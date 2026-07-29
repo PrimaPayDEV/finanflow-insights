@@ -26,7 +26,7 @@ import {
   terminalsQuery,
   type Merchant,
 } from "@/lib/db";
-import { PCT } from "@/lib/format";
+import { PCT, formatCNPJ, formatPhone } from "@/lib/format";
 
 export const Route = createFileRoute("/merchants")({
   head: () => ({
@@ -118,16 +118,16 @@ function MerchantsPage() {
                 <Label>CNPJ</Label>
                 <Input
                   value={form.document_cnpj}
-                  onChange={(e) => setForm({ ...form, document_cnpj: e.target.value })}
-                  maxLength={20}
+                  onChange={(e) => setForm({ ...form, document_cnpj: formatCNPJ(e.target.value) })}
+                  maxLength={18}
                 />
               </div>
               <div className="grid gap-1.5">
                 <Label>WhatsApp</Label>
                 <Input
                   value={form.phone_whatsapp}
-                  onChange={(e) => setForm({ ...form, phone_whatsapp: e.target.value })}
-                  maxLength={30}
+                  onChange={(e) => setForm({ ...form, phone_whatsapp: formatPhone(e.target.value) })}
+                  maxLength={15}
                 />
               </div>
               <div className="grid gap-1.5">
