@@ -9,38 +9,155 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as MerchantsRouteImport } from './routes/merchants'
+import { Route as ImportRouteImport } from './routes/import'
+import { Route as ExpensesRouteImport } from './routes/expenses'
+import { Route as ClosuresRouteImport } from './routes/closures'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as SettingsAsaasRouteImport } from './routes/settings.asaas'
 
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MerchantsRoute = MerchantsRouteImport.update({
+  id: '/merchants',
+  path: '/merchants',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ImportRoute = ImportRouteImport.update({
+  id: '/import',
+  path: '/import',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ExpensesRoute = ExpensesRouteImport.update({
+  id: '/expenses',
+  path: '/expenses',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ClosuresRoute = ClosuresRouteImport.update({
+  id: '/closures',
+  path: '/closures',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SettingsAsaasRoute = SettingsAsaasRouteImport.update({
+  id: '/settings/asaas',
+  path: '/settings/asaas',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/closures': typeof ClosuresRoute
+  '/expenses': typeof ExpensesRoute
+  '/import': typeof ImportRoute
+  '/merchants': typeof MerchantsRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/settings/asaas': typeof SettingsAsaasRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/closures': typeof ClosuresRoute
+  '/expenses': typeof ExpensesRoute
+  '/import': typeof ImportRoute
+  '/merchants': typeof MerchantsRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/settings/asaas': typeof SettingsAsaasRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/closures': typeof ClosuresRoute
+  '/expenses': typeof ExpensesRoute
+  '/import': typeof ImportRoute
+  '/merchants': typeof MerchantsRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/settings/asaas': typeof SettingsAsaasRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/closures'
+    | '/expenses'
+    | '/import'
+    | '/merchants'
+    | '/sitemap.xml'
+    | '/settings/asaas'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/closures'
+    | '/expenses'
+    | '/import'
+    | '/merchants'
+    | '/sitemap.xml'
+    | '/settings/asaas'
+  id:
+    | '__root__'
+    | '/'
+    | '/closures'
+    | '/expenses'
+    | '/import'
+    | '/merchants'
+    | '/sitemap.xml'
+    | '/settings/asaas'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ClosuresRoute: typeof ClosuresRoute
+  ExpensesRoute: typeof ExpensesRoute
+  ImportRoute: typeof ImportRoute
+  MerchantsRoute: typeof MerchantsRoute
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  SettingsAsaasRoute: typeof SettingsAsaasRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/merchants': {
+      id: '/merchants'
+      path: '/merchants'
+      fullPath: '/merchants'
+      preLoaderRoute: typeof MerchantsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/import': {
+      id: '/import'
+      path: '/import'
+      fullPath: '/import'
+      preLoaderRoute: typeof ImportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/expenses': {
+      id: '/expenses'
+      path: '/expenses'
+      fullPath: '/expenses'
+      preLoaderRoute: typeof ExpensesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/closures': {
+      id: '/closures'
+      path: '/closures'
+      fullPath: '/closures'
+      preLoaderRoute: typeof ClosuresRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,22 +165,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/settings/asaas': {
+      id: '/settings/asaas'
+      path: '/settings/asaas'
+      fullPath: '/settings/asaas'
+      preLoaderRoute: typeof SettingsAsaasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ClosuresRoute: ClosuresRoute,
+  ExpensesRoute: ExpensesRoute,
+  ImportRoute: ImportRoute,
+  MerchantsRoute: MerchantsRoute,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
+  SettingsAsaasRoute: SettingsAsaasRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
