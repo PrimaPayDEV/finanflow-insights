@@ -1,6 +1,9 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { notificationsQuery } from "@/lib/db";
+import { supabase } from "@/integrations/supabase/client";
 import {
   LayoutDashboard,
   Store,
@@ -48,6 +51,18 @@ export function AppLayout({
 }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [isCollapsed, setIsCollapsed] = useState(false);
+  
+  const qc = useQueryClient();
+  const { data: notifications = [] } = useQuery(notificationsQuery);
+  const unreadCount = notifications.filter(n => !n.is_read).length;
+
+  const markAsRead = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('notifications').update({ is_read: true }).eq('id', id);
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["notifications"] })
+  });
 
   return (
     <div className="flex min-h-screen w-full bg-background">
@@ -130,19 +145,43 @@ export function AppLayout({
                   <DropdownMenuTrigger asChild>
                     <Button variant="outline" size="icon" className="relative rounded-full">
                       <Bell className="h-4 w-4" />
-                      <span className="absolute top-0 right-0 h-2 w-2 rounded-full bg-destructive" />
+                      {unreadCount > 0 && (
+                        <span className="absolute top-0 right-0 h-2 w-2 rounded-full bg-destructive" />
+                      )}
                       <span className="sr-only">Notificações</span>
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-64">
+                  <DropdownMenuContent align="end" className="w-72 max-h-96 overflow-y-auto">
                     <DropdownMenuLabel>Notificações</DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem>
-                      <div className="flex flex-col gap-1">
-                        <span className="text-sm font-medium">Bem-vindo(a)!</span>
-                        <span className="text-xs text-muted-foreground">Você tem acesso ao novo design.</span>
-                      </div>
-                    </DropdownMenuItem>
+                    {notifications.length === 0 ? (
+                      <DropdownMenuItem disabled>Nenhuma notificação</DropdownMenuItem>
+                    ) : (
+                      notifications.map(notification => (
+                        <DropdownMenuItem 
+                          key={notification.id}
+                          className={cn("flex flex-col items-start gap-1 p-3 cursor-pointer", !notification.is_read && "bg-muted/50")}
+                          onClick={() => {
+                            if (!notification.is_read) markAsRead.mutate(notification.id);
+                          }}
+                        >
+                          <div className="flex items-center gap-2 w-full">
+                            <span className="text-sm font-medium leading-none">
+                              {notification.type === 'payment' && '💰 '}
+                              {notification.type === 'closure' && '📄 '}
+                              {notification.type === 'error' && '⚠️ '}
+                              {notification.title}
+                            </span>
+                            {!notification.is_read && <span className="ml-auto w-2 h-2 rounded-full bg-primary" />}
+                          </div>
+                          {notification.description && (
+                            <span className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                              {notification.description}
+                            </span>
+                          )}
+                        </DropdownMenuItem>
+                      ))
+                    )}
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>

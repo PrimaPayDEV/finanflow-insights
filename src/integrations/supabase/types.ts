@@ -182,6 +182,44 @@ export type Database = {
         }
         Relationships: []
       }
+      notifications: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_read: boolean
+          merchant_id: string | null
+          title: string
+          type: Database["public"]["Enums"]["notification_type"]
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_read?: boolean
+          merchant_id?: string | null
+          title: string
+          type: Database["public"]["Enums"]["notification_type"]
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_read?: boolean
+          merchant_id?: string | null
+          title?: string
+          type?: Database["public"]["Enums"]["notification_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pos_terminals: {
         Row: {
           created_at: string
@@ -346,6 +384,7 @@ export type Database = {
       closure_status: "draft" | "closed" | "invoice_generated" | "paid"
       import_status: "processing" | "completed" | "error"
       merchant_status: "active" | "inactive"
+      notification_type: "closure" | "payment" | "error"
       payment_modality:
         | "pix"
         | "debit"

@@ -9,6 +9,7 @@ export type Expense = Tables<"expenses_adjustments">;
 export type Closure = Tables<"closures">;
 export type SplitRule = Tables<"split_rules">;
 export type StatementImport = Tables<"statements_imports">;
+export type Notification = Tables<"notifications">;
 
 function unwrap<T>({ data, error }: { data: T | null; error: { message: string } | null }): T {
   if (error) throw new Error(error.message);
@@ -67,6 +68,14 @@ export const importsQuery = {
     unwrap(
       await supabase.from("statements_imports").select("*").order("created_at", { ascending: false }),
     ) as StatementImport[],
+};
+
+export const notificationsQuery = {
+  queryKey: ["notifications"],
+  queryFn: async () =>
+    unwrap(
+      await supabase.from("notifications").select("*").order("created_at", { ascending: false }),
+    ) as Notification[],
 };
 
 export { unwrap };
