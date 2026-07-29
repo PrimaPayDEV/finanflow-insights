@@ -24,7 +24,7 @@ export function KpiCard({
           </p>
           <p
             className={cn(
-              "mt-2 truncate text-2xl font-semibold tracking-tight",
+              "mt-2 truncate text-2xl font-bold tracking-tight",
               tone === "success" && "text-success",
               tone === "primary" && "text-primary",
             )}
