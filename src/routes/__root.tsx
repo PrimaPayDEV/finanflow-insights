@@ -13,6 +13,9 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { Loader2 } from "lucide-react";
+import { useNavigate, useRouterState } from "@tanstack/react-router";
 
 function NotFoundComponent() {
   return (
@@ -116,15 +119,47 @@ function RootShell({ children }: { children: ReactNode }) {
   );
 }
 
+function AuthGuard({ children }: { children: ReactNode }) {
+  const { user, isLoading } = useAuth();
+  const navigate = useNavigate();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+
+  useEffect(() => {
+    if (!isLoading) {
+      if (!user && pathname !== "/login") {
+        navigate({ to: "/login" });
+      } else if (user && pathname === "/login") {
+        navigate({ to: "/" });
+      }
+    }
+  }, [user, isLoading, pathname, navigate]);
+
+  if (isLoading) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center">
+        <Loader2 className="animate-spin size-8" />
+      </div>
+    );
+  }
+
+  if (!user && pathname !== "/login") return null;
+
+  return <>{children}</>;
+}
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
   return (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
       <QueryClientProvider client={queryClient}>
-        {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-        <Outlet />
-        <Toaster richColors position="top-right" />
+        <AuthProvider>
+          <AuthGuard>
+            {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+            <Outlet />
+          </AuthGuard>
+          <Toaster richColors position="top-right" />
+        </AuthProvider>
       </QueryClientProvider>
     </ThemeProvider>
   );

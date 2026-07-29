@@ -15,10 +15,12 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Bell,
+  LogOut,
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "./ThemeToggle";
+import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "./ui/button";
 import {
   DropdownMenu,
@@ -51,6 +53,7 @@ export function AppLayout({
 }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const { signOut } = useAuth();
   
   const qc = useQueryClient();
   const { data: notifications = [] } = useQuery(notificationsQuery);
@@ -184,6 +187,10 @@ export function AppLayout({
                     )}
                   </DropdownMenuContent>
                 </DropdownMenu>
+
+                <Button variant="ghost" size="icon" onClick={signOut} title="Sair">
+                  <LogOut className="h-4 w-4 text-muted-foreground hover:text-foreground transition-colors" />
+                </Button>
               </div>
             </div>
           </div>

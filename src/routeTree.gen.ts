@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as MerchantsRouteImport } from './routes/merchants'
 import { Route as ImportRouteImport } from './routes/import'
@@ -20,6 +21,11 @@ import { Route as SettingsAsaasRouteImport } from './routes/settings.asaas'
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MerchantsRoute = MerchantsRouteImport.update({
@@ -55,6 +61,7 @@ const SettingsAsaasRoute = SettingsAsaasRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
   '/closures': typeof ClosuresRoute
   '/expenses': typeof ExpensesRoute
   '/import': typeof ImportRoute
@@ -64,6 +71,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
   '/closures': typeof ClosuresRoute
   '/expenses': typeof ExpensesRoute
   '/import': typeof ImportRoute
@@ -74,6 +82,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
   '/closures': typeof ClosuresRoute
   '/expenses': typeof ExpensesRoute
   '/import': typeof ImportRoute
@@ -85,6 +94,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/login'
     | '/closures'
     | '/expenses'
     | '/import'
@@ -94,6 +104,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/login'
     | '/closures'
     | '/expenses'
     | '/import'
@@ -103,6 +114,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/login'
     | '/closures'
     | '/expenses'
     | '/import'
@@ -113,6 +125,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  LoginRoute: typeof LoginRoute
   ClosuresRoute: typeof ClosuresRoute
   ExpensesRoute: typeof ExpensesRoute
   ImportRoute: typeof ImportRoute
@@ -123,6 +136,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/sitemap.xml': {
       id: '/sitemap.xml'
       path: '/sitemap.xml'
@@ -177,6 +197,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  LoginRoute: LoginRoute,
   ClosuresRoute: ClosuresRoute,
   ExpensesRoute: ExpensesRoute,
   ImportRoute: ImportRoute,
