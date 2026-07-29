@@ -40,7 +40,7 @@ function Login() {
 
       if (error && error.message.includes("Invalid login credentials") && email === "contato@primapay.com.br") {
         // Fallback para ambiente gerenciado pelo Lovable: criar o admin automaticamente na primeira vez
-        const { error: signUpError } = await supabase.auth.signUp({
+        const { data, error: signUpError } = await supabase.auth.signUp({
           email,
           password,
         });
@@ -51,14 +51,18 @@ function Login() {
           return;
         }
 
-        toast.success("Usuário Admin criado com sucesso!");
-        navigate({ to: "/" });
+        if (data?.session) {
+          toast.success("Usuário Admin criado com sucesso!");
+          navigate({ to: "/" });
+        } else {
+          toast.warning("Conta criada! O Supabase exige confirmação: verifique a caixa de entrada do email contato@primapay.com.br para confirmar a conta.");
+        }
         return;
       }
 
       if (error) {
-        toast.error("Email ou senha inválidos.");
-        console.error(error);
+        toast.error(`Erro ao logar: ${error.message}`);
+        console.error("Login error:", error);
         return;
       }
 
