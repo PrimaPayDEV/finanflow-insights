@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
-import { PiggyBank, FileCheck2, ExternalLink, Sparkles } from "lucide-react";
+import { PiggyBank, FileCheck2, ExternalLink, Sparkles, Download } from "lucide-react";
 import { toast } from "sonner";
 import { AppLayout } from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
@@ -142,9 +142,23 @@ function ClosuresPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const handlePrint = () => {
+    window.print();
+  };
+
   return (
-    <AppLayout title="Fechamentos & Cobrança" subtitle="Comparativo de economia e emissão automática">
-      <div className="grid gap-3 sm:grid-cols-2 lg:max-w-2xl">
+    <AppLayout 
+      title="Fechamentos & Cobrança" 
+      subtitle="Comparativo de economia e emissão automática"
+      actions={
+        merchant ? (
+          <Button variant="outline" onClick={handlePrint} className="print:hidden">
+            <Download className="mr-2 h-4 w-4" /> Exportar PDF
+          </Button>
+        ) : undefined
+      }
+    >
+      <div className="grid gap-3 sm:grid-cols-2 lg:max-w-2xl print:hidden">
         <Select value={merchantId} onValueChange={setMerchantId}>
           <SelectTrigger>
             <SelectValue placeholder="Selecione o estabelecimento" />
@@ -178,8 +192,8 @@ function ClosuresPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="mt-6 grid gap-4 lg:grid-cols-[1fr_380px]">
-          <Card>
+        <div className="mt-6 grid gap-4 lg:grid-cols-[1fr_380px] print:block print:space-y-6">
+          <Card className="print:shadow-none print:border-none">
             <CardHeader>
               <CardTitle className="text-base">
                 Detalhamento — {merchant.name} · {monthLabel(month)}
@@ -233,8 +247,8 @@ function ClosuresPage() {
             </CardContent>
           </Card>
 
-          <div className="space-y-4">
-            <Card className="border-success/40 bg-success/5">
+          <div className="space-y-4 print:space-y-6">
+            <Card className="border-success/40 bg-success/5 print:shadow-none print:border-none print:bg-transparent">
               <CardHeader className="pb-2">
                 <CardTitle className="flex items-center gap-2 text-base">
                   <Sparkles className="size-4 text-success" /> Comparativo de economia
@@ -260,7 +274,7 @@ function ClosuresPage() {
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="print:hidden">
               <CardHeader className="pb-2">
                 <CardTitle className="text-base">Cobrança Asaas</CardTitle>
               </CardHeader>

@@ -71,7 +71,7 @@ export function AppLayout({
     <div className="flex min-h-screen w-full bg-background">
       <aside
         className={cn(
-          "sticky top-0 hidden h-screen shrink-0 flex-col bg-sidebar text-sidebar-foreground transition-all duration-300 md:flex",
+          "print:hidden sticky top-0 hidden h-screen shrink-0 flex-col bg-sidebar text-sidebar-foreground transition-all duration-300 md:flex",
           isCollapsed ? "w-20" : "w-64"
         )}
       >
@@ -131,7 +131,7 @@ export function AppLayout({
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-10 border-b border-border bg-card/80 backdrop-blur">
+        <header className="print:hidden sticky top-0 z-10 border-b border-border bg-card/80 backdrop-blur">
           <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 md:px-8">
             <div>
               <h1 className="text-xl font-semibold tracking-tight text-foreground">{title}</h1>
@@ -208,7 +208,7 @@ export function AppLayout({
           </nav>
         </header>
         
-        <main className="flex-1 overflow-hidden px-5 py-6 md:px-8">
+        <main className="flex-1 overflow-hidden px-5 py-6 md:px-8 print:p-0 print:overflow-visible">
           <AnimatePresence mode="wait">
             <motion.div
               key={pathname}
