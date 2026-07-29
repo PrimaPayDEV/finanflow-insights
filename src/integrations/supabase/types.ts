@@ -14,7 +14,327 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      closures: {
+        Row: {
+          asaas_invoice_url: string | null
+          asaas_payment_id: string | null
+          created_at: string
+          id: string
+          merchant_id: string
+          net_invoice_amount: number
+          reference_month: string
+          savings_amount: number
+          status: Database["public"]["Enums"]["closure_status"]
+          total_expenses: number
+          total_gross_volume: number
+          total_op_fee_amount: number
+          traditional_cost_estimate: number
+        }
+        Insert: {
+          asaas_invoice_url?: string | null
+          asaas_payment_id?: string | null
+          created_at?: string
+          id?: string
+          merchant_id: string
+          net_invoice_amount?: number
+          reference_month: string
+          savings_amount?: number
+          status?: Database["public"]["Enums"]["closure_status"]
+          total_expenses?: number
+          total_gross_volume?: number
+          total_op_fee_amount?: number
+          traditional_cost_estimate?: number
+        }
+        Update: {
+          asaas_invoice_url?: string | null
+          asaas_payment_id?: string | null
+          created_at?: string
+          id?: string
+          merchant_id?: string
+          net_invoice_amount?: number
+          reference_month?: string
+          savings_amount?: number
+          status?: Database["public"]["Enums"]["closure_status"]
+          total_expenses?: number
+          total_gross_volume?: number
+          total_op_fee_amount?: number
+          traditional_cost_estimate?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "closures_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      expenses_adjustments: {
+        Row: {
+          amount: number
+          created_at: string
+          description: string
+          id: string
+          merchant_id: string
+          reference_month: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          description: string
+          id?: string
+          merchant_id: string
+          reference_month: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          description?: string
+          id?: string
+          merchant_id?: string
+          reference_month?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expenses_adjustments_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fee_plans: {
+        Row: {
+          cash_rate: number
+          created_at: string
+          credit_installment_rate: number
+          credit_vista_rate: number
+          debit_rate: number
+          fixed_rate_percent: number
+          id: string
+          merchant_id: string
+          pix_rate: number
+          traditional_fee_avg: number
+        }
+        Insert: {
+          cash_rate?: number
+          created_at?: string
+          credit_installment_rate?: number
+          credit_vista_rate?: number
+          debit_rate?: number
+          fixed_rate_percent?: number
+          id?: string
+          merchant_id: string
+          pix_rate?: number
+          traditional_fee_avg?: number
+        }
+        Update: {
+          cash_rate?: number
+          created_at?: string
+          credit_installment_rate?: number
+          credit_vista_rate?: number
+          debit_rate?: number
+          fixed_rate_percent?: number
+          id?: string
+          merchant_id?: string
+          pix_rate?: number
+          traditional_fee_avg?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fee_plans_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: true
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      merchants: {
+        Row: {
+          created_at: string
+          document_cnpj: string
+          email: string
+          id: string
+          name: string
+          phone_whatsapp: string
+          status: Database["public"]["Enums"]["merchant_status"]
+        }
+        Insert: {
+          created_at?: string
+          document_cnpj?: string
+          email?: string
+          id?: string
+          name: string
+          phone_whatsapp?: string
+          status?: Database["public"]["Enums"]["merchant_status"]
+        }
+        Update: {
+          created_at?: string
+          document_cnpj?: string
+          email?: string
+          id?: string
+          name?: string
+          phone_whatsapp?: string
+          status?: Database["public"]["Enums"]["merchant_status"]
+        }
+        Relationships: []
+      }
+      pos_terminals: {
+        Row: {
+          created_at: string
+          id: string
+          merchant_id: string
+          model: string
+          serial_number: string
+          status: Database["public"]["Enums"]["merchant_status"]
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          merchant_id: string
+          model?: string
+          serial_number: string
+          status?: Database["public"]["Enums"]["merchant_status"]
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          merchant_id?: string
+          model?: string
+          serial_number?: string
+          status?: Database["public"]["Enums"]["merchant_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pos_terminals_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      split_rules: {
+        Row: {
+          created_at: string
+          id: string
+          merchant_id: string
+          partner_asaas_wallet_id: string
+          partner_name: string
+          percentage: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          merchant_id: string
+          partner_asaas_wallet_id?: string
+          partner_name: string
+          percentage?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          merchant_id?: string
+          partner_asaas_wallet_id?: string
+          partner_name?: string
+          percentage?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "split_rules_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      statements_imports: {
+        Row: {
+          created_at: string
+          file_name: string
+          id: string
+          merchant_id: string | null
+          reference_month: string
+          status: Database["public"]["Enums"]["import_status"]
+        }
+        Insert: {
+          created_at?: string
+          file_name: string
+          id?: string
+          merchant_id?: string | null
+          reference_month: string
+          status?: Database["public"]["Enums"]["import_status"]
+        }
+        Update: {
+          created_at?: string
+          file_name?: string
+          id?: string
+          merchant_id?: string | null
+          reference_month?: string
+          status?: Database["public"]["Enums"]["import_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "statements_imports_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      transactions: {
+        Row: {
+          created_at: string
+          gross_amount: number
+          id: string
+          import_id: string | null
+          merchant_id: string
+          modality: Database["public"]["Enums"]["payment_modality"]
+          pos_serial: string
+          transaction_date: string
+        }
+        Insert: {
+          created_at?: string
+          gross_amount?: number
+          id?: string
+          import_id?: string | null
+          merchant_id: string
+          modality: Database["public"]["Enums"]["payment_modality"]
+          pos_serial?: string
+          transaction_date?: string
+        }
+        Update: {
+          created_at?: string
+          gross_amount?: number
+          id?: string
+          import_id?: string | null
+          merchant_id?: string
+          modality?: Database["public"]["Enums"]["payment_modality"]
+          pos_serial?: string
+          transaction_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transactions_import_id_fkey"
+            columns: ["import_id"]
+            isOneToOne: false
+            referencedRelation: "statements_imports"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +343,15 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      closure_status: "draft" | "closed" | "invoice_generated" | "paid"
+      import_status: "processing" | "completed" | "error"
+      merchant_status: "active" | "inactive"
+      payment_modality:
+        | "pix"
+        | "debit"
+        | "credit_vista"
+        | "credit_installment"
+        | "cash"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +478,17 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      closure_status: ["draft", "closed", "invoice_generated", "paid"],
+      import_status: ["processing", "completed", "error"],
+      merchant_status: ["active", "inactive"],
+      payment_modality: [
+        "pix",
+        "debit",
+        "credit_vista",
+        "credit_installment",
+        "cash",
+      ],
+    },
   },
 } as const
