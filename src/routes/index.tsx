@@ -31,13 +31,13 @@ import { BRL, MODALITIES, closureStatusLabel, currentMonth, modalityLabel, month
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Dashboard | Gestão de ECs e Cobrança Automática" },
+      { title: "Dashboard PrimaPay | Gestão de ECs e Cobrança" },
       {
         name: "description",
         content:
           "Painel fintech com faturamento por modalidade, taxa operacional a receber, economia gerada e status das cobranças dos estabelecimentos.",
       },
-      { property: "og:title", content: "Dashboard | Gestão de ECs e Cobrança Automática" },
+      { property: "og:title", content: "Dashboard PrimaPay | Gestão de ECs e Cobrança" },
       {
         property: "og:description",
         content: "Faturamento, taxas operacionais, economia e cobranças em um só painel.",

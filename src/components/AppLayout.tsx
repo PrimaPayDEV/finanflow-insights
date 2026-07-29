@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 const nav = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
   { to: "/merchants", label: "Estabelecimentos", icon: Store },
-  { to: "/import", label: "Importar Confrapag", icon: Upload },
+  { to: "/import", label: "Importar Extrato", icon: Upload },
   { to: "/expenses", label: "Despesas / Ajustes", icon: Receipt },
   { to: "/closures", label: "Fechamentos & Cobrança", icon: FileCheck2 },
   { to: "/settings/asaas", label: "Configuração Asaas", icon: Settings },
@@ -41,7 +41,7 @@ export function AppLayout({
             <CircleDollarSign className="size-5" />
           </span>
           <div className="leading-tight">
-            <p className="text-sm font-semibold">Confrapag</p>
+            <p className="text-sm font-semibold">PrimaPay</p>
             <p className="text-xs text-sidebar-foreground/60">Gestão de ECs</p>
           </div>
         </div>
