@@ -31,13 +31,13 @@ import { BRL, MODALITIES, currentMonth, modalityLabel, monthLabel, monthOptions,
 export const Route = createFileRoute("/import")({
   head: () => ({
     meta: [
-      { title: "Importar Extrato Confrapag | Gestão de ECs" },
+      { title: "Importar Extrato PrimaPay | Gestão de ECs" },
       {
         name: "description",
         content:
-          "Faça upload do extrato Confrapag em CSV, XLSX ou PDF, revise a prévia agrupada por modalidade e confirme a importação do faturamento.",
+          "Faça upload do extrato PrimaPay em CSV, XLSX ou PDF, revise a prévia agrupada por modalidade e confirme a importação do faturamento.",
       },
-      { property: "og:title", content: "Importar Extrato Confrapag" },
+      { property: "og:title", content: "Importar Extrato PrimaPay" },
       {
         property: "og:description",
         content: "Upload, parser por modalidade e identificação do EC pelo serial do POS.",
@@ -158,7 +158,7 @@ function ImportPage() {
         .from("statements_imports")
         .insert({
           merchant_id: merchantId || null,
-          file_name: fileName || "extrato-confrapag",
+          file_name: fileName || "extrato-primapay",
           reference_month: month,
           status: "processing",
         })
@@ -197,7 +197,7 @@ function ImportPage() {
   })).filter((t) => t.total > 0);
 
   return (
-    <AppLayout title="Importar Confrapag" subtitle="Upload de extratos e conferência do faturamento">
+    <AppLayout title="Importar Extrato" subtitle="Upload de extratos e conferência do faturamento">
       <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
         <Card>
           <CardHeader>
