@@ -1,0 +1,375 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
+import { FileUp, CheckCircle2, Trash2 } from "lucide-react";
+import { toast } from "sonner";
+import { AppLayout } from "@/components/AppLayout";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { supabase } from "@/integrations/supabase/client";
+import { importsQuery, merchantsQuery, terminalsQuery } from "@/lib/db";
+import { BRL, MODALITIES, currentMonth, modalityLabel, monthLabel, monthOptions, type Modality } from "@/lib/format";
+
+export const Route = createFileRoute("/import")({
+  head: () => ({
+    meta: [
+      { title: "Importar Extrato Confrapag | Gestão de ECs" },
+      {
+        name: "description",
+        content:
+          "Faça upload do extrato Confrapag em CSV, XLSX ou PDF, revise a prévia agrupada por modalidade e confirme a importação do faturamento.",
+      },
+      { property: "og:title", content: "Importar Extrato Confrapag" },
+      {
+        property: "og:description",
+        content: "Upload, parser por modalidade e identificação do EC pelo serial do POS.",
+      },
+    ],
+  }),
+  component: ImportPage,
+});
+
+type PreviewRow = {
+  serial: string;
+  modality: Modality;
+  amount: number;
+  date: string;
+};
+
+const MODALITY_ALIASES: Record<string, Modality> = {
+  pix: "pix",
+  debito: "debit",
+  débito: "debit",
+  debit: "debit",
+  credito: "credit_vista",
+  crédito: "credit_vista",
+  credito_vista: "credit_vista",
+  "credito a vista": "credit_vista",
+  "crédito à vista": "credit_vista",
+  credit_vista: "credit_vista",
+  parcelado: "credit_installment",
+  "credito parcelado": "credit_installment",
+  "crédito parcelado": "credit_installment",
+  credit_installment: "credit_installment",
+  dinheiro: "cash",
+  cash: "cash",
+};
+
+function parseCsv(text: string): PreviewRow[] {
+  const lines = text.split(/\r?\n/).filter((l) => l.trim());
+  if (lines.length === 0) return [];
+  const delim = lines[0].includes(";") ? ";" : ",";
+  const header = lines[0].toLowerCase().split(delim).map((h) => h.trim());
+  const idx = (names: string[]) => header.findIndex((h) => names.some((n) => h.includes(n)));
+  const iSerial = idx(["serial", "pos", "terminal"]);
+  const iMod = idx(["modalidade", "modality", "tipo", "bandeira"]);
+  const iVal = idx(["valor", "bruto", "amount"]);
+  const iDate = idx(["data", "date"]);
+
+  const rows: PreviewRow[] = [];
+  for (const line of lines.slice(1)) {
+    const cols = line.split(delim).map((c) => c.trim().replace(/^"|"$/g, ""));
+    const rawMod = (cols[iMod] ?? "").toLowerCase();
+    const modality =
+      MODALITY_ALIASES[rawMod] ??
+      (Object.entries(MODALITY_ALIASES).find(([k]) => rawMod.includes(k))?.[1] as Modality) ??
+      "credit_vista";
+    const rawVal = (cols[iVal] ?? "0").replace(/[R$\s.]/g, "").replace(",", ".");
+    const amount = Number(rawVal) || 0;
+    if (!amount) continue;
+    const rawDate = cols[iDate] ?? "";
+    let date = new Date().toISOString().slice(0, 10);
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(rawDate)) {
+      const [d, m, y] = rawDate.split("/");
+      date = `${y}-${m}-${d}`;
+    } else if (/^\d{4}-\d{2}-\d{2}/.test(rawDate)) {
+      date = rawDate.slice(0, 10);
+    }
+    rows.push({ serial: cols[iSerial] ?? "", modality, amount, date });
+  }
+  return rows;
+}
+
+function simulateRows(month: string): PreviewRow[] {
+  const day = (n: number) => `${month}-${String(n).padStart(2, "0")}`;
+  return [
+    { serial: "", modality: "pix", amount: 12850.4, date: day(5) },
+    { serial: "", modality: "debit", amount: 8420.9, date: day(9) },
+    { serial: "", modality: "credit_vista", amount: 19730.15, date: day(14) },
+    { serial: "", modality: "credit_installment", amount: 24310.0, date: day(21) },
+    { serial: "", modality: "cash", amount: 3110.25, date: day(27) },
+  ];
+}
+
+function ImportPage() {
+  const qc = useQueryClient();
+  const merchants = useQuery(merchantsQuery);
+  const terminals = useQuery(terminalsQuery);
+  const imports = useQuery(importsQuery);
+
+  const [merchantId, setMerchantId] = useState<string>("");
+  const [month, setMonth] = useState(currentMonth());
+  const [fileName, setFileName] = useState("");
+  const [rows, setRows] = useState<PreviewRow[]>([]);
+
+  const resolveMerchant = (serial: string) => {
+    const t = (terminals.data ?? []).find((x) => x.serial_number === serial.trim());
+    return t?.merchant_id ?? merchantId;
+  };
+
+  const handleFile = async (file: File) => {
+    setFileName(file.name);
+    if (/\.csv$/i.test(file.name)) {
+      const text = await file.text();
+      const parsed = parseCsv(text);
+      setRows(parsed);
+      toast.success(`${parsed.length} lançamentos lidos do CSV`);
+    } else {
+      setRows(simulateRows(month));
+      toast.info("XLSX/PDF: prévia gerada pelo simulador de parser — revise antes de confirmar.");
+    }
+  };
+
+  const confirm = useMutation({
+    mutationFn: async () => {
+      const unresolved = rows.filter((r) => !resolveMerchant(r.serial));
+      if (unresolved.length > 0) {
+        throw new Error("Selecione um EC padrão ou vincule os seriais aos terminais.");
+      }
+      const { data: imp, error: impError } = await supabase
+        .from("statements_imports")
+        .insert({
+          merchant_id: merchantId || null,
+          file_name: fileName || "extrato-confrapag",
+          reference_month: month,
+          status: "processing",
+        })
+        .select("id")
+        .single();
+      if (impError) throw new Error(impError.message);
+
+      const payload = rows.map((r) => ({
+        merchant_id: resolveMerchant(r.serial),
+        pos_serial: r.serial,
+        modality: r.modality,
+        gross_amount: r.amount,
+        transaction_date: new Date(`${r.date}T12:00:00`).toISOString(),
+        import_id: imp.id,
+      }));
+      const { error } = await supabase.from("transactions").insert(payload);
+      if (error) {
+        await supabase.from("statements_imports").update({ status: "error" }).eq("id", imp.id);
+        throw new Error(error.message);
+      }
+      await supabase.from("statements_imports").update({ status: "completed" }).eq("id", imp.id);
+    },
+    onSuccess: () => {
+      toast.success("Importação concluída");
+      setRows([]);
+      setFileName("");
+      qc.invalidateQueries({ queryKey: ["transactions"] });
+      qc.invalidateQueries({ queryKey: ["imports"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const totals = MODALITIES.map((m) => ({
+    label: m.label,
+    total: rows.filter((r) => r.modality === m.value).reduce((s, r) => s + r.amount, 0),
+  })).filter((t) => t.total > 0);
+
+  return (
+    <AppLayout title="Importar Confrapag" subtitle="Upload de extratos e conferência do faturamento">
+      <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Upload do extrato</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="grid gap-1.5">
+                <Label>EC padrão (quando o serial não identificar)</Label>
+                <Select value={merchantId} onValueChange={setMerchantId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o estabelecimento" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(merchants.data ?? []).map((m) => (
+                      <SelectItem key={m.id} value={m.id}>
+                        {m.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid gap-1.5">
+                <Label>Mês de referência</Label>
+                <Select value={month} onValueChange={setMonth}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {monthOptions().map((m) => (
+                      <SelectItem key={m} value={m}>
+                        {monthLabel(m)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border bg-muted/40 px-6 py-10 text-center transition-colors hover:bg-muted">
+              <FileUp className="size-6 text-muted-foreground" />
+              <span className="text-sm font-medium">
+                {fileName || "Selecione o arquivo CSV, XLSX ou PDF"}
+              </span>
+              <span className="text-xs text-muted-foreground">
+                Colunas esperadas no CSV: serial, modalidade, valor, data
+              </span>
+              <input
+                type="file"
+                accept=".csv,.xlsx,.xls,.pdf"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) void handleFile(f);
+                }}
+              />
+            </label>
+
+            {rows.length > 0 && (
+              <>
+                <div className="flex flex-wrap gap-2">
+                  {totals.map((t) => (
+                    <Badge key={t.label} variant="secondary">
+                      {t.label}: {BRL(t.total)}
+                    </Badge>
+                  ))}
+                </div>
+                <div className="overflow-x-auto rounded-lg border border-border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Serial POS</TableHead>
+                        <TableHead>Modalidade</TableHead>
+                        <TableHead>Data</TableHead>
+                        <TableHead className="text-right">Valor bruto</TableHead>
+                        <TableHead />
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {rows.map((r, i) => (
+                        <TableRow key={i}>
+                          <TableCell>
+                            <Input
+                              value={r.serial}
+                              placeholder="serial"
+                              className="h-8 w-36 font-mono text-xs"
+                              onChange={(e) => {
+                                const next = [...rows];
+                                next[i] = { ...r, serial: e.target.value };
+                                setRows(next);
+                              }}
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Select
+                              value={r.modality}
+                              onValueChange={(v) => {
+                                const next = [...rows];
+                                next[i] = { ...r, modality: v as Modality };
+                                setRows(next);
+                              }}
+                            >
+                              <SelectTrigger className="h-8 w-44">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {MODALITIES.map((m) => (
+                                  <SelectItem key={m.value} value={m.value}>
+                                    {m.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </TableCell>
+                          <TableCell className="text-sm">{r.date}</TableCell>
+                          <TableCell className="text-right text-sm font-medium">
+                            {BRL(r.amount)}
+                          </TableCell>
+                          <TableCell>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              aria-label="Remover linha"
+                              onClick={() => setRows(rows.filter((_, j) => j !== i))}
+                            >
+                              <Trash2 className="size-4" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+                <Button onClick={() => confirm.mutate()} disabled={confirm.isPending}>
+                  <CheckCircle2 className="size-4" /> Confirmar importação
+                </Button>
+              </>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Histórico de importações</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {(imports.data ?? []).length === 0 && (
+              <p className="text-sm text-muted-foreground">Nenhuma importação registrada.</p>
+            )}
+            {(imports.data ?? []).map((i) => (
+              <div key={i.id} className="rounded-lg border border-border p-3">
+                <p className="truncate text-sm font-medium">{i.file_name}</p>
+                <p className="text-xs text-muted-foreground">
+                  {monthLabel(i.reference_month)} ·{" "}
+                  {(merchants.data ?? []).find((m) => m.id === i.merchant_id)?.name ?? "Multi-EC"}
+                </p>
+                <Badge className="mt-2" variant={i.status === "completed" ? "default" : "secondary"}>
+                  {i.status === "completed"
+                    ? "Concluída"
+                    : i.status === "error"
+                      ? "Erro"
+                      : "Processando"}
+                </Badge>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      </div>
+
+      <p className="mt-6 text-xs text-muted-foreground">
+        Modalidades suportadas pelo parser: {MODALITIES.map((m) => modalityLabel(m.value)).join(", ")}.
+      </p>
+    </AppLayout>
+  );
+}
