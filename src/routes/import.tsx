@@ -213,6 +213,20 @@ function ImportPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const deleteImport = useMutation({
+    mutationFn: async (id: string) => {
+      await supabase.from("transactions").delete().eq("import_id", id);
+      const { error } = await supabase.from("statements_imports").delete().eq("id", id);
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      toast.success("Importação excluída com sucesso");
+      qc.invalidateQueries({ queryKey: ["transactions"] });
+      qc.invalidateQueries({ queryKey: ["imports"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const totals = MODALITIES.map((m) => ({
     label: m.label,
     total: rows.filter((r) => r.modality === m.value).reduce((s, r) => s + r.amount, 0),
@@ -370,19 +384,34 @@ function ImportPage() {
               <p className="text-sm text-muted-foreground">Nenhuma importação registrada.</p>
             )}
             {(imports.data ?? []).map((i) => (
-              <div key={i.id} className="rounded-lg border border-border p-3">
-                <p className="truncate text-sm font-medium">{i.file_name}</p>
-                <p className="text-xs text-muted-foreground">
-                  {monthLabel(i.reference_month)} ·{" "}
-                  {(merchants.data ?? []).find((m) => m.id === i.merchant_id)?.name ?? "Multi-EC"}
-                </p>
-                <Badge className="mt-2" variant={i.status === "completed" ? "default" : "secondary"}>
-                  {i.status === "completed"
-                    ? "Concluída"
-                    : i.status === "error"
-                      ? "Erro"
-                      : "Processando"}
-                </Badge>
+              <div key={i.id} className="rounded-lg border border-border p-3 group relative">
+                <div className="pr-8">
+                  <p className="truncate text-sm font-medium">{i.file_name}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {monthLabel(i.reference_month)} ·{" "}
+                    {(merchants.data ?? []).find((m) => m.id === i.merchant_id)?.name ?? "Multi-EC"}
+                  </p>
+                  <Badge className="mt-2" variant={i.status === "completed" ? "default" : "secondary"}>
+                    {i.status === "completed"
+                      ? "Concluída"
+                      : i.status === "error"
+                        ? "Erro"
+                        : "Processando"}
+                  </Badge>
+                </div>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="absolute right-2 top-2 h-8 w-8 text-muted-foreground opacity-0 group-hover:opacity-100 hover:text-destructive transition-opacity"
+                  onClick={() => {
+                    if (window.confirm("Tem certeza que deseja excluir esta importação e todas as suas transações?")) {
+                      deleteImport.mutate(i.id);
+                    }
+                  }}
+                  disabled={deleteImport.isPending}
+                >
+                  <Trash2 className="size-4" />
+                </Button>
               </div>
             ))}
           </CardContent>
