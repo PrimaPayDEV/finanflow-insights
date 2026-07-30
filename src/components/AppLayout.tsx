@@ -22,6 +22,7 @@ import { cn } from "@/lib/utils";
 import { ThemeToggle } from "./ThemeToggle";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "./ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -53,7 +54,7 @@ export function AppLayout({
 }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const { signOut } = useAuth();
+  const { user, signOut } = useAuth();
   
   const qc = useQueryClient();
   const { data: notifications = [] } = useQuery(notificationsQuery);
@@ -190,10 +191,13 @@ export function AppLayout({
 
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="relative rounded-full">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
-                        <span className="text-sm font-medium text-primary">AD</span>
-                      </div>
+                    <Button variant="ghost" size="icon" className="relative rounded-full h-8 w-8 overflow-hidden">
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src={user?.user_metadata?.avatar_url} style={{ objectFit: 'cover' }} />
+                        <AvatarFallback className="bg-primary/10 text-sm font-medium text-primary">
+                          {user?.email?.substring(0, 2).toUpperCase() || "AD"}
+                        </AvatarFallback>
+                      </Avatar>
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-56">
