@@ -386,23 +386,22 @@ function ClosuresPage() {
           {/* Seção 3: Painel de Economia */}
           <section className="break-inside-avoid print:break-inside-avoid">
             <Card className="bg-success text-success-foreground overflow-hidden shadow-lg border-none print:shadow-none print:bg-transparent print:text-foreground print:border print:border-border">
-              <div className="grid md:grid-cols-2">
-                <div className="p-8 md:p-10 flex flex-col justify-center space-y-6">
+              <div className="flex flex-col">
+                <div className="grid grid-cols-2 p-6 md:p-10 gap-6">
                   <div>
                     <h3 className="text-success-foreground/80 font-medium text-sm uppercase tracking-wide print:text-muted-foreground">Custos no Meio Tradicional ({PCT(calc.appliedTraditionalRate)})</h3>
-                    <p className="text-3xl font-semibold line-through opacity-75">{BRL(calc.traditionalCost)}</p>
+                    <p className="text-2xl md:text-3xl font-semibold line-through opacity-75">{BRL(calc.traditionalCost)}</p>
                   </div>
-                  <Separator className="bg-success-foreground/20 print:bg-border" />
                   <div>
                     <h3 className="text-success-foreground/80 font-medium text-sm uppercase tracking-wide print:text-muted-foreground">Custos com a Solução Prima ({PCT(calc.appliedPrimaRate)})</h3>
-                    <p className="text-3xl font-semibold">{BRL(calc.totalOpFee)}</p>
+                    <p className="text-2xl md:text-3xl font-semibold">{BRL(calc.totalOpFee)}</p>
                   </div>
                 </div>
                 
-                <div className="bg-white/10 p-8 md:p-10 flex flex-col justify-center items-center text-center print:bg-success/5 print:border-l">
-                  <PiggyBank className="w-16 h-16 mb-6 opacity-90 print:text-success" />
-                  <h3 className="text-xl md:text-2xl font-medium mb-2 print:text-foreground">Sua economia neste mês foi de:</h3>
-                  <p className="text-5xl md:text-6xl font-black tracking-tight drop-shadow-md print:text-success print:drop-shadow-none">
+                <div className="bg-white/10 p-8 md:p-10 flex flex-col justify-center items-center text-center print:bg-success/5 print:border-t">
+                  <PiggyBank className="w-12 h-12 md:w-16 md:h-16 mb-4 opacity-90 print:text-success" />
+                  <h3 className="text-lg md:text-xl font-medium mb-2 print:text-foreground">Sua economia neste mês foi de:</h3>
+                  <p className="text-4xl md:text-6xl font-black tracking-tight drop-shadow-md print:text-success print:drop-shadow-none">
                     {BRL(calc.savings)}
                   </p>
                 </div>
