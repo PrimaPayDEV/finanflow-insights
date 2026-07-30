@@ -332,7 +332,7 @@ function EditMerchantDialog({ merchant }: { merchant: Merchant }) {
 }
 
 const planFields = [
-  { key: "fixed_rate_percent", label: "Taxa operacional fixa (%)" },
+  { key: "fixed_rate_percent", label: "Taxa operacional variável (%)" },
   { key: "pix_rate", label: "Pix (%)" },
   { key: "debit_rate", label: "Débito (%)" },
   { key: "credit_vista_rate", label: "Crédito à vista (%)" },
