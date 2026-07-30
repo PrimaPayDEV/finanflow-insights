@@ -404,7 +404,7 @@ function ClosuresPage() {
                   <Separator className="bg-success-foreground/20 print:bg-border" />
                   <div>
                     <h3 className="text-success-foreground/80 font-medium text-sm uppercase tracking-wide print:text-muted-foreground">Custos com a Solução Prima</h3>
-                    <p className="text-3xl font-semibold">{BRL(calc.netInvoice)}</p>
+                    <p className="text-3xl font-semibold">{BRL(calc.totalOpFee)}</p>
                   </div>
                 </div>
                 

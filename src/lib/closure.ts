@@ -51,7 +51,7 @@ export function calculateClosure(
   const totalExpenses = expenses.reduce((s, e) => s + Number(e.amount), 0);
   const netInvoice = totalOpFee - totalExpenses;
   const traditionalCost = (totalGross * Number(plan?.traditional_fee_avg ?? 0)) / 100;
-  const savings = traditionalCost - netInvoice;
+  const savings = traditionalCost - totalOpFee;
 
   return {
     grossByModality,
