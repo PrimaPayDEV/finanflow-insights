@@ -76,6 +76,29 @@ function Login() {
     }
   };
 
+  const handleResetPassword = async () => {
+    if (!email) {
+      toast.warning("Por favor, preencha seu email no campo acima para redefinir a senha.");
+      return;
+    }
+    
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: window.location.origin,
+      });
+      if (error) {
+        toast.error(`Erro: ${error.message}`);
+        return;
+      }
+      toast.success("Enviamos as instruções de redefinição para o seu email!");
+    } catch (error: any) {
+      toast.error("Ocorreu um erro ao tentar redefinir a senha.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="absolute inset-0 bg-grid-white/[0.02] bg-[size:60px_60px]" />
@@ -117,9 +140,19 @@ function Login() {
             </div>
 
             <div className="space-y-2">
-              <label htmlFor="password" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                Senha
-              </label>
+              <div className="flex items-center justify-between">
+                <label htmlFor="password" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                  Senha
+                </label>
+                <button
+                  type="button"
+                  onClick={handleResetPassword}
+                  className="text-sm font-medium text-primary hover:underline focus:outline-none"
+                  tabIndex={-1}
+                >
+                  Esqueci a senha?
+                </button>
+              </div>
               <div className="relative">
                 <Input
                   id="password"
