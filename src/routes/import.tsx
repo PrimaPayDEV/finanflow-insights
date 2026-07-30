@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { read, utils } from "xlsx";
 import { useState } from "react";
 import { FileUp, CheckCircle2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -73,50 +74,71 @@ const MODALITY_ALIASES: Record<string, Modality> = {
   cash: "cash",
 };
 
-function parseCsv(text: string): PreviewRow[] {
-  const lines = text.split(/\r?\n/).filter((l) => l.trim());
-  if (lines.length === 0) return [];
-  const delim = lines[0].includes(";") ? ";" : ",";
-  const header = lines[0].toLowerCase().split(delim).map((h) => h.trim());
+function parseSpreadsheet(data: ArrayBuffer): PreviewRow[] {
+  const wb = read(data, { type: "array", cellDates: true });
+  if (!wb.SheetNames.length) return [];
+  const ws = wb.Sheets[wb.SheetNames[0]];
+  const rawRows: any[][] = utils.sheet_to_json(ws, { header: 1, defval: "" });
+  
+  if (rawRows.length < 2) return [];
+  
+  const header = rawRows[0].map(h => String(h).toLowerCase().trim());
   const idx = (names: string[]) => header.findIndex((h) => names.some((n) => h.includes(n)));
-  const iSerial = idx(["serial", "pos", "terminal"]);
-  const iMod = idx(["modalidade", "modality", "tipo", "bandeira"]);
-  const iVal = idx(["valor", "bruto", "amount"]);
-  const iDate = idx(["data", "date"]);
+  
+  const iSerial = idx(["número de série do cartão sim", "número de série", "serial", "pos", "terminal"]);
+  const iMod = idx(["tipo de pagamento", "modalidade", "modality", "tipo", "bandeira"]);
+  const iVal = idx(["valor líquido", "valor", "bruto", "amount"]);
+  const iDate = idx(["data de captura", "data", "date"]);
+  const iParcel = idx(["parcelamento"]);
 
   const rows: PreviewRow[] = [];
-  for (const line of lines.slice(1)) {
-    const cols = line.split(delim).map((c) => c.trim().replace(/^"|"$/g, ""));
-    const rawMod = (cols[iMod] ?? "").toLowerCase();
-    const modality =
-      MODALITY_ALIASES[rawMod] ??
-      (Object.entries(MODALITY_ALIASES).find(([k]) => rawMod.includes(k))?.[1] as Modality) ??
-      "credit_vista";
-    const rawVal = (cols[iVal] ?? "0").replace(/[R$\s.]/g, "").replace(",", ".");
-    const amount = Number(rawVal) || 0;
-    if (!amount) continue;
-    const rawDate = cols[iDate] ?? "";
-    let date = new Date().toISOString().slice(0, 10);
-    if (/^\d{2}\/\d{2}\/\d{4}$/.test(rawDate)) {
-      const [d, m, y] = rawDate.split("/");
-      date = `${y}-${m}-${d}`;
-    } else if (/^\d{4}-\d{2}-\d{2}/.test(rawDate)) {
-      date = rawDate.slice(0, 10);
+  for (const cols of rawRows.slice(1)) {
+    if (!cols.some(c => String(c).trim())) continue;
+    
+    const rawMod = String(cols[iMod] ?? "").toLowerCase();
+    
+    let modality: Modality = "credit_vista";
+    if (rawMod.includes("pix")) modality = "pix";
+    else if (rawMod.includes("débito") || rawMod.includes("debito")) modality = "debit";
+    else if (rawMod.includes("dinheiro") || rawMod.includes("cash")) modality = "cash";
+    else if (rawMod.includes("crédito") || rawMod.includes("credito") || rawMod.includes("credit")) {
+      const parcelInfo = String(cols[iParcel] ?? "").toLowerCase().trim();
+      if (parcelInfo && parcelInfo !== "1" && parcelInfo !== "1x" && parcelInfo !== "0" && parcelInfo !== "não" && parcelInfo !== "nao" && parcelInfo !== "à vista" && parcelInfo !== "a vista") {
+        modality = "credit_installment";
+      } else {
+        modality = "credit_vista";
+      }
+    } else {
+      modality = "credit_vista";
     }
-    rows.push({ serial: cols[iSerial] ?? "", modality, amount, date });
+
+    let rawVal = cols[iVal];
+    let amount = 0;
+    if (typeof rawVal === "number") {
+      amount = rawVal;
+    } else {
+      const cleaned = String(rawVal ?? "0").replace(/[R$\s.]/g, "").replace(",", ".");
+      amount = Number(cleaned) || 0;
+    }
+    if (!amount) continue;
+
+    let date = new Date().toISOString().slice(0, 10);
+    const rawDate = cols[iDate];
+    if (rawDate instanceof Date && !isNaN(rawDate.getTime())) {
+      date = rawDate.toISOString().slice(0, 10);
+    } else {
+      const dateStr = String(rawDate ?? "").trim().split(" ")[0];
+      if (/^\d{2}\/\d{2}\/\d{4}$/.test(dateStr)) {
+        const [d, m, y] = dateStr.split("/");
+        date = `${y}-${m}-${d}`;
+      } else if (/^\d{4}-\d{2}-\d{2}/.test(dateStr)) {
+        date = dateStr.slice(0, 10);
+      }
+    }
+
+    rows.push({ serial: String(cols[iSerial] ?? "").trim(), modality, amount, date });
   }
   return rows;
-}
-
-function simulateRows(month: string): PreviewRow[] {
-  const day = (n: number) => `${month}-${String(n).padStart(2, "0")}`;
-  return [
-    { serial: "", modality: "pix", amount: 12850.4, date: day(5) },
-    { serial: "", modality: "debit", amount: 8420.9, date: day(9) },
-    { serial: "", modality: "credit_vista", amount: 19730.15, date: day(14) },
-    { serial: "", modality: "credit_installment", amount: 24310.0, date: day(21) },
-    { serial: "", modality: "cash", amount: 3110.25, date: day(27) },
-  ];
 }
 
 function ImportPage() {
@@ -137,14 +159,14 @@ function ImportPage() {
 
   const handleFile = async (file: File) => {
     setFileName(file.name);
-    if (/\.csv$/i.test(file.name)) {
-      const text = await file.text();
-      const parsed = parseCsv(text);
+    try {
+      const buffer = await file.arrayBuffer();
+      const parsed = parseSpreadsheet(buffer);
       setRows(parsed);
-      toast.success(`${parsed.length} lançamentos lidos do CSV`);
-    } else {
-      setRows(simulateRows(month));
-      toast.info("XLSX/PDF: prévia gerada pelo simulador de parser — revise antes de confirmar.");
+      toast.success(`${parsed.length} lançamentos lidos da planilha`);
+    } catch (err) {
+      console.error(err);
+      toast.error("Erro ao processar o arquivo. Verifique o formato.");
     }
   };
 
