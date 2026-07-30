@@ -16,6 +16,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogClose,
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
@@ -194,6 +195,7 @@ function MerchantsPage() {
                   <Badge variant={active.status === "active" ? "default" : "secondary"}>
                     {active.status === "active" ? "Ativo" : "Inativo"}
                   </Badge>
+                  <EditMerchantDialog merchant={active} />
                   <Button
                     variant="ghost"
                     size="icon"
@@ -238,6 +240,94 @@ function MerchantsPage() {
         )}
       </div>
     </AppLayout>
+  );
+}
+
+function EditMerchantDialog({ merchant }: { merchant: Merchant }) {
+  const qc = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const [form, setForm] = useState({
+    name: merchant.name,
+    document_cnpj: merchant.document_cnpj || "",
+    phone_whatsapp: merchant.phone_whatsapp || "",
+    email: merchant.email || "",
+  });
+
+  const save = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase
+        .from("merchants")
+        .update(form)
+        .eq("id", merchant.id);
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      toast.success("Estabelecimento atualizado");
+      setOpen(false);
+      qc.invalidateQueries({ queryKey: ["merchants"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline" size="sm">
+          Editar
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Editar estabelecimento</DialogTitle>
+        </DialogHeader>
+        <div className="grid gap-3">
+          <div className="grid gap-1.5">
+            <Label>Razão social</Label>
+            <Input
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              maxLength={200}
+            />
+          </div>
+          <div className="grid gap-1.5">
+            <Label>CNPJ</Label>
+            <Input
+              value={form.document_cnpj}
+              onChange={(e) => setForm({ ...form, document_cnpj: formatCNPJ(e.target.value) })}
+              maxLength={18}
+            />
+          </div>
+          <div className="grid gap-1.5">
+            <Label>WhatsApp</Label>
+            <Input
+              value={form.phone_whatsapp}
+              onChange={(e) => setForm({ ...form, phone_whatsapp: formatPhone(e.target.value) })}
+              maxLength={15}
+            />
+          </div>
+          <div className="grid gap-1.5">
+            <Label>E-mail</Label>
+            <Input
+              type="email"
+              value={form.email}
+              onChange={(e) => setForm({ ...form, email: e.target.value })}
+              maxLength={200}
+            />
+          </div>
+        </div>
+        <DialogFooter>
+          <DialogClose asChild>
+            <Button variant="ghost">Cancelar</Button>
+          </DialogClose>
+          <Button
+            onClick={() => save.mutate()}
+            disabled={!form.name.trim() || save.isPending}
+          >
+            Salvar
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
