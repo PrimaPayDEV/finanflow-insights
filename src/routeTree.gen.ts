@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as MerchantsRouteImport } from './routes/merchants'
 import { Route as ImportRouteImport } from './routes/import'
 import { Route as ExpensesRouteImport } from './routes/expenses'
@@ -21,6 +22,11 @@ import { Route as SettingsAsaasRouteImport } from './routes/settings.asaas'
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfileRoute = ProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -62,6 +68,7 @@ const SettingsAsaasRoute = SettingsAsaasRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/profile': typeof ProfileRoute
   '/closures': typeof ClosuresRoute
   '/expenses': typeof ExpensesRoute
   '/import': typeof ImportRoute
@@ -72,6 +79,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/profile': typeof ProfileRoute
   '/closures': typeof ClosuresRoute
   '/expenses': typeof ExpensesRoute
   '/import': typeof ImportRoute
@@ -83,6 +91,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/profile': typeof ProfileRoute
   '/closures': typeof ClosuresRoute
   '/expenses': typeof ExpensesRoute
   '/import': typeof ImportRoute
@@ -95,6 +104,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/login'
+    | '/profile'
     | '/closures'
     | '/expenses'
     | '/import'
@@ -105,6 +115,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/login'
+    | '/profile'
     | '/closures'
     | '/expenses'
     | '/import'
@@ -115,6 +126,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/login'
+    | '/profile'
     | '/closures'
     | '/expenses'
     | '/import'
@@ -126,6 +138,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   LoginRoute: typeof LoginRoute
+  ProfileRoute: typeof ProfileRoute
   ClosuresRoute: typeof ClosuresRoute
   ExpensesRoute: typeof ExpensesRoute
   ImportRoute: typeof ImportRoute
@@ -141,6 +154,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profile': {
+      id: '/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof ProfileRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sitemap.xml': {
@@ -198,6 +218,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   LoginRoute: LoginRoute,
+  ProfileRoute: ProfileRoute,
   ClosuresRoute: ClosuresRoute,
   ExpensesRoute: ExpensesRoute,
   ImportRoute: ImportRoute,

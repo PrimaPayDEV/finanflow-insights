@@ -188,9 +188,28 @@ export function AppLayout({
                   </DropdownMenuContent>
                 </DropdownMenu>
 
-                <Button variant="ghost" size="icon" onClick={signOut} title="Sair">
-                  <LogOut className="h-4 w-4 text-muted-foreground hover:text-foreground transition-colors" />
-                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="relative rounded-full">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
+                        <span className="text-sm font-medium text-primary">AD</span>
+                      </div>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <DropdownMenuLabel>Administrador</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link to="/profile" className="w-full cursor-pointer font-medium">
+                        Meu Perfil
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={signOut} className="text-destructive focus:text-destructive cursor-pointer font-medium">
+                      <LogOut className="mr-2 h-4 w-4" />
+                      Sair
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </div>
           </div>
