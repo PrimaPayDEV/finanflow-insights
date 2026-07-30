@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
-import { PiggyBank, FileCheck2, ExternalLink, Sparkles, Download } from "lucide-react";
+import { PiggyBank, FileCheck2, ExternalLink, Download, Settings2, Receipt, TrendingUp } from "lucide-react";
 import { toast } from "sonner";
 import { AppLayout } from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,24 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import {
   closuresQuery,
@@ -29,29 +47,19 @@ import { calculateClosure } from "@/lib/closure";
 import { createAsaasCharge } from "@/lib/asaas.functions";
 import {
   BRL,
-  MODALITIES,
-  PCT,
   closureStatusLabel,
   currentMonth,
   monthLabel,
   monthOptions,
-  rateFieldByModality,
 } from "@/lib/format";
+import type { Database } from "@/integrations/supabase/types";
+
+type FeePlan = Database["public"]["Tables"]["fee_plans"]["Row"];
 
 export const Route = createFileRoute("/closures")({
   head: () => ({
     meta: [
-      { title: "Fechamentos e Cobrança Asaas | Gestão de ECs" },
-      {
-        name: "description",
-        content:
-          "Gere o fechamento mensal do estabelecimento, compare o custo do modelo tradicional com a economia real e emita o boleto Pix híbrido no Asaas com split.",
-      },
-      { property: "og:title", content: "Fechamentos e Cobrança Asaas" },
-      {
-        property: "og:description",
-        content: "Fechamento mensal, comparativo de economia e emissão de cobrança automática.",
-      },
+      { title: "Relatório de Fechamento | Gestão de ECs" },
     ],
   }),
   component: ClosuresPage,
@@ -69,6 +77,7 @@ function ClosuresPage() {
 
   const [merchantId, setMerchantId] = useState("");
   const [month, setMonth] = useState(currentMonth());
+  const [isConfigOpen, setIsConfigOpen] = useState(false);
 
   const merchant = (merchants.data ?? []).find((m) => m.id === merchantId);
   const plan = (plans.data ?? []).find((p) => p.merchant_id === merchantId);
@@ -78,6 +87,7 @@ function ClosuresPage() {
   const exps = (expenses.data ?? []).filter(
     (e) => e.merchant_id === merchantId && e.reference_month === month,
   );
+  
   const calc = calculateClosure(txs, exps, plan);
   const existing = (closures.data ?? []).find(
     (c) => c.merchant_id === merchantId && c.reference_month === month,
@@ -142,19 +152,106 @@ function ClosuresPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const updatePlan = useMutation({
+    mutationFn: async (updatedPlan: Partial<FeePlan>) => {
+      if (!merchant) return;
+      const { error } = await supabase
+        .from("fee_plans")
+        .upsert({ ...updatedPlan, merchant_id: merchant.id } as any);
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      toast.success("Taxas atualizadas com sucesso!");
+      qc.invalidateQueries({ queryKey: ["feePlans"] });
+      setIsConfigOpen(false);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const handlePrint = () => {
     window.print();
   };
 
   return (
     <AppLayout 
-      title="Fechamentos & Cobrança" 
-      subtitle="Comparativo de economia e emissão automática"
+      title="Relatório de Fechamento" 
+      subtitle="Extrato mensal, custos e economia gerada"
       actions={
         merchant ? (
-          <Button variant="outline" onClick={handlePrint} className="print:hidden">
-            <Download className="mr-2 h-4 w-4" /> Exportar PDF
-          </Button>
+          <div className="flex gap-2 print:hidden">
+            <Sheet open={isConfigOpen} onOpenChange={setIsConfigOpen}>
+              <SheetTrigger asChild>
+                <Button variant="outline">
+                  <Settings2 className="mr-2 h-4 w-4" /> Configurar Taxas
+                </Button>
+              </SheetTrigger>
+              <SheetContent className="w-[400px] sm:w-[540px] overflow-y-auto">
+                <SheetHeader>
+                  <SheetTitle>Configurar Taxas (Dev/Admin)</SheetTitle>
+                  <SheetDescription>
+                    Altere as taxas deste EC para testar o cálculo do painel de economia em tempo real.
+                    Os valores são em percentual (ex: 1.5 para 1,5%).
+                  </SheetDescription>
+                </SheetHeader>
+                {plan && (
+                  <form 
+                    className="space-y-4 mt-6"
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      const formData = new FormData(e.currentTarget);
+                      updatePlan.mutate({
+                        id: plan.id,
+                        pix_rate: Number(formData.get("pix_rate")),
+                        debit_rate: Number(formData.get("debit_rate")),
+                        credit_vista_rate: Number(formData.get("credit_vista_rate")),
+                        credit_installment_rate: Number(formData.get("credit_installment_rate")),
+                        cash_rate: Number(formData.get("cash_rate")),
+                        fixed_rate_percent: Number(formData.get("fixed_rate_percent")),
+                        traditional_fee_avg: Number(formData.get("traditional_fee_avg")),
+                      });
+                    }}
+                  >
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Taxa Pix (%)</Label>
+                        <Input name="pix_rate" type="number" step="0.01" defaultValue={plan.pix_rate} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Taxa Débito (%)</Label>
+                        <Input name="debit_rate" type="number" step="0.01" defaultValue={plan.debit_rate} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Taxa Créd. Vista (%)</Label>
+                        <Input name="credit_vista_rate" type="number" step="0.01" defaultValue={plan.credit_vista_rate} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Taxa Créd. Parcelado (%)</Label>
+                        <Input name="credit_installment_rate" type="number" step="0.01" defaultValue={plan.credit_installment_rate} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Taxa Dinheiro/Espécie (%)</Label>
+                        <Input name="cash_rate" type="number" step="0.01" defaultValue={plan.cash_rate} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Taxa Operacional Prima (%)</Label>
+                        <Input name="fixed_rate_percent" type="number" step="0.01" defaultValue={plan.fixed_rate_percent} />
+                      </div>
+                      <div className="space-y-2 col-span-2">
+                        <Label>Taxa Média Modelo Tradicional (%)</Label>
+                        <Input name="traditional_fee_avg" type="number" step="0.01" defaultValue={plan.traditional_fee_avg} />
+                      </div>
+                    </div>
+                    <Button type="submit" className="w-full mt-4" disabled={updatePlan.isPending}>
+                      Salvar Alterações
+                    </Button>
+                  </form>
+                )}
+              </SheetContent>
+            </Sheet>
+            <Button variant="outline" onClick={handlePrint}>
+              <Download className="mr-2 h-4 w-4" /> Exportar PDF
+            </Button>
+          </div>
         ) : undefined
       }
     >
@@ -188,141 +285,187 @@ function ClosuresPage() {
       {!merchant ? (
         <Card className="mt-6">
           <CardContent className="p-10 text-center text-sm text-muted-foreground">
-            Selecione um EC e o mês para gerar o fechamento.
+            Selecione um EC e o mês para gerar o relatório de fechamento.
           </CardContent>
         </Card>
       ) : (
-        <div className="mt-6 grid gap-4 lg:grid-cols-[1fr_380px] print:block print:space-y-6">
-          <Card className="print:shadow-none print:border-none">
-            <CardHeader>
-              <CardTitle className="text-base">
-                Detalhamento — {merchant.name} · {monthLabel(month)}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="overflow-hidden rounded-lg border border-border">
-                <table className="w-full text-sm">
-                  <thead className="bg-muted/60 text-xs uppercase text-muted-foreground">
-                    <tr>
-                      <th className="px-3 py-2 text-left">Modalidade</th>
-                      <th className="px-3 py-2 text-right">Faturamento bruto</th>
-                      <th className="px-3 py-2 text-right">Taxa</th>
-                      <th className="px-3 py-2 text-right">Valor da taxa</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border">
-                    {MODALITIES.map((m) => (
-                      <tr key={m.value}>
-                        <td className="px-3 py-2">{m.label}</td>
-                        <td className="px-3 py-2 text-right">{BRL(calc.grossByModality[m.value])}</td>
-                        <td className="px-3 py-2 text-right text-muted-foreground">
-                          {PCT(
-                            Number(
-                              (plan as unknown as Record<string, number>)?.[
-                                rateFieldByModality[m.value]
-                              ] ?? 0,
-                            ),
-                          )}
-                        </td>
-                        <td className="px-3 py-2 text-right">{BRL(calc.feeByModality[m.value])}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+        <div className="mt-6 space-y-8 print:mt-0 print:space-y-10">
+          
+          {/* Seção 1: Extrato Básico de Movimentações */}
+          <section>
+            <h2 className="text-xl font-bold tracking-tight mb-4 flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-primary" />
+              Extrato Básico de Movimentações
+            </h2>
+            <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+              <Card className="print:shadow-none print:border-border">
+                <CardHeader className="p-4 pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">Pix</CardTitle>
+                </CardHeader>
+                <CardContent className="p-4 pt-0">
+                  <p className="text-xl font-semibold">{BRL(calc.grossByModality.pix)}</p>
+                </CardContent>
+              </Card>
+              <Card className="print:shadow-none print:border-border">
+                <CardHeader className="p-4 pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">Débito</CardTitle>
+                </CardHeader>
+                <CardContent className="p-4 pt-0">
+                  <p className="text-xl font-semibold">{BRL(calc.grossByModality.debit)}</p>
+                </CardContent>
+              </Card>
+              <Card className="print:shadow-none print:border-border">
+                <CardHeader className="p-4 pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">Crédito à Vista</CardTitle>
+                </CardHeader>
+                <CardContent className="p-4 pt-0">
+                  <p className="text-xl font-semibold">{BRL(calc.grossByModality.credit_vista)}</p>
+                </CardContent>
+              </Card>
+              <Card className="print:shadow-none print:border-border">
+                <CardHeader className="p-4 pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">Créd. Parcelado</CardTitle>
+                </CardHeader>
+                <CardContent className="p-4 pt-0">
+                  <p className="text-xl font-semibold">{BRL(calc.grossByModality.credit_installment)}</p>
+                </CardContent>
+              </Card>
+              <Card className="bg-primary text-primary-foreground print:bg-transparent print:text-foreground print:shadow-none print:border-2 print:border-primary col-span-2 lg:col-span-1">
+                <CardHeader className="p-4 pb-2">
+                  <CardTitle className="text-sm font-medium opacity-90 print:text-primary">Faturamento Total</CardTitle>
+                </CardHeader>
+                <CardContent className="p-4 pt-0">
+                  <p className="text-2xl font-bold">{BRL(calc.totalGross)}</p>
+                </CardContent>
+              </Card>
+            </div>
+          </section>
 
-              <div className="space-y-2 text-sm">
-                <Row label="Faturamento bruto total" value={BRL(calc.totalGross)} />
-                <Row
-                  label={`Taxa operacional fixa (${PCT(Number(plan?.fixed_rate_percent ?? 0))})`}
-                  value={BRL(calc.fixedFeeAmount)}
-                />
-                <Row label="Taxas por modalidade" value={BRL(calc.modalityFeeTotal)} />
-                <Separator />
-                <Row label="Total de taxa operacional" value={BRL(calc.totalOpFee)} strong />
-                <Row label="Despesas abatidas" value={`- ${BRL(calc.totalExpenses)}`} />
-                <Separator />
-                <Row label="Valor final a cobrar" value={BRL(calc.netInvoice)} strong />
-              </div>
-            </CardContent>
-          </Card>
-
-          <div className="space-y-4 print:space-y-6">
-            <Card className="border-success/40 bg-success/5 print:shadow-none print:border-none print:bg-transparent">
-              <CardHeader className="pb-2">
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <Sparkles className="size-4 text-success" /> Comparativo de economia
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">
-                    Modelo tradicional ({PCT(Number(plan?.traditional_fee_avg ?? 0))})
-                  </span>
-                  <span className="font-medium line-through">{BRL(calc.traditionalCost)}</span>
+          {/* Seção 2: Lançamento de Despesas */}
+          <section>
+            <h2 className="text-xl font-bold tracking-tight mb-4 flex items-center gap-2">
+              <Receipt className="h-5 w-5 text-muted-foreground" />
+              Lançamento de Despesas
+            </h2>
+            <Card className="print:shadow-none print:border print:border-border overflow-hidden">
+              <CardContent className="p-0">
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader className="bg-muted/50 print:bg-transparent">
+                      <TableRow>
+                        <TableHead>Tipo / Lançamento</TableHead>
+                        <TableHead>Descrição do Fornecedor</TableHead>
+                        <TableHead className="text-right">Valor (R$)</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {exps.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={3} className="text-center text-muted-foreground py-6">
+                            Nenhuma despesa lançada neste mês.
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        exps.map((exp) => (
+                          <TableRow key={exp.id}>
+                            <TableCell className="font-medium">
+                              {/* If no exact type is in DB, infer from description or default to Pagamento */}
+                              {exp.description.toLowerCase().includes('pix') ? 'Pix' : 
+                               exp.description.toLowerCase().includes('boleto') ? 'Boleto' : 
+                               exp.description.toLowerCase().includes('espécie') || exp.description.toLowerCase().includes('dinheiro') ? 'Dinheiro' : 'Despesa/Pagamento'}
+                            </TableCell>
+                            <TableCell>{exp.description}</TableCell>
+                            <TableCell className="text-right">{BRL(exp.amount)}</TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
                 </div>
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Nosso modelo</span>
-                  <span className="font-semibold">{BRL(calc.netInvoice)}</span>
-                </div>
-                <div className="rounded-xl bg-success p-4 text-center text-success-foreground">
-                  <p className="flex items-center justify-center gap-2 text-xs font-semibold uppercase tracking-wide">
-                    <PiggyBank className="size-4" /> Sua economia
-                  </p>
-                  <p className="mt-1 text-3xl font-bold">{BRL(calc.savings)}</p>
+                <div className="flex justify-end p-4 bg-muted/20 border-t print:bg-transparent">
+                  <div className="flex items-center gap-8">
+                    <span className="font-medium text-muted-foreground">Total de Despesas:</span>
+                    <span className="text-lg font-bold text-destructive">{BRL(calc.totalExpenses)}</span>
+                  </div>
                 </div>
               </CardContent>
             </Card>
+          </section>
 
-            <Card className="print:hidden">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base">Cobrança Asaas</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {existing && (
-                  <div className="flex items-center justify-between">
+          {/* Seção 3: Painel de Economia */}
+          <section>
+            <Card className="bg-success text-success-foreground overflow-hidden shadow-lg border-none print:shadow-none print:bg-transparent print:text-foreground print:border print:border-border">
+              <div className="grid md:grid-cols-2">
+                <div className="p-8 md:p-10 flex flex-col justify-center space-y-6">
+                  <div>
+                    <h3 className="text-success-foreground/80 font-medium text-sm uppercase tracking-wide print:text-muted-foreground">Custos no Meio Tradicional</h3>
+                    <p className="text-3xl font-semibold line-through opacity-75">{BRL(calc.traditionalCost)}</p>
+                  </div>
+                  <Separator className="bg-success-foreground/20 print:bg-border" />
+                  <div>
+                    <h3 className="text-success-foreground/80 font-medium text-sm uppercase tracking-wide print:text-muted-foreground">Custos com a Solução Prima</h3>
+                    <p className="text-3xl font-semibold">{BRL(calc.netInvoice)}</p>
+                  </div>
+                </div>
+                
+                <div className="bg-white/10 p-8 md:p-10 flex flex-col justify-center items-center text-center print:bg-success/5 print:border-l">
+                  <PiggyBank className="w-16 h-16 mb-6 opacity-90 print:text-success" />
+                  <h3 className="text-xl md:text-2xl font-medium mb-2 print:text-foreground">Sua economia neste mês foi de:</h3>
+                  <p className="text-5xl md:text-6xl font-black tracking-tight drop-shadow-md print:text-success print:drop-shadow-none">
+                    {BRL(calc.savings)}
+                  </p>
+                </div>
+              </div>
+            </Card>
+          </section>
+
+          {/* Ações / Cobrança */}
+          <section className="print:hidden pb-10">
+            <Card className="border-border">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-lg flex items-center justify-between">
+                  <span>Emissão de Cobrança (Asaas)</span>
+                  {existing && (
                     <Badge variant={existing.status === "paid" ? "default" : "secondary"}>
                       {closureStatusLabel[existing.status]}
                     </Badge>
-                    {existing.asaas_invoice_url && (
-                      <a
-                        className="inline-flex items-center gap-1 text-sm text-primary underline"
-                        href={existing.asaas_invoice_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        Ver fatura <ExternalLink className="size-3.5" />
-                      </a>
-                    )}
+                  )}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex flex-col sm:flex-row gap-4 items-center justify-between bg-muted/50 p-4 rounded-lg border">
+                  <div>
+                    <p className="font-semibold text-lg">{BRL(calc.netInvoice)}</p>
+                    <p className="text-sm text-muted-foreground">
+                      Boleto com Pix híbrido, vencimento em 5 dias.
+                      {merchantSplits.length > 0
+                        ? ` Split ativo para ${merchantSplits.length} parceiro(s).`
+                        : " Nenhum split configurado."}
+                    </p>
                   </div>
-                )}
-                <p className="text-xs text-muted-foreground">
-                  Boleto com Pix híbrido, vencimento em 5 dias.
-                  {merchantSplits.length > 0
-                    ? ` Split ativo para ${merchantSplits.length} parceiro(s).`
-                    : " Nenhum split configurado."}
-                </p>
-                <Button
-                  className="w-full"
-                  onClick={() => approve.mutate()}
-                  disabled={approve.isPending || calc.netInvoice <= 0}
-                >
-                  <FileCheck2 className="size-4" /> Aprovar fechamento e gerar boleto
-                </Button>
+                  <div className="flex gap-3 w-full sm:w-auto">
+                    {existing?.asaas_invoice_url && (
+                      <Button variant="outline" asChild className="w-full sm:w-auto">
+                        <a href={existing.asaas_invoice_url} target="_blank" rel="noopener noreferrer">
+                          Ver Fatura <ExternalLink className="ml-2 h-4 w-4" />
+                        </a>
+                      </Button>
+                    )}
+                    <Button
+                      className="w-full sm:w-auto"
+                      onClick={() => approve.mutate()}
+                      disabled={approve.isPending || calc.netInvoice <= 0}
+                    >
+                      <FileCheck2 className="mr-2 h-4 w-4" /> {existing ? 'Regerar Cobrança' : 'Aprovar e Gerar Boleto'}
+                    </Button>
+                  </div>
+                </div>
               </CardContent>
             </Card>
-          </div>
+          </section>
+
         </div>
       )}
     </AppLayout>
-  );
-}
-
-function Row({ label, value, strong }: { label: string; value: string; strong?: boolean }) {
-  return (
-    <div className="flex items-center justify-between">
-      <span className={strong ? "font-medium" : "text-muted-foreground"}>{label}</span>
-      <span className={strong ? "text-base font-semibold" : "font-medium"}>{value}</span>
-    </div>
   );
 }
