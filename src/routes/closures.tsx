@@ -188,7 +188,7 @@ function ClosuresPage() {
               </SheetTrigger>
               <SheetContent className="w-[400px] sm:w-[540px] overflow-y-auto">
                 <SheetHeader>
-                  <SheetTitle>Configurar Taxas (Dev/Admin)</SheetTitle>
+                  <SheetTitle>Configurar Taxas</SheetTitle>
                   <SheetDescription>
                     Altere as taxas deste EC para testar o cálculo do painel de economia em tempo real.
                     Os valores são em percentual (ex: 1.5 para 1,5%).
@@ -227,7 +227,7 @@ function ClosuresPage() {
                         <Label>Taxa Créd. Parcelado (%)</Label>
                         <Input name="credit_installment_rate" type="number" step="0.01" defaultValue={plan.credit_installment_rate} />
                       </div>
-                      <div className="space-y-2">
+                      <div className="col-span-2 space-y-2">
                         <Label>Taxa Dinheiro/Espécie (%)</Label>
                         <Input name="cash_rate" type="number" step="0.01" defaultValue={plan.cash_rate} />
                       </div>
