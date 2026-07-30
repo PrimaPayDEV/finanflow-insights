@@ -83,7 +83,13 @@ function parseSpreadsheet(data: ArrayBuffer): PreviewRow[] {
   if (rawRows.length < 2) return [];
   
   const header = rawRows[0].map(h => String(h).toLowerCase().trim());
-  const idx = (names: string[]) => header.findIndex((h) => names.some((n) => h.includes(n)));
+  const idx = (names: string[]) => {
+    for (const name of names) {
+      const i = header.findIndex((h) => h.includes(name));
+      if (i !== -1) return i;
+    }
+    return -1;
+  };
   
   const iSerial = idx(["número de série do cartão sim", "número de série", "serial", "pos", "terminal"]);
   const iMod = idx(["tipo de pagamento", "modalidade", "modality", "tipo", "bandeira"]);
