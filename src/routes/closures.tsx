@@ -384,7 +384,7 @@ function ClosuresPage() {
           </section>
 
           {/* Seção 3: Painel de Economia */}
-          <section>
+          <section className="break-inside-avoid print:break-inside-avoid">
             <Card className="bg-success text-success-foreground overflow-hidden shadow-lg border-none print:shadow-none print:bg-transparent print:text-foreground print:border print:border-border">
               <div className="grid md:grid-cols-2">
                 <div className="p-8 md:p-10 flex flex-col justify-center space-y-6">
