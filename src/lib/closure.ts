@@ -12,10 +12,21 @@ export type ClosureCalc = {
   netInvoice: number;
   traditionalCost: number;
   savings: number;
+  appliedPrimaRate: number;
+  appliedTraditionalRate: number;
 };
 
 export function inMonth(dateIso: string, month: string) {
   return dateIso.slice(0, 7) === month;
+}
+
+export function getTierRates(totalGross: number) {
+  if (totalGross <= 15000) return { traditionalRate: 4.00, primaRate: 1.60 };
+  if (totalGross <= 30000) return { traditionalRate: 7.30, primaRate: 2.92 };
+  if (totalGross <= 60000) return { traditionalRate: 9.50, primaRate: 3.80 };
+  if (totalGross <= 150000) return { traditionalRate: 10.70, primaRate: 4.28 };
+  if (totalGross <= 300000) return { traditionalRate: 14.30, primaRate: 5.72 };
+  return { traditionalRate: 19.00, primaRate: 7.60 };
 }
 
 export function calculateClosure(
@@ -46,11 +57,12 @@ export function calculateClosure(
     totalGross += gross;
   }
 
-  const fixedFeeAmount = (totalGross * Number(plan?.fixed_rate_percent ?? 0)) / 100;
+  const { traditionalRate, primaRate } = getTierRates(totalGross);
+  const fixedFeeAmount = (totalGross * primaRate) / 100;
   const totalOpFee = modalityFeeTotal + fixedFeeAmount;
   const totalExpenses = expenses.reduce((s, e) => s + Number(e.amount), 0);
   const netInvoice = totalOpFee - totalExpenses;
-  const traditionalCost = (totalGross * Number(plan?.traditional_fee_avg ?? 0)) / 100;
+  const traditionalCost = (totalGross * traditionalRate) / 100;
   const savings = traditionalCost - totalOpFee;
 
   return {
@@ -64,5 +76,7 @@ export function calculateClosure(
     netInvoice,
     traditionalCost,
     savings,
+    appliedPrimaRate: primaRate,
+    appliedTraditionalRate: traditionalRate,
   };
 }

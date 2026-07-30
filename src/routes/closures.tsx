@@ -47,6 +47,7 @@ import { calculateClosure } from "@/lib/closure";
 import { createAsaasCharge } from "@/lib/asaas.functions";
 import {
   BRL,
+  PCT,
   closureStatusLabel,
   currentMonth,
   monthLabel,
@@ -206,8 +207,6 @@ function ClosuresPage() {
                         credit_vista_rate: Number(formData.get("credit_vista_rate")),
                         credit_installment_rate: Number(formData.get("credit_installment_rate")),
                         cash_rate: Number(formData.get("cash_rate")),
-                        fixed_rate_percent: Number(formData.get("fixed_rate_percent")),
-                        traditional_fee_avg: Number(formData.get("traditional_fee_avg")),
                       });
                     }}
                   >
@@ -231,14 +230,6 @@ function ClosuresPage() {
                       <div className="space-y-2">
                         <Label>Taxa Dinheiro/Espécie (%)</Label>
                         <Input name="cash_rate" type="number" step="0.01" defaultValue={plan.cash_rate} />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Taxa Operacional Prima (%)</Label>
-                        <Input name="fixed_rate_percent" type="number" step="0.01" defaultValue={plan.fixed_rate_percent} />
-                      </div>
-                      <div className="space-y-2 col-span-2">
-                        <Label>Taxa Média Modelo Tradicional (%)</Label>
-                        <Input name="traditional_fee_avg" type="number" step="0.01" defaultValue={plan.traditional_fee_avg} />
                       </div>
                     </div>
                     <Button type="submit" className="w-full mt-4" disabled={updatePlan.isPending}>
@@ -398,12 +389,12 @@ function ClosuresPage() {
               <div className="grid md:grid-cols-2">
                 <div className="p-8 md:p-10 flex flex-col justify-center space-y-6">
                   <div>
-                    <h3 className="text-success-foreground/80 font-medium text-sm uppercase tracking-wide print:text-muted-foreground">Custos no Meio Tradicional</h3>
+                    <h3 className="text-success-foreground/80 font-medium text-sm uppercase tracking-wide print:text-muted-foreground">Custos no Meio Tradicional ({PCT(calc.appliedTraditionalRate)})</h3>
                     <p className="text-3xl font-semibold line-through opacity-75">{BRL(calc.traditionalCost)}</p>
                   </div>
                   <Separator className="bg-success-foreground/20 print:bg-border" />
                   <div>
-                    <h3 className="text-success-foreground/80 font-medium text-sm uppercase tracking-wide print:text-muted-foreground">Custos com a Solução Prima</h3>
+                    <h3 className="text-success-foreground/80 font-medium text-sm uppercase tracking-wide print:text-muted-foreground">Custos com a Solução Prima ({PCT(calc.appliedPrimaRate)})</h3>
                     <p className="text-3xl font-semibold">{BRL(calc.totalOpFee)}</p>
                   </div>
                 </div>
