@@ -163,7 +163,7 @@ function ClosuresPage() {
     },
     onSuccess: () => {
       toast.success("Taxas atualizadas com sucesso!");
-      qc.invalidateQueries({ queryKey: ["feePlans"] });
+      qc.invalidateQueries({ queryKey: ["fee_plans"] });
       setIsConfigOpen(false);
     },
     onError: (e: Error) => toast.error(e.message),
