@@ -172,7 +172,7 @@ function MerchantsPage() {
                     : "border-border hover:bg-muted/60"
                 }`}
               >
-                <p className="truncate text-sm font-medium">{m.name}</p>
+                <p className="truncate text-sm font-bold">{m.name}</p>
                 <p className="truncate text-xs text-muted-foreground">
                   {m.document_cnpj || "sem CNPJ"}
                 </p>
@@ -186,7 +186,7 @@ function MerchantsPage() {
             <Card>
               <CardHeader className="flex-row items-start justify-between gap-3 space-y-0">
                 <div>
-                  <CardTitle className="text-base">{active.name}</CardTitle>
+                  <CardTitle className="text-base font-bold">{active.name}</CardTitle>
                   <p className="mt-1 text-sm text-muted-foreground">
                     {active.email || "sem e-mail"} · {active.phone_whatsapp || "sem WhatsApp"}
                   </p>
