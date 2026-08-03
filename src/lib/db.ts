@@ -79,3 +79,25 @@ export const notificationsQuery = {
 };
 
 export { unwrap };
+
+export type AsaasSettings = Tables<"asaas_settings">;
+
+export const asaasSettingsQuery = {
+  queryKey: ["asaas_settings"],
+  queryFn: async () =>
+    unwrap(
+      await supabase.from("asaas_settings").select("*").limit(1).maybeSingle(),
+    ) as AsaasSettings | null,
+};
+
+export const asaasEventsQuery = {
+  queryKey: ["asaas_webhook_events"],
+  queryFn: async () =>
+    unwrap(
+      await supabase
+        .from("asaas_webhook_events")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(20),
+    ) as Tables<"asaas_webhook_events">[],
+};
