@@ -21,12 +21,12 @@ export function inMonth(dateIso: string, month: string) {
 }
 
 export function getTierRates(totalGross: number) {
-  if (totalGross <= 15000) return { primaRate: 2.00 };
-  if (totalGross <= 30000) return { primaRate: 2.50 };
-  if (totalGross <= 60000) return { primaRate: 3.00 };
-  if (totalGross <= 150000) return { primaRate: 3.50 };
-  if (totalGross <= 300000) return { primaRate: 4.50 };
-  return { primaRate: 5.50 };
+  if (totalGross <= 15000) return { traditionalRate: 4.00, primaRate: 2.00 };
+  if (totalGross <= 30000) return { traditionalRate: 7.30, primaRate: 2.50 };
+  if (totalGross <= 60000) return { traditionalRate: 9.50, primaRate: 3.00 };
+  if (totalGross <= 150000) return { traditionalRate: 10.70, primaRate: 3.50 };
+  if (totalGross <= 300000) return { traditionalRate: 14.30, primaRate: 4.50 };
+  return { traditionalRate: 19.00, primaRate: 5.50 };
 }
 
 const TRADITIONAL_RATES = {
@@ -131,13 +131,16 @@ export function calculateClosure(
     traditionalCost += (gross * tradRate) / 100;
   }
 
-  const { primaRate } = getTierRates(totalGross);
+  const { primaRate, traditionalRate } = getTierRates(totalGross);
   const customPrimaRate = plan?.fixed_rate_percent && plan.fixed_rate_percent > 0 ? plan.fixed_rate_percent : primaRate;
   const fixedFeeAmount = (totalGross * customPrimaRate) / 100;
   
   const totalOpFee = modalityFeeTotal + fixedFeeAmount;
   const totalExpenses = expenses.reduce((s, e) => s + Number(e.amount), 0);
   const netInvoice = totalOpFee - totalExpenses;
+  
+  // Traditional Cost = (Transaction Fees from Image) + (Total Gross * Traditional Operational Rate from Image)
+  traditionalCost += (totalGross * traditionalRate) / 100;
   const savings = traditionalCost - totalOpFee;
   
   const effectiveTraditionalRate = totalGross > 0 ? (traditionalCost / totalGross) * 100 : 0;
