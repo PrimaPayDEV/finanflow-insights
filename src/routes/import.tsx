@@ -171,6 +171,10 @@ function ImportPage() {
   const [month, setMonth] = useState(currentMonth());
   const [fileName, setFileName] = useState("");
   const [rows, setRows] = useState<PreviewRow[]>([]);
+  
+  const [viewingImport, setViewingImport] = useState<{ id: string; name: string } | null>(null);
+  const [viewingRows, setViewingRows] = useState<PreviewRow[]>([]);
+  const [isLoadingView, setIsLoadingView] = useState(false);
 
   const resolveMerchant = (serial: string) => {
     const t = (terminals.data ?? []).find((x) => x.serial_number === serial.trim());
@@ -187,6 +191,28 @@ function ImportPage() {
     } catch (err) {
       console.error(err);
       toast.error("Erro ao processar o arquivo. Verifique o formato.");
+    }
+  };
+
+  const loadImportView = async (imp: any) => {
+    setIsLoadingView(true);
+    try {
+      const { data, error } = await supabase.from("transactions").select("*").eq("import_id", imp.id);
+      if (error) throw error;
+      const mapped: PreviewRow[] = (data || []).map((t) => ({
+        serial: t.pos_serial || "",
+        modality: t.modality as Modality,
+        amount: Number(t.gross_amount),
+        date: String(t.transaction_date).slice(0, 10),
+        installments: t.installments || 1,
+        brand: t.brand || "",
+      }));
+      setViewingRows(mapped);
+      setViewingImport({ id: imp.id, name: imp.file_name });
+    } catch (err) {
+      toast.error("Erro ao carregar os dados desta importação");
+    } finally {
+      setIsLoadingView(false);
     }
   };
 
@@ -245,13 +271,20 @@ function ImportPage() {
       toast.success("Importação excluída com sucesso");
       qc.invalidateQueries({ queryKey: ["transactions"] });
       qc.invalidateQueries({ queryKey: ["imports"] });
+      if (viewingImport?.id) {
+        setViewingImport(null);
+        setViewingRows([]);
+      }
     },
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const displayRows = viewingImport ? viewingRows : rows;
+  const isViewing = !!viewingImport;
+
   const totals = MODALITIES.map((m) => ({
     label: m.label,
-    total: rows.filter((r) => r.modality === m.value).reduce((s, r) => s + r.amount, 0),
+    total: displayRows.filter((r) => r.modality === m.value).reduce((s, r) => s + r.amount, 0),
   })).filter((t) => t.total > 0);
 
   return (
@@ -259,62 +292,66 @@ function ImportPage() {
       <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Upload do extrato</CardTitle>
+            <CardTitle className="text-base">{isViewing ? `Visualizando: ${viewingImport.name}` : "Upload do extrato"}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div className="grid gap-1.5">
-                <Label>EC padrão (quando o serial não identificar)</Label>
-                <Select value={merchantId} onValueChange={setMerchantId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione o estabelecimento" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {(merchants.data ?? []).map((m) => (
-                      <SelectItem key={m.id} value={m.id}>
-                        {m.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid gap-1.5">
-                <Label>Mês de referência</Label>
-                <Select value={month} onValueChange={setMonth}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {monthOptions().map((m) => (
-                      <SelectItem key={m} value={m}>
-                        {monthLabel(m)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+            {!isViewing && (
+              <>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="grid gap-1.5">
+                    <Label>EC padrão (quando o serial não identificar)</Label>
+                    <Select value={merchantId} onValueChange={setMerchantId}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o estabelecimento" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(merchants.data ?? []).map((m) => (
+                          <SelectItem key={m.id} value={m.id}>
+                            {m.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid gap-1.5">
+                    <Label>Mês de referência</Label>
+                    <Select value={month} onValueChange={setMonth}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {monthOptions().map((m) => (
+                          <SelectItem key={m} value={m}>
+                            {monthLabel(m)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
 
-            <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border bg-muted/40 px-6 py-10 text-center transition-colors hover:bg-muted">
-              <FileUp className="size-6 text-muted-foreground" />
-              <span className="text-sm font-medium">
-                {fileName || "Selecione o arquivo CSV, XLSX ou PDF"}
-              </span>
-              <span className="text-xs text-muted-foreground">
-                Colunas esperadas no CSV: serial, modalidade, valor, data
-              </span>
-              <input
-                type="file"
-                accept=".csv,.xlsx,.xls,.pdf"
-                className="hidden"
-                onChange={(e) => {
-                  const f = e.target.files?.[0];
-                  if (f) void handleFile(f);
-                }}
-              />
-            </label>
+                <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border bg-muted/40 px-6 py-10 text-center transition-colors hover:bg-muted">
+                  <FileUp className="size-6 text-muted-foreground" />
+                  <span className="text-sm font-medium">
+                    {fileName || "Selecione o arquivo CSV, XLSX ou PDF"}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    Colunas esperadas no CSV: serial, modalidade, valor, data
+                  </span>
+                  <input
+                    type="file"
+                    accept=".csv,.xlsx,.xls,.pdf"
+                    className="hidden"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) void handleFile(f);
+                    }}
+                  />
+                </label>
+              </>
+            )}
 
-            {rows.length > 0 && (
+            {displayRows.length > 0 && (
               <>
                 <div className="flex flex-wrap gap-2">
                   {totals.map((t) => (
@@ -337,11 +374,12 @@ function ImportPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {rows.map((r, i) => (
+                      {displayRows.map((r, i) => (
                         <TableRow key={i}>
                           <TableCell>
                             <Input
                               value={r.serial}
+                              disabled={isViewing}
                               placeholder="serial"
                               className="h-8 w-36 font-mono text-xs"
                               onChange={(e) => {
@@ -354,6 +392,7 @@ function ImportPage() {
                           <TableCell>
                             <Select
                               value={r.modality}
+                              disabled={isViewing}
                               onValueChange={(v) => {
                                 const next = [...rows];
                                 next[i] = { ...r, modality: v as Modality };
@@ -382,24 +421,35 @@ function ImportPage() {
                           <TableCell className="text-right text-sm font-medium">
                             {BRL(r.amount)}
                           </TableCell>
-                          <TableCell>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              aria-label="Remover linha"
-                              onClick={() => setRows(rows.filter((_, j) => j !== i))}
-                            >
-                              <Trash2 className="size-4" />
-                            </Button>
-                          </TableCell>
+                          {!isViewing && (
+                            <TableCell>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                aria-label="Remover linha"
+                                onClick={() => setRows(rows.filter((_, j) => j !== i))}
+                              >
+                                <Trash2 className="size-4" />
+                              </Button>
+                            </TableCell>
+                          )}
                         </TableRow>
                       ))}
                     </TableBody>
                   </Table>
                 </div>
-                <Button onClick={() => confirm.mutate()} disabled={confirm.isPending}>
-                  <CheckCircle2 className="size-4" /> Confirmar importação
-                </Button>
+                {!isViewing ? (
+                  <Button onClick={() => confirm.mutate()} disabled={confirm.isPending}>
+                    <CheckCircle2 className="size-4" /> Confirmar importação
+                  </Button>
+                ) : (
+                  <Button variant="secondary" onClick={() => {
+                    setViewingImport(null);
+                    setViewingRows([]);
+                  }}>
+                    Voltar para upload
+                  </Button>
+                )}
               </>
             )}
           </CardContent>
@@ -414,7 +464,11 @@ function ImportPage() {
               <p className="text-sm text-muted-foreground">Nenhuma importação registrada.</p>
             )}
             {(imports.data ?? []).map((i) => (
-              <div key={i.id} className="rounded-lg border border-border p-3 group relative">
+              <div 
+                key={i.id} 
+                className={`rounded-lg border p-3 group relative cursor-pointer transition-colors hover:bg-muted/50 ${viewingImport?.id === i.id ? 'border-primary bg-primary/5' : 'border-border'}`}
+                onClick={() => loadImportView(i)}
+              >
                 <div className="pr-8">
                   <p className="truncate text-sm font-medium">{i.file_name}</p>
                   <p className="text-xs text-muted-foreground">
@@ -433,7 +487,8 @@ function ImportPage() {
                   variant="ghost" 
                   size="icon" 
                   className="absolute right-2 top-2 h-8 w-8 text-muted-foreground opacity-0 group-hover:opacity-100 hover:text-destructive transition-opacity"
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.stopPropagation(); // prevent clicking the card
                     if (window.confirm("Tem certeza que deseja excluir esta importação e todas as suas transações?")) {
                       deleteImport.mutate(i.id);
                     }
