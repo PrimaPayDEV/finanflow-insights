@@ -335,6 +335,7 @@ export type Database = {
           modality: Database["public"]["Enums"]["payment_modality"]
           pos_serial: string
           transaction_date: string
+          installments: number
         }
         Insert: {
           created_at?: string
@@ -345,6 +346,7 @@ export type Database = {
           modality: Database["public"]["Enums"]["payment_modality"]
           pos_serial?: string
           transaction_date?: string
+          installments?: number
         }
         Update: {
           created_at?: string
@@ -355,6 +357,7 @@ export type Database = {
           modality?: Database["public"]["Enums"]["payment_modality"]
           pos_serial?: string
           transaction_date?: string
+          installments?: number
         }
         Relationships: [
           {

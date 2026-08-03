@@ -53,6 +53,7 @@ type PreviewRow = {
   modality: Modality;
   amount: number;
   date: string;
+  installments: number;
 };
 
 const MODALITY_ALIASES: Record<string, Modality> = {
@@ -103,6 +104,8 @@ function parseSpreadsheet(data: ArrayBuffer): PreviewRow[] {
     
     const rawMod = String(cols[iMod] ?? "").toLowerCase();
     
+    let installments = 1;
+
     let modality: Modality = "credit_vista";
     if (rawMod.includes("pix")) modality = "pix";
     else if (rawMod.includes("débito") || rawMod.includes("debito")) modality = "debit";
@@ -111,6 +114,10 @@ function parseSpreadsheet(data: ArrayBuffer): PreviewRow[] {
       const parcelInfo = String(cols[iParcel] ?? "").toLowerCase().trim();
       if (parcelInfo && parcelInfo !== "1" && parcelInfo !== "1x" && parcelInfo !== "0" && parcelInfo !== "não" && parcelInfo !== "nao" && parcelInfo !== "à vista" && parcelInfo !== "a vista") {
         modality = "credit_installment";
+        const match = parcelInfo.match(/\d+/);
+        if (match) {
+          installments = parseInt(match[0], 10) || 1;
+        }
       } else {
         modality = "credit_vista";
       }
@@ -142,7 +149,7 @@ function parseSpreadsheet(data: ArrayBuffer): PreviewRow[] {
       }
     }
 
-    rows.push({ serial: String(cols[iSerial] ?? "").trim(), modality, amount, date });
+    rows.push({ serial: String(cols[iSerial] ?? "").trim(), modality, amount, date, installments });
   }
   return rows;
 }
@@ -200,6 +207,7 @@ function ImportPage() {
         modality: r.modality,
         gross_amount: r.amount,
         transaction_date: new Date(`${r.date}T12:00:00`).toISOString(),
+        installments: r.installments,
         import_id: imp.id,
       }));
       const { error } = await supabase.from("transactions").insert(payload);
@@ -313,6 +321,7 @@ function ImportPage() {
                       <TableRow>
                         <TableHead>Serial POS</TableHead>
                         <TableHead>Modalidade</TableHead>
+                        <TableHead>Parcelas</TableHead>
                         <TableHead>Data</TableHead>
                         <TableHead className="text-right">Valor bruto</TableHead>
                         <TableHead />
@@ -353,6 +362,9 @@ function ImportPage() {
                                 ))}
                               </SelectContent>
                             </Select>
+                          </TableCell>
+                          <TableCell>
+                            <span className="text-sm font-medium">{r.installments}x</span>
                           </TableCell>
                           <TableCell className="text-sm">{r.date}</TableCell>
                           <TableCell className="text-right text-sm font-medium">
