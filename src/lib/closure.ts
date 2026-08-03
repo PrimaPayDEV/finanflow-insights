@@ -29,6 +29,53 @@ export function getTierRates(totalGross: number) {
   return { traditionalRate: 19.00, primaRate: 5.50 };
 }
 
+const CPAG59 = {
+  vm: {
+    debit: 1.36,
+    credit: [0, 3.47, 5.08, 5.84, 6.60, 7.26, 8.11, 9.16, 9.91, 10.67, 11.43, 12.18, 12.94, 13.70, 14.45, 15.21, 15.97, 16.73, 17.48, 19.48, 21.48, 23.48]
+  },
+  elo: {
+    debit: 2.35,
+    credit: [0, 3.98, 6.17, 6.88, 7.58, 8.29, 8.99, 9.91, 10.66, 11.41, 12.16, 12.91, 13.66, 14.41, 15.16, 15.91, 16.66, 17.41, 18.16, 20.16, 22.16, 24.16]
+  },
+  hiper: {
+    debit: 0,
+    credit: [0, 3.98, 5.96, 6.71, 7.58, 8.21, 8.97, 9.91, 10.66, 11.41, 12.16, 12.91, 13.66, 14.41, 15.16, 15.91, 16.66, 17.41, 18.16, 20.16, 22.16, 24.16]
+  },
+  amex: {
+    debit: 0,
+    credit: [0, 5.00, 6.37, 7.07, 7.78, 8.48, 9.18, 10.09, 10.84, 11.59, 12.34, 13.09, 13.84, 14.59, 15.34, 16.09, 16.84, 17.59, 18.13, 20.13, 22.13, 24.13]
+  },
+  cabal: {
+    debit: 6.50,
+    credit: [0, 8.17, 9.04, 9.77, 10.49, 11.22, 11.94, 12.80, 13.53, 14.25, 14.98, 15.70, 16.43, 17.15, 17.88, 18.60, 19.33, 20.05, 20.78, 22.78, 24.78, 26.78]
+  },
+  pix: 1.39
+};
+
+export function getModalityRate(t: Transaction): number {
+  if (t.modality === 'pix') return CPAG59.pix;
+  if (t.modality === 'cash') return 0;
+
+  const brand = (t.brand || "").toLowerCase();
+  let bKey: keyof typeof CPAG59 = 'vm';
+  if (brand.includes('elo')) bKey = 'elo';
+  else if (brand.includes('hiper')) bKey = 'hiper';
+  else if (brand.includes('amex')) bKey = 'amex';
+  else if (brand.includes('cabal')) bKey = 'cabal';
+  
+  const bData = CPAG59[bKey] as any;
+  if (!bData) return 0;
+  
+  if (t.modality === 'debit') return bData.debit;
+  
+  const installments = t.installments || 1;
+  if (installments >= 1 && installments <= 21) {
+    return bData.credit[installments];
+  }
+  return 0;
+}
+
 export function calculateClosure(
   transactions: Transaction[],
   expenses: Expense[],
@@ -41,25 +88,25 @@ export function calculateClosure(
     feeByModality[m.value] = 0;
   }
 
+  let totalGross = 0;
+  let modalityFeeTotal = 0;
+
   for (const t of transactions) {
     const mod = t.modality as Modality;
-    grossByModality[mod] = (grossByModality[mod] ?? 0) + Number(t.gross_amount);
-  }
-
-  let modalityFeeTotal = 0;
-  let totalGross = 0;
-  for (const m of MODALITIES) {
-    const gross = grossByModality[m.value];
-    const rate = plan ? Number((plan as unknown as Record<string, number>)[rateFieldByModality[m.value]] ?? 0) : 0;
-    const fee = (gross * rate) / 100;
-    feeByModality[m.value] = fee;
-    modalityFeeTotal += fee;
+    const gross = Number(t.gross_amount);
+    grossByModality[mod] += gross;
     totalGross += gross;
+
+    const rate = getModalityRate(t);
+    const fee = (gross * rate) / 100;
+    feeByModality[mod] += fee;
+    modalityFeeTotal += fee;
   }
 
   const { traditionalRate, primaRate } = getTierRates(totalGross);
   const customPrimaRate = plan?.fixed_rate_percent && plan.fixed_rate_percent > 0 ? plan.fixed_rate_percent : primaRate;
   const fixedFeeAmount = (totalGross * customPrimaRate) / 100;
+  
   const totalOpFee = modalityFeeTotal + fixedFeeAmount;
   const totalExpenses = expenses.reduce((s, e) => s + Number(e.amount), 0);
   const netInvoice = totalOpFee - totalExpenses;

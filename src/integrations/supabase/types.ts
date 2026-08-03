@@ -336,6 +336,7 @@ export type Database = {
           pos_serial: string
           transaction_date: string
           installments: number
+          brand: string
         }
         Insert: {
           created_at?: string
@@ -347,6 +348,7 @@ export type Database = {
           pos_serial?: string
           transaction_date?: string
           installments?: number
+          brand?: string
         }
         Update: {
           created_at?: string
@@ -358,6 +360,7 @@ export type Database = {
           pos_serial?: string
           transaction_date?: string
           installments?: number
+          brand?: string
         }
         Relationships: [
           {
