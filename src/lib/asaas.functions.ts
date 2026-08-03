@@ -86,6 +86,7 @@ export const createAsaasCharge = createServerFn({ method: "POST" })
     }
 
     // 2. Cobrança híbrida Boleto/Pix com split
+    const discountPercent = Number(settings?.discount_percent ?? 0);
     const paymentRes = await fetch(`${base}/payments`, {
       method: "POST",
       headers,
@@ -93,8 +94,21 @@ export const createAsaasCharge = createServerFn({ method: "POST" })
         customer: customerId,
         billingType: "BOLETO",
         value: Number(data.value.toFixed(2)),
-        dueDate: data.dueDate,
-        description: data.description,
+        dueDate: nextDueDate(Number(settings?.due_day ?? 10)),
+        description: settings?.default_description
+          ? `${settings.default_description} — ${data.description}`
+          : data.description,
+        fine: { value: Number(settings?.fine_percent ?? 0), type: "PERCENTAGE" },
+        interest: { value: Number(settings?.interest_percent ?? 0) },
+        ...(discountPercent > 0
+          ? {
+              discount: {
+                value: discountPercent,
+                dueDateLimitDays: Number(settings?.discount_deadline_days ?? 0),
+                type: "PERCENTAGE",
+              },
+            }
+          : {}),
         split: data.splits.map((s) => ({
           walletId: s.walletId,
           percentualValue: s.percentualValue,
@@ -114,8 +128,8 @@ export const createAsaasCharge = createServerFn({ method: "POST" })
       };
     }
 
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     await supabaseAdmin
+
       .from("closures")
       .update({
         status: "invoice_generated",
