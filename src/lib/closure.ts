@@ -30,11 +30,8 @@ export function getTierRates(totalGross: number) {
 }
 
 const TRADITIONAL_RATES = {
-  debit: {
-    standard: 0.99, // Visa, Master, Elo
-    other: 1.29,    // Hiper, Banri, Demais
-  },
-  credit: [0, 2.50, 4.98, 5.77, 6.55, 7.33, 8.10, 9.41, 10.16, 10.91, 11.65, 12.37, 13.10, 14.10, 14.81, 15.51, 16.20, 16.88, 17.55],
+  debit: 1.49,
+  credit: [0, 4.50, 6.59, 7.38, 8.16, 8.94, 9.71, 12.47, 13.22, 13.97, 14.71, 15.43, 16.16, 17.61, 18.32, 19.02, 19.71, 20.39, 21.06],
   pix: 0.90
 };
 
@@ -42,13 +39,8 @@ export function getTraditionalRate(t: Transaction): number {
   if (t.modality === 'pix') return TRADITIONAL_RATES.pix;
   if (t.modality === 'cash') return 0;
   
-  const brand = (t.brand || "").toLowerCase();
-  
   if (t.modality === 'debit') {
-    if (brand.includes('hiper') || brand.includes('banri') || brand.includes('cabal') || brand.includes('amex') || brand.includes('demais')) {
-      return TRADITIONAL_RATES.debit.other;
-    }
-    return TRADITIONAL_RATES.debit.standard; // default para Visa, Master, Elo
+    return TRADITIONAL_RATES.debit;
   }
   
   const installments = t.installments || 1;
