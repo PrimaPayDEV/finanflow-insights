@@ -50,7 +50,7 @@ export const Route = createFileRoute("/api/public/asaas-webhook")({
         await supabaseAdmin.from("asaas_webhook_events").insert({
           event: parsed.event,
           asaas_payment_id: parsed.payment?.id ?? null,
-          payload: parsed as unknown as Record<string, unknown>,
+          payload: JSON.parse(JSON.stringify(parsed)),
         });
 
         const paymentId = parsed.payment?.id;
