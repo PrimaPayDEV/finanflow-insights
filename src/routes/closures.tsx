@@ -120,9 +120,6 @@ function ClosuresPage() {
         .single();
       if (error) throw new Error(error.message);
 
-      const due = new Date();
-      due.setDate(due.getDate() + 5);
-
       const res = await charge({
         data: {
           closureId: saved.id,
@@ -133,15 +130,14 @@ function ClosuresPage() {
             phone: merchant.phone_whatsapp,
           },
           value: Number(calc.netInvoice.toFixed(2)),
-          dueDate: due.toISOString().slice(0, 10),
           description: `Taxa operacional ${monthLabel(month)} - ${merchant.name}`,
           splits: merchantSplits.map((s) => ({
             walletId: s.partner_asaas_wallet_id,
             percentualValue: Number(s.percentage),
           })),
-          sandbox: true,
         },
       });
+
       if (!res.ok) throw new Error(res.error);
       return res;
     },
