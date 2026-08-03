@@ -185,40 +185,29 @@ export type Database = {
       notifications: {
         Row: {
           created_at: string
-          description: string | null
+          description: string
           id: string
           is_read: boolean
-          merchant_id: string | null
           title: string
-          type: Database["public"]["Enums"]["notification_type"]
+          type: string
         }
         Insert: {
           created_at?: string
-          description?: string | null
+          description?: string
           id?: string
           is_read?: boolean
-          merchant_id?: string | null
           title: string
-          type: Database["public"]["Enums"]["notification_type"]
+          type?: string
         }
         Update: {
           created_at?: string
-          description?: string | null
+          description?: string
           id?: string
           is_read?: boolean
-          merchant_id?: string | null
           title?: string
-          type?: Database["public"]["Enums"]["notification_type"]
+          type?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "notifications_merchant_id_fkey"
-            columns: ["merchant_id"]
-            isOneToOne: false
-            referencedRelation: "merchants"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       pos_terminals: {
         Row: {
@@ -327,40 +316,40 @@ export type Database = {
       }
       transactions: {
         Row: {
+          brand: string
           created_at: string
           gross_amount: number
           id: string
           import_id: string | null
+          installments: number
           merchant_id: string
           modality: Database["public"]["Enums"]["payment_modality"]
           pos_serial: string
           transaction_date: string
-          installments: number
-          brand: string
         }
         Insert: {
+          brand?: string
           created_at?: string
           gross_amount?: number
           id?: string
           import_id?: string | null
+          installments?: number
           merchant_id: string
           modality: Database["public"]["Enums"]["payment_modality"]
           pos_serial?: string
           transaction_date?: string
-          installments?: number
-          brand?: string
         }
         Update: {
+          brand?: string
           created_at?: string
           gross_amount?: number
           id?: string
           import_id?: string | null
+          installments?: number
           merchant_id?: string
           modality?: Database["public"]["Enums"]["payment_modality"]
           pos_serial?: string
           transaction_date?: string
-          installments?: number
-          brand?: string
         }
         Relationships: [
           {
@@ -390,7 +379,6 @@ export type Database = {
       closure_status: "draft" | "closed" | "invoice_generated" | "paid"
       import_status: "processing" | "completed" | "error"
       merchant_status: "active" | "inactive"
-      notification_type: "closure" | "payment" | "error"
       payment_modality:
         | "pix"
         | "debit"

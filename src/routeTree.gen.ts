@@ -9,10 +9,10 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as LoginRouteImport } from './routes/login'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as MerchantsRouteImport } from './routes/merchants'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as ImportRouteImport } from './routes/import'
 import { Route as ExpensesRouteImport } from './routes/expenses'
 import { Route as ClosuresRouteImport } from './routes/closures'
@@ -29,14 +29,14 @@ const ProfileRoute = ProfileRouteImport.update({
   path: '/profile',
   getParentRoute: () => rootRouteImport,
 } as any)
-const LoginRoute = LoginRouteImport.update({
-  id: '/login',
-  path: '/login',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const MerchantsRoute = MerchantsRouteImport.update({
   id: '/merchants',
   path: '/merchants',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ImportRoute = ImportRouteImport.update({
@@ -67,35 +67,35 @@ const SettingsAsaasRoute = SettingsAsaasRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/login': typeof LoginRoute
-  '/profile': typeof ProfileRoute
   '/closures': typeof ClosuresRoute
   '/expenses': typeof ExpensesRoute
   '/import': typeof ImportRoute
+  '/login': typeof LoginRoute
   '/merchants': typeof MerchantsRoute
+  '/profile': typeof ProfileRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/settings/asaas': typeof SettingsAsaasRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/login': typeof LoginRoute
-  '/profile': typeof ProfileRoute
   '/closures': typeof ClosuresRoute
   '/expenses': typeof ExpensesRoute
   '/import': typeof ImportRoute
+  '/login': typeof LoginRoute
   '/merchants': typeof MerchantsRoute
+  '/profile': typeof ProfileRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/settings/asaas': typeof SettingsAsaasRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/login': typeof LoginRoute
-  '/profile': typeof ProfileRoute
   '/closures': typeof ClosuresRoute
   '/expenses': typeof ExpensesRoute
   '/import': typeof ImportRoute
+  '/login': typeof LoginRoute
   '/merchants': typeof MerchantsRoute
+  '/profile': typeof ProfileRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/settings/asaas': typeof SettingsAsaasRoute
 }
@@ -103,57 +103,57 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/login'
-    | '/profile'
     | '/closures'
     | '/expenses'
     | '/import'
+    | '/login'
     | '/merchants'
+    | '/profile'
     | '/sitemap.xml'
     | '/settings/asaas'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/login'
-    | '/profile'
     | '/closures'
     | '/expenses'
     | '/import'
+    | '/login'
     | '/merchants'
+    | '/profile'
     | '/sitemap.xml'
     | '/settings/asaas'
   id:
     | '__root__'
     | '/'
-    | '/login'
-    | '/profile'
     | '/closures'
     | '/expenses'
     | '/import'
+    | '/login'
     | '/merchants'
+    | '/profile'
     | '/sitemap.xml'
     | '/settings/asaas'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  LoginRoute: typeof LoginRoute
-  ProfileRoute: typeof ProfileRoute
   ClosuresRoute: typeof ClosuresRoute
   ExpensesRoute: typeof ExpensesRoute
   ImportRoute: typeof ImportRoute
+  LoginRoute: typeof LoginRoute
   MerchantsRoute: typeof MerchantsRoute
+  ProfileRoute: typeof ProfileRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   SettingsAsaasRoute: typeof SettingsAsaasRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/login': {
-      id: '/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof LoginRouteImport
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/profile': {
@@ -163,18 +163,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProfileRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/sitemap.xml': {
-      id: '/sitemap.xml'
-      path: '/sitemap.xml'
-      fullPath: '/sitemap.xml'
-      preLoaderRoute: typeof SitemapDotxmlRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/merchants': {
       id: '/merchants'
       path: '/merchants'
       fullPath: '/merchants'
       preLoaderRoute: typeof MerchantsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/import': {
@@ -217,12 +217,12 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  LoginRoute: LoginRoute,
-  ProfileRoute: ProfileRoute,
   ClosuresRoute: ClosuresRoute,
   ExpensesRoute: ExpensesRoute,
   ImportRoute: ImportRoute,
+  LoginRoute: LoginRoute,
   MerchantsRoute: MerchantsRoute,
+  ProfileRoute: ProfileRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   SettingsAsaasRoute: SettingsAsaasRoute,
 }
