@@ -289,30 +289,36 @@ export type Database = {
       }
       transactions: {
         Row: {
+          brand: string
           created_at: string
           gross_amount: number
           id: string
           import_id: string | null
+          installments: number
           merchant_id: string
           modality: Database["public"]["Enums"]["payment_modality"]
           pos_serial: string
           transaction_date: string
         }
         Insert: {
+          brand?: string
           created_at?: string
           gross_amount?: number
           id?: string
           import_id?: string | null
+          installments?: number
           merchant_id: string
           modality: Database["public"]["Enums"]["payment_modality"]
           pos_serial?: string
           transaction_date?: string
         }
         Update: {
+          brand?: string
           created_at?: string
           gross_amount?: number
           id?: string
           import_id?: string | null
+          installments?: number
           merchant_id?: string
           modality?: Database["public"]["Enums"]["payment_modality"]
           pos_serial?: string
