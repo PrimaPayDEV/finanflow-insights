@@ -21,12 +21,44 @@ export function inMonth(dateIso: string, month: string) {
 }
 
 export function getTierRates(totalGross: number) {
-  if (totalGross <= 15000) return { traditionalRate: 4.00, primaRate: 2.00 };
-  if (totalGross <= 30000) return { traditionalRate: 7.30, primaRate: 2.50 };
-  if (totalGross <= 60000) return { traditionalRate: 9.50, primaRate: 3.00 };
-  if (totalGross <= 150000) return { traditionalRate: 10.70, primaRate: 3.50 };
-  if (totalGross <= 300000) return { traditionalRate: 14.30, primaRate: 4.50 };
-  return { traditionalRate: 19.00, primaRate: 5.50 };
+  if (totalGross <= 15000) return { primaRate: 2.00 };
+  if (totalGross <= 30000) return { primaRate: 2.50 };
+  if (totalGross <= 60000) return { primaRate: 3.00 };
+  if (totalGross <= 150000) return { primaRate: 3.50 };
+  if (totalGross <= 300000) return { primaRate: 4.50 };
+  return { primaRate: 5.50 };
+}
+
+const TRADITIONAL_RATES = {
+  debit: {
+    standard: 0.99, // Visa, Master, Elo
+    other: 1.29,    // Hiper, Banri, Demais
+  },
+  credit: [0, 2.50, 4.98, 5.77, 6.55, 7.33, 8.10, 9.41, 10.16, 10.91, 11.65, 12.37, 13.10, 14.10, 14.81, 15.51, 16.20, 16.88, 17.55],
+  pix: 0.90
+};
+
+export function getTraditionalRate(t: Transaction): number {
+  if (t.modality === 'pix') return TRADITIONAL_RATES.pix;
+  if (t.modality === 'cash') return 0;
+  
+  const brand = (t.brand || "").toLowerCase();
+  
+  if (t.modality === 'debit') {
+    if (brand.includes('hiper') || brand.includes('banri') || brand.includes('cabal') || brand.includes('amex') || brand.includes('demais')) {
+      return TRADITIONAL_RATES.debit.other;
+    }
+    return TRADITIONAL_RATES.debit.standard; // default para Visa, Master, Elo
+  }
+  
+  const installments = t.installments || 1;
+  if (installments >= 1 && installments <= 18) {
+    return TRADITIONAL_RATES.credit[installments];
+  }
+  if (installments > 18) {
+    return TRADITIONAL_RATES.credit[18]; // Fallback para > 18
+  }
+  return 0;
 }
 
 const CPAG59 = {
@@ -90,6 +122,7 @@ export function calculateClosure(
 
   let totalGross = 0;
   let modalityFeeTotal = 0;
+  let traditionalCost = 0;
 
   for (const t of transactions) {
     const mod = t.modality as Modality;
@@ -101,17 +134,21 @@ export function calculateClosure(
     const fee = (gross * rate) / 100;
     feeByModality[mod] += fee;
     modalityFeeTotal += fee;
+
+    const tradRate = getTraditionalRate(t);
+    traditionalCost += (gross * tradRate) / 100;
   }
 
-  const { traditionalRate, primaRate } = getTierRates(totalGross);
+  const { primaRate } = getTierRates(totalGross);
   const customPrimaRate = plan?.fixed_rate_percent && plan.fixed_rate_percent > 0 ? plan.fixed_rate_percent : primaRate;
   const fixedFeeAmount = (totalGross * customPrimaRate) / 100;
   
   const totalOpFee = modalityFeeTotal + fixedFeeAmount;
   const totalExpenses = expenses.reduce((s, e) => s + Number(e.amount), 0);
   const netInvoice = totalOpFee - totalExpenses;
-  const traditionalCost = (totalGross * traditionalRate) / 100;
   const savings = traditionalCost - totalOpFee;
+  
+  const effectiveTraditionalRate = totalGross > 0 ? (traditionalCost / totalGross) * 100 : 0;
 
   return {
     grossByModality,
@@ -125,6 +162,6 @@ export function calculateClosure(
     traditionalCost,
     savings,
     appliedPrimaRate: customPrimaRate,
-    appliedTraditionalRate: traditionalRate,
+    appliedTraditionalRate: effectiveTraditionalRate,
   };
 }
