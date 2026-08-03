@@ -467,7 +467,14 @@ function ImportPage() {
               <div 
                 key={i.id} 
                 className={`rounded-lg border p-3 group relative cursor-pointer transition-colors hover:bg-muted/50 ${viewingImport?.id === i.id ? 'border-primary bg-primary/5' : 'border-border'}`}
-                onClick={() => loadImportView(i)}
+                onClick={() => {
+                  if (viewingImport?.id === i.id) {
+                    setViewingImport(null);
+                    setViewingRows([]);
+                  } else {
+                    loadImportView(i);
+                  }
+                }}
               >
                 <div className="pr-8">
                   <p className="truncate text-sm font-medium">{i.file_name}</p>
