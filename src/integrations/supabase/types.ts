@@ -14,6 +14,69 @@ export type Database = {
   }
   public: {
     Tables: {
+      asaas_settings: {
+        Row: {
+          created_at: string
+          default_description: string
+          discount_deadline_days: number
+          discount_percent: number
+          due_day: number
+          fine_percent: number
+          id: string
+          interest_percent: number
+          sandbox: boolean
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          default_description?: string
+          discount_deadline_days?: number
+          discount_percent?: number
+          due_day?: number
+          fine_percent?: number
+          id?: string
+          interest_percent?: number
+          sandbox?: boolean
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          default_description?: string
+          discount_deadline_days?: number
+          discount_percent?: number
+          due_day?: number
+          fine_percent?: number
+          id?: string
+          interest_percent?: number
+          sandbox?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      asaas_webhook_events: {
+        Row: {
+          asaas_payment_id: string | null
+          created_at: string
+          event: string
+          id: string
+          payload: Json
+        }
+        Insert: {
+          asaas_payment_id?: string | null
+          created_at?: string
+          event: string
+          id?: string
+          payload?: Json
+        }
+        Update: {
+          asaas_payment_id?: string | null
+          created_at?: string
+          event?: string
+          id?: string
+          payload?: Json
+        }
+        Relationships: []
+      }
       closures: {
         Row: {
           asaas_invoice_url: string | null
@@ -22,6 +85,8 @@ export type Database = {
           id: string
           merchant_id: string
           net_invoice_amount: number
+          paid_amount: number | null
+          paid_at: string | null
           reference_month: string
           savings_amount: number
           status: Database["public"]["Enums"]["closure_status"]
@@ -37,6 +102,8 @@ export type Database = {
           id?: string
           merchant_id: string
           net_invoice_amount?: number
+          paid_amount?: number | null
+          paid_at?: string | null
           reference_month: string
           savings_amount?: number
           status?: Database["public"]["Enums"]["closure_status"]
@@ -52,6 +119,8 @@ export type Database = {
           id?: string
           merchant_id?: string
           net_invoice_amount?: number
+          paid_amount?: number | null
+          paid_at?: string | null
           reference_month?: string
           savings_amount?: number
           status?: Database["public"]["Enums"]["closure_status"]
