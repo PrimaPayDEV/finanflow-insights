@@ -16,7 +16,7 @@ const schema = z.object({
     .array(z.object({ walletId: z.string().min(1), percentualValue: z.number().positive().max(100) }))
     .max(20)
     .default([]),
-  sandbox: z.boolean().default(true),
+  sandbox: z.boolean().default(false),
 });
 
 export const checkAsaasConfigured = createServerFn({ method: "GET" }).handler(async () => ({

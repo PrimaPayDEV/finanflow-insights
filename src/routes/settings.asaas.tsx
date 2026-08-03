@@ -87,9 +87,8 @@ function AsaasSettings() {
               title="Cliente automático"
               text="O EC é localizado pelo CNPJ no Asaas e criado automaticamente caso ainda não exista."
             />
-            <p className="rounded-lg bg-muted p-3 text-xs text-muted-foreground">
-              As cobranças são emitidas no ambiente sandbox do Asaas. Avise no chat quando quiser
-              mudar para produção.
+            <p className="rounded-lg border border-primary/20 bg-primary/10 p-3 text-xs text-primary">
+              O sistema está operando em <strong>Produção (Conta Real)</strong>. As cobranças emitidas serão válidas.
             </p>
           </CardContent>
         </Card>
