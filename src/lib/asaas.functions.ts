@@ -6,8 +6,19 @@ const schema = z.object({
   customer: z.object({
     name: z.string().min(1).max(200),
     cpfCnpj: z.string().min(11).max(20),
-    email: z.string().email().max(200).optional().or(z.literal("")),
-    phone: z.string().max(30).optional().or(z.literal("")),
+    email: z
+      .string()
+      .max(200)
+      .nullish()
+      .transform((v) => {
+        const t = (v ?? "").trim();
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(t) ? t : undefined;
+      }),
+    phone: z
+      .string()
+      .max(30)
+      .nullish()
+      .transform((v) => (v ?? "").trim() || undefined),
   }),
   value: z.number().positive(),
   description: z.string().max(500),
