@@ -62,7 +62,11 @@ export const createAsaasCharge = createServerFn({ method: "POST" })
     const base = sandbox
       ? "https://sandbox.asaas.com/api/v3"
       : "https://api.asaas.com/v3";
-    const headers = { "Content-Type": "application/json", access_token: apiKey };
+    const headers = {
+      "Content-Type": "application/json",
+      "User-Agent": "PrimaPay",
+      access_token: apiKey,
+    };
 
 
     // 1. Cliente (busca por CPF/CNPJ, cria se não existir)
