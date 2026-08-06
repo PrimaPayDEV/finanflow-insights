@@ -591,7 +591,8 @@ function CreateAsaasSubaccountDialog({ onCreated }: { onCreated: (walletId: stri
 
   const create = useMutation({
     mutationFn: async () => {
-      const res = await createAsaasSubaccount({ data: { ...form, incomeValue: Number(form.incomeValue) } });
+      const parsedIncome = Number(form.incomeValue.replace(/\D/g, "")) / 100;
+      const res = await createAsaasSubaccount({ data: { ...form, incomeValue: parsedIncome } });
       if (!res.ok) throw new Error(res.error);
       return res.walletId;
     },
@@ -660,8 +661,8 @@ function CreateAsaasSubaccountDialog({ onCreated }: { onCreated: (walletId: stri
               <Input value={form.mobilePhone} onChange={e => setForm({...form, mobilePhone: formatPhone(e.target.value)})} />
             </div>
             <div className="grid gap-1.5">
-              <Label>Faturamento Mensal (R$)</Label>
-              <Input type="number" value={form.incomeValue} onChange={e => setForm({...form, incomeValue: e.target.value})} />
+              <Label>Faturamento Mensal</Label>
+              <Input type="text" value={form.incomeValue} onChange={e => setForm({...form, incomeValue: formatCurrencyInput(e.target.value)})} />
             </div>
           </div>
           <div className="grid sm:grid-cols-2 gap-3">

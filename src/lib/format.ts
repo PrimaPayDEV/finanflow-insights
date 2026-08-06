@@ -1,6 +1,15 @@
 export const BRL = (v: number | null | undefined) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(Number(v ?? 0));
 
+export function formatCurrencyInput(value: string) {
+  const v = value.replace(/\D/g, "");
+  if (!v) return "";
+  return (Number(v) / 100).toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  });
+}
+
 export const PCT = (v: number | null | undefined) =>
   `${Number(v ?? 0).toLocaleString("pt-BR", { maximumFractionDigits: 2 })}%`;
 
