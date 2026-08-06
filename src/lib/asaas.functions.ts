@@ -42,7 +42,7 @@ const subaccountSchema = z.object({
 });
 
 export const checkAsaasConfigured = createServerFn({ method: "GET" }).handler(async () => ({
-  configured: Boolean(process.env.ASAAS_API_KEY),
+  configured: Boolean(process.env.ASAAS_API_KEY || process.env.ASAAS_API_TESTE),
   webhookTokenConfigured: Boolean(process.env.ASAAS_WEBHOOK_TOKEN),
 }));
 
@@ -59,9 +59,9 @@ function nextDueDate(dueDay: number) {
 export const createAsaasCharge = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => schema.parse(d))
   .handler(async ({ data }) => {
-    const apiKey = process.env.ASAAS_API_KEY;
+    const apiKey = process.env.ASAAS_API_KEY || process.env.ASAAS_API_TESTE;
     if (!apiKey) {
-      return { ok: false as const, error: "ASAAS_API_KEY não configurada no backend." };
+      return { ok: false as const, error: "Chave da API do Asaas não configurada no backend." };
     }
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -176,9 +176,9 @@ export const createAsaasCharge = createServerFn({ method: "POST" })
 export const createAsaasSubaccount = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => subaccountSchema.parse(d))
   .handler(async ({ data }) => {
-    const apiKey = process.env.ASAAS_API_KEY;
+    const apiKey = process.env.ASAAS_API_KEY || process.env.ASAAS_API_TESTE;
     if (!apiKey) {
-      return { ok: false as const, error: "ASAAS_API_KEY não configurada no backend." };
+      return { ok: false as const, error: "Chave da API do Asaas não configurada no backend." };
     }
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
