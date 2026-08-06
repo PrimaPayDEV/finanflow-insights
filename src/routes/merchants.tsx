@@ -27,7 +27,7 @@ import {
   terminalsQuery,
   type Merchant,
 } from "@/lib/db";
-import { PCT, formatCpfCnpj, formatPhone } from "@/lib/format";
+import { PCT, formatCpfCnpj, formatPhone, formatCurrencyInput } from "@/lib/format";
 import { createAsaasSubaccount } from "@/lib/asaas.functions";
 
 export const Route = createFileRoute("/merchants")({
