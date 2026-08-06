@@ -27,7 +27,7 @@ import {
   terminalsQuery,
   type Merchant,
 } from "@/lib/db";
-import { PCT, formatCNPJ, formatPhone } from "@/lib/format";
+import { PCT, formatCpfCnpj, formatPhone } from "@/lib/format";
 import { createAsaasSubaccount } from "@/lib/asaas.functions";
 
 export const Route = createFileRoute("/merchants")({
@@ -120,7 +120,7 @@ function MerchantsPage() {
                 <Label>CNPJ</Label>
                 <Input
                   value={form.document_cnpj}
-                  onChange={(e) => setForm({ ...form, document_cnpj: formatCNPJ(e.target.value) })}
+                  onChange={(e) => setForm({ ...form, document_cnpj: formatCpfCnpj(e.target.value) })}
                   maxLength={18}
                 />
               </div>
@@ -294,7 +294,7 @@ function EditMerchantDialog({ merchant }: { merchant: Merchant }) {
             <Label>CNPJ</Label>
             <Input
               value={form.document_cnpj}
-              onChange={(e) => setForm({ ...form, document_cnpj: formatCNPJ(e.target.value) })}
+              onChange={(e) => setForm({ ...form, document_cnpj: formatCpfCnpj(e.target.value) })}
               maxLength={18}
             />
           </div>
@@ -634,7 +634,7 @@ function CreateAsaasSubaccountDialog({ onCreated }: { onCreated: (walletId: stri
           <div className="grid sm:grid-cols-2 gap-3">
             <div className="grid gap-1.5">
               <Label>CPF / CNPJ</Label>
-              <Input value={form.cpfCnpj} onChange={e => setForm({...form, cpfCnpj: formatCNPJ(e.target.value)})} />
+              <Input value={form.cpfCnpj} onChange={e => setForm({...form, cpfCnpj: formatCpfCnpj(e.target.value)})} />
             </div>
             <div className="grid gap-1.5">
               <Label>Tipo de Empresa</Label>

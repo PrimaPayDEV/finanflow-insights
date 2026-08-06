@@ -56,9 +56,16 @@ export const closureStatusLabel: Record<string, string> = {
   paid: "Pago",
 };
 
-export function formatCNPJ(value: string) {
-  return value
-    .replace(/\D/g, "")
+export function formatCpfCnpj(value: string) {
+  const v = value.replace(/\D/g, "");
+  if (v.length <= 11) {
+    return v
+      .replace(/(\d{3})(\d)/, "$1.$2")
+      .replace(/(\d{3})(\d)/, "$1.$2")
+      .replace(/(\d{3})(\d{1,2})$/, "$1-$2")
+      .slice(0, 14);
+  }
+  return v
     .replace(/^(\d{2})(\d)/, "$1.$2")
     .replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3")
     .replace(/\.(\d{3})(\d)/, ".$1/$2")
