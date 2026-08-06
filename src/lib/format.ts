@@ -2,12 +2,12 @@ export const BRL = (v: number | null | undefined) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(Number(v ?? 0));
 
 export function formatCurrencyInput(value: string) {
-  const v = value.replace(/\D/g, "");
+  let v = value.replace(/\D/g, "");
   if (!v) return "";
-  return (Number(v) / 100).toLocaleString("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  });
+  v = (Number(v) / 100).toFixed(2);
+  v = v.replace(".", ",");
+  v = v.replace(/(\d)(?=(\d{3})+(?!\d))/g, "$1.");
+  return "R$ " + v;
 }
 
 export const PCT = (v: number | null | undefined) =>
