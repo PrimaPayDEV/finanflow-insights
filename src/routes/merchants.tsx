@@ -28,6 +28,7 @@ import {
   type Merchant,
 } from "@/lib/db";
 import { PCT, formatCNPJ, formatPhone } from "@/lib/format";
+import { createAsaasSubaccount } from "@/lib/asaas.functions";
 
 export const Route = createFileRoute("/merchants")({
   head: () => ({
@@ -528,7 +529,10 @@ function SplitPanel({ merchant }: { merchant: Merchant }) {
             <Input value={partner} onChange={(e) => setPartner(e.target.value)} maxLength={120} />
           </div>
           <div className="grid gap-1.5">
-            <Label>Wallet ID Asaas</Label>
+            <div className="flex items-center justify-between">
+              <Label>Wallet ID Asaas</Label>
+              <CreateAsaasSubaccountDialog onCreated={(id) => setWallet(id)} />
+            </div>
             <Input value={wallet} onChange={(e) => setWallet(e.target.value)} maxLength={80} />
           </div>
           <div className="grid w-28 gap-1.5">
@@ -567,5 +571,129 @@ function SplitPanel({ merchant }: { merchant: Merchant }) {
         </ul>
       </CardContent>
     </Card>
+  );
+}
+
+function CreateAsaasSubaccountDialog({ onCreated }: { onCreated: (walletId: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    cpfCnpj: "",
+    companyType: "LIMITED",
+    mobilePhone: "",
+    incomeValue: "",
+    address: "",
+    addressNumber: "",
+    province: "",
+    postalCode: "",
+  });
+
+  const create = useMutation({
+    mutationFn: async () => {
+      const res = await createAsaasSubaccount({ data: { ...form, incomeValue: Number(form.incomeValue) } });
+      if (!res.ok) throw new Error(res.error);
+      return res.walletId;
+    },
+    onSuccess: (walletId) => {
+      toast.success("Subconta criada no Asaas!");
+      onCreated(walletId);
+      setOpen(false);
+      setForm({
+        name: "",
+        email: "",
+        cpfCnpj: "",
+        companyType: "LIMITED",
+        mobilePhone: "",
+        incomeValue: "",
+        address: "",
+        addressNumber: "",
+        province: "",
+        postalCode: "",
+      });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline" size="sm" type="button" className="h-6 px-2 text-xs">
+          Criar nova
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Criar Subconta Asaas (Não-BaaS)</DialogTitle>
+        </DialogHeader>
+        <div className="grid gap-3">
+          <div className="grid gap-1.5">
+            <Label>Nome / Razão Social</Label>
+            <Input value={form.name} onChange={e => setForm({...form, name: e.target.value})} />
+          </div>
+          <div className="grid sm:grid-cols-2 gap-3">
+            <div className="grid gap-1.5">
+              <Label>CPF / CNPJ</Label>
+              <Input value={form.cpfCnpj} onChange={e => setForm({...form, cpfCnpj: formatCNPJ(e.target.value)})} />
+            </div>
+            <div className="grid gap-1.5">
+              <Label>Tipo de Empresa</Label>
+              <select 
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                value={form.companyType} 
+                onChange={e => setForm({...form, companyType: e.target.value})}
+              >
+                <option value="MEI">MEI</option>
+                <option value="LIMITED">Limitada (LTDA)</option>
+                <option value="INDIVIDUAL">Individual</option>
+                <option value="ASSOCIATION">Associação</option>
+              </select>
+            </div>
+          </div>
+          <div className="grid gap-1.5">
+            <Label>E-mail (Login e Comunicação)</Label>
+            <Input type="email" value={form.email} onChange={e => setForm({...form, email: e.target.value})} />
+          </div>
+          <div className="grid sm:grid-cols-2 gap-3">
+            <div className="grid gap-1.5">
+              <Label>Celular</Label>
+              <Input value={form.mobilePhone} onChange={e => setForm({...form, mobilePhone: formatPhone(e.target.value)})} />
+            </div>
+            <div className="grid gap-1.5">
+              <Label>Faturamento Mensal (R$)</Label>
+              <Input type="number" value={form.incomeValue} onChange={e => setForm({...form, incomeValue: e.target.value})} />
+            </div>
+          </div>
+          <div className="grid sm:grid-cols-2 gap-3">
+            <div className="grid gap-1.5">
+              <Label>CEP</Label>
+              <Input value={form.postalCode} onChange={e => setForm({...form, postalCode: e.target.value})} maxLength={9} />
+            </div>
+            <div className="grid gap-1.5">
+              <Label>Endereço (Rua, Av)</Label>
+              <Input value={form.address} onChange={e => setForm({...form, address: e.target.value})} />
+            </div>
+          </div>
+          <div className="grid sm:grid-cols-2 gap-3">
+            <div className="grid gap-1.5">
+              <Label>Número</Label>
+              <Input value={form.addressNumber} onChange={e => setForm({...form, addressNumber: e.target.value})} />
+            </div>
+            <div className="grid gap-1.5">
+              <Label>Bairro</Label>
+              <Input value={form.province} onChange={e => setForm({...form, province: e.target.value})} />
+            </div>
+          </div>
+        </div>
+        <DialogFooter>
+          <DialogClose asChild>
+            <Button variant="ghost">Cancelar</Button>
+          </DialogClose>
+          <Button onClick={() => create.mutate()} disabled={create.isPending || !form.name || !form.cpfCnpj}>
+            {create.isPending ? "Criando..." : "Criar Subconta"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

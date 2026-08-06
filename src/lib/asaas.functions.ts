@@ -28,6 +28,19 @@ const schema = z.object({
     .default([]),
 });
 
+const subaccountSchema = z.object({
+  name: z.string().min(1, "Nome é obrigatório"),
+  email: z.string().email("E-mail inválido"),
+  cpfCnpj: z.string().min(11, "Documento inválido"),
+  companyType: z.string().min(1, "Tipo de empresa é obrigatório"),
+  mobilePhone: z.string().min(10, "Celular inválido"),
+  incomeValue: z.number().positive("O faturamento deve ser maior que zero"),
+  address: z.string().min(1, "Endereço é obrigatório"),
+  addressNumber: z.string().min(1, "Número é obrigatório"),
+  province: z.string().min(1, "Bairro é obrigatório"),
+  postalCode: z.string().min(8, "CEP inválido"),
+});
+
 export const checkAsaasConfigured = createServerFn({ method: "GET" }).handler(async () => ({
   configured: Boolean(process.env.ASAAS_API_KEY),
   webhookTokenConfigured: Boolean(process.env.ASAAS_WEBHOOK_TOKEN),
@@ -157,5 +170,68 @@ export const createAsaasCharge = createServerFn({ method: "POST" })
       ok: true as const,
       paymentId: payment.id,
       invoiceUrl: payment.invoiceUrl ?? payment.bankSlipUrl ?? null,
+    };
+  });
+
+export const createAsaasSubaccount = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => subaccountSchema.parse(d))
+  .handler(async ({ data }) => {
+    const apiKey = process.env.ASAAS_API_KEY;
+    if (!apiKey) {
+      return { ok: false as const, error: "ASAAS_API_KEY não configurada no backend." };
+    }
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: settings } = await supabaseAdmin
+      .from("asaas_settings")
+      .select("*")
+      .limit(1)
+      .maybeSingle();
+
+    const sandbox = settings?.sandbox ?? false;
+    const base = sandbox
+      ? "https://sandbox.asaas.com/api/v3"
+      : "https://api.asaas.com/v3";
+    const headers = {
+      "Content-Type": "application/json",
+      "User-Agent": "PrimaPay",
+      access_token: apiKey,
+    };
+
+    const res = await fetch(`${base}/accounts`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        name: data.name,
+        email: data.email,
+        loginEmail: data.email,
+        cpfCnpj: data.cpfCnpj.replace(/\D/g, ''),
+        companyType: data.companyType,
+        mobilePhone: data.mobilePhone.replace(/\D/g, ''),
+        incomeValue: data.incomeValue,
+        address: data.address,
+        addressNumber: data.addressNumber,
+        province: data.province,
+        postalCode: data.postalCode.replace(/\D/g, ''),
+      }),
+    });
+
+    const parsed = (await res.json()) as {
+      walletId?: string;
+      apiKey?: string;
+      errors?: Array<{ description: string }>;
+    };
+
+    if (!parsed.walletId) {
+      return {
+        ok: false as const,
+        error: parsed.errors?.[0]?.description ?? "Falha ao criar subconta no Asaas.",
+      };
+    }
+
+    return {
+      ok: true as const,
+      walletId: parsed.walletId,
+      apiKey: parsed.apiKey,
     };
   });
