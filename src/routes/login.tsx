@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { CircleDollarSign, Loader2, Eye, EyeOff } from "lucide-react";
+import { Wallet, Loader2, Eye, EyeOff } from "lucide-react";
 import { motion } from "framer-motion";
 import { translateError } from "@/lib/translateError";
 
@@ -111,10 +111,13 @@ function Login() {
         className="w-full max-w-md space-y-8 relative z-10"
       >
         <div className="text-center">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-sidebar-primary text-sidebar-primary-foreground shadow-lg mb-6">
-            <CircleDollarSign className="size-8" />
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-sidebar-primary text-sidebar-primary-foreground shadow-lg mb-4">
+            <Wallet className="size-8" />
           </div>
-          <h2 className="mt-6 text-3xl font-bold tracking-tight text-foreground">
+          <h1 className="text-3xl font-extrabold tracking-tight mb-4" style={{ fontFamily: '"Montserrat Arabic", Montserrat, sans-serif' }}>
+            PrimaHub
+          </h1>
+          <h2 className="text-2xl font-bold tracking-tight text-foreground">
             Acesse sua conta
           </h2>
           <p className="mt-2 text-sm text-muted-foreground">
