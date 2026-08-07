@@ -1,4 +1,4 @@
-import { Link, useRouterState } from "@tanstack/react-router";
+import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -57,12 +57,21 @@ export function AppLayout({
   const { user, signOut } = useAuth();
   
   const qc = useQueryClient();
+  const navigate = useNavigate();
   const { data: notifications = [] } = useQuery(notificationsQuery);
   const unreadCount = notifications.filter(n => !n.is_read).length;
 
   const markAsRead = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase.from('notifications').update({ is_read: true }).eq('id', id);
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["notifications"] })
+  });
+
+  const clearNotifications = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.from('notifications').delete().not('id', 'is', null);
       if (error) throw new Error(error.message);
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["notifications"] })
@@ -156,7 +165,23 @@ export function AppLayout({
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-72 max-h-96 overflow-y-auto">
-                    <DropdownMenuLabel>Notificações</DropdownMenuLabel>
+                    <div className="flex items-center justify-between px-2 pb-1 pt-2">
+                      <DropdownMenuLabel className="p-0">Notificações</DropdownMenuLabel>
+                      {notifications.length > 0 && (
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="h-auto p-1 text-xs text-muted-foreground hover:text-destructive"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            clearNotifications.mutate();
+                          }}
+                          disabled={clearNotifications.isPending}
+                        >
+                          Limpar todas
+                        </Button>
+                      )}
+                    </div>
                     <DropdownMenuSeparator />
                     {notifications.length === 0 ? (
                       <DropdownMenuItem disabled>Nenhuma notificação</DropdownMenuItem>
@@ -164,9 +189,15 @@ export function AppLayout({
                       notifications.map(notification => (
                         <DropdownMenuItem 
                           key={notification.id}
-                          className={cn("flex flex-col items-start gap-1 p-3 cursor-pointer", !notification.is_read && "bg-muted/50")}
+                          className={cn(
+                            "flex flex-col items-start gap-1 p-3 cursor-pointer transition-colors",
+                            !notification.is_read 
+                              ? "bg-primary/5 dark:bg-primary/10 border-l-2 border-primary data-[highlighted]:bg-primary/10" 
+                              : "border-l-2 border-transparent"
+                          )}
                           onClick={() => {
                             if (!notification.is_read) markAsRead.mutate(notification.id);
+                            navigate({ to: "/closures" });
                           }}
                         >
                           <div className="flex items-center gap-2 w-full">
