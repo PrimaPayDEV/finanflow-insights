@@ -53,7 +53,7 @@ import {
   monthLabel,
   monthOptions,
 } from "@/lib/format";
-import { generateClosureReceiptPDF } from "@/lib/pdf";
+
 import { translateError } from "@/lib/translateError";
 import type { Database } from "@/integrations/supabase/types";
 
