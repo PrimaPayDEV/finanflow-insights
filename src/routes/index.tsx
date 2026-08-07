@@ -31,16 +31,16 @@ import { BRL, MODALITIES, closureStatusLabel, currentMonth, modalityLabel, month
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Dashboard PrimaHub | Gestão de ECs e Cobrança" },
+      { title: "Dashboard PrimaHub | Gestão e Pagamentos" },
       {
         name: "description",
         content:
-          "Painel fintech com faturamento por modalidade, taxa operacional a receber, economia gerada e status das cobranças dos estabelecimentos.",
+          "FinanFlow Insights is a comprehensive platform for managing commercial establishments, billing, and automated collections.",
       },
-      { property: "og:title", content: "Dashboard PrimaHub | Gestão de ECs e Cobrança" },
+      { property: "og:title", content: "Dashboard PrimaHub | Gestão e Pagamentos" },
       {
         property: "og:description",
-        content: "Faturamento, taxas operacionais, economia e cobranças em um só painel.",
+        content: "FinanFlow Insights is a comprehensive platform for managing commercial establishments, billing, and automated collections.",
       },
     ],
   }),
