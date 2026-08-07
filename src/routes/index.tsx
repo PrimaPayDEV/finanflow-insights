@@ -31,13 +31,13 @@ import { BRL, MODALITIES, closureStatusLabel, currentMonth, modalityLabel, month
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Dashboard PrimaHub | Gestão e Pagamentos" },
+      { title: "PrimaHub | Gestão e Pagamentos" },
       {
         name: "description",
         content:
           "FinanFlow Insights is a comprehensive platform for managing commercial establishments, billing, and automated collections.",
       },
-      { property: "og:title", content: "Dashboard PrimaHub | Gestão e Pagamentos" },
+      { property: "og:title", content: "PrimaHub | Gestão e Pagamentos" },
       {
         property: "og:description",
         content: "FinanFlow Insights is a comprehensive platform for managing commercial establishments, billing, and automated collections.",
