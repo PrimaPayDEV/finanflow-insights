@@ -11,7 +11,7 @@ import {
   Receipt,
   FileCheck2,
   Settings,
-  CircleDollarSign,
+  Wallet,
   PanelLeftClose,
   PanelLeftOpen,
   Bell,
@@ -88,12 +88,11 @@ export function AppLayout({
         <div className="flex items-center justify-between px-5 py-6">
           <div className="flex items-center gap-2 overflow-hidden">
             <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-sidebar-primary text-sidebar-primary-foreground">
-              <CircleDollarSign className="size-5" />
+              <Wallet className="size-5" />
             </span>
             {!isCollapsed && (
               <div className="leading-tight whitespace-nowrap">
-                <p className="text-sm font-semibold">PrimaPay</p>
-                <p className="text-xs text-sidebar-foreground/60">Gestão de ECs</p>
+                <p className="text-base font-bold tracking-tight">PrimaHub</p>
               </div>
             )}
           </div>

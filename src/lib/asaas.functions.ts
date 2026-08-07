@@ -77,7 +77,7 @@ export const createAsaasCharge = createServerFn({ method: "POST" })
       : "https://api.asaas.com/v3";
     const headers = {
       "Content-Type": "application/json",
-      "User-Agent": "PrimaPay",
+      "User-Agent": "PrimaHub",
       access_token: apiKey,
     };
 
@@ -203,7 +203,7 @@ export const createAsaasSubaccount = createServerFn({ method: "POST" })
       : "https://api.asaas.com/v3";
     const headers = {
       "Content-Type": "application/json",
-      "User-Agent": "PrimaPay",
+      "User-Agent": "PrimaHub",
       access_token: apiKey,
     };
 
@@ -244,3 +244,4 @@ export const createAsaasSubaccount = createServerFn({ method: "POST" })
       apiKey: parsed.apiKey,
     };
   });
+

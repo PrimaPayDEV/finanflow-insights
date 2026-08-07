@@ -33,13 +33,13 @@ import { translateError } from "@/lib/translateError";
 export const Route = createFileRoute("/import")({
   head: () => ({
     meta: [
-      { title: "Importar Extrato PrimaPay | Gestão de ECs" },
+      { title: "Importar Extrato PrimaHub | Gestão de ECs" },
       {
         name: "description",
         content:
-          "Faça upload do extrato PrimaPay em CSV, XLSX ou PDF, revise a prévia agrupada por modalidade e confirme a importação do faturamento.",
+          "Faça upload do extrato PrimaHub em CSV, XLSX ou PDF, revise a prévia agrupada por modalidade e confirme a importação do faturamento.",
       },
-      { property: "og:title", content: "Importar Extrato PrimaPay" },
+      { property: "og:title", content: "Importar Extrato PrimaHub" },
       {
         property: "og:description",
         content: "Upload, parser por modalidade e identificação do EC pelo serial do POS.",
@@ -227,7 +227,7 @@ function ImportPage() {
         .from("statements_imports")
         .insert({
           merchant_id: merchantId || null,
-          file_name: fileName || "extrato-primapay",
+          file_name: fileName || "extrato-PrimaHub",
           reference_month: month,
           status: "processing",
         })
@@ -517,3 +517,4 @@ function ImportPage() {
     </AppLayout>
   );
 }
+

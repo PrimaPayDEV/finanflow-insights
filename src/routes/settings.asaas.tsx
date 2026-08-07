@@ -20,13 +20,13 @@ import { translateError } from "@/lib/translateError";
 export const Route = createFileRoute("/settings/asaas")({
   head: () => ({
     meta: [
-      { title: "Configuração Asaas | PrimaPay" },
+      { title: "Configuração Asaas | PrimaHub" },
       {
         name: "description",
         content:
-          "Preferências de cobrança PrimaPay no Asaas: vencimento, multa, juros, desconto, ambiente e sincronização de status por webhook.",
+          "Preferências de cobrança PrimaHub no Asaas: vencimento, multa, juros, desconto, ambiente e sincronização de status por webhook.",
       },
-      { property: "og:title", content: "Configuração Asaas | PrimaPay" },
+      { property: "og:title", content: "Configuração Asaas | PrimaHub" },
       {
         property: "og:description",
         content: "Preferências de cobrança, split e sincronização automática de pagamentos.",
@@ -44,7 +44,7 @@ const defaults = {
   interest_percent: 1,
   discount_percent: 0,
   discount_deadline_days: 0,
-  default_description: "Fatura PrimaPay",
+  default_description: "Fatura PrimaHub",
   sandbox: false,
 };
 
@@ -303,3 +303,4 @@ function Feature({
     </div>
   );
 }
+

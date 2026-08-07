@@ -82,10 +82,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "PrimaPay | Gestão de ECs e Cobrança Automática" },
-      { name: "description", content: "PrimaPay: plataforma de gestão de estabelecimentos, fechamento de faturamento e cobrança automática." },
+      { title: "PrimaHub | Gestão de ECs e Cobrança Automática" },
+      { name: "description", content: "PrimaHub: plataforma de gestão de estabelecimentos, fechamento de faturamento e cobrança automática." },
       { name: "author", content: "Lovable" },
-      { property: "og:title", content: "PrimaPay" },
+      { property: "og:title", content: "PrimaHub" },
       { property: "og:description", content: "Plataforma de gestão de ECs, fechamento e cobrança automática." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },

@@ -15,7 +15,7 @@ import { translateError } from "@/lib/translateError";
 
 export const Route = createFileRoute("/profile")({
   head: () => ({
-    meta: [{ title: "Meu Perfil | PrimaPay" }],
+    meta: [{ title: "Meu Perfil | PrimaHub" }],
   }),
   component: ProfilePage,
 });
@@ -236,3 +236,4 @@ function ProfilePage() {
     </AppLayout>
   );
 }
+
