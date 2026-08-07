@@ -142,15 +142,15 @@ export function AppLayout({
 
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="print:hidden sticky top-0 z-10 border-b border-border bg-card/80 backdrop-blur">
-          <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-4 md:px-8">
-            <div className="flex items-center gap-3">
+          <div className="flex items-center justify-between gap-2 px-3 py-3 md:px-8">
+            <div className="flex items-center gap-2 overflow-hidden">
               <Sheet>
                 <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon" className="md:hidden">
+                  <Button variant="ghost" size="icon" className="md:hidden shrink-0">
                     <PanelLeftOpen className="size-5" />
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="left" className="w-64 p-0">
+                <SheetContent side="left" className="w-64 p-0 bg-sidebar text-sidebar-foreground border-r-0">
                   <div className="flex items-center gap-2 overflow-hidden px-5 py-6">
                     <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-sidebar-primary text-sidebar-primary-foreground">
                       <Wallet className="size-5" />
@@ -183,16 +183,16 @@ export function AppLayout({
                 </SheetContent>
               </Sheet>
               
-              <div>
-                <h1 className="text-xl font-semibold tracking-tight text-foreground">{title}</h1>
-                {subtitle && <p className="text-sm text-muted-foreground hidden sm:block">{subtitle}</p>}
+              <div className="truncate">
+                <h1 className="text-lg md:text-xl font-semibold tracking-tight text-foreground truncate">{title}</h1>
+                {subtitle && <p className="text-sm text-muted-foreground hidden sm:block truncate">{subtitle}</p>}
               </div>
             </div>
             
-            <div className="flex items-center gap-4">
-              {actions}
+            <div className="flex items-center gap-1.5 sm:gap-4 shrink-0">
+              {actions && <div className="hidden sm:block">{actions}</div>}
               
-              <div className="flex items-center gap-2 pl-4 border-l">
+              <div className="flex items-center gap-1 pl-1.5 sm:pl-4 border-l shrink-0">
                 <ThemeToggle />
                 
                 <DropdownMenu>
@@ -289,21 +289,9 @@ export function AppLayout({
               </div>
             </div>
           </div>
-          
-          <nav className="flex gap-1 overflow-x-auto px-3 pb-3 md:hidden">
-            {nav.map((item) => (
-              <Link
-                key={item.to}
-                to={item.to}
-                className="whitespace-nowrap rounded-md px-3 py-1.5 text-xs text-muted-foreground hover:bg-muted"
-              >
-                {item.label}
-              </Link>
-            ))}
-          </nav>
         </header>
         
-        <main className="flex-1 overflow-hidden px-5 py-6 md:px-8 print:p-0 print:overflow-visible">
+        <main className="flex-1 overflow-hidden px-3 py-4 md:px-8 print:p-0 print:overflow-visible">
           <AnimatePresence mode="wait">
             <motion.div
               key={pathname}
