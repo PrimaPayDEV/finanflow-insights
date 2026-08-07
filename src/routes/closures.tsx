@@ -209,7 +209,7 @@ function ClosuresPage() {
                       });
                     }}
                   >
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label>Taxa Pix (%)</Label>
                         <Input name="pix_rate" type="number" step="0.01" defaultValue={plan.pix_rate} />
@@ -287,7 +287,7 @@ function ClosuresPage() {
               <TrendingUp className="h-5 w-5 text-primary" />
               Extrato Básico de Movimentações
             </h2>
-            <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
               <Card className="print:shadow-none print:border-border">
                 <CardHeader className="p-4 pb-2">
                   <CardTitle className="text-sm font-medium text-muted-foreground">Pix</CardTitle>
@@ -386,7 +386,7 @@ function ClosuresPage() {
           <section className="break-inside-avoid print:break-inside-avoid">
             <Card className="bg-success text-success-foreground overflow-hidden shadow-lg border-none print:shadow-none print:bg-transparent print:text-foreground print:border print:border-border">
               <div className="flex flex-col">
-                <div className="grid grid-cols-2 p-6 md:p-10 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 p-6 md:p-10 gap-6">
                   <div>
                     <h3 className="text-success-foreground/80 font-medium text-sm uppercase tracking-wide print:text-muted-foreground">Custos no Meio Tradicional ({PCT(calc.appliedTraditionalRate)})</h3>
                     <p className="text-2xl md:text-3xl font-semibold line-through opacity-75">{BRL(calc.traditionalCost)}</p>
