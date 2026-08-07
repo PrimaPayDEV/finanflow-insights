@@ -171,7 +171,7 @@ function Dashboard() {
                     </div>
                     <div className="flex items-center gap-3">
                       <span className="text-sm font-semibold">{BRL(Number(c.net_invoice_amount))}</span>
-                      <Badge variant={c.status === "paid" ? "default" : "secondary"}>
+                      <Badge variant={c.status === "paid" ? "success" : "secondary"}>
                         {closureStatusLabel[c.status]}
                       </Badge>
                     </div>

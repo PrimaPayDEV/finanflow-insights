@@ -414,7 +414,7 @@ function ClosuresPage() {
                 <CardTitle className="text-lg flex items-center justify-between">
                   <span>Emissão de Cobrança (Asaas)</span>
                   {existing && (
-                    <Badge variant={existing.status === "paid" ? "default" : "secondary"}>
+                    <Badge variant={existing.status === "paid" ? "success" : "secondary"}>
                       {closureStatusLabel[existing.status]}
                     </Badge>
                   )}
