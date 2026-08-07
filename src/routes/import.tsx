@@ -28,6 +28,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { importsQuery, merchantsQuery, terminalsQuery } from "@/lib/db";
 import { BRL, MODALITIES, currentMonth, modalityLabel, monthLabel, monthOptions, type Modality } from "@/lib/format";
+import { translateError } from "@/lib/translateError";
 
 export const Route = createFileRoute("/import")({
   head: () => ({
@@ -190,7 +191,7 @@ function ImportPage() {
       toast.success(`${parsed.length} lançamentos lidos da planilha`);
     } catch (err) {
       console.error(err);
-      toast.error("Erro ao processar o arquivo. Verifique o formato.");
+      toast.error(translateError("Erro ao processar o arquivo. Verifique o formato."));
     }
   };
 
@@ -210,7 +211,7 @@ function ImportPage() {
       setViewingRows(mapped);
       setViewingImport({ id: imp.id, name: imp.file_name });
     } catch (err) {
-      toast.error("Erro ao carregar os dados desta importação");
+      toast.error(translateError("Erro ao carregar os dados desta importação"));
     } finally {
       setIsLoadingView(false);
     }
@@ -258,7 +259,7 @@ function ImportPage() {
       qc.invalidateQueries({ queryKey: ["transactions"] });
       qc.invalidateQueries({ queryKey: ["imports"] });
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(translateError(e.message)),
   });
 
   const deleteImport = useMutation({
@@ -276,7 +277,7 @@ function ImportPage() {
         setViewingRows([]);
       }
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(translateError(e.message)),
   });
 
   const displayRows = viewingImport ? viewingRows : rows;

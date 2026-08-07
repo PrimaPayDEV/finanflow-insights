@@ -53,6 +53,8 @@ import {
   monthLabel,
   monthOptions,
 } from "@/lib/format";
+import { generateClosureReceiptPDF } from "@/lib/pdf";
+import { translateError } from "@/lib/translateError";
 import type { Database } from "@/integrations/supabase/types";
 
 type FeePlan = Database["public"]["Tables"]["fee_plans"]["Row"];
@@ -146,7 +148,7 @@ function ClosuresPage() {
       if (res?.invoiceUrl) window.open(res.invoiceUrl, "_blank", "noopener");
       qc.invalidateQueries({ queryKey: ["closures"] });
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(translateError(e.message)),
   });
 
   const updatePlan = useMutation({
@@ -162,7 +164,7 @@ function ClosuresPage() {
       qc.invalidateQueries({ queryKey: ["fee_plans"] });
       setIsConfigOpen(false);
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(translateError(e.message)),
   });
 
   const handlePrint = () => {

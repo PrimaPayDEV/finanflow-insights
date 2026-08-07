@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { Loader2, KeyRound, UserCircle, Camera } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useRef } from "react";
+import { translateError } from "@/lib/translateError";
 
 export const Route = createFileRoute("/profile")({
   head: () => ({
@@ -72,7 +73,7 @@ function ProfilePage() {
       toast.success("Foto de perfil atualizada!");
       // Forçar atualização do context se necessário, mas o onAuthStateChange já deve capturar
     } catch (error: any) {
-      toast.error(`Erro ao atualizar foto: ${error.message}`);
+      toast.error(translateError(error.message));
     } finally {
       setUploadingAvatar(false);
     }
@@ -99,7 +100,7 @@ function ProfilePage() {
       });
 
       if (error) {
-        toast.error(`Erro ao atualizar a senha: ${error.message}`);
+        toast.error(translateError(error.message));
         console.error(error);
         return;
       }

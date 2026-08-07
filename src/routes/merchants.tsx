@@ -29,6 +29,7 @@ import {
 } from "@/lib/db";
 import { PCT, formatCpfCnpj, formatPhone, formatCurrencyInput } from "@/lib/format";
 import { createAsaasSubaccount } from "@/lib/asaas.functions";
+import { translateError } from "@/lib/translateError";
 
 export const Route = createFileRoute("/merchants")({
   head: () => ({
@@ -73,7 +74,7 @@ function MerchantsPage() {
       setOpen(false);
       invalidate();
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(translateError(e.message)),
   });
 
   const remove = useMutation({
@@ -86,7 +87,7 @@ function MerchantsPage() {
       setSelected(null);
       invalidate();
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(translateError(e.message)),
   });
 
   const list = merchants.data ?? [];
@@ -267,7 +268,7 @@ function EditMerchantDialog({ merchant }: { merchant: Merchant }) {
       setOpen(false);
       qc.invalidateQueries({ queryKey: ["merchants"] });
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(translateError(e.message)),
   });
 
   return (
@@ -371,7 +372,7 @@ function FeePlanForm({ merchant }: { merchant: Merchant }) {
       setDraft(null);
       qc.invalidateQueries({ queryKey: ["fee_plans"] });
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(translateError(e.message)),
   });
 
   return (
@@ -429,7 +430,7 @@ function TerminalsPanel({ merchant }: { merchant: Merchant }) {
       setModel("");
       qc.invalidateQueries({ queryKey: ["pos_terminals"] });
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(translateError(e.message)),
   });
 
   const remove = useMutation({
@@ -506,7 +507,7 @@ function SplitPanel({ merchant }: { merchant: Merchant }) {
       setPercentage("");
       qc.invalidateQueries({ queryKey: ["split_rules"] });
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(translateError(e.message)),
   });
 
   const remove = useMutation({
@@ -613,7 +614,7 @@ function CreateAsaasSubaccountDialog({ onCreated }: { onCreated: (walletId: stri
         postalCode: "",
       });
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(translateError(e.message)),
   });
 
   return (

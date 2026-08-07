@@ -15,6 +15,7 @@ import { Separator } from "@/components/ui/separator";
 import { checkAsaasConfigured } from "@/lib/asaas.functions";
 import { asaasSettingsQuery, asaasEventsQuery, type AsaasSettings } from "@/lib/db";
 import { supabase } from "@/integrations/supabase/client";
+import { translateError } from "@/lib/translateError";
 
 export const Route = createFileRoute("/settings/asaas")({
   head: () => ({
@@ -84,7 +85,7 @@ function AsaasSettingsPage() {
       toast.success("Preferências de cobrança salvas");
       qc.invalidateQueries({ queryKey: ["asaas_settings"] });
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(translateError(e.message)),
   });
 
   const webhookUrl =

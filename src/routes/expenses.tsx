@@ -18,6 +18,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { expensesQuery, merchantsQuery } from "@/lib/db";
 import { BRL, currentMonth, monthLabel, monthOptions } from "@/lib/format";
+import { translateError } from "@/lib/translateError";
 
 export const Route = createFileRoute("/expenses")({
   head: () => ({
@@ -65,7 +66,7 @@ function ExpensesPage() {
       setAmount("");
       qc.invalidateQueries({ queryKey: ["expenses"] });
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(translateError(e.message)),
   });
 
   const remove = useMutation({

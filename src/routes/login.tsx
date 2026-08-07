@@ -8,6 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { CircleDollarSign, Loader2, Eye, EyeOff } from "lucide-react";
 import { motion } from "framer-motion";
+import { translateError } from "@/lib/translateError";
 
 export const Route = createFileRoute("/login")({
   component: Login,
@@ -61,7 +62,7 @@ function Login() {
       }
 
       if (error) {
-        toast.error(`Erro ao logar: ${error.message}`);
+        toast.error(translateError(error.message));
         console.error("Login error:", error);
         return;
       }
@@ -88,7 +89,7 @@ function Login() {
         redirectTo: window.location.origin,
       });
       if (error) {
-        toast.error(`Erro: ${error.message}`);
+        toast.error(translateError(error.message));
         return;
       }
       toast.success("Enviamos as instruções de redefinição para o seu email!");
