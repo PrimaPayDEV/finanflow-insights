@@ -49,6 +49,7 @@ import {
   BRL,
   PCT,
   closureStatusLabel,
+  getClosureBadgeVariant,
   currentMonth,
   monthLabel,
   monthOptions,
@@ -414,7 +415,7 @@ function ClosuresPage() {
                 <CardTitle className="text-lg flex items-center justify-between">
                   <span>Emissão de Cobrança (Asaas)</span>
                   {existing && (
-                    <Badge variant={existing.status === "paid" ? "success" : "secondary"}>
+                    <Badge variant={getClosureBadgeVariant(existing.status)}>
                       {closureStatusLabel[existing.status]}
                     </Badge>
                   )}

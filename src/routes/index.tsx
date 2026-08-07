@@ -26,7 +26,15 @@ import {
   transactionsQuery,
 } from "@/lib/db";
 import { calculateClosure } from "@/lib/closure";
-import { BRL, MODALITIES, closureStatusLabel, currentMonth, modalityLabel, monthLabel } from "@/lib/format";
+import {
+  BRL,
+  MODALITIES,
+  closureStatusLabel,
+  currentMonth,
+  getClosureBadgeVariant,
+  modalityLabel,
+  monthLabel,
+} from "@/lib/format";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -171,7 +179,7 @@ function Dashboard() {
                     </div>
                     <div className="flex items-center gap-3">
                       <span className="text-sm font-semibold">{BRL(Number(c.net_invoice_amount))}</span>
-                      <Badge variant={c.status === "paid" ? "success" : "secondary"}>
+                      <Badge variant={getClosureBadgeVariant(c.status)}>
                         {closureStatusLabel[c.status]}
                       </Badge>
                     </div>

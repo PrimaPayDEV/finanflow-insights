@@ -65,6 +65,21 @@ export const closureStatusLabel: Record<string, string> = {
   paid: "Pago",
 };
 
+export function getClosureBadgeVariant(status: string): "default" | "secondary" | "success" | "warning" | "destructive" | "outline" {
+  switch (status) {
+    case "draft":
+      return "secondary";
+    case "closed":
+      return "default";
+    case "invoice_generated":
+      return "warning";
+    case "paid":
+      return "success";
+    default:
+      return "secondary";
+  }
+}
+
 export function formatCpfCnpj(value: string) {
   const v = value.replace(/\D/g, "");
   if (v.length <= 11) {
