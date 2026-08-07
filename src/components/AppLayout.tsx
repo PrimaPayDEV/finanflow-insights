@@ -171,7 +171,7 @@ export function AppLayout({
                         <Button 
                           variant="ghost" 
                           size="sm" 
-                          className="h-auto p-1 text-xs text-muted-foreground hover:text-destructive"
+                          className="h-auto p-1 text-xs text-muted-foreground hover:bg-muted hover:text-foreground"
                           onClick={(e) => {
                             e.preventDefault();
                             clearNotifications.mutate();
