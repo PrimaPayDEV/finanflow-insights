@@ -190,9 +190,9 @@ export function AppLayout({
                         <DropdownMenuItem 
                           key={notification.id}
                           className={cn(
-                            "flex flex-col items-start gap-1 p-3 cursor-pointer transition-colors",
+                            "flex flex-col items-start gap-1 p-3 cursor-pointer transition-colors focus:bg-muted focus:text-foreground",
                             !notification.is_read 
-                              ? "bg-primary/5 dark:bg-primary/10 border-l-2 border-primary data-[highlighted]:bg-primary/10" 
+                              ? "bg-primary/5 dark:bg-primary/10 border-l-2 border-primary" 
                               : "border-l-2 border-transparent"
                           )}
                           onClick={() => {
