@@ -156,15 +156,24 @@ export const createAsaasCharge = createServerFn({ method: "POST" })
       };
     }
 
-    await supabaseAdmin
-
+    const closureUpdate = await supabaseAdmin
       .from("closures")
       .update({
         status: "invoice_generated",
         asaas_payment_id: payment.id,
         asaas_invoice_url: payment.invoiceUrl ?? payment.bankSlipUrl ?? null,
       })
-      .eq("id", data.closureId);
+      .eq("id", data.closureId)
+      .select("merchants(name)")
+      .single();
+
+    if (closureUpdate.data?.merchants?.name) {
+      await supabaseAdmin.from("notifications").insert({
+        type: "closure",
+        title: "Boleto Gerado",
+        description: `Boleto gerado para o estabelecimento ${closureUpdate.data.merchants.name} no valor de R$ ${data.value.toFixed(2)}.`
+      });
+    }
 
     return {
       ok: true as const,

@@ -56,7 +56,7 @@ export const Route = createFileRoute("/api/public/asaas-webhook")({
         const paymentId = parsed.payment?.id;
         if (paymentId) {
           if (PAID_EVENTS.has(parsed.event)) {
-            await supabaseAdmin
+            const closureUpdate = await supabaseAdmin
               .from("closures")
               .update({
                 status: "paid",
@@ -65,12 +65,32 @@ export const Route = createFileRoute("/api/public/asaas-webhook")({
                   : new Date().toISOString(),
                 paid_amount: parsed.payment?.value ?? null,
               })
-              .eq("asaas_payment_id", paymentId);
+              .eq("asaas_payment_id", paymentId)
+              .select("merchants(name)")
+              .single();
+              
+            if (closureUpdate.data?.merchants?.name) {
+              await supabaseAdmin.from("notifications").insert({
+                type: "payment",
+                title: "Pagamento Recebido",
+                description: `Fatura de R$ ${parsed.payment?.value?.toFixed(2)} do EC ${closureUpdate.data.merchants.name} foi paga.`,
+              });
+            }
           } else if (REVERTED_EVENTS.has(parsed.event)) {
-            await supabaseAdmin
+            const closureUpdate = await supabaseAdmin
               .from("closures")
               .update({ status: "invoice_generated", paid_at: null, paid_amount: null })
-              .eq("asaas_payment_id", paymentId);
+              .eq("asaas_payment_id", paymentId)
+              .select("merchants(name)")
+              .single();
+              
+            if (closureUpdate.data?.merchants?.name) {
+              await supabaseAdmin.from("notifications").insert({
+                type: "error",
+                title: "Pagamento Revertido",
+                description: `A cobrança do EC ${closureUpdate.data.merchants.name} teve seu status revertido no Asaas.`,
+              });
+            }
           }
         }
 
