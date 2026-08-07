@@ -92,7 +92,7 @@ export function AppLayout({
             </span>
             {!isCollapsed && (
               <div className="leading-tight whitespace-nowrap">
-                <p className="text-base font-bold tracking-tight">PrimaHub</p>
+                <p className="text-xl font-extrabold tracking-tight" style={{ fontFamily: '"Montserrat Arabic", Montserrat, sans-serif' }}>PrimaHub</p>
               </div>
             )}
           </div>
