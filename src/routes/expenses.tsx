@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
+import { motion } from "framer-motion";
 import { Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { AppLayout } from "@/components/AppLayout";
@@ -158,11 +159,17 @@ function ExpensesPage() {
               {list.length === 0 && (
                 <li className="py-3 text-sm text-muted-foreground">Nenhum lançamento no período.</li>
               )}
-              {list.map((e) => (
-                <li key={e.id} className="flex items-center justify-between gap-3 py-3">
+              {list.map((e, i) => (
+                <motion.li 
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: i * 0.05 }}
+                  key={e.id} 
+                  className="flex items-center justify-between gap-3 py-3 px-2 rounded-md hover:bg-muted/60 transition-colors group"
+                >
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-medium">{e.description}</p>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="truncate text-sm font-medium group-hover:text-primary transition-colors">{e.description}</p>
+                    <p className="text-xs text-muted-foreground group-hover:text-muted-foreground/80 transition-colors">
                       {(merchants.data ?? []).find((m) => m.id === e.merchant_id)?.name}
                     </p>
                   </div>
@@ -172,12 +179,13 @@ function ExpensesPage() {
                       variant="ghost"
                       size="icon"
                       aria-label="Remover"
+                      className="opacity-0 group-hover:opacity-100 transition-opacity"
                       onClick={() => remove.mutate(e.id)}
                     >
-                      <Trash2 className="size-4" />
+                      <Trash2 className="size-4 text-destructive" />
                     </Button>
                   </div>
-                </li>
+                </motion.li>
               ))}
             </ul>
           </CardContent>

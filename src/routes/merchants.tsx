@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
+import { motion } from "framer-motion";
 import { Plus, Trash2, Save, Smartphone, Percent, Users } from "lucide-react";
 import { toast } from "sonner";
 import { AppLayout } from "@/components/AppLayout";
@@ -160,31 +161,41 @@ function MerchantsPage() {
           <CardHeader>
             <CardTitle className="text-base">Carteira de ECs</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2">
-            {list.length === 0 && (
-              <p className="text-sm text-muted-foreground">Nenhum EC cadastrado ainda.</p>
-            )}
-            {list.map((m) => (
-              <button
-                key={m.id}
-                onClick={() => setSelected(m.id)}
-                className={`w-full rounded-lg border px-3 py-2.5 text-left transition-colors ${
-                  selected === m.id
-                    ? "border-primary bg-primary/5"
-                    : "border-border hover:bg-muted/60"
-                }`}
-              >
-                <p className="truncate text-sm font-bold">{m.name}</p>
-                <p className="truncate text-xs text-muted-foreground">
-                  {m.document_cnpj || "sem CNPJ"}
-                </p>
-              </button>
-            ))}
+          <CardContent>
+            <div className="flex flex-col gap-2 p-1">
+              {list.length === 0 && (
+                <p className="text-sm text-muted-foreground">Nenhum EC cadastrado ainda.</p>
+              )}
+              {list.map((m, i) => (
+                <motion.button
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: i * 0.05 }}
+                  key={m.id}
+                  onClick={() => setSelected(m.id)}
+                  className={`w-full rounded-lg border px-3 py-2.5 text-left transition-all duration-200 ${
+                    selected === m.id
+                      ? "border-primary bg-primary/5 shadow-sm scale-[1.02]"
+                      : "border-border hover:bg-muted/60 hover:border-primary/30"
+                  }`}
+                >
+                  <p className="truncate text-sm font-bold">{m.name}</p>
+                  <p className="truncate text-xs text-muted-foreground">
+                    {m.document_cnpj || "sem CNPJ"}
+                  </p>
+                </motion.button>
+              ))}
+            </div>
           </CardContent>
         </Card>
 
         {active ? (
-          <div className="space-y-4">
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            key={active.id}
+            className="space-y-4"
+          >
             <Card>
               <CardHeader className="flex-row items-start justify-between gap-3 space-y-0">
                 <div>

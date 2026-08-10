@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
+import { motion } from "framer-motion";
 import { PiggyBank, FileCheck2, ExternalLink, Download, Settings2, Receipt, TrendingUp } from "lucide-react";
 import { toast } from "sonner";
 import { AppLayout } from "@/components/AppLayout";
@@ -279,10 +280,15 @@ function ClosuresPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="mt-6 space-y-8 print:mt-0 print:space-y-10">
+        <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5, staggerChildren: 0.2 }}
+            className="mt-6 space-y-8 print:mt-0 print:space-y-10"
+          >
           
           {/* Seção 1: Extrato Básico de Movimentações */}
-          <section>
+          <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
             <h2 className="text-xl font-bold tracking-tight mb-4 flex items-center gap-2">
               <TrendingUp className="h-5 w-5 text-primary" />
               Extrato Básico de Movimentações
@@ -329,10 +335,10 @@ function ClosuresPage() {
                 </CardContent>
               </Card>
             </div>
-          </section>
+          </motion.section>
 
           {/* Seção 2: Lançamento de Despesas */}
-          <section>
+          <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
             <h2 className="text-xl font-bold tracking-tight mb-4 flex items-center gap-2">
               <Receipt className="h-5 w-5 text-muted-foreground" />
               Lançamento de Despesas
@@ -380,10 +386,10 @@ function ClosuresPage() {
                 </div>
               </CardContent>
             </Card>
-          </section>
+          </motion.section>
 
           {/* Seção 3: Painel de Economia */}
-          <section className="break-inside-avoid print:break-inside-avoid">
+          <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="break-inside-avoid print:break-inside-avoid">
             <Card className="bg-success text-success-foreground overflow-hidden shadow-lg border-none print:shadow-none print:bg-transparent print:text-foreground print:border print:border-border">
               <div className="flex flex-col">
                 <div className="grid grid-cols-1 sm:grid-cols-2 p-6 md:p-10 gap-6">
@@ -406,7 +412,7 @@ function ClosuresPage() {
                 </div>
               </div>
             </Card>
-          </section>
+          </motion.section>
 
           {/* Ações / Cobrança */}
           <section className="print:hidden pb-10">
@@ -453,7 +459,7 @@ function ClosuresPage() {
             </Card>
           </section>
 
-        </div>
+        </motion.div>
       )}
     </AppLayout>
   );
