@@ -1,4 +1,5 @@
 import type { LucideIcon } from "lucide-react";
+import { ArrowDownRight, ArrowUpRight, Minus } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
@@ -14,6 +15,8 @@ export function KpiCard({
   hint?: string;
   icon: LucideIcon;
   tone?: "default" | "success" | "primary";
+  trend?: "up" | "down" | "neutral";
+  trendValue?: string;
 }) {
   return (
     <Card className="border-border/70 shadow-sm">
@@ -31,7 +34,24 @@ export function KpiCard({
           >
             {value}
           </p>
-          {hint && <p className="mt-1 text-xs text-muted-foreground">{hint}</p>}
+          <div className="mt-1 flex items-center gap-2">
+            {trend && (
+              <span
+                className={cn(
+                  "flex items-center text-xs font-medium",
+                  trend === "up" && "text-success",
+                  trend === "down" && "text-destructive",
+                  trend === "neutral" && "text-muted-foreground",
+                )}
+              >
+                {trend === "up" && <ArrowUpRight className="mr-0.5 size-3" />}
+                {trend === "down" && <ArrowDownRight className="mr-0.5 size-3" />}
+                {trend === "neutral" && <Minus className="mr-0.5 size-3" />}
+                {trendValue}
+              </span>
+            )}
+            {hint && <span className="text-xs text-muted-foreground">{hint}</span>}
+          </div>
         </div>
         <span
           className={cn(

@@ -1,6 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { TrendingUp, Wallet, PiggyBank, FileCheck2 } from "lucide-react";
+import { useState, useMemo } from "react";
+import { TrendingUp, Wallet, PiggyBank, FileCheck2, CalendarIcon } from "lucide-react";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import {
   Bar,
   BarChart,
@@ -18,6 +21,11 @@ import { AppLayout } from "@/components/AppLayout";
 import { KpiCard } from "@/components/KpiCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { PeriodType, DateRange, getPeriodDateRange, isDateInRange, isMonthInRange, calculateTrend } from "@/lib/dateUtils";
 import {
   closuresQuery,
   expensesQuery,
@@ -58,62 +66,148 @@ export const Route = createFileRoute("/")({
 const COLORS = ["var(--chart-1)", "var(--chart-2)", "var(--chart-3)", "var(--chart-4)", "var(--chart-5)"];
 
 function Dashboard() {
-  const month = currentMonth();
+  const [period, setPeriod] = useState<PeriodType>("month");
+  const [customRange, setCustomRange] = useState<{ from?: Date; to?: Date }>();
+
   const merchants = useQuery(merchantsQuery);
   const transactions = useQuery(transactionsQuery);
   const expenses = useQuery(expensesQuery);
   const plans = useQuery(feePlansQuery);
   const closures = useQuery(closuresQuery);
 
-  const txs = (transactions.data ?? []).filter((t) => t.transaction_date.slice(0, 7) === month);
-  const exps = (expenses.data ?? []).filter((e) => e.reference_month === month);
+  const ranges = useMemo(() => getPeriodDateRange(period, customRange as DateRange), [period, customRange]);
 
-  let totalGross = 0;
-  let totalOpFee = 0;
-  let totalSavings = 0;
-  const byModality: Record<string, number> = {};
+  const calcPeriod = (range: DateRange) => {
+    const txs = (transactions.data ?? []).filter((t) => isDateInRange(t.transaction_date, range));
+    const exps = (expenses.data ?? []).filter((e) => isMonthInRange(e.reference_month, range));
 
-  for (const merchant of merchants.data ?? []) {
-    const calc = calculateClosure(
-      txs.filter((t) => t.merchant_id === merchant.id),
-      exps.filter((e) => e.merchant_id === merchant.id),
-      (plans.data ?? []).find((p) => p.merchant_id === merchant.id),
-    );
-    totalGross += calc.totalGross;
-    totalOpFee += calc.totalOpFee;
-    totalSavings += calc.savings;
-    for (const m of MODALITIES) {
-      byModality[m.value] = (byModality[m.value] ?? 0) + calc.grossByModality[m.value];
+    let totalGross = 0;
+    let totalOpFee = 0;
+    let totalSavings = 0;
+    const byModality: Record<string, number> = {};
+
+    for (const merchant of merchants.data ?? []) {
+      const calc = calculateClosure(
+        txs.filter((t) => t.merchant_id === merchant.id),
+        exps.filter((e) => e.merchant_id === merchant.id),
+        (plans.data ?? []).find((p) => p.merchant_id === merchant.id),
+      );
+      totalGross += calc.totalGross;
+      totalOpFee += calc.totalOpFee;
+      totalSavings += calc.savings;
+      for (const m of MODALITIES) {
+        byModality[m.value] = (byModality[m.value] ?? 0) + calc.grossByModality[m.value];
+      }
     }
-  }
+    return { totalGross, totalOpFee, totalSavings, byModality };
+  };
+
+  const currentData = useMemo(() => calcPeriod(ranges.current), [transactions.data, expenses.data, merchants.data, plans.data, ranges.current]);
+  const previousData = useMemo(() => calcPeriod(ranges.previous), [transactions.data, expenses.data, merchants.data, plans.data, ranges.previous]);
+
+  const grossTrend = calculateTrend(currentData.totalGross, previousData.totalGross);
+  const opFeeTrend = calculateTrend(currentData.totalOpFee, previousData.totalOpFee);
+  const savingsTrend = calculateTrend(currentData.totalSavings, previousData.totalSavings);
 
   const chartData = MODALITIES.map((m) => ({
     name: m.label,
-    valor: Number((byModality[m.value] ?? 0).toFixed(2)),
+    valor: Number((currentData.byModality[m.value] ?? 0).toFixed(2)),
   }));
 
-  const monthClosures = (closures.data ?? []).filter((c) => c.reference_month === month);
+  const monthClosures = (closures.data ?? []).filter((c) => isMonthInRange(c.reference_month, ranges.current));
   const pendingCount = monthClosures.filter((c) => c.status !== "paid").length;
+
+  const getSubtitle = () => {
+    if (period === "month") return `Visão consolidada de ${format(ranges.current.from, "MMMM/yyyy", { locale: ptBR })}`;
+    if (period === "7d") return "Últimos 7 dias";
+    if (period === "30d") return "Últimos 30 dias";
+    if (period === "90d") return "Últimos 90 dias";
+    if (period === "custom" && customRange?.from && customRange?.to) {
+      return `${format(customRange.from, "dd/MM/yyyy")} até ${format(customRange.to, "dd/MM/yyyy")}`;
+    }
+    return "Visão consolidada";
+  };
 
   return (
     <AppLayout
       title="Dashboard"
-      subtitle={`Visão consolidada de ${monthLabel(month)}`}
-      actions={<Badge variant="secondary">{(merchants.data ?? []).length} estabelecimentos</Badge>}
+      subtitle={getSubtitle()}
+      actions={
+        <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2">
+          <Select value={period} onValueChange={(v) => setPeriod(v as PeriodType)}>
+            <SelectTrigger className="w-[140px] h-8 text-xs">
+              <SelectValue placeholder="Período" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="month">Este Mês</SelectItem>
+              <SelectItem value="7d">Últimos 7 dias</SelectItem>
+              <SelectItem value="30d">Últimos 30 dias</SelectItem>
+              <SelectItem value="90d">Últimos 90 dias</SelectItem>
+              <SelectItem value="custom">Personalizado</SelectItem>
+            </SelectContent>
+          </Select>
+          {period === "custom" && (
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className="h-8 px-2 text-xs min-w-[180px] justify-start">
+                  <CalendarIcon className="mr-2 h-3 w-3" />
+                  {customRange?.from ? (
+                    customRange.to ? (
+                      <>
+                        {format(customRange.from, "P", { locale: ptBR })} -{" "}
+                        {format(customRange.to, "P", { locale: ptBR })}
+                      </>
+                    ) : (
+                      format(customRange.from, "P", { locale: ptBR })
+                    )
+                  ) : (
+                    <span>Selecione a data</span>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="end">
+                <Calendar
+                  initialFocus
+                  mode="range"
+                  defaultMonth={customRange?.from}
+                  selected={{ from: customRange?.from, to: customRange?.to }}
+                  onSelect={(v: any) => setCustomRange(v)}
+                  numberOfMonths={1}
+                />
+              </PopoverContent>
+            </Popover>
+          )}
+        </div>
+      }
     >
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <KpiCard label="Total faturado (global)" value={BRL(totalGross)} icon={TrendingUp} tone="primary" />
-        <KpiCard label="Taxa operacional a receber" value={BRL(totalOpFee)} icon={Wallet} />
+        <KpiCard 
+          label="Total faturado (global)" 
+          value={BRL(currentData.totalGross)} 
+          icon={TrendingUp} 
+          tone="primary" 
+          trend={grossTrend.trend}
+          trendValue={grossTrend.value}
+        />
+        <KpiCard 
+          label="Taxa operacional a receber" 
+          value={BRL(currentData.totalOpFee)} 
+          icon={Wallet} 
+          trend={opFeeTrend.trend}
+          trendValue={opFeeTrend.value}
+        />
         <KpiCard
           label="Economia gerada aos clientes"
-          value={BRL(totalSavings)}
+          value={BRL(currentData.totalSavings)}
           icon={PiggyBank}
           tone="success"
+          trend={savingsTrend.trend}
+          trendValue={savingsTrend.value}
         />
         <KpiCard
           label="Cobranças pendentes"
           value={String(pendingCount)}
-          hint={`${monthClosures.length} fechamentos no mês`}
+          hint={`${monthClosures.length} fechamentos no período`}
           icon={FileCheck2}
         />
       </div>
