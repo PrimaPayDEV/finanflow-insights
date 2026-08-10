@@ -1,9 +1,10 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState, useMemo } from "react";
 import { TrendingUp, Wallet, PiggyBank, FileCheck2, CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { motion } from "framer-motion";
 import {
   Bar,
   BarChart,
@@ -181,38 +182,51 @@ function Dashboard() {
       }
     >
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <KpiCard 
-          label="Total faturado (global)" 
-          value={BRL(currentData.totalGross)} 
-          icon={TrendingUp} 
-          tone="primary" 
-          trend={grossTrend.trend}
-          trendValue={grossTrend.value}
-        />
-        <KpiCard 
-          label="Taxa operacional a receber" 
-          value={BRL(currentData.totalOpFee)} 
-          icon={Wallet} 
-          trend={opFeeTrend.trend}
-          trendValue={opFeeTrend.value}
-        />
-        <KpiCard
-          label="Economia gerada aos clientes"
-          value={BRL(currentData.totalSavings)}
-          icon={PiggyBank}
-          tone="success"
-          trend={savingsTrend.trend}
-          trendValue={savingsTrend.value}
-        />
-        <KpiCard
-          label="Cobranças pendentes"
-          value={String(pendingCount)}
-          hint={`${monthClosures.length} fechamentos no período`}
-          icon={FileCheck2}
-        />
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1, duration: 0.4 }}>
+          <KpiCard 
+            label="Total faturado (global)" 
+            value={BRL(currentData.totalGross)} 
+            icon={TrendingUp} 
+            tone="primary" 
+            trend={grossTrend.trend}
+            trendValue={grossTrend.value}
+          />
+        </motion.div>
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2, duration: 0.4 }}>
+          <KpiCard 
+            label="Taxa operacional a receber" 
+            value={BRL(currentData.totalOpFee)} 
+            icon={Wallet} 
+            trend={opFeeTrend.trend}
+            trendValue={opFeeTrend.value}
+          />
+        </motion.div>
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, duration: 0.4 }}>
+          <KpiCard
+            label="Economia gerada aos clientes"
+            value={BRL(currentData.totalSavings)}
+            icon={PiggyBank}
+            tone="success"
+            trend={savingsTrend.trend}
+            trendValue={savingsTrend.value}
+          />
+        </motion.div>
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4, duration: 0.4 }}>
+          <KpiCard
+            label="Cobranças pendentes"
+            value={String(pendingCount)}
+            hint={`${monthClosures.length} fechamentos no período`}
+            icon={FileCheck2}
+          />
+        </motion.div>
       </div>
 
-      <div className="mt-6 grid gap-4 lg:grid-cols-5">
+      <motion.div 
+        className="mt-6 grid gap-4 lg:grid-cols-5"
+        initial={{ opacity: 0, y: 20 }} 
+        animate={{ opacity: 1, y: 0 }} 
+        transition={{ delay: 0.5, duration: 0.4 }}
+      >
         <Card className="lg:col-span-3">
           <CardHeader>
             <CardTitle className="text-base">Faturamento por modalidade</CardTitle>
@@ -248,9 +262,14 @@ function Dashboard() {
             </ResponsiveContainer>
           </CardContent>
         </Card>
-      </div>
+      </motion.div>
 
-      <Card className="mt-6">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }} 
+        animate={{ opacity: 1, y: 0 }} 
+        transition={{ delay: 0.6, duration: 0.4 }}
+      >
+        <Card className="mt-6 hover:shadow-md transition-shadow">
         <CardHeader>
           <CardTitle className="text-base">Status das cobranças</CardTitle>
         </CardHeader>
@@ -264,19 +283,21 @@ function Dashboard() {
               {monthClosures.map((c) => {
                 const merchant = (merchants.data ?? []).find((m) => m.id === c.merchant_id);
                 return (
-                  <li key={c.id} className="flex items-center justify-between gap-3 py-3">
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-medium">{merchant?.name ?? "EC"}</p>
-                      <p className="text-xs text-muted-foreground">
-                        Economia {BRL(Number(c.savings_amount))}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span className="text-sm font-semibold">{BRL(Number(c.net_invoice_amount))}</span>
-                      <Badge variant={getClosureBadgeVariant(c.status)}>
-                        {closureStatusLabel[c.status]}
-                      </Badge>
-                    </div>
+                  <li key={c.id}>
+                    <Link to="/closures" className="flex items-center justify-between gap-3 py-3 px-2 rounded-md hover:bg-muted/60 transition-colors group">
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-medium group-hover:text-primary transition-colors">{merchant?.name ?? "EC"}</p>
+                        <p className="text-xs text-muted-foreground group-hover:text-muted-foreground/80 transition-colors">
+                          Economia {BRL(Number(c.savings_amount))}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-3 shrink-0">
+                        <span className="text-sm font-semibold">{BRL(Number(c.net_invoice_amount))}</span>
+                        <Badge variant={getClosureBadgeVariant(c.status)} className="transition-transform group-hover:scale-105">
+                          {closureStatusLabel[c.status]}
+                        </Badge>
+                      </div>
+                    </Link>
                   </li>
                 );
               })}
@@ -284,6 +305,7 @@ function Dashboard() {
           )}
         </CardContent>
       </Card>
+      </motion.div>
 
       <p className="mt-6 text-xs text-muted-foreground">
         Modalidades acompanhadas: {MODALITIES.map((m) => modalityLabel(m.value)).join(" · ")}
