@@ -257,7 +257,7 @@ function Dashboard() {
         <CardContent>
           {monthClosures.length === 0 ? (
             <p className="text-sm text-muted-foreground">
-              Nenhum fechamento gerado para {monthLabel(month)}.
+              Nenhum fechamento gerado para o período selecionado.
             </p>
           ) : (
             <ul className="divide-y divide-border">
