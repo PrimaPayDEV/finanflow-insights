@@ -243,7 +243,7 @@ function MerchantsPage() {
                 <SplitPanel merchant={active} />
               </TabsContent>
             </Tabs>
-          </div>
+          </motion.div>
         ) : (
           <Card>
             <CardContent className="p-10 text-center text-sm text-muted-foreground">
