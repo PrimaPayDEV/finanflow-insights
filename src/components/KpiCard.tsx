@@ -9,6 +9,8 @@ export function KpiCard({
   hint,
   icon: Icon,
   tone = "default",
+  trend,
+  trendValue,
 }: {
   label: string;
   value: string;
