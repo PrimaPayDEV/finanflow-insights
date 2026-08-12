@@ -94,7 +94,7 @@ function parseSpreadsheet(data: ArrayBuffer): PreviewRow[] {
     return -1;
   };
   
-  const iSerial = idx(["número de série do cartão sim", "número de série", "serial", "pos", "terminal"]);
+  const iSerial = idx(["sn equipamento", "número de série", "serial", "pos", "terminal"]);
   const iMod = idx(["tipo de pagamento", "modalidade", "modality", "tipo"]);
   const iBrand = idx(["bandeira", "brand", "marca"]);
   const iVal = idx(["valor líquido", "valor", "bruto", "amount"]);
