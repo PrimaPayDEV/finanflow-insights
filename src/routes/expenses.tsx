@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { AppLayout } from "@/components/AppLayout";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -49,6 +50,7 @@ function ExpensesPage() {
   const [month, setMonth] = useState(currentMonth());
   const [description, setDescription] = useState("");
   const [amount, setAmount] = useState("");
+  const [category, setCategory] = useState<"despesa" | "cobranca">("despesa");
 
   const add = useMutation({
     mutationFn: async () => {
@@ -58,6 +60,7 @@ function ExpensesPage() {
         description: description.trim(),
         amount: Number(amount || 0),
         reference_month: month,
+        category,
       });
       if (error) throw new Error(error.message);
     },
@@ -81,7 +84,7 @@ function ExpensesPage() {
   const list = (expenses.data ?? []).filter(
     (e) => e.reference_month === month && (!merchantId || e.merchant_id === merchantId),
   );
-  const total = list.reduce((s, e) => s + Number(e.amount), 0);
+  const total = list.reduce((s, e) => s + (e.category === "cobranca" ? -Number(e.amount) : Number(e.amount)), 0);
 
   return (
     <AppLayout title="Despesas / Ajustes" subtitle="Débitos e créditos extras que abatem a fatura">
@@ -118,6 +121,18 @@ function ExpensesPage() {
                       {monthLabel(m)}
                     </SelectItem>
                   ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-1.5">
+              <Label>Categoria</Label>
+              <Select value={category} onValueChange={(v) => setCategory(v as "despesa" | "cobranca")}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="despesa">Despesa (Soma no Boleto)</SelectItem>
+                  <SelectItem value="cobranca">Cobrança (Subtrai do Boleto)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -168,13 +183,20 @@ function ExpensesPage() {
                   className="flex items-center justify-between gap-3 py-3 px-2 rounded-md hover:bg-muted/60 transition-colors group"
                 >
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-medium group-hover:text-primary transition-colors">{e.description}</p>
+                    <div className="flex items-center gap-2 mb-1">
+                      <Badge variant={e.category === "cobranca" ? "default" : "destructive"} className="text-[10px] px-1.5 py-0">
+                        {e.category === "cobranca" ? "Cobrança (-)" : "Despesa (+)"}
+                      </Badge>
+                      <p className="truncate text-sm font-medium group-hover:text-primary transition-colors">{e.description}</p>
+                    </div>
                     <p className="text-xs text-muted-foreground group-hover:text-muted-foreground/80 transition-colors">
                       {(merchants.data ?? []).find((m) => m.id === e.merchant_id)?.name}
                     </p>
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className="text-sm font-semibold">{BRL(Number(e.amount))}</span>
+                    <span className={`text-sm font-semibold ${e.category === 'cobranca' ? 'text-success' : 'text-destructive'}`}>
+                      {e.category === 'cobranca' ? '-' : '+'}{BRL(Number(e.amount))}
+                    </span>
                     <Button
                       variant="ghost"
                       size="icon"

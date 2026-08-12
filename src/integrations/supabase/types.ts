@@ -147,6 +147,7 @@ export type Database = {
           id: string
           merchant_id: string
           reference_month: string
+          category: "despesa" | "cobranca"
         }
         Insert: {
           amount?: number
@@ -155,6 +156,7 @@ export type Database = {
           id?: string
           merchant_id: string
           reference_month: string
+          category?: "despesa" | "cobranca"
         }
         Update: {
           amount?: number
@@ -163,6 +165,7 @@ export type Database = {
           id?: string
           merchant_id?: string
           reference_month?: string
+          category?: "despesa" | "cobranca"
         }
         Relationships: [
           {

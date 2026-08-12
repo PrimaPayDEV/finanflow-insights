@@ -337,11 +337,11 @@ function ClosuresPage() {
             </div>
           </motion.section>
 
-          {/* Seção 2: Lançamento de Despesas */}
+          {/* Seção 2: Lançamentos (Despesas e Cobranças) */}
           <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
             <h2 className="text-xl font-bold tracking-tight mb-4 flex items-center gap-2">
               <Receipt className="h-5 w-5 text-muted-foreground" />
-              Lançamento de Despesas
+              Lançamentos (Despesas e Cobranças)
             </h2>
             <Card className="print:shadow-none print:border print:border-border overflow-hidden">
               <CardContent className="p-0">
@@ -349,21 +349,27 @@ function ClosuresPage() {
                   <Table>
                     <TableHeader className="bg-muted/50 print:bg-transparent">
                       <TableRow>
+                        <TableHead>Categoria</TableHead>
                         <TableHead>Tipo / Lançamento</TableHead>
-                        <TableHead>Descrição do Fornecedor</TableHead>
+                        <TableHead>Descrição</TableHead>
                         <TableHead className="text-right">Valor (R$)</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {exps.length === 0 ? (
                         <TableRow>
-                          <TableCell colSpan={3} className="text-center text-muted-foreground py-6">
-                            Nenhuma despesa lançada neste mês.
+                          <TableCell colSpan={4} className="text-center text-muted-foreground py-6">
+                            Nenhum lançamento extra neste mês.
                           </TableCell>
                         </TableRow>
                       ) : (
                         exps.map((exp) => (
                           <TableRow key={exp.id}>
+                            <TableCell>
+                              <Badge variant={exp.category === "cobranca" ? "default" : "destructive"}>
+                                {exp.category === "cobranca" ? "Cobrança (-)" : "Despesa (+)"}
+                              </Badge>
+                            </TableCell>
                             <TableCell className="font-medium">
                               {/* If no exact type is in DB, infer from description or default to Pagamento */}
                               {exp.description.toLowerCase().includes('pix') ? 'Pix' : 
@@ -371,7 +377,11 @@ function ClosuresPage() {
                                exp.description.toLowerCase().includes('espécie') || exp.description.toLowerCase().includes('dinheiro') ? 'Dinheiro' : 'Despesa/Pagamento'}
                             </TableCell>
                             <TableCell>{exp.description}</TableCell>
-                            <TableCell className="text-right">{BRL(exp.amount)}</TableCell>
+                            <TableCell className="text-right font-semibold">
+                              <span className={exp.category === "cobranca" ? "text-success" : "text-destructive"}>
+                                {exp.category === "cobranca" ? "-" : "+"}{BRL(exp.amount)}
+                              </span>
+                            </TableCell>
                           </TableRow>
                         ))
                       )}

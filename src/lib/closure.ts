@@ -9,6 +9,7 @@ export type ClosureCalc = {
   fixedFeeAmount: number;
   totalOpFee: number;
   totalExpenses: number;
+  totalCharges: number;
   netInvoice: number;
   traditionalCost: number;
   savings: number;
@@ -138,8 +139,18 @@ export function calculateClosure(
   
   // O valor a ser cobrado na plataforma é a taxa operacional vezes o faturamento
   const totalOpFee = fixedFeeAmount;
-  const totalExpenses = expenses.reduce((s, e) => s + Number(e.amount), 0);
-  const netInvoice = totalOpFee - totalExpenses;
+  
+  let totalExpenses = 0;
+  let totalCharges = 0;
+  for (const e of expenses) {
+    if (e.category === "cobranca") {
+      totalCharges += Number(e.amount);
+    } else {
+      totalExpenses += Number(e.amount);
+    }
+  }
+  
+  const netInvoice = totalOpFee + totalExpenses - totalCharges;
   
   // Traditional Cost = (Transaction Fees from Image) + (Total Gross * Traditional Operational Rate from Image)
   traditionalCost += (totalGross * traditionalRate) / 100;
@@ -158,6 +169,7 @@ export function calculateClosure(
     fixedFeeAmount,
     totalOpFee,
     totalExpenses,
+    totalCharges,
     netInvoice,
     traditionalCost,
     savings,
