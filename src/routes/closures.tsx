@@ -374,12 +374,33 @@ function ClosuresPage() {
                             <TableCell className="text-right">{BRL(exp.amount)}</TableCell>
                           </TableRow>
                         ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.section>
+
+          {/* Seção 3: Economia gerada */}
+          <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+            <h2 className="text-xl font-bold tracking-tight mb-4 flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-muted-foreground" />
+              Comparativo e Economia
+            </h2>
+            <Card className="overflow-hidden bg-success text-success-foreground print:bg-transparent print:text-foreground print:shadow-none print:border print:border-border">
+              <div className="grid md:grid-cols-2">
+                <div className="p-8 md:p-10 flex flex-col justify-center gap-6">
+                  <div>
+                    <h3 className="text-success-foreground/80 font-medium text-sm uppercase tracking-wide print:text-muted-foreground">Custo no modelo tradicional ({PCT(calc.appliedTraditionalRate)})</h3>
+                    <p className="text-2xl md:text-3xl font-semibold">{BRL(calc.traditionalCost)}</p>
                   </div>
                   <div>
                     <h3 className="text-success-foreground/80 font-medium text-sm uppercase tracking-wide print:text-muted-foreground">Custos com a Solução Prima ({PCT(calc.appliedPrimaRate)})</h3>
                     <p className="text-2xl md:text-3xl font-semibold">{BRL(calc.totalMerchantCost)}</p>
                   </div>
                 </div>
+
                 
                 <div className="bg-white/10 p-8 md:p-10 flex flex-col justify-center items-center text-center print:bg-success/5 print:border-t">
                   <PiggyBank className="w-12 h-12 md:w-16 md:h-16 mb-4 opacity-90 print:text-success" />
