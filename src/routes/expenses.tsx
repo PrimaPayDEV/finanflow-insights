@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, ArrowDownCircle, ArrowUpCircle, Store, Receipt } from "lucide-react";
 import { toast } from "sonner";
 import { AppLayout } from "@/components/AppLayout";
 import { Badge } from "@/components/ui/badge";
@@ -164,52 +164,79 @@ function ExpensesPage() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex-row items-center justify-between space-y-0">
-            <CardTitle className="text-base">Lançamentos de {monthLabel(month)}</CardTitle>
-            <span className="text-sm font-semibold text-primary">{BRL(total)}</span>
+        <Card className="flex flex-col h-full border-border/50 shadow-sm">
+          <CardHeader className="flex-row items-center justify-between pb-4 border-b border-border/30 bg-muted/20">
+            <div className="space-y-1">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Receipt className="w-4 h-4 text-primary" /> 
+                Lançamentos de {monthLabel(month)}
+              </CardTitle>
+              <p className="text-xs text-muted-foreground">
+                Despesas (+) e Cobranças (-) do período
+              </p>
+            </div>
+            <div className="text-right">
+              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-1">Impacto no Boleto</p>
+              <span className={`text-lg font-bold ${total > 0 ? 'text-destructive' : total < 0 ? 'text-success' : 'text-foreground'}`}>
+                {total > 0 ? '+' : total < 0 ? '-' : ''}{BRL(Math.abs(total))}
+              </span>
+            </div>
           </CardHeader>
-          <CardContent>
-            <ul className="divide-y divide-border">
+          <CardContent className="flex-1 p-4 bg-muted/10">
+            <div className="space-y-3">
               {list.length === 0 && (
-                <li className="py-3 text-sm text-muted-foreground">Nenhum lançamento no período.</li>
+                <div className="flex flex-col items-center justify-center py-10 text-center opacity-70">
+                  <Receipt className="w-10 h-10 mb-3 text-muted-foreground/50" />
+                  <p className="text-sm font-medium">Nenhum lançamento no período</p>
+                  <p className="text-xs text-muted-foreground mt-1">Os ajustes lançados aparecerão aqui.</p>
+                </div>
               )}
               {list.map((e, i) => (
                 <motion.li 
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.05 }}
                   key={e.id} 
-                  className="flex items-center justify-between gap-3 py-3 px-2 rounded-md hover:bg-muted/60 transition-colors group"
+                  className="flex items-center justify-between gap-4 p-4 rounded-xl bg-card border border-border/40 shadow-sm hover:shadow-md hover:border-primary/20 transition-all group list-none"
                 >
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Badge variant={e.category === "cobranca" ? "default" : "destructive"} className="text-[10px] px-1.5 py-0">
-                        {e.category === "cobranca" ? "Cobrança (-)" : "Despesa (+)"}
-                      </Badge>
-                      <p className="truncate text-sm font-medium group-hover:text-primary transition-colors">{e.description}</p>
+                  <div className="flex items-center gap-4 min-w-0">
+                    <div className={`flex-shrink-0 p-2.5 rounded-full ${e.category === 'cobranca' ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'}`}>
+                      {e.category === 'cobranca' ? <ArrowDownCircle className="w-5 h-5" /> : <ArrowUpCircle className="w-5 h-5" />}
                     </div>
-                    <p className="text-xs text-muted-foreground group-hover:text-muted-foreground/80 transition-colors">
-                      {(merchants.data ?? []).find((m) => m.id === e.merchant_id)?.name}
-                    </p>
+                    
+                    <div className="min-w-0 space-y-1">
+                      <div className="flex items-center gap-2">
+                        <p className="truncate text-sm font-semibold group-hover:text-primary transition-colors">{e.description}</p>
+                        <Badge variant={e.category === "cobranca" ? "outline" : "destructive"} className={`text-[9px] px-1.5 py-0 uppercase tracking-wider h-4 ${e.category === 'cobranca' ? 'text-success border-success/30 bg-success/5' : ''}`}>
+                          {e.category === "cobranca" ? "Cobrança" : "Despesa"}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground group-hover:text-muted-foreground/80 transition-colors">
+                        <Store className="w-3.5 h-3.5 opacity-70" />
+                        <span className="truncate">{(merchants.data ?? []).find((m) => m.id === e.merchant_id)?.name}</span>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <span className={`text-sm font-semibold ${e.category === 'cobranca' ? 'text-success' : 'text-destructive'}`}>
-                      {e.category === 'cobranca' ? '-' : '+'}{BRL(Number(e.amount))}
-                    </span>
+                  
+                  <div className="flex items-center gap-4">
+                    <div className="text-right">
+                      <span className={`text-base font-bold ${e.category === 'cobranca' ? 'text-success' : 'text-destructive'}`}>
+                        {e.category === 'cobranca' ? '-' : '+'}{BRL(Number(e.amount))}
+                      </span>
+                    </div>
                     <Button
                       variant="ghost"
                       size="icon"
                       aria-label="Remover"
-                      className="opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive hover:text-destructive-foreground h-8 w-8 rounded-full"
                       onClick={() => remove.mutate(e.id)}
                     >
-                      <Trash2 className="size-4 text-destructive" />
+                      <Trash2 className="w-4 h-4" />
                     </Button>
                   </div>
                 </motion.li>
               ))}
-            </ul>
+            </div>
           </CardContent>
         </Card>
       </div>
