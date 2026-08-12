@@ -176,6 +176,7 @@ function ImportPage() {
   const [viewingImport, setViewingImport] = useState<{ id: string; name: string } | null>(null);
   const [viewingRows, setViewingRows] = useState<PreviewRow[]>([]);
   const [isLoadingView, setIsLoadingView] = useState(false);
+  const [serialFilter, setSerialFilter] = useState<string>("all");
 
   const resolveMerchant = (serial: string) => {
     const t = (terminals.data ?? []).find((x) => x.serial_number === serial.trim());
@@ -219,7 +220,9 @@ function ImportPage() {
 
   const confirm = useMutation({
     mutationFn: async () => {
-      const unresolved = rows.filter((r) => !resolveMerchant(r.serial));
+      const dataToImport = serialFilter && serialFilter !== "all" ? rows.filter(r => r.serial === serialFilter) : rows;
+      
+      const unresolved = dataToImport.filter((r) => !resolveMerchant(r.serial));
       if (unresolved.length > 0) {
         throw new Error("Selecione um EC padrão ou vincule os seriais aos terminais.");
       }
@@ -235,7 +238,7 @@ function ImportPage() {
         .single();
       if (impError) throw new Error(impError.message);
 
-      const payload = rows.map((r) => ({
+      const payload = dataToImport.map((r) => ({
         merchant_id: resolveMerchant(r.serial),
         pos_serial: r.serial,
         modality: r.modality,
@@ -280,8 +283,11 @@ function ImportPage() {
     onError: (e: Error) => toast.error(translateError(e.message)),
   });
 
-  const displayRows = viewingImport ? viewingRows : rows;
+  const baseRows = viewingImport ? viewingRows : rows;
+  const displayRows = serialFilter !== "all" ? baseRows.filter(r => r.serial === serialFilter) : baseRows;
   const isViewing = !!viewingImport;
+  
+  const uniqueSerials = Array.from(new Set(baseRows.map(r => r.serial).filter(Boolean)));
 
   const totals = MODALITIES.map((m) => ({
     label: m.label,
@@ -352,14 +358,34 @@ function ImportPage() {
               </>
             )}
 
-            {displayRows.length > 0 && (
+            )}
+
+            {baseRows.length > 0 && (
               <>
-                <div className="flex flex-wrap gap-2">
-                  {totals.map((t) => (
-                    <Badge key={t.label} variant="secondary">
-                      {t.label}: {BRL(t.total)}
-                    </Badge>
-                  ))}
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-muted/30 p-4 rounded-lg border">
+                  <div className="flex flex-wrap gap-2">
+                    {totals.map((t) => (
+                      <Badge key={t.label} variant="secondary">
+                        {t.label}: {BRL(t.total)}
+                      </Badge>
+                    ))}
+                  </div>
+                  <div className="flex items-center gap-2 w-full sm:w-auto">
+                    <Label className="whitespace-nowrap">Filtrar Equipamento:</Label>
+                    <Select value={serialFilter} onValueChange={setSerialFilter}>
+                      <SelectTrigger className="w-full sm:w-64 bg-background">
+                        <SelectValue placeholder="Todos os equipamentos" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Todos os equipamentos</SelectItem>
+                        {uniqueSerials.map(serial => (
+                          <SelectItem key={serial} value={serial}>
+                            {serial}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
                 <div className="overflow-x-auto rounded-lg border border-border">
                   <Table>
