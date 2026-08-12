@@ -358,7 +358,7 @@ function ImportPage() {
               </>
             )}
 
-            )}
+
 
             {baseRows.length > 0 && (
               <>
