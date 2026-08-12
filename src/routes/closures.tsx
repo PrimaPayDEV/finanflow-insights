@@ -374,32 +374,10 @@ function ClosuresPage() {
                             <TableCell className="text-right">{BRL(exp.amount)}</TableCell>
                           </TableRow>
                         ))
-                      )}
-                    </TableBody>
-                  </Table>
-                </div>
-                <div className="flex justify-end p-4 bg-muted/20 border-t print:bg-transparent">
-                  <div className="flex items-center gap-8">
-                    <span className="font-medium text-muted-foreground">Total de Despesas:</span>
-                    <span className="text-lg font-bold text-destructive">{BRL(calc.totalExpenses)}</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.section>
-
-          {/* Seção 3: Painel de Economia */}
-          <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="break-inside-avoid print:break-inside-avoid">
-            <Card className="bg-success text-success-foreground overflow-hidden shadow-lg border-none print:shadow-none print:bg-transparent print:text-foreground print:border print:border-border">
-              <div className="flex flex-col">
-                <div className="grid grid-cols-1 sm:grid-cols-2 p-6 md:p-10 gap-6">
-                  <div>
-                    <h3 className="text-success-foreground/80 font-medium text-sm uppercase tracking-wide print:text-muted-foreground">Custos no Meio Tradicional ({PCT(calc.appliedTraditionalRate)})</h3>
-                    <p className="text-2xl md:text-3xl font-semibold line-through opacity-75">{BRL(calc.traditionalCost)}</p>
                   </div>
                   <div>
                     <h3 className="text-success-foreground/80 font-medium text-sm uppercase tracking-wide print:text-muted-foreground">Custos com a Solução Prima ({PCT(calc.appliedPrimaRate)})</h3>
-                    <p className="text-2xl md:text-3xl font-semibold">{BRL(calc.totalOpFee)}</p>
+                    <p className="text-2xl md:text-3xl font-semibold">{BRL(calc.totalMerchantCost)}</p>
                   </div>
                 </div>
                 

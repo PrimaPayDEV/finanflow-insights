@@ -12,6 +12,7 @@ export type ClosureCalc = {
   netInvoice: number;
   traditionalCost: number;
   savings: number;
+  totalMerchantCost: number;
   appliedPrimaRate: number;
   appliedTraditionalRate: number;
 };
@@ -135,13 +136,17 @@ export function calculateClosure(
   const customPrimaRate = plan?.fixed_rate_percent && plan.fixed_rate_percent > 0 ? plan.fixed_rate_percent : primaRate;
   const fixedFeeAmount = (totalGross * customPrimaRate) / 100;
   
-  const totalOpFee = modalityFeeTotal + fixedFeeAmount;
+  // O valor a ser cobrado na plataforma é a taxa operacional vezes o faturamento
+  const totalOpFee = fixedFeeAmount;
   const totalExpenses = expenses.reduce((s, e) => s + Number(e.amount), 0);
   const netInvoice = totalOpFee - totalExpenses;
   
   // Traditional Cost = (Transaction Fees from Image) + (Total Gross * Traditional Operational Rate from Image)
   traditionalCost += (totalGross * traditionalRate) / 100;
-  const savings = traditionalCost - totalOpFee;
+  
+  // Savings is traditional cost minus the merchant's total cost (transaction fees + operational fee)
+  const totalMerchantCost = modalityFeeTotal + totalOpFee;
+  const savings = traditionalCost - totalMerchantCost;
   
   const effectiveTraditionalRate = totalGross > 0 ? (traditionalCost / totalGross) * 100 : 0;
 
@@ -156,6 +161,7 @@ export function calculateClosure(
     netInvoice,
     traditionalCost,
     savings,
+    totalMerchantCost,
     appliedPrimaRate: customPrimaRate,
     appliedTraditionalRate: effectiveTraditionalRate,
   };
