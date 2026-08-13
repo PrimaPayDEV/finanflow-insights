@@ -284,9 +284,10 @@ function ClosuresPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5, staggerChildren: 0.2 }}
-            className="mt-6 space-y-8 print:mt-0 print:space-y-10"
+            className="mt-6 space-y-8 print:mt-0 print:space-y-0"
           >
           
+          <div className="print:min-h-[95vh] print:flex print:flex-col">
           {/* Cabeçalho de Impressão */}
           <div className="hidden print:block mb-8 border-b-2 border-primary pb-6">
             <div className="flex justify-between items-center mb-6">
@@ -321,7 +322,7 @@ function ClosuresPage() {
           </div>
           
           {/* Seção 1: Extrato Básico de Movimentações */}
-          <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+          <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="print:flex-1 print:flex print:flex-col print:justify-center print:pb-20 mt-8 print:mt-0">
             <h2 className="text-xl font-bold tracking-tight mb-4 flex items-center gap-2">
               <TrendingUp className="h-5 w-5 text-primary" />
               Extrato Básico de Movimentações
@@ -369,6 +370,7 @@ function ClosuresPage() {
               </Card>
             </div>
           </motion.section>
+          </div>
 
           {/* Seção 2: Lançamentos (Despesas e Cobranças) */}
           <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="print:break-before-page print:pt-8">
@@ -426,34 +428,41 @@ function ClosuresPage() {
           </motion.section>
 
           {/* Seção 3: Economia gerada */}
-          <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="print:mt-8">
-            <h2 className="text-xl font-bold tracking-tight mb-4 flex items-center gap-2 print:text-primary">
+          <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="print:mt-12 mt-8">
+            <h2 className="text-xl font-bold tracking-tight mb-6 flex items-center gap-2 print:text-primary">
               <TrendingUp className="h-5 w-5 text-muted-foreground print:text-primary" />
               Comparativo e Economia
             </h2>
-            <Card className="overflow-hidden bg-success text-success-foreground print:color-adjust-exact print:bg-success print:text-success-foreground print:shadow-md print:border-none">
-              <div className="grid md:grid-cols-2">
-                <div className="p-8 md:p-10 flex flex-col justify-center gap-6">
-                  <div>
-                    <h3 className="text-success-foreground/80 font-bold text-xs uppercase tracking-wider print:text-success-foreground/90">Custo no modelo tradicional ({PCT(calc.appliedTraditionalRate)})</h3>
-                    <p className="text-2xl md:text-3xl font-bold">{BRL(calc.traditionalCost)}</p>
-                  </div>
-                  <div>
-                    <h3 className="text-success-foreground/80 font-bold text-xs uppercase tracking-wider print:text-success-foreground/90">Custos com a Solução Prima ({PCT(calc.appliedPrimaRate)})</h3>
-                    <p className="text-2xl md:text-3xl font-bold">{BRL(calc.totalMerchantCost)}</p>
-                  </div>
-                </div>
+            
+            <div className="flex flex-col gap-6">
+              {/* Lado a Lado (Tradicional vs Prima) */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 print:grid-cols-2 print:gap-6">
+                <Card className="print:shadow-none print:border-2 print:border-muted-foreground/20 print:bg-muted/10 bg-muted/20">
+                  <CardContent className="p-6 md:p-8 flex flex-col justify-center text-center">
+                    <h3 className="text-muted-foreground font-bold text-xs md:text-sm uppercase tracking-wider mb-2">Custo no modelo tradicional ({PCT(calc.appliedTraditionalRate)})</h3>
+                    <p className="text-3xl md:text-4xl font-bold text-destructive line-through decoration-destructive/40">{BRL(calc.traditionalCost)}</p>
+                  </CardContent>
+                </Card>
 
-                
-                <div className="bg-white/15 p-8 md:p-10 flex flex-col justify-center items-center text-center print:bg-white/20 print:border-none">
-                  <PiggyBank className="w-12 h-12 md:w-16 md:h-16 mb-4 opacity-90 print:text-success-foreground" />
-                  <h3 className="text-lg md:text-xl font-semibold mb-2 print:text-success-foreground">Sua economia neste mês foi de:</h3>
-                  <p className="text-4xl md:text-6xl font-black tracking-tight drop-shadow-md print:text-success-foreground print:drop-shadow-none">
+                <Card className="print:shadow-none print:border-2 print:border-primary/40 print:bg-primary/5 bg-primary/5 border-primary/20">
+                  <CardContent className="p-6 md:p-8 flex flex-col justify-center text-center">
+                    <h3 className="text-primary font-bold text-xs md:text-sm uppercase tracking-wider mb-2">Custos com a Solução Prima ({PCT(calc.appliedPrimaRate)})</h3>
+                    <p className="text-3xl md:text-4xl font-bold text-primary">{BRL(calc.totalMerchantCost)}</p>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Destaque Economia */}
+              <Card className="overflow-hidden bg-success text-success-foreground print:color-adjust-exact print:bg-success/15 print:text-success-foreground print:shadow-none print:border-4 print:border-success">
+                <div className="p-10 md:p-14 flex flex-col justify-center items-center text-center">
+                  <PiggyBank className="w-16 h-16 md:w-20 md:h-20 mb-6 opacity-90 print:text-success" />
+                  <h3 className="text-xl md:text-2xl font-bold mb-3 print:text-foreground">Sua economia neste mês foi de:</h3>
+                  <p className="text-5xl md:text-7xl font-black tracking-tight drop-shadow-md print:text-success print:drop-shadow-none">
                     {BRL(calc.savings)}
                   </p>
                 </div>
-              </div>
-            </Card>
+              </Card>
+            </div>
           </motion.section>
 
           {/* Ações / Cobrança */}
