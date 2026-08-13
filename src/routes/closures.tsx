@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { PiggyBank, FileCheck2, ExternalLink, Download, Settings2, Receipt, TrendingUp } from "lucide-react";
+import { PiggyBank, FileCheck2, ExternalLink, Download, Settings2, Receipt, TrendingUp, DollarSign, PieChart, Banknote, ArrowDownRight, ArrowUpRight } from "lucide-react";
 import { toast } from "sonner";
 import { AppLayout } from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
@@ -328,38 +328,46 @@ function ClosuresPage() {
               Extrato Básico de Movimentações
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-              <Card className="print:shadow-none print:border-border">
-                <CardHeader className="p-4 pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">Pix</CardTitle>
-                </CardHeader>
-                <CardContent className="p-4 pt-0">
-                  <p className="text-xl font-semibold">{BRL(calc.grossByModality.pix)}</p>
-                </CardContent>
-              </Card>
-              <Card className="print:shadow-none print:border-border">
-                <CardHeader className="p-4 pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">Débito</CardTitle>
-                </CardHeader>
-                <CardContent className="p-4 pt-0">
-                  <p className="text-xl font-semibold">{BRL(calc.grossByModality.debit)}</p>
-                </CardContent>
-              </Card>
-              <Card className="print:shadow-none print:border-border">
-                <CardHeader className="p-4 pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">Crédito à Vista</CardTitle>
-                </CardHeader>
-                <CardContent className="p-4 pt-0">
-                  <p className="text-xl font-semibold">{BRL(calc.grossByModality.credit_vista)}</p>
-                </CardContent>
-              </Card>
-              <Card className="print:shadow-none print:border-border">
-                <CardHeader className="p-4 pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">Créd. Parcelado</CardTitle>
-                </CardHeader>
-                <CardContent className="p-4 pt-0">
-                  <p className="text-xl font-semibold">{BRL(calc.grossByModality.credit_installment)}</p>
-                </CardContent>
-              </Card>
+              <motion.div whileHover={{ scale: 1.02 }} transition={{ type: "spring", stiffness: 300 }}>
+                <Card className="print:shadow-none print:border-border border-border/40 bg-card/60 backdrop-blur-sm shadow-sm hover:shadow-md transition-all duration-300">
+                  <CardHeader className="p-4 pb-2">
+                    <CardTitle className="text-sm font-semibold text-muted-foreground">Pix</CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-4 pt-0">
+                    <p className="text-xl font-bold">{BRL(calc.grossByModality.pix)}</p>
+                  </CardContent>
+                </Card>
+              </motion.div>
+              <motion.div whileHover={{ scale: 1.02 }} transition={{ type: "spring", stiffness: 300 }}>
+                <Card className="print:shadow-none print:border-border border-border/40 bg-card/60 backdrop-blur-sm shadow-sm hover:shadow-md transition-all duration-300">
+                  <CardHeader className="p-4 pb-2">
+                    <CardTitle className="text-sm font-semibold text-muted-foreground">Débito</CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-4 pt-0">
+                    <p className="text-xl font-bold">{BRL(calc.grossByModality.debit)}</p>
+                  </CardContent>
+                </Card>
+              </motion.div>
+              <motion.div whileHover={{ scale: 1.02 }} transition={{ type: "spring", stiffness: 300 }}>
+                <Card className="print:shadow-none print:border-border border-border/40 bg-card/60 backdrop-blur-sm shadow-sm hover:shadow-md transition-all duration-300">
+                  <CardHeader className="p-4 pb-2">
+                    <CardTitle className="text-sm font-semibold text-muted-foreground">Crédito à Vista</CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-4 pt-0">
+                    <p className="text-xl font-bold">{BRL(calc.grossByModality.credit_vista)}</p>
+                  </CardContent>
+                </Card>
+              </motion.div>
+              <motion.div whileHover={{ scale: 1.02 }} transition={{ type: "spring", stiffness: 300 }}>
+                <Card className="print:shadow-none print:border-border border-border/40 bg-card/60 backdrop-blur-sm shadow-sm hover:shadow-md transition-all duration-300">
+                  <CardHeader className="p-4 pb-2">
+                    <CardTitle className="text-sm font-semibold text-muted-foreground">Créd. Parcelado</CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-4 pt-0">
+                    <p className="text-xl font-bold">{BRL(calc.grossByModality.credit_installment)}</p>
+                  </CardContent>
+                </Card>
+              </motion.div>
             </div>
 
             <Card className="bg-primary text-primary-foreground print:color-adjust-exact print:bg-primary/10 print:text-foreground print:shadow-none print:border-4 print:border-primary text-center py-4 md:py-6">
@@ -379,48 +387,76 @@ function ClosuresPage() {
               <Receipt className="h-5 w-5 text-muted-foreground print:text-primary" />
               Lançamentos (Despesas e Cobranças)
             </h2>
-            <Card className="print:shadow-none print:border-2 print:border-border overflow-hidden">
+            <Card className="print:shadow-none print:border-2 print:border-border border-border/40 bg-card/60 backdrop-blur-sm shadow-sm overflow-hidden">
               <CardContent className="p-0">
                 <div className="overflow-x-auto">
                   <Table>
-                    <TableHeader className="bg-muted/50 print:bg-transparent">
-                      <TableRow>
-                        <TableHead>Categoria</TableHead>
-                        <TableHead>Tipo / Lançamento</TableHead>
-                        <TableHead>Descrição</TableHead>
-                        <TableHead className="text-right">Valor (R$)</TableHead>
+                    <TableHeader className="bg-muted/30 print:bg-transparent">
+                      <TableRow className="hover:bg-muted/30">
+                        <TableHead className="font-semibold text-muted-foreground">Categoria</TableHead>
+                        <TableHead className="font-semibold text-muted-foreground">Tipo / Lançamento</TableHead>
+                        <TableHead className="font-semibold text-muted-foreground">Descrição</TableHead>
+                        <TableHead className="text-right font-semibold text-muted-foreground">Valor (R$)</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {exps.length === 0 ? (
-                        <TableRow>
-                          <TableCell colSpan={4} className="text-center text-muted-foreground py-6">
-                            Nenhum lançamento extra neste mês.
-                          </TableCell>
-                        </TableRow>
-                      ) : (
-                        exps.map((exp) => (
-                          <TableRow key={exp.id}>
-                            <TableCell>
-                              <Badge variant={exp.category === "cobranca" ? "default" : "destructive"}>
-                                {exp.category === "cobranca" ? "Cobrança (-)" : "Despesa (+)"}
-                              </Badge>
+                      <AnimatePresence mode="popLayout">
+                        {exps.length === 0 ? (
+                          <motion.tr
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                          >
+                            <TableCell colSpan={4} className="h-48 text-center">
+                              <div className="flex flex-col items-center justify-center text-muted-foreground space-y-3">
+                                <div className="p-4 bg-muted/30 rounded-full">
+                                  <SearchX className="h-8 w-8 opacity-40" />
+                                </div>
+                                <p className="text-sm font-medium">Nenhum lançamento extra neste mês.</p>
+                              </div>
                             </TableCell>
-                            <TableCell className="font-medium">
-                              {/* If no exact type is in DB, infer from description or default to Pagamento */}
-                              {exp.description.toLowerCase().includes('pix') ? 'Pix' : 
-                               exp.description.toLowerCase().includes('boleto') ? 'Boleto' : 
-                               exp.description.toLowerCase().includes('espécie') || exp.description.toLowerCase().includes('dinheiro') ? 'Dinheiro' : 'Despesa/Pagamento'}
-                            </TableCell>
-                            <TableCell>{exp.description}</TableCell>
-                            <TableCell className="text-right font-semibold">
-                              <span className={exp.category === "cobranca" ? "text-success" : "text-destructive"}>
-                                {exp.category === "cobranca" ? "-" : "+"}{BRL(exp.amount)}
-                              </span>
-                            </TableCell>
-                          </TableRow>
-                        ))
-                      )}
+                          </motion.tr>
+                        ) : (
+                          exps.map((exp) => (
+                            <motion.tr 
+                              key={exp.id}
+                              initial={{ opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              exit={{ opacity: 0, scale: 0.95 }}
+                              transition={{ duration: 0.2 }}
+                              className="group hover:bg-muted/30 transition-colors"
+                            >
+                              <TableCell>
+                                <Badge variant={exp.category === "cobranca" ? "default" : "destructive"} className="px-2 py-0.5">
+                                  {exp.category === "cobranca" ? (
+                                    <span className="flex items-center gap-1"><ArrowDownRight className="w-3 h-3" /> Cobrança (-)</span>
+                                  ) : (
+                                    <span className="flex items-center gap-1"><ArrowUpRight className="w-3 h-3" /> Despesa (+)</span>
+                                  )}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="font-medium">
+                                <div className="flex items-center gap-2">
+                                  <div className="p-1.5 bg-muted/50 rounded-md shrink-0">
+                                    <Banknote className="w-4 h-4 text-muted-foreground" />
+                                  </div>
+                                  <span>
+                                    {exp.description.toLowerCase().includes('pix') ? 'Pix' : 
+                                     exp.description.toLowerCase().includes('boleto') ? 'Boleto' : 
+                                     exp.description.toLowerCase().includes('espécie') || exp.description.toLowerCase().includes('dinheiro') ? 'Dinheiro' : 'Despesa/Pagamento'}
+                                  </span>
+                                </div>
+                              </TableCell>
+                              <TableCell className="text-muted-foreground">{exp.description}</TableCell>
+                              <TableCell className="text-right font-bold tracking-tight text-[15px]">
+                                <span className={exp.category === "cobranca" ? "text-success group-hover:text-success/80 transition-colors" : "text-destructive group-hover:text-destructive/80 transition-colors"}>
+                                  {exp.category === "cobranca" ? "-" : "+"}{BRL(exp.amount)}
+                                </span>
+                              </TableCell>
+                            </motion.tr>
+                          ))
+                        )}
+                      </AnimatePresence>
                     </TableBody>
                   </Table>
                 </div>

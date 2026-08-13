@@ -21,7 +21,7 @@ export function KpiCard({
   trendValue?: string;
 }) {
   return (
-    <Card className="border-border/70 shadow-sm">
+    <Card className="border-border/40 shadow-sm bg-card/60 backdrop-blur-sm hover:shadow-md hover:scale-[1.02] transition-all duration-300">
       <CardContent className="flex items-start justify-between gap-4 p-5">
         <div className="min-w-0">
           <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">

@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState, useMemo } from "react";
-import { TrendingUp, Wallet, PiggyBank, FileCheck2, CalendarIcon } from "lucide-react";
+import { PiggyBank, TrendingUp, Wallet, FileCheck2, CalendarIcon, Store } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { motion } from "framer-motion";
@@ -227,7 +227,7 @@ function Dashboard() {
         animate={{ opacity: 1, y: 0 }} 
         transition={{ delay: 0.5, duration: 0.4 }}
       >
-        <Card className="lg:col-span-3">
+        <Card className="lg:col-span-3 border-border/40 shadow-sm bg-card/60 backdrop-blur-sm">
           <CardHeader>
             <CardTitle className="text-base">Faturamento por modalidade</CardTitle>
           </CardHeader>
@@ -244,7 +244,7 @@ function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card className="lg:col-span-2">
+        <Card className="lg:col-span-2 border-border/40 shadow-sm bg-card/60 backdrop-blur-sm">
           <CardHeader>
             <CardTitle className="text-base">Distribuição do volume</CardTitle>
           </CardHeader>
@@ -269,7 +269,7 @@ function Dashboard() {
         animate={{ opacity: 1, y: 0 }} 
         transition={{ delay: 0.6, duration: 0.4 }}
       >
-        <Card className="mt-6 hover:shadow-md transition-shadow">
+        <Card className="mt-6 border-border/40 shadow-sm bg-card/60 backdrop-blur-sm hover:shadow-md transition-shadow">
         <CardHeader>
           <CardTitle className="text-base">Status das cobranças</CardTitle>
         </CardHeader>
@@ -285,11 +285,16 @@ function Dashboard() {
                 return (
                   <li key={c.id}>
                     <Link to="/closures" className="flex items-center justify-between gap-3 py-3 px-2 rounded-md hover:bg-muted/60 transition-colors group">
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-medium group-hover:text-primary transition-colors">{merchant?.name ?? "EC"}</p>
-                        <p className="text-xs text-muted-foreground group-hover:text-muted-foreground/80 transition-colors">
-                          Economia {BRL(Number(c.savings_amount))}
-                        </p>
+                      <div className="min-w-0 flex items-center gap-3">
+                        <div className="p-1.5 bg-primary/10 text-primary rounded-md shrink-0">
+                          <Store className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <p className="truncate text-sm font-medium group-hover:text-primary transition-colors">{merchant?.name ?? "EC"}</p>
+                          <p className="text-xs text-muted-foreground group-hover:text-muted-foreground/80 transition-colors">
+                            Economia {BRL(Number(c.savings_amount))}
+                          </p>
+                        </div>
                       </div>
                       <div className="flex items-center gap-3 shrink-0">
                         <span className="text-sm font-semibold">{BRL(Number(c.net_invoice_amount))}</span>

@@ -1,8 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { motion } from "framer-motion";
-import { Plus, Trash2, Save, Smartphone, Percent, Users } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Plus, Search, Smartphone, Users, Save, Percent, Trash2, Settings2, Edit2, Store } from "lucide-react";
 import { toast } from "sonner";
 import { AppLayout } from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
@@ -157,7 +157,7 @@ function MerchantsPage() {
       }
     >
       <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
-        <Card>
+        <Card className="border-border/40 shadow-sm bg-card/60 backdrop-blur-sm">
           <CardHeader>
             <CardTitle className="text-base">Carteira de ECs</CardTitle>
           </CardHeader>
@@ -196,7 +196,7 @@ function MerchantsPage() {
             key={active.id}
             className="space-y-4"
           >
-            <Card>
+            <Card className="border-border/40 shadow-sm bg-card/60 backdrop-blur-sm">
               <CardHeader className="flex-row items-start justify-between gap-3 space-y-0">
                 <div>
                   <CardTitle className="text-base font-bold">{active.name}</CardTitle>
@@ -245,11 +245,18 @@ function MerchantsPage() {
             </Tabs>
           </motion.div>
         ) : (
-          <Card>
-            <CardContent className="p-10 text-center text-sm text-muted-foreground">
-              Selecione um estabelecimento para configurar terminais, taxas e split.
-            </CardContent>
-          </Card>
+          <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="h-full">
+            <Card className="border-border/40 shadow-sm bg-card/60 backdrop-blur-sm h-full flex items-center justify-center min-h-[400px]">
+              <CardContent className="p-10 text-center flex flex-col items-center justify-center space-y-4">
+                <div className="p-4 bg-muted/30 rounded-full">
+                  <Store className="h-10 w-10 text-muted-foreground opacity-40" />
+                </div>
+                <p className="text-sm font-medium text-muted-foreground">
+                  Selecione um estabelecimento para configurar terminais, taxas e split.
+                </p>
+              </CardContent>
+            </Card>
+          </motion.div>
         )}
       </div>
     </AppLayout>
@@ -387,7 +394,7 @@ function FeePlanForm({ merchant }: { merchant: Merchant }) {
   });
 
   return (
-    <Card>
+    <Card className="border-border/40 shadow-sm bg-card/60 backdrop-blur-sm">
       <CardHeader>
         <CardTitle className="text-base">Configuração do plano financeiro</CardTitle>
       </CardHeader>
@@ -453,7 +460,7 @@ function TerminalsPanel({ merchant }: { merchant: Merchant }) {
   });
 
   return (
-    <Card>
+    <Card className="border-border/40 shadow-sm bg-card/60 backdrop-blur-sm">
       <CardHeader>
         <CardTitle className="text-base">Maquininhas vinculadas</CardTitle>
       </CardHeader>
@@ -530,7 +537,7 @@ function SplitPanel({ merchant }: { merchant: Merchant }) {
   });
 
   return (
-    <Card>
+    <Card className="border-border/40 shadow-sm bg-card/60 backdrop-blur-sm">
       <CardHeader>
         <CardTitle className="text-base">Split de pagamento (parceiros)</CardTitle>
       </CardHeader>
