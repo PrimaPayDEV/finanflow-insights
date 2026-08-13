@@ -327,7 +327,7 @@ function ClosuresPage() {
               <TrendingUp className="h-5 w-5 text-primary" />
               Extrato Básico de Movimentações
             </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
               <Card className="print:shadow-none print:border-border">
                 <CardHeader className="p-4 pb-2">
                   <CardTitle className="text-sm font-medium text-muted-foreground">Pix</CardTitle>
@@ -360,15 +360,16 @@ function ClosuresPage() {
                   <p className="text-xl font-semibold">{BRL(calc.grossByModality.credit_installment)}</p>
                 </CardContent>
               </Card>
-              <Card className="bg-primary text-primary-foreground print:color-adjust-exact print:bg-primary print:text-primary-foreground print:shadow-md print:border-none col-span-2 lg:col-span-1">
-                <CardHeader className="p-4 pb-2">
-                  <CardTitle className="text-sm font-medium opacity-90 print:opacity-100">Faturamento Total</CardTitle>
-                </CardHeader>
-                <CardContent className="p-4 pt-0">
-                  <p className="text-2xl font-bold">{BRL(calc.totalGross)}</p>
-                </CardContent>
-              </Card>
             </div>
+
+            <Card className="bg-primary text-primary-foreground print:color-adjust-exact print:bg-primary/10 print:text-foreground print:shadow-none print:border-4 print:border-primary text-center py-4 md:py-6">
+              <CardHeader className="p-4 pb-2">
+                <CardTitle className="text-sm md:text-base font-bold opacity-90 print:opacity-100 print:text-primary uppercase tracking-widest">Faturamento Total</CardTitle>
+              </CardHeader>
+              <CardContent className="p-4 pt-0">
+                <p className="text-4xl md:text-5xl font-black print:text-primary tracking-tight">{BRL(calc.totalGross)}</p>
+              </CardContent>
+            </Card>
           </motion.section>
           </div>
 
