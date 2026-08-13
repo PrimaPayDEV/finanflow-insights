@@ -262,8 +262,8 @@ function ReportsPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Todos os status</SelectItem>
-                    <SelectItem value="pending">Pendente (No prazo)</SelectItem>
-                    <SelectItem value="overdue">Vencido (Em atraso)</SelectItem>
+                    <SelectItem value="pending">Pendente</SelectItem>
+                    <SelectItem value="overdue">Vencido</SelectItem>
                     <SelectItem value="paid">Pago</SelectItem>
                   </SelectContent>
                 </Select>
