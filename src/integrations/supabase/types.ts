@@ -142,30 +142,30 @@ export type Database = {
       expenses_adjustments: {
         Row: {
           amount: number
+          category: string
           created_at: string
           description: string
           id: string
           merchant_id: string
           reference_month: string
-          category: "despesa" | "cobranca"
         }
         Insert: {
           amount?: number
+          category?: string
           created_at?: string
           description: string
           id?: string
           merchant_id: string
           reference_month: string
-          category?: "despesa" | "cobranca"
         }
         Update: {
           amount?: number
+          category?: string
           created_at?: string
           description?: string
           id?: string
           merchant_id?: string
           reference_month?: string
-          category?: "despesa" | "cobranca"
         }
         Relationships: [
           {
