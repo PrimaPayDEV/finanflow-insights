@@ -297,7 +297,7 @@ function ClosuresPage() {
                 <p className="text-xl font-bold text-foreground capitalize">{monthLabel(month)}</p>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-6 bg-muted/20 p-5 rounded-xl border border-primary/20 print:color-adjust-exact print:bg-muted/30">
+            <div className="grid grid-cols-2 gap-6 bg-muted/20 p-5 rounded-xl border border-primary/20 print:color-adjust-exact print:bg-transparent print:border-border/50">
               <div>
                 <p className="text-xs font-bold text-primary uppercase tracking-wider mb-1">Estabelecimento</p>
                 <p className="font-bold text-lg text-foreground">{merchant.name}</p>
@@ -329,7 +329,7 @@ function ClosuresPage() {
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
               <motion.div whileHover={{ scale: 1.02 }} transition={{ type: "spring", stiffness: 300 }}>
-                <Card className="print:shadow-none border-none shadow-card hover:shadow-md transition-all duration-300">
+                <Card className="print:shadow-none print:border print:border-border/50 border-none shadow-card hover:shadow-md transition-all duration-300">
                   <CardHeader className="p-4 pb-2">
                     <CardTitle className="text-sm font-semibold text-muted-foreground">Pix</CardTitle>
                   </CardHeader>
@@ -339,7 +339,7 @@ function ClosuresPage() {
                 </Card>
               </motion.div>
               <motion.div whileHover={{ scale: 1.02 }} transition={{ type: "spring", stiffness: 300 }}>
-                <Card className="print:shadow-none border-none shadow-card hover:shadow-md transition-all duration-300">
+                <Card className="print:shadow-none print:border print:border-border/50 border-none shadow-card hover:shadow-md transition-all duration-300">
                   <CardHeader className="p-4 pb-2">
                     <CardTitle className="text-sm font-semibold text-muted-foreground">Débito</CardTitle>
                   </CardHeader>
@@ -349,7 +349,7 @@ function ClosuresPage() {
                 </Card>
               </motion.div>
               <motion.div whileHover={{ scale: 1.02 }} transition={{ type: "spring", stiffness: 300 }}>
-                <Card className="print:shadow-none border-none shadow-card hover:shadow-md transition-all duration-300">
+                <Card className="print:shadow-none print:border print:border-border/50 border-none shadow-card hover:shadow-md transition-all duration-300">
                   <CardHeader className="p-4 pb-2">
                     <CardTitle className="text-sm font-semibold text-muted-foreground">Crédito à Vista</CardTitle>
                   </CardHeader>
@@ -359,7 +359,7 @@ function ClosuresPage() {
                 </Card>
               </motion.div>
               <motion.div whileHover={{ scale: 1.02 }} transition={{ type: "spring", stiffness: 300 }}>
-                <Card className="print:shadow-none border-none shadow-card hover:shadow-md transition-all duration-300">
+                <Card className="print:shadow-none print:border print:border-border/50 border-none shadow-card hover:shadow-md transition-all duration-300">
                   <CardHeader className="p-4 pb-2">
                     <CardTitle className="text-sm font-semibold text-muted-foreground">Créd. Parcelado</CardTitle>
                   </CardHeader>
@@ -370,7 +370,7 @@ function ClosuresPage() {
               </motion.div>
             </div>
 
-            <Card className="border-none shadow-card text-center py-4 md:py-6">
+            <Card className="border-none shadow-card text-center py-4 md:py-6 print:shadow-none print:border print:border-border/50">
               <CardHeader className="p-4 pb-2">
                 <CardTitle className="text-sm md:text-base font-bold text-muted-foreground uppercase tracking-widest">Faturamento Total</CardTitle>
               </CardHeader>
@@ -387,7 +387,7 @@ function ClosuresPage() {
               <Receipt className="h-5 w-5 text-muted-foreground print:text-primary" />
               Lançamentos (Despesas e Cobranças)
             </h2>
-            <Card className="print:shadow-none border-none shadow-card overflow-hidden">
+            <Card className="print:shadow-none print:border print:border-border/50 border-none shadow-card overflow-hidden">
               <CardContent className="p-0">
                 <div className="overflow-x-auto">
                   <Table>
@@ -474,14 +474,14 @@ function ClosuresPage() {
             <div className="flex flex-col gap-6">
               {/* Lado a Lado (Tradicional vs Prima) */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 print:grid-cols-2 print:gap-6">
-                <Card className="print:shadow-none border-none shadow-card bg-slate-50/50">
+                <Card className="print:shadow-none print:border print:border-border/50 border-none shadow-card bg-slate-50/50">
                   <CardContent className="p-6 md:p-8 flex flex-col justify-center text-center">
                     <h3 className="text-muted-foreground font-bold text-xs md:text-sm uppercase tracking-wider mb-2">Custo no modelo tradicional ({PCT(calc.appliedTraditionalRate)})</h3>
                     <p className="text-3xl md:text-4xl font-bold text-destructive line-through decoration-destructive/40">{BRL(calc.traditionalCost)}</p>
                   </CardContent>
                 </Card>
 
-                <Card className="print:shadow-none border border-primary/20 shadow-card bg-primary/5">
+                <Card className="print:shadow-none print:border print:border-border/50 border border-primary/20 shadow-card bg-primary/5">
                   <CardContent className="p-6 md:p-8 flex flex-col justify-center text-center">
                     <h3 className="text-primary font-bold text-xs md:text-sm uppercase tracking-wider mb-2">Custos com a Solução Prima ({PCT(calc.appliedPrimaRate)})</h3>
                     <p className="text-3xl md:text-4xl font-bold text-primary">{BRL(calc.totalMerchantCost)}</p>
@@ -490,7 +490,7 @@ function ClosuresPage() {
               </div>
 
               {/* Destaque Economia */}
-              <Card className="overflow-hidden border-none shadow-card bg-success text-success-foreground print:color-adjust-exact print:bg-success/15 print:text-success-foreground print:shadow-none">
+              <Card className="overflow-hidden border-none shadow-card bg-success text-success-foreground print:color-adjust-exact print:bg-success/10 print:text-success-foreground print:shadow-none print:border print:border-border/50">
                 <div className="p-10 md:p-14 flex flex-col justify-center items-center text-center">
                   <PiggyBank className="w-16 h-16 md:w-20 md:h-20 mb-6 opacity-90 print:text-success" />
                   <h3 className="text-xl md:text-2xl font-bold mb-3 print:text-foreground">Sua economia neste mês foi de:</h3>
