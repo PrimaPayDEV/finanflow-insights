@@ -307,9 +307,9 @@ function ReportsPage() {
                   <TableHeader>
                     <TableRow className="bg-muted/30 hover:bg-muted/30">
                       <TableHead className="py-4 pl-6 font-semibold text-muted-foreground w-[28%]">Estabelecimento</TableHead>
-                      <TableHead className="py-4 font-semibold text-muted-foreground w-[15%]">Emissão</TableHead>
+                      <TableHead className="py-4 font-semibold text-muted-foreground text-center w-[15%]">Emissão</TableHead>
                       <TableHead className="py-4 font-semibold text-muted-foreground text-center w-[12%]">Ref</TableHead>
-                      <TableHead className="py-4 font-semibold text-muted-foreground w-[15%]">Vencimento</TableHead>
+                      <TableHead className="py-4 font-semibold text-muted-foreground text-center w-[15%]">Vencimento</TableHead>
                       <TableHead className="py-4 font-semibold text-muted-foreground text-center w-[15%]">Status</TableHead>
                       <TableHead className="py-4 pr-6 text-right font-semibold text-muted-foreground w-[15%]">Valor Líquido</TableHead>
                     </TableRow>
@@ -358,7 +358,7 @@ function ReportsPage() {
                                 </div>
                               </TableCell>
                               <TableCell className="py-5">
-                                <div className="flex items-center gap-3">
+                                <div className="flex items-center justify-center gap-2.5">
                                   <Receipt className="w-4 h-4 text-muted-foreground shrink-0" />
                                   <span>{format(new Date(c.created_at), "dd/MM/yyyy")}</span>
                                 </div>
@@ -369,7 +369,7 @@ function ReportsPage() {
                                 </Badge>
                               </TableCell>
                               <TableCell className="py-5">
-                                <div className={isBefore(dueDate, today) && status !== "paid" ? "text-destructive font-medium flex items-center gap-3" : "flex items-center gap-3"}>
+                                <div className={isBefore(dueDate, today) && status !== "paid" ? "text-destructive font-medium flex items-center justify-center gap-2.5" : "flex items-center justify-center gap-2.5"}>
                                   {isBefore(dueDate, today) && status !== "paid" ? <AlertCircle className="w-4 h-4 shrink-0" /> : <CalendarDays className="w-4 h-4 text-muted-foreground shrink-0" />}
                                   <span>{format(dueDate, "dd/MM/yyyy")}</span>
                                 </div>
