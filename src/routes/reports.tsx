@@ -162,46 +162,33 @@ function ReportsPage() {
       <div className="space-y-6">
         {/* Total a Receber Highlight */}
         <motion.div 
-          initial={{ opacity: 0, y: 20, scale: 0.98 }} 
-          animate={{ opacity: 1, y: 0, scale: 1 }} 
-          transition={{ duration: 0.5, ease: "easeOut" }}
+          initial={{ opacity: 0, y: 20 }} 
+          animate={{ opacity: 1, y: 0 }} 
+          transition={{ duration: 0.4 }}
         >
-          <Card className="relative overflow-hidden border-none shadow-xl bg-gradient-to-br from-primary via-primary/90 to-primary/70 text-primary-foreground">
-            {/* Background decoration */}
-            <div className="absolute top-0 right-0 -mt-16 -mr-16 p-32 bg-white/10 rounded-full blur-3xl pointer-events-none" />
-            <div className="absolute bottom-0 left-0 -mb-16 -ml-16 p-24 bg-black/10 rounded-full blur-2xl pointer-events-none" />
-            
-            <CardHeader className="relative z-10 pb-2">
+          <Card className="border-none shadow-lg bg-gradient-to-br from-primary via-primary/90 to-primary/80 text-primary-foreground">
+            <CardHeader className="pb-2">
               <CardTitle className="text-lg font-medium opacity-90 flex items-center gap-2">
-                <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm">
+                <div className="p-1.5 bg-white/20 rounded-lg backdrop-blur-sm">
                   <DollarSign className="h-5 w-5 text-white" />
                 </div>
                 Valor Total a Receber
               </CardTitle>
             </CardHeader>
-            <CardContent className="relative z-10">
+            <CardContent>
               <div className="flex flex-col md:flex-row md:items-end gap-4 justify-between">
-                <motion.div 
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.2, duration: 0.5 }}
-                >
-                  <p className="text-5xl md:text-6xl font-black tracking-tighter drop-shadow-sm">
+                <div>
+                  <p className="text-4xl md:text-5xl font-black tracking-tight drop-shadow-sm">
                     {BRL(totalToReceive)}
                   </p>
-                  <p className="text-sm font-medium opacity-80 mt-2 max-w-md">
+                  <p className="text-sm font-medium opacity-80 mt-2">
                     Soma de todos os boletos pendentes ou vencidos no período selecionado
                   </p>
-                </motion.div>
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.3, duration: 0.5 }}
-                  className="hidden md:flex items-center gap-2 bg-white/10 px-4 py-2 rounded-full backdrop-blur-md border border-white/20"
-                >
+                </div>
+                <div className="hidden md:flex items-center gap-2 bg-white/10 px-4 py-2 rounded-full backdrop-blur-sm border border-white/20">
                   <TrendingUp className="w-4 h-4" />
                   <span className="text-sm font-medium">Previsão Atualizada</span>
-                </motion.div>
+                </div>
               </div>
             </CardContent>
           </Card>
