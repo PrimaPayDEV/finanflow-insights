@@ -16,6 +16,7 @@ import { Route as ImportRouteImport } from './routes/import'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as MerchantsRouteImport } from './routes/merchants'
 import { Route as ProfileRouteImport } from './routes/profile'
+import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SettingsAsaasRouteImport } from './routes/settings.asaas'
 import { Route as ApiPublicAsaasWebhookRouteImport } from './routes/api/public/asaas-webhook'
@@ -55,6 +56,11 @@ const ProfileRoute = ProfileRouteImport.update({
   path: '/profile',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ReportsRoute = ReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
@@ -79,6 +85,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/merchants': typeof MerchantsRoute
   '/profile': typeof ProfileRoute
+  '/reports': typeof ReportsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/settings/asaas': typeof SettingsAsaasRoute
   '/api/public/asaas-webhook': typeof ApiPublicAsaasWebhookRoute
@@ -91,6 +98,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/merchants': typeof MerchantsRoute
   '/profile': typeof ProfileRoute
+  '/reports': typeof ReportsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/settings/asaas': typeof SettingsAsaasRoute
   '/api/public/asaas-webhook': typeof ApiPublicAsaasWebhookRoute
@@ -104,6 +112,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/merchants': typeof MerchantsRoute
   '/profile': typeof ProfileRoute
+  '/reports': typeof ReportsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/settings/asaas': typeof SettingsAsaasRoute
   '/api/public/asaas-webhook': typeof ApiPublicAsaasWebhookRoute
@@ -118,6 +127,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/merchants'
     | '/profile'
+    | '/reports'
     | '/sitemap.xml'
     | '/settings/asaas'
     | '/api/public/asaas-webhook'
@@ -130,6 +140,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/merchants'
     | '/profile'
+    | '/reports'
     | '/sitemap.xml'
     | '/settings/asaas'
     | '/api/public/asaas-webhook'
@@ -142,6 +153,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/merchants'
     | '/profile'
+    | '/reports'
     | '/sitemap.xml'
     | '/settings/asaas'
     | '/api/public/asaas-webhook'
@@ -155,6 +167,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   MerchantsRoute: typeof MerchantsRoute
   ProfileRoute: typeof ProfileRoute
+  ReportsRoute: typeof ReportsRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   SettingsAsaasRoute: typeof SettingsAsaasRoute
   ApiPublicAsaasWebhookRoute: typeof ApiPublicAsaasWebhookRoute
@@ -211,6 +224,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProfileRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/reports': {
+      id: '/reports'
+      path: '/reports'
+      fullPath: '/reports'
+      preLoaderRoute: typeof ReportsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/sitemap.xml': {
       id: '/sitemap.xml'
       path: '/sitemap.xml'
@@ -243,6 +263,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   MerchantsRoute: MerchantsRoute,
   ProfileRoute: ProfileRoute,
+  ReportsRoute: ReportsRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   SettingsAsaasRoute: SettingsAsaasRoute,
   ApiPublicAsaasWebhookRoute: ApiPublicAsaasWebhookRoute,

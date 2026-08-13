@@ -16,6 +16,7 @@ import {
   PanelLeftOpen,
   Bell,
   LogOut,
+  FileBarChart2,
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
@@ -39,6 +40,7 @@ const nav = [
   { to: "/import", label: "Importar Extrato", icon: Upload },
   { to: "/expenses", label: "Despesas / Cobranças", icon: Receipt },
   { to: "/closures", label: "Fechamentos", icon: FileCheck2 },
+  { to: "/reports", label: "Relatórios", icon: FileBarChart2 },
   { to: "/settings/asaas", label: "Configuração Asaas", icon: Settings },
 ] as const;
 
