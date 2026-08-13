@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { PiggyBank, FileCheck2, ExternalLink, Download, Settings2, Receipt, TrendingUp, DollarSign, PieChart, Banknote, ArrowDownRight, ArrowUpRight } from "lucide-react";
+import { PiggyBank, FileCheck2, ExternalLink, Download, Settings2, Receipt, TrendingUp, DollarSign, PieChart, Banknote, ArrowDownRight, ArrowUpRight, SearchX } from "lucide-react";
 import { toast } from "sonner";
 import { AppLayout } from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
