@@ -292,30 +292,26 @@ function ReportsPage() {
         {/* Data Table */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.3 }}>
           <Card className="border-border/40 shadow-sm overflow-hidden">
-            <CardHeader className="bg-muted/20 px-6 py-5 border-b border-border/40 flex flex-row items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-primary/10 rounded-lg">
-                  <FileBarChart2 className="h-5 w-5 text-primary" />
-                </div>
-                <CardTitle className="text-lg font-bold tracking-tight text-foreground">
-                  Listagem de Recebíveis
-                </CardTitle>
-              </div>
-              <Badge variant="secondary" className="bg-primary/10 text-primary font-bold px-3 py-1 text-sm">
-                {filteredClosures.length} {filteredClosures.length === 1 ? 'registro' : 'registros'}
-              </Badge>
+            <CardHeader className="bg-muted/20 pb-4 border-b border-border/40">
+              <CardTitle className="text-base font-semibold flex items-center gap-2">
+                <FileBarChart2 className="h-4 w-4 text-primary" />
+                Listagem de Recebíveis
+                <Badge variant="secondary" className="ml-2 bg-primary/10 text-primary font-bold">
+                  {filteredClosures.length} {filteredClosures.length === 1 ? 'registro' : 'registros'}
+                </Badge>
+              </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-muted/30 hover:bg-muted/30">
-                      <TableHead className="py-4 pl-6 font-semibold text-muted-foreground text-center w-[28%]">Estabelecimento</TableHead>
+                      <TableHead className="py-4 pl-6 font-semibold text-muted-foreground w-[28%]">Estabelecimento</TableHead>
                       <TableHead className="py-4 font-semibold text-muted-foreground text-center w-[15%]">Emissão</TableHead>
                       <TableHead className="py-4 font-semibold text-muted-foreground text-center w-[12%]">Ref</TableHead>
                       <TableHead className="py-4 font-semibold text-muted-foreground text-center w-[15%]">Vencimento</TableHead>
                       <TableHead className="py-4 font-semibold text-muted-foreground text-center w-[15%]">Status</TableHead>
-                      <TableHead className="py-4 pr-6 font-semibold text-muted-foreground text-center w-[15%]">Valor Líquido</TableHead>
+                      <TableHead className="py-4 pr-6 text-right font-semibold text-muted-foreground w-[15%]">Valor Líquido</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -351,8 +347,8 @@ function ReportsPage() {
                               transition={{ duration: 0.2 }}
                               className="group hover:bg-muted/30 transition-colors"
                             >
-                              <TableCell className="py-5 pl-6 font-medium text-center">
-                                <div className="flex items-center justify-center gap-3">
+                              <TableCell className="py-5 pl-6 font-medium">
+                                <div className="flex items-center gap-3">
                                   <div className="p-2 bg-primary/10 text-primary rounded-lg shrink-0">
                                     <Store className="w-4 h-4" />
                                   </div>
@@ -383,7 +379,7 @@ function ReportsPage() {
                                 {status === "pending" && <Badge variant="outline" className="w-[100px] justify-center text-amber-600 border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-1"><Clock className="w-3.5 h-3.5 mr-1.5" /> Pendente</Badge>}
                                 {status === "overdue" && <Badge variant="destructive" className="w-[100px] justify-center px-3 py-1 shadow-sm"><AlertCircle className="w-3.5 h-3.5 mr-1.5" /> Vencido</Badge>}
                               </TableCell>
-                              <TableCell className="py-5 pr-6 font-bold tracking-tight text-[15px] text-center group-hover:text-primary transition-colors">
+                              <TableCell className="py-5 pr-6 text-right font-bold tracking-tight text-[15px] group-hover:text-primary transition-colors">
                                 {BRL(c.net_invoice_amount)}
                               </TableCell>
                             </motion.tr>
