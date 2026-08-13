@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { FileBarChart2, Filter, DollarSign, AlertCircle, CheckCircle2, Clock, CalendarIcon, Inbox, TrendingUp, SearchX } from "lucide-react";
+import { FileBarChart2, Filter, DollarSign, AlertCircle, CheckCircle2, Clock, CalendarIcon, Inbox, TrendingUp, SearchX, Store, CalendarDays, Receipt } from "lucide-react";
 import { AppLayout } from "@/components/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -360,16 +360,29 @@ function ReportsPage() {
                               className="group hover:bg-muted/30 transition-colors"
                             >
                               <TableCell className="font-medium">
-                                {merchant?.name || "Desconhecido"}
+                                <div className="flex items-center gap-2.5">
+                                  <div className="p-1.5 bg-primary/10 text-primary rounded-md shrink-0">
+                                    <Store className="w-4 h-4" />
+                                  </div>
+                                  <span className="truncate max-w-[180px]" title={merchant?.name || "Desconhecido"}>
+                                    {merchant?.name || "Desconhecido"}
+                                  </span>
+                                </div>
                               </TableCell>
                               <TableCell>
-                                {format(new Date(c.created_at), "dd/MM/yyyy")} <span className="text-muted-foreground text-xs ml-1">({c.reference_month})</span>
+                                <div className="flex items-center gap-2.5">
+                                  <Receipt className="w-4 h-4 text-muted-foreground shrink-0" />
+                                  <div className="flex flex-col line-height-none leading-tight">
+                                    <span>{format(new Date(c.created_at), "dd/MM/yyyy")}</span>
+                                    <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">{c.reference_month}</span>
+                                  </div>
+                                </div>
                               </TableCell>
                               <TableCell>
-                                <span className={isBefore(dueDate, today) && status !== "paid" ? "text-destructive font-medium flex items-center gap-1.5" : "flex items-center gap-1.5"}>
-                                  {isBefore(dueDate, today) && status !== "paid" && <AlertCircle className="w-3.5 h-3.5" />}
-                                  {format(dueDate, "dd/MM/yyyy")}
-                                </span>
+                                <div className={isBefore(dueDate, today) && status !== "paid" ? "text-destructive font-medium flex items-center gap-2" : "flex items-center gap-2"}>
+                                  {isBefore(dueDate, today) && status !== "paid" ? <AlertCircle className="w-4 h-4 shrink-0" /> : <CalendarDays className="w-4 h-4 text-muted-foreground shrink-0" />}
+                                  <span>{format(dueDate, "dd/MM/yyyy")}</span>
+                                </div>
                               </TableCell>
                               <TableCell>
                                 {status === "paid" && <Badge variant="success" className="bg-success text-success-foreground border-success hover:bg-success/90 px-2 py-0.5"><CheckCircle2 className="w-3 h-3 mr-1" /> Pago</Badge>}
