@@ -292,14 +292,18 @@ function ReportsPage() {
         {/* Data Table */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.3 }}>
           <Card className="border-border/40 shadow-sm overflow-hidden">
-            <CardHeader className="bg-muted/20 pb-4 border-b border-border/40">
-              <CardTitle className="text-base font-semibold flex items-center gap-2">
-                <FileBarChart2 className="h-4 w-4 text-primary" />
-                Listagem de Recebíveis
-                <Badge variant="secondary" className="ml-2 bg-primary/10 text-primary font-bold">
-                  {filteredClosures.length} {filteredClosures.length === 1 ? 'registro' : 'registros'}
-                </Badge>
-              </CardTitle>
+            <CardHeader className="bg-muted/20 px-6 py-5 border-b border-border/40 flex flex-row items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-primary/10 rounded-lg">
+                  <FileBarChart2 className="h-5 w-5 text-primary" />
+                </div>
+                <CardTitle className="text-lg font-bold tracking-tight text-foreground">
+                  Listagem de Recebíveis
+                </CardTitle>
+              </div>
+              <Badge variant="secondary" className="bg-primary/10 text-primary font-bold px-3 py-1 text-sm">
+                {filteredClosures.length} {filteredClosures.length === 1 ? 'registro' : 'registros'}
+              </Badge>
             </CardHeader>
             <CardContent className="p-0">
               <div className="overflow-x-auto">
