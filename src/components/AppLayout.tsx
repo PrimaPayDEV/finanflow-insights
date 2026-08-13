@@ -101,26 +101,27 @@ export function AppLayout({
           </div>
         </div>
 
-        <nav className="flex flex-1 flex-col gap-1 px-3">
-          {nav.map((item) => {
+        <nav className="flex flex-1 flex-col px-3">
+          {nav.map((item, index) => {
             const active =
               item.to === "/" ? pathname === "/" : pathname.startsWith(item.to);
             return (
-              <Link
-                key={item.to}
-                to={item.to}
-                title={isCollapsed ? item.label : undefined}
-                className={cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors",
-                  active
-                    ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground"
-                    : "text-sidebar-foreground/75 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground",
-                  isCollapsed && "justify-center px-0"
-                )}
-              >
-                <item.icon className="size-5 shrink-0" />
-                {!isCollapsed && <span className="truncate">{item.label}</span>}
-              </Link>
+              <div key={item.to} className={cn("flex flex-col", index !== nav.length - 1 && "border-b border-sidebar-border/30 pb-2 mb-2")}>
+                <Link
+                  to={item.to}
+                  title={isCollapsed ? item.label : undefined}
+                  className={cn(
+                    "flex items-center gap-3 rounded-lg px-3 py-3 text-sm transition-colors",
+                    active
+                      ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground shadow-sm"
+                      : "text-sidebar-foreground/75 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground",
+                    isCollapsed && "justify-center px-0"
+                  )}
+                >
+                  <item.icon className="size-5 shrink-0" />
+                  {!isCollapsed && <span className="truncate">{item.label}</span>}
+                </Link>
+              </div>
             );
           })}
         </nav>
