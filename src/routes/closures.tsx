@@ -465,7 +465,7 @@ function ClosuresPage() {
           </motion.section>
 
           {/* Seção 3: Economia gerada */}
-          <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="print:mt-12 mt-8">
+          <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="print:mt-12 mt-8 print:break-inside-avoid">
             <h2 className="text-xl font-bold tracking-tight mb-6 flex items-center gap-2 print:text-primary">
               <TrendingUp className="h-5 w-5 text-muted-foreground print:text-primary" />
               Comparativo e Economia
@@ -490,7 +490,7 @@ function ClosuresPage() {
               </div>
 
               {/* Destaque Economia */}
-              <Card className="overflow-hidden border-none shadow-card bg-success text-success-foreground print:color-adjust-exact print:bg-success/10 print:text-success-foreground print:shadow-none print:border print:border-border/50">
+              <Card className="print:break-inside-avoid border-none shadow-card bg-success text-success-foreground print:color-adjust-exact print:bg-success/10 print:text-success-foreground print:shadow-none print:border print:border-border/50">
                 <div className="p-10 md:p-14 flex flex-col justify-center items-center text-center">
                   <PiggyBank className="w-16 h-16 md:w-20 md:h-20 mb-6 opacity-90 print:text-success" />
                   <h3 className="text-xl md:text-2xl font-bold mb-3 print:text-foreground">Sua economia neste mês foi de:</h3>
