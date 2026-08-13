@@ -287,6 +287,33 @@ function ClosuresPage() {
             className="mt-6 space-y-8 print:mt-0 print:space-y-10"
           >
           
+          {/* Cabeçalho de Impressão */}
+          <div className="hidden print:block mb-8 border-b border-border pb-4">
+            <h1 className="text-2xl font-bold mb-4">Relatório de Fechamento - {monthLabel(month)}</h1>
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <p className="text-muted-foreground mb-1">Estabelecimento</p>
+                <p className="font-semibold text-lg">{merchant.name}</p>
+              </div>
+              <div>
+                <p className="text-muted-foreground mb-1">CNPJ</p>
+                <p className="font-medium">{merchant.document_cnpj || "Não informado"}</p>
+              </div>
+              {merchant.email && (
+                <div>
+                  <p className="text-muted-foreground mb-1">E-mail</p>
+                  <p className="font-medium">{merchant.email}</p>
+                </div>
+              )}
+              {merchant.phone_whatsapp && (
+                <div>
+                  <p className="text-muted-foreground mb-1">WhatsApp</p>
+                  <p className="font-medium">{merchant.phone_whatsapp}</p>
+                </div>
+              )}
+            </div>
+          </div>
+          
           {/* Seção 1: Extrato Básico de Movimentações */}
           <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
             <h2 className="text-xl font-bold tracking-tight mb-4 flex items-center gap-2">
