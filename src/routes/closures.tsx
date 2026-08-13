@@ -288,27 +288,33 @@ function ClosuresPage() {
           >
           
           {/* Cabeçalho de Impressão */}
-          <div className="hidden print:block mb-8 border-b border-border pb-4">
-            <h1 className="text-2xl font-bold mb-4">Relatório de Fechamento - {monthLabel(month)}</h1>
-            <div className="grid grid-cols-2 gap-4 text-sm">
+          <div className="hidden print:block mb-8 border-b-2 border-primary pb-6">
+            <div className="flex justify-between items-center mb-6">
+              <h1 className="text-3xl font-black text-primary tracking-tight uppercase">Relatório de Fechamento</h1>
+              <div className="text-right">
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Período</p>
+                <p className="text-xl font-bold text-foreground capitalize">{monthLabel(month)}</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-6 bg-muted/20 p-5 rounded-xl border border-primary/20 print:color-adjust-exact print:bg-muted/30">
               <div>
-                <p className="text-muted-foreground mb-1">Estabelecimento</p>
-                <p className="font-semibold text-lg">{merchant.name}</p>
+                <p className="text-xs font-bold text-primary uppercase tracking-wider mb-1">Estabelecimento</p>
+                <p className="font-bold text-lg text-foreground">{merchant.name}</p>
               </div>
               <div>
-                <p className="text-muted-foreground mb-1">CNPJ</p>
-                <p className="font-medium">{merchant.document_cnpj || "Não informado"}</p>
+                <p className="text-xs font-bold text-primary uppercase tracking-wider mb-1">CNPJ</p>
+                <p className="font-semibold text-foreground">{merchant.document_cnpj || "Não informado"}</p>
               </div>
               {merchant.email && (
                 <div>
-                  <p className="text-muted-foreground mb-1">E-mail</p>
-                  <p className="font-medium">{merchant.email}</p>
+                  <p className="text-xs font-bold text-primary uppercase tracking-wider mb-1">E-mail</p>
+                  <p className="font-semibold text-foreground">{merchant.email}</p>
                 </div>
               )}
               {merchant.phone_whatsapp && (
                 <div>
-                  <p className="text-muted-foreground mb-1">WhatsApp</p>
-                  <p className="font-medium">{merchant.phone_whatsapp}</p>
+                  <p className="text-xs font-bold text-primary uppercase tracking-wider mb-1">WhatsApp</p>
+                  <p className="font-semibold text-foreground">{merchant.phone_whatsapp}</p>
                 </div>
               )}
             </div>
@@ -353,9 +359,9 @@ function ClosuresPage() {
                   <p className="text-xl font-semibold">{BRL(calc.grossByModality.credit_installment)}</p>
                 </CardContent>
               </Card>
-              <Card className="bg-primary text-primary-foreground print:bg-transparent print:text-foreground print:shadow-none print:border-2 print:border-primary col-span-2 lg:col-span-1">
+              <Card className="bg-primary text-primary-foreground print:color-adjust-exact print:bg-primary print:text-primary-foreground print:shadow-md print:border-none col-span-2 lg:col-span-1">
                 <CardHeader className="p-4 pb-2">
-                  <CardTitle className="text-sm font-medium opacity-90 print:text-primary">Faturamento Total</CardTitle>
+                  <CardTitle className="text-sm font-medium opacity-90 print:opacity-100">Faturamento Total</CardTitle>
                 </CardHeader>
                 <CardContent className="p-4 pt-0">
                   <p className="text-2xl font-bold">{BRL(calc.totalGross)}</p>
@@ -365,12 +371,12 @@ function ClosuresPage() {
           </motion.section>
 
           {/* Seção 2: Lançamentos (Despesas e Cobranças) */}
-          <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-            <h2 className="text-xl font-bold tracking-tight mb-4 flex items-center gap-2">
-              <Receipt className="h-5 w-5 text-muted-foreground" />
+          <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="print:break-before-page print:pt-8">
+            <h2 className="text-xl font-bold tracking-tight mb-4 flex items-center gap-2 print:text-primary">
+              <Receipt className="h-5 w-5 text-muted-foreground print:text-primary" />
               Lançamentos (Despesas e Cobranças)
             </h2>
-            <Card className="print:shadow-none print:border print:border-border overflow-hidden">
+            <Card className="print:shadow-none print:border-2 print:border-border overflow-hidden">
               <CardContent className="p-0">
                 <div className="overflow-x-auto">
                   <Table>
@@ -420,29 +426,29 @@ function ClosuresPage() {
           </motion.section>
 
           {/* Seção 3: Economia gerada */}
-          <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-            <h2 className="text-xl font-bold tracking-tight mb-4 flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-muted-foreground" />
+          <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="print:mt-8">
+            <h2 className="text-xl font-bold tracking-tight mb-4 flex items-center gap-2 print:text-primary">
+              <TrendingUp className="h-5 w-5 text-muted-foreground print:text-primary" />
               Comparativo e Economia
             </h2>
-            <Card className="overflow-hidden bg-success text-success-foreground print:bg-transparent print:text-foreground print:shadow-none print:border print:border-border">
+            <Card className="overflow-hidden bg-success text-success-foreground print:color-adjust-exact print:bg-success print:text-success-foreground print:shadow-md print:border-none">
               <div className="grid md:grid-cols-2">
                 <div className="p-8 md:p-10 flex flex-col justify-center gap-6">
                   <div>
-                    <h3 className="text-success-foreground/80 font-medium text-sm uppercase tracking-wide print:text-muted-foreground">Custo no modelo tradicional ({PCT(calc.appliedTraditionalRate)})</h3>
-                    <p className="text-2xl md:text-3xl font-semibold">{BRL(calc.traditionalCost)}</p>
+                    <h3 className="text-success-foreground/80 font-bold text-xs uppercase tracking-wider print:text-success-foreground/90">Custo no modelo tradicional ({PCT(calc.appliedTraditionalRate)})</h3>
+                    <p className="text-2xl md:text-3xl font-bold">{BRL(calc.traditionalCost)}</p>
                   </div>
                   <div>
-                    <h3 className="text-success-foreground/80 font-medium text-sm uppercase tracking-wide print:text-muted-foreground">Custos com a Solução Prima ({PCT(calc.appliedPrimaRate)})</h3>
-                    <p className="text-2xl md:text-3xl font-semibold">{BRL(calc.totalMerchantCost)}</p>
+                    <h3 className="text-success-foreground/80 font-bold text-xs uppercase tracking-wider print:text-success-foreground/90">Custos com a Solução Prima ({PCT(calc.appliedPrimaRate)})</h3>
+                    <p className="text-2xl md:text-3xl font-bold">{BRL(calc.totalMerchantCost)}</p>
                   </div>
                 </div>
 
                 
-                <div className="bg-white/10 p-8 md:p-10 flex flex-col justify-center items-center text-center print:bg-success/5 print:border-t">
-                  <PiggyBank className="w-12 h-12 md:w-16 md:h-16 mb-4 opacity-90 print:text-success" />
-                  <h3 className="text-lg md:text-xl font-medium mb-2 print:text-foreground">Sua economia neste mês foi de:</h3>
-                  <p className="text-4xl md:text-6xl font-black tracking-tight drop-shadow-md print:text-success print:drop-shadow-none">
+                <div className="bg-white/15 p-8 md:p-10 flex flex-col justify-center items-center text-center print:bg-white/20 print:border-none">
+                  <PiggyBank className="w-12 h-12 md:w-16 md:h-16 mb-4 opacity-90 print:text-success-foreground" />
+                  <h3 className="text-lg md:text-xl font-semibold mb-2 print:text-success-foreground">Sua economia neste mês foi de:</h3>
+                  <p className="text-4xl md:text-6xl font-black tracking-tight drop-shadow-md print:text-success-foreground print:drop-shadow-none">
                     {BRL(calc.savings)}
                   </p>
                 </div>
