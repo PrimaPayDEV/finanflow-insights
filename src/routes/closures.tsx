@@ -465,7 +465,7 @@ function ClosuresPage() {
           </motion.section>
 
           {/* Seção 3: Economia gerada */}
-          <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="print:mt-12 mt-8 print:break-inside-avoid">
+          <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="print:mt-12 mt-8 print:break-inside-avoid print:break-before-page">
             <h2 className="text-xl font-bold tracking-tight mb-6 flex items-center gap-2 print:text-primary">
               <TrendingUp className="h-5 w-5 text-muted-foreground print:text-primary" />
               Comparativo e Economia
