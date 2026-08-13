@@ -81,7 +81,7 @@ export function AppLayout({
   });
 
   return (
-    <div className="flex min-h-screen w-full bg-slate-50/50 dark:bg-slate-950 relative overflow-hidden print:overflow-visible print:h-auto">
+    <div className="flex min-h-screen w-full bg-slate-50/50 dark:bg-slate-950 relative print:overflow-visible print:h-auto">
       <aside
         className={cn(
           "relative z-20 print:hidden sticky top-0 hidden h-screen shrink-0 flex-col border-r border-sidebar-border/40 bg-sidebar text-sidebar-foreground transition-all duration-300 md:flex",
