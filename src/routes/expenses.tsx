@@ -131,8 +131,8 @@ function ExpensesPage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="despesa">Despesa (Soma no Boleto)</SelectItem>
-                  <SelectItem value="cobranca">Cobrança (Subtrai do Boleto)</SelectItem>
+                  <SelectItem value="despesa">Despesa</SelectItem>
+                  <SelectItem value="cobranca">Cobrança</SelectItem>
                 </SelectContent>
               </Select>
             </div>
