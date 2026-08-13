@@ -172,7 +172,7 @@ function ExpensesPage() {
                 Lançamentos de {monthLabel(month)}
               </CardTitle>
               <p className="text-xs text-muted-foreground">
-                Despesas (+) e Cobranças (-) do período
+                Despesas e Cobranças do período
               </p>
             </div>
             <div className="text-right">
