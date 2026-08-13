@@ -307,7 +307,8 @@ function ReportsPage() {
                   <TableHeader>
                     <TableRow className="bg-muted/30 hover:bg-muted/30">
                       <TableHead className="font-semibold text-muted-foreground">Estabelecimento</TableHead>
-                      <TableHead className="font-semibold text-muted-foreground">Emissão (Ref)</TableHead>
+                      <TableHead className="font-semibold text-muted-foreground">Emissão</TableHead>
+                      <TableHead className="font-semibold text-muted-foreground">Ref</TableHead>
                       <TableHead className="font-semibold text-muted-foreground">Vencimento</TableHead>
                       <TableHead className="font-semibold text-muted-foreground">Status</TableHead>
                       <TableHead className="text-right font-semibold text-muted-foreground">Valor Líquido</TableHead>
@@ -321,7 +322,7 @@ function ReportsPage() {
                           animate={{ opacity: 1 }}
                           exit={{ opacity: 0 }}
                         >
-                          <TableCell colSpan={5} className="h-64 text-center">
+                          <TableCell colSpan={6} className="h-64 text-center">
                             <div className="flex flex-col items-center justify-center text-muted-foreground space-y-3">
                               <div className="p-4 bg-muted/30 rounded-full">
                                 <SearchX className="h-8 w-8 opacity-40" />
@@ -359,11 +360,13 @@ function ReportsPage() {
                               <TableCell>
                                 <div className="flex items-center gap-2.5">
                                   <Receipt className="w-4 h-4 text-muted-foreground shrink-0" />
-                                  <div className="flex flex-col line-height-none leading-tight">
-                                    <span>{format(new Date(c.created_at), "dd/MM/yyyy")}</span>
-                                    <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">{c.reference_month}</span>
-                                  </div>
+                                  <span>{format(new Date(c.created_at), "dd/MM/yyyy")}</span>
                                 </div>
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant="outline" className="font-medium bg-muted/30 text-muted-foreground border-border/50 uppercase tracking-widest text-[10px]">
+                                  {c.reference_month}
+                                </Badge>
                               </TableCell>
                               <TableCell>
                                 <div className={isBefore(dueDate, today) && status !== "paid" ? "text-destructive font-medium flex items-center gap-2" : "flex items-center gap-2"}>
