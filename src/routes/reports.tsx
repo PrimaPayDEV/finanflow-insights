@@ -306,12 +306,12 @@ function ReportsPage() {
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-muted/30 hover:bg-muted/30">
-                      <TableHead className="font-semibold text-muted-foreground">Estabelecimento</TableHead>
-                      <TableHead className="font-semibold text-muted-foreground">Emissão</TableHead>
-                      <TableHead className="font-semibold text-muted-foreground">Ref</TableHead>
-                      <TableHead className="font-semibold text-muted-foreground">Vencimento</TableHead>
-                      <TableHead className="font-semibold text-muted-foreground">Status</TableHead>
-                      <TableHead className="text-right font-semibold text-muted-foreground">Valor Líquido</TableHead>
+                      <TableHead className="py-4 font-semibold text-muted-foreground w-[28%]">Estabelecimento</TableHead>
+                      <TableHead className="py-4 font-semibold text-muted-foreground w-[15%]">Emissão</TableHead>
+                      <TableHead className="py-4 font-semibold text-muted-foreground text-center w-[12%]">Ref</TableHead>
+                      <TableHead className="py-4 font-semibold text-muted-foreground w-[15%]">Vencimento</TableHead>
+                      <TableHead className="py-4 font-semibold text-muted-foreground text-center w-[15%]">Status</TableHead>
+                      <TableHead className="py-4 text-right font-semibold text-muted-foreground w-[15%]">Valor Líquido</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -347,9 +347,9 @@ function ReportsPage() {
                               transition={{ duration: 0.2 }}
                               className="group hover:bg-muted/30 transition-colors"
                             >
-                              <TableCell className="font-medium">
-                                <div className="flex items-center gap-2.5">
-                                  <div className="p-1.5 bg-primary/10 text-primary rounded-md shrink-0">
+                              <TableCell className="py-5 font-medium">
+                                <div className="flex items-center gap-3">
+                                  <div className="p-2 bg-primary/10 text-primary rounded-lg shrink-0">
                                     <Store className="w-4 h-4" />
                                   </div>
                                   <span className="truncate max-w-[180px]" title={merchant?.name || "Desconhecido"}>
@@ -357,29 +357,29 @@ function ReportsPage() {
                                   </span>
                                 </div>
                               </TableCell>
-                              <TableCell>
-                                <div className="flex items-center gap-2.5">
+                              <TableCell className="py-5">
+                                <div className="flex items-center gap-3">
                                   <Receipt className="w-4 h-4 text-muted-foreground shrink-0" />
                                   <span>{format(new Date(c.created_at), "dd/MM/yyyy")}</span>
                                 </div>
                               </TableCell>
-                              <TableCell>
-                                <Badge variant="outline" className="font-medium bg-muted/30 text-muted-foreground border-border/50 uppercase tracking-widest text-[10px]">
+                              <TableCell className="py-5 text-center">
+                                <Badge variant="outline" className="font-medium bg-muted/30 text-muted-foreground border-border/50 uppercase tracking-widest text-[10px] py-1 px-3 rounded-md">
                                   {c.reference_month}
                                 </Badge>
                               </TableCell>
-                              <TableCell>
-                                <div className={isBefore(dueDate, today) && status !== "paid" ? "text-destructive font-medium flex items-center gap-2" : "flex items-center gap-2"}>
+                              <TableCell className="py-5">
+                                <div className={isBefore(dueDate, today) && status !== "paid" ? "text-destructive font-medium flex items-center gap-3" : "flex items-center gap-3"}>
                                   {isBefore(dueDate, today) && status !== "paid" ? <AlertCircle className="w-4 h-4 shrink-0" /> : <CalendarDays className="w-4 h-4 text-muted-foreground shrink-0" />}
                                   <span>{format(dueDate, "dd/MM/yyyy")}</span>
                                 </div>
                               </TableCell>
-                              <TableCell>
-                                {status === "paid" && <Badge variant="success" className="bg-success text-success-foreground border-success hover:bg-success/90 px-2 py-0.5"><CheckCircle2 className="w-3 h-3 mr-1" /> Pago</Badge>}
-                                {status === "pending" && <Badge variant="outline" className="text-amber-600 border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-2 py-0.5"><Clock className="w-3 h-3 mr-1" /> Pendente</Badge>}
-                                {status === "overdue" && <Badge variant="destructive" className="px-2 py-0.5 shadow-sm"><AlertCircle className="w-3 h-3 mr-1" /> Vencido</Badge>}
+                              <TableCell className="py-5 text-center">
+                                {status === "paid" && <Badge variant="success" className="w-[100px] justify-center bg-success text-success-foreground border-success hover:bg-success/90 px-3 py-1"><CheckCircle2 className="w-3.5 h-3.5 mr-1.5" /> Pago</Badge>}
+                                {status === "pending" && <Badge variant="outline" className="w-[100px] justify-center text-amber-600 border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-1"><Clock className="w-3.5 h-3.5 mr-1.5" /> Pendente</Badge>}
+                                {status === "overdue" && <Badge variant="destructive" className="w-[100px] justify-center px-3 py-1 shadow-sm"><AlertCircle className="w-3.5 h-3.5 mr-1.5" /> Vencido</Badge>}
                               </TableCell>
-                              <TableCell className="text-right font-bold tracking-tight text-[15px] group-hover:text-primary transition-colors">
+                              <TableCell className="py-5 text-right font-bold tracking-tight text-[15px] group-hover:text-primary transition-colors">
                                 {BRL(c.net_invoice_amount)}
                               </TableCell>
                             </motion.tr>
