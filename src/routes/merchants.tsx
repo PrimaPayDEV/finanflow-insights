@@ -157,7 +157,7 @@ function MerchantsPage() {
       }
     >
       <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
-        <Card className="border-border/40 shadow-sm bg-card/60 backdrop-blur-sm">
+        <Card className="border-none shadow-card">
           <CardHeader>
             <CardTitle className="text-base">Carteira de ECs</CardTitle>
           </CardHeader>
@@ -196,7 +196,7 @@ function MerchantsPage() {
             key={active.id}
             className="space-y-4"
           >
-            <Card className="border-border/40 shadow-sm bg-card/60 backdrop-blur-sm">
+            <Card className="border-none shadow-card">
               <CardHeader className="flex-row items-start justify-between gap-3 space-y-0">
                 <div>
                   <CardTitle className="text-base font-bold">{active.name}</CardTitle>
@@ -246,7 +246,7 @@ function MerchantsPage() {
           </motion.div>
         ) : (
           <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="h-full">
-            <Card className="border-border/40 shadow-sm bg-card/60 backdrop-blur-sm h-full flex items-center justify-center min-h-[400px]">
+            <Card className="border-none shadow-card h-full flex items-center justify-center min-h-[400px]">
               <CardContent className="p-10 text-center flex flex-col items-center justify-center space-y-4">
                 <div className="p-4 bg-muted/30 rounded-full">
                   <Store className="h-10 w-10 text-muted-foreground opacity-40" />
@@ -394,7 +394,7 @@ function FeePlanForm({ merchant }: { merchant: Merchant }) {
   });
 
   return (
-    <Card className="border-border/40 shadow-sm bg-card/60 backdrop-blur-sm">
+    <Card className="border-none shadow-card">
       <CardHeader>
         <CardTitle className="text-base">Configuração do plano financeiro</CardTitle>
       </CardHeader>
@@ -460,7 +460,7 @@ function TerminalsPanel({ merchant }: { merchant: Merchant }) {
   });
 
   return (
-    <Card className="border-border/40 shadow-sm bg-card/60 backdrop-blur-sm">
+    <Card className="border-none shadow-card">
       <CardHeader>
         <CardTitle className="text-base">Maquininhas vinculadas</CardTitle>
       </CardHeader>
@@ -537,7 +537,7 @@ function SplitPanel({ merchant }: { merchant: Merchant }) {
   });
 
   return (
-    <Card className="border-border/40 shadow-sm bg-card/60 backdrop-blur-sm">
+    <Card className="border-none shadow-card">
       <CardHeader>
         <CardTitle className="text-base">Split de pagamento (parceiros)</CardTitle>
       </CardHeader>

@@ -81,16 +81,10 @@ export function AppLayout({
   });
 
   return (
-    <div className="flex min-h-screen w-full bg-slate-50 dark:bg-slate-950 relative overflow-hidden">
-      {/* Background ambient light for premium feel */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
-        <div className="absolute -top-[20%] -left-[10%] w-[50%] h-[50%] rounded-full bg-primary/10 blur-[120px]" />
-        <div className="absolute top-[60%] -right-[10%] w-[40%] h-[40%] rounded-full bg-primary/10 blur-[100px]" />
-      </div>
-      
+    <div className="flex min-h-screen w-full bg-slate-50/50 dark:bg-slate-950 relative overflow-hidden">
       <aside
         className={cn(
-          "relative z-20 print:hidden sticky top-0 hidden h-screen shrink-0 flex-col bg-sidebar text-sidebar-foreground transition-all duration-300 md:flex",
+          "relative z-20 print:hidden sticky top-0 hidden h-screen shrink-0 flex-col border-r border-sidebar-border/40 bg-sidebar text-sidebar-foreground transition-all duration-300 md:flex",
           isCollapsed ? "w-20" : "w-64"
         )}
       >
@@ -149,7 +143,7 @@ export function AppLayout({
       </aside>
 
       <div className="relative z-10 flex min-w-0 flex-1 flex-col">
-        <header className="print:hidden sticky top-0 z-10 border-b border-border bg-card/80 backdrop-blur">
+        <header className="print:hidden sticky top-0 z-10 border-b border-border/50 bg-background/80 backdrop-blur-md">
           <div className="flex items-center justify-between gap-2 px-3 py-3 md:px-8">
             <div className="flex items-center gap-2 overflow-hidden">
               <Sheet>

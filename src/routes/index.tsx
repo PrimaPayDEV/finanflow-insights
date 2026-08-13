@@ -227,7 +227,7 @@ function Dashboard() {
         animate={{ opacity: 1, y: 0 }} 
         transition={{ delay: 0.5, duration: 0.4 }}
       >
-        <Card className="lg:col-span-3 border-border/40 shadow-sm bg-card/60 backdrop-blur-sm">
+        <Card className="lg:col-span-3 border-none shadow-card">
           <CardHeader>
             <CardTitle className="text-base">Faturamento por modalidade</CardTitle>
           </CardHeader>
@@ -244,7 +244,7 @@ function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card className="lg:col-span-2 border-border/40 shadow-sm bg-card/60 backdrop-blur-sm">
+        <Card className="lg:col-span-2 border-none shadow-card">
           <CardHeader>
             <CardTitle className="text-base">Distribuição do volume</CardTitle>
           </CardHeader>
@@ -269,7 +269,7 @@ function Dashboard() {
         animate={{ opacity: 1, y: 0 }} 
         transition={{ delay: 0.6, duration: 0.4 }}
       >
-        <Card className="mt-6 border-border/40 shadow-sm bg-card/60 backdrop-blur-sm hover:shadow-md transition-shadow">
+        <Card className="mt-6 border-none shadow-card">
         <CardHeader>
           <CardTitle className="text-base">Status das cobranças</CardTitle>
         </CardHeader>

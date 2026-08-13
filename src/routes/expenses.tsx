@@ -89,7 +89,7 @@ function ExpensesPage() {
   return (
     <AppLayout title="Despesas / Ajustes" subtitle="Débitos e créditos extras que abatem a fatura">
       <div className="grid gap-4 lg:grid-cols-[380px_1fr]">
-        <Card className="border-border/40 shadow-sm bg-card/60 backdrop-blur-sm">
+        <Card className="border-none shadow-card">
           <CardHeader>
             <CardTitle className="text-base">Novo lançamento</CardTitle>
           </CardHeader>
@@ -164,7 +164,7 @@ function ExpensesPage() {
           </CardContent>
         </Card>
 
-        <Card className="flex flex-col h-full border-border/40 bg-card/60 backdrop-blur-sm shadow-sm">
+        <Card className="flex flex-col h-full border-none shadow-card">
           <CardHeader className="flex-row items-center justify-between pb-4 border-b border-border/30 bg-muted/20">
             <div className="space-y-1">
               <CardTitle className="text-base flex items-center gap-2">
@@ -201,7 +201,7 @@ function ExpensesPage() {
                     exit={{ opacity: 0, scale: 0.95 }}
                     transition={{ delay: i * 0.05 }}
                     key={e.id} 
-                    className="flex items-center justify-between gap-4 p-4 rounded-xl bg-card border border-border/40 shadow-sm hover:shadow-md hover:border-primary/20 transition-all group list-none"
+                    className="flex items-center justify-between gap-4 p-4 rounded-xl bg-card border-none shadow-[0_2px_10px_-2px_rgba(0,0,0,0.04)] hover:shadow-md transition-all group list-none"
                   >
                     <div className="flex items-center gap-4 min-w-0">
                       <div className={`flex-shrink-0 p-2.5 rounded-full ${e.category === 'cobranca' ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'}`}>

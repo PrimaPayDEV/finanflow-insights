@@ -166,11 +166,11 @@ function ReportsPage() {
           animate={{ opacity: 1, y: 0 }} 
           transition={{ duration: 0.4 }}
         >
-          <Card className="border-none shadow-lg bg-gradient-to-br from-primary via-primary/90 to-primary/80 text-primary-foreground">
+          <Card className="border border-primary/20 bg-primary/5 shadow-card text-foreground">
             <CardHeader className="pb-2">
-              <CardTitle className="text-lg font-medium opacity-90 flex items-center gap-2">
-                <div className="p-1.5 bg-white/20 rounded-lg backdrop-blur-sm">
-                  <DollarSign className="h-5 w-5 text-white" />
+              <CardTitle className="text-lg font-semibold flex items-center gap-2 text-primary">
+                <div className="p-1.5 bg-primary/10 rounded-lg">
+                  <DollarSign className="h-5 w-5 text-primary" />
                 </div>
                 Valor Total a Receber
               </CardTitle>
@@ -185,7 +185,7 @@ function ReportsPage() {
                     Soma de todos os boletos pendentes ou vencidos no período selecionado
                   </p>
                 </div>
-                <div className="hidden md:flex items-center gap-2 bg-white/10 px-4 py-2 rounded-full backdrop-blur-sm border border-white/20">
+                <div className="hidden md:flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full border border-primary/20">
                   <TrendingUp className="w-4 h-4" />
                   <span className="text-sm font-medium">Previsão Atualizada</span>
                 </div>
@@ -202,7 +202,7 @@ function ReportsPage() {
           className="grid grid-cols-1 md:grid-cols-3 gap-4"
         >
           <motion.div whileHover={{ scale: 1.02 }} transition={{ type: "spring", stiffness: 300 }}>
-            <Card className="border-border/50 shadow-sm hover:shadow-md transition-all duration-300">
+            <Card className="border-none shadow-card hover:-translate-y-0.5 transition-all duration-300">
               <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
                 <CardTitle className="text-sm font-semibold text-muted-foreground">Pendente (A Vencer)</CardTitle>
                 <div className="p-2 bg-amber-100 dark:bg-amber-900/30 rounded-full">
@@ -216,7 +216,7 @@ function ReportsPage() {
           </motion.div>
 
           <motion.div whileHover={{ scale: 1.02 }} transition={{ type: "spring", stiffness: 300 }}>
-            <Card className="border-border/50 shadow-sm hover:shadow-md transition-all duration-300">
+            <Card className="border-none shadow-card hover:-translate-y-0.5 transition-all duration-300">
               <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
                 <CardTitle className="text-sm font-semibold text-muted-foreground">Em Atraso (Vencido)</CardTitle>
                 <div className="p-2 bg-destructive/10 rounded-full">
@@ -230,7 +230,7 @@ function ReportsPage() {
           </motion.div>
 
           <motion.div whileHover={{ scale: 1.02 }} transition={{ type: "spring", stiffness: 300 }}>
-            <Card className="border-border/50 shadow-sm hover:shadow-md transition-all duration-300">
+            <Card className="border-none shadow-card hover:-translate-y-0.5 transition-all duration-300">
               <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
                 <CardTitle className="text-sm font-semibold text-muted-foreground">Recebido (Pago)</CardTitle>
                 <div className="p-2 bg-success/10 rounded-full">
@@ -246,7 +246,7 @@ function ReportsPage() {
 
         {/* Filters */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.2 }}>
-          <Card className="border-border/40 shadow-sm bg-card/60 backdrop-blur-sm">
+          <Card className="border-none shadow-card">
             <CardHeader className="pb-4 border-b border-border/40">
               <CardTitle className="text-base font-semibold flex items-center gap-2">
                 <Filter className="h-4 w-4 text-primary" />
