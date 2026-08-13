@@ -1,8 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
-import { FileBarChart2, Filter, DollarSign, AlertCircle, CheckCircle2, Clock } from "lucide-react";
+import { FileBarChart2, Filter, DollarSign, AlertCircle, CheckCircle2, Clock, CalendarIcon } from "lucide-react";
 import { AppLayout } from "@/components/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -13,6 +13,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { PeriodType, DateRange, getPeriodDateRange } from "@/lib/dateUtils";
+import { ptBR } from "date-fns/locale";
 import {
   Table,
   TableBody,
@@ -38,11 +43,15 @@ function ReportsPage() {
   const closures = useQuery(closuresQuery);
   const merchants = useQuery(merchantsQuery);
 
-  const [periodFilter, setPeriodFilter] = useState("all");
+  const [period, setPeriod] = useState<PeriodType>("month");
+  const [customRange, setCustomRange] = useState<{ from?: Date; to?: Date }>();
+
   const [statusFilter, setStatusFilter] = useState("all");
   const [merchantFilter, setMerchantFilter] = useState("all");
 
   const today = startOfDay(new Date());
+  
+  const ranges = useMemo(() => getPeriodDateRange(period, customRange as DateRange), [period, customRange]);
 
   const getDueDate = (createdAt: string) => {
     return startOfDay(addDays(new Date(createdAt), 5));
@@ -63,21 +72,9 @@ function ReportsPage() {
     const cStatus = getStatus(c, dueDate);
     if (statusFilter !== "all" && cStatus !== statusFilter) return false;
 
-    // Period Filter
-    if (periodFilter !== "all") {
-      let withinPeriod = false;
-      if (periodFilter === "this_month") {
-        withinPeriod = isWithinInterval(dueDate, { start: startOfMonth(today), end: endOfMonth(today) });
-      } else if (periodFilter === "last_7d") {
-        withinPeriod = isWithinInterval(dueDate, { start: subDays(today, 7), end: today });
-      } else if (periodFilter === "last_30d") {
-        withinPeriod = isWithinInterval(dueDate, { start: subDays(today, 30), end: today });
-      } else if (periodFilter === "next_7d") {
-        withinPeriod = isWithinInterval(dueDate, { start: today, end: addDays(today, 7) });
-      } else if (periodFilter === "next_30d") {
-        withinPeriod = isWithinInterval(dueDate, { start: today, end: addDays(today, 30) });
-      }
-      if (!withinPeriod) return false;
+    // Period Filter (based on due date)
+    if (!isWithinInterval(dueDate, { start: startOfDay(ranges.current.from), end: startOfDay(ranges.current.to) })) {
+      return false;
     }
 
     return true;
@@ -99,10 +96,68 @@ function ReportsPage() {
     .filter((c) => getStatus(c, getDueDate(c.created_at)) === "paid")
     .reduce((sum, c) => sum + (c.paid_amount || c.net_invoice_amount), 0);
 
+  const getSubtitle = () => {
+    if (period === "month") return `Visão consolidada de ${format(ranges.current.from, "MMMM/yyyy", { locale: ptBR })}`;
+    if (period === "7d") return "Últimos 7 dias";
+    if (period === "30d") return "Últimos 30 dias";
+    if (period === "90d") return "Últimos 90 dias";
+    if (period === "custom" && customRange?.from && customRange?.to) {
+      return `${format(customRange.from, "dd/MM/yyyy")} até ${format(customRange.to, "dd/MM/yyyy")}`;
+    }
+    return "Visão consolidada";
+  };
+
   return (
     <AppLayout
       title="Relatórios e Previsibilidade"
-      subtitle="Acompanhe seus recebíveis e controle pagamentos"
+      subtitle={getSubtitle()}
+      actions={
+        <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2">
+          <Select value={period} onValueChange={(v) => setPeriod(v as PeriodType)}>
+            <SelectTrigger className="w-[140px] h-8 text-xs">
+              <SelectValue placeholder="Período" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="month">Este Mês</SelectItem>
+              <SelectItem value="7d">Últimos 7 dias</SelectItem>
+              <SelectItem value="30d">Últimos 30 dias</SelectItem>
+              <SelectItem value="90d">Últimos 90 dias</SelectItem>
+              <SelectItem value="custom">Personalizado</SelectItem>
+            </SelectContent>
+          </Select>
+          {period === "custom" && (
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className="h-8 px-2 text-xs min-w-[180px] justify-start">
+                  <CalendarIcon className="mr-2 h-3 w-3" />
+                  {customRange?.from ? (
+                    customRange.to ? (
+                      <>
+                        {format(customRange.from, "P", { locale: ptBR })} -{" "}
+                        {format(customRange.to, "P", { locale: ptBR })}
+                      </>
+                    ) : (
+                      format(customRange.from, "P", { locale: ptBR })
+                    )
+                  ) : (
+                    <span>Selecione a data</span>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="end">
+                <Calendar
+                  initialFocus
+                  mode="range"
+                  defaultMonth={customRange?.from}
+                  selected={{ from: customRange?.from, to: customRange?.to }}
+                  onSelect={(v: any) => setCustomRange(v)}
+                  numberOfMonths={1}
+                />
+              </PopoverContent>
+            </Popover>
+          )}
+        </div>
+      }
     >
       <div className="space-y-6">
         {/* Total a Receber Highlight */}
@@ -170,24 +225,7 @@ function ReportsPage() {
                 Filtros
               </CardTitle>
             </CardHeader>
-            <CardContent className="pt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-muted-foreground">Período de Vencimento</label>
-                <Select value={periodFilter} onValueChange={setPeriodFilter}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione o período" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todo o período</SelectItem>
-                    <SelectItem value="this_month">Este Mês</SelectItem>
-                    <SelectItem value="last_7d">Últimos 7 dias</SelectItem>
-                    <SelectItem value="last_30d">Últimos 30 dias</SelectItem>
-                    <SelectItem value="next_7d">Próximos 7 dias</SelectItem>
-                    <SelectItem value="next_30d">Próximos 30 dias</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
+            <CardContent className="pt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="text-sm font-medium text-muted-foreground">Status do Pagamento</label>
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
