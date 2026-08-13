@@ -1,8 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState, useMemo } from "react";
-import { motion } from "framer-motion";
-import { FileBarChart2, Filter, DollarSign, AlertCircle, CheckCircle2, Clock, CalendarIcon } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { FileBarChart2, Filter, DollarSign, AlertCircle, CheckCircle2, Clock, CalendarIcon, Inbox, TrendingUp, SearchX } from "lucide-react";
 import { AppLayout } from "@/components/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -161,20 +161,47 @@ function ReportsPage() {
     >
       <div className="space-y-6">
         {/* Total a Receber Highlight */}
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
-          <Card className="bg-primary text-primary-foreground border-none shadow-lg">
-            <CardHeader className="pb-2">
+        <motion.div 
+          initial={{ opacity: 0, y: 20, scale: 0.98 }} 
+          animate={{ opacity: 1, y: 0, scale: 1 }} 
+          transition={{ duration: 0.5, ease: "easeOut" }}
+        >
+          <Card className="relative overflow-hidden border-none shadow-xl bg-gradient-to-br from-primary via-primary/90 to-primary/70 text-primary-foreground">
+            {/* Background decoration */}
+            <div className="absolute top-0 right-0 -mt-16 -mr-16 p-32 bg-white/10 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute bottom-0 left-0 -mb-16 -ml-16 p-24 bg-black/10 rounded-full blur-2xl pointer-events-none" />
+            
+            <CardHeader className="relative z-10 pb-2">
               <CardTitle className="text-lg font-medium opacity-90 flex items-center gap-2">
-                <DollarSign className="h-5 w-5" />
+                <div className="p-2 bg-white/20 rounded-xl backdrop-blur-sm">
+                  <DollarSign className="h-5 w-5 text-white" />
+                </div>
                 Valor Total a Receber
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="relative z-10">
               <div className="flex flex-col md:flex-row md:items-end gap-4 justify-between">
-                <div>
-                  <p className="text-5xl font-black tracking-tight">{BRL(totalToReceive)}</p>
-                  <p className="text-sm opacity-80 mt-1">Soma de todos os boletos pendentes ou vencidos no período selecionado</p>
-                </div>
+                <motion.div 
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.2, duration: 0.5 }}
+                >
+                  <p className="text-5xl md:text-6xl font-black tracking-tighter drop-shadow-sm">
+                    {BRL(totalToReceive)}
+                  </p>
+                  <p className="text-sm font-medium opacity-80 mt-2 max-w-md">
+                    Soma de todos os boletos pendentes ou vencidos no período selecionado
+                  </p>
+                </motion.div>
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.3, duration: 0.5 }}
+                  className="hidden md:flex items-center gap-2 bg-white/10 px-4 py-2 rounded-full backdrop-blur-md border border-white/20"
+                >
+                  <TrendingUp className="w-4 h-4" />
+                  <span className="text-sm font-medium">Previsão Atualizada</span>
+                </motion.div>
               </div>
             </CardContent>
           </Card>
@@ -182,58 +209,72 @@ function ReportsPage() {
 
         {/* Secondary Metrics */}
         <motion.div 
-          initial={{ opacity: 0, y: 10 }} 
+          initial={{ opacity: 0, y: 20 }} 
           animate={{ opacity: 1, y: 0 }} 
-          transition={{ duration: 0.4, delay: 0.1 }}
+          transition={{ duration: 0.5, delay: 0.1, staggerChildren: 0.1 }}
           className="grid grid-cols-1 md:grid-cols-3 gap-4"
         >
-          <Card>
-            <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Pendente (A Vencer)</CardTitle>
-              <Clock className="h-4 w-4 text-amber-500" />
-            </CardHeader>
-            <CardContent>
-              <p className="text-2xl font-bold">{BRL(totalPending)}</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Em Atraso (Vencido)</CardTitle>
-              <AlertCircle className="h-4 w-4 text-destructive" />
-            </CardHeader>
-            <CardContent>
-              <p className="text-2xl font-bold text-destructive">{BRL(totalOverdue)}</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Recebido (Pago)</CardTitle>
-              <CheckCircle2 className="h-4 w-4 text-success" />
-            </CardHeader>
-            <CardContent>
-              <p className="text-2xl font-bold text-success">{BRL(totalReceived)}</p>
-            </CardContent>
-          </Card>
+          <motion.div whileHover={{ scale: 1.02 }} transition={{ type: "spring", stiffness: 300 }}>
+            <Card className="border-border/50 shadow-sm hover:shadow-md transition-all duration-300">
+              <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
+                <CardTitle className="text-sm font-semibold text-muted-foreground">Pendente (A Vencer)</CardTitle>
+                <div className="p-2 bg-amber-100 dark:bg-amber-900/30 rounded-full">
+                  <Clock className="h-4 w-4 text-amber-600 dark:text-amber-500" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <p className="text-2xl font-bold text-foreground">{BRL(totalPending)}</p>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          <motion.div whileHover={{ scale: 1.02 }} transition={{ type: "spring", stiffness: 300 }}>
+            <Card className="border-border/50 shadow-sm hover:shadow-md transition-all duration-300">
+              <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
+                <CardTitle className="text-sm font-semibold text-muted-foreground">Em Atraso (Vencido)</CardTitle>
+                <div className="p-2 bg-destructive/10 rounded-full">
+                  <AlertCircle className="h-4 w-4 text-destructive" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <p className="text-2xl font-bold text-destructive">{BRL(totalOverdue)}</p>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          <motion.div whileHover={{ scale: 1.02 }} transition={{ type: "spring", stiffness: 300 }}>
+            <Card className="border-border/50 shadow-sm hover:shadow-md transition-all duration-300">
+              <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
+                <CardTitle className="text-sm font-semibold text-muted-foreground">Recebido (Pago)</CardTitle>
+                <div className="p-2 bg-success/10 rounded-full">
+                  <CheckCircle2 className="h-4 w-4 text-success" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <p className="text-2xl font-bold text-success">{BRL(totalReceived)}</p>
+              </CardContent>
+            </Card>
+          </motion.div>
         </motion.div>
 
         {/* Filters */}
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.2 }}>
-          <Card>
-            <CardHeader className="pb-4 border-b">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Filter className="h-4 w-4" />
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.2 }}>
+          <Card className="border-border/40 shadow-sm bg-card/60 backdrop-blur-sm">
+            <CardHeader className="pb-4 border-b border-border/40">
+              <CardTitle className="text-base font-semibold flex items-center gap-2">
+                <Filter className="h-4 w-4 text-primary" />
                 Filtros
               </CardTitle>
             </CardHeader>
-            <CardContent className="pt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-muted-foreground">Status do Pagamento</label>
+            <CardContent className="pt-5 grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2.5">
+                <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Status do Pagamento</label>
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger>
+                  <SelectTrigger className="bg-background/50 border-border/50 h-10 transition-colors hover:bg-background">
                     <SelectValue placeholder="Selecione o status" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">Todos</SelectItem>
+                    <SelectItem value="all">Todos os status</SelectItem>
                     <SelectItem value="pending">Pendente (No prazo)</SelectItem>
                     <SelectItem value="overdue">Vencido (Em atraso)</SelectItem>
                     <SelectItem value="paid">Pago</SelectItem>
@@ -241,14 +282,14 @@ function ReportsPage() {
                 </Select>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-muted-foreground">Estabelecimento</label>
+              <div className="space-y-2.5">
+                <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Estabelecimento</label>
                 <Select value={merchantFilter} onValueChange={setMerchantFilter}>
-                  <SelectTrigger>
+                  <SelectTrigger className="bg-background/50 border-border/50 h-10 transition-colors hover:bg-background">
                     <SelectValue placeholder="Todos os estabelecimentos" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">Todos</SelectItem>
+                    <SelectItem value="all">Todos os estabelecimentos</SelectItem>
                     {(merchants.data ?? []).map((m) => (
                       <SelectItem key={m.id} value={m.id}>
                         {m.name}
@@ -262,62 +303,87 @@ function ReportsPage() {
         </motion.div>
 
         {/* Data Table */}
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.3 }}>
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
-                <FileBarChart2 className="h-4 w-4" />
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.3 }}>
+          <Card className="border-border/40 shadow-sm overflow-hidden">
+            <CardHeader className="bg-muted/20 pb-4 border-b border-border/40">
+              <CardTitle className="text-base font-semibold flex items-center gap-2">
+                <FileBarChart2 className="h-4 w-4 text-primary" />
                 Listagem de Recebíveis
+                <Badge variant="secondary" className="ml-2 bg-primary/10 text-primary font-bold">
+                  {filteredClosures.length} {filteredClosures.length === 1 ? 'registro' : 'registros'}
+                </Badge>
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
-                    <TableRow>
-                      <TableHead>Estabelecimento</TableHead>
-                      <TableHead>Emissão (Ref)</TableHead>
-                      <TableHead>Vencimento</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Valor Líquido</TableHead>
+                    <TableRow className="bg-muted/30 hover:bg-muted/30">
+                      <TableHead className="font-semibold text-muted-foreground">Estabelecimento</TableHead>
+                      <TableHead className="font-semibold text-muted-foreground">Emissão (Ref)</TableHead>
+                      <TableHead className="font-semibold text-muted-foreground">Vencimento</TableHead>
+                      <TableHead className="font-semibold text-muted-foreground">Status</TableHead>
+                      <TableHead className="text-right font-semibold text-muted-foreground">Valor Líquido</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredClosures.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
-                          Nenhum registro encontrado para os filtros selecionados.
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      filteredClosures.map((c) => {
-                        const dueDate = getDueDate(c.created_at);
-                        const status = getStatus(c, dueDate);
-                        const merchant = merchants.data?.find(m => m.id === c.merchant_id);
-                        
-                        return (
-                          <TableRow key={c.id}>
-                            <TableCell className="font-medium">
-                              {merchant?.name || "Desconhecido"}
-                            </TableCell>
-                            <TableCell>
-                              {format(new Date(c.created_at), "dd/MM/yyyy")} <span className="text-muted-foreground text-xs">({c.reference_month})</span>
-                            </TableCell>
-                            <TableCell>
-                              {format(dueDate, "dd/MM/yyyy")}
-                            </TableCell>
-                            <TableCell>
-                              {status === "paid" && <Badge variant="success" className="bg-success text-success-foreground">Pago</Badge>}
-                              {status === "pending" && <Badge variant="outline" className="text-amber-600 border-amber-200 bg-amber-50">Pendente</Badge>}
-                              {status === "overdue" && <Badge variant="destructive">Vencido</Badge>}
-                            </TableCell>
-                            <TableCell className="text-right font-bold">
-                              {BRL(c.net_invoice_amount)}
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })
-                    )}
+                    <AnimatePresence mode="popLayout">
+                      {filteredClosures.length === 0 ? (
+                        <motion.tr
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                        >
+                          <TableCell colSpan={5} className="h-64 text-center">
+                            <div className="flex flex-col items-center justify-center text-muted-foreground space-y-3">
+                              <div className="p-4 bg-muted/30 rounded-full">
+                                <SearchX className="h-8 w-8 opacity-40" />
+                              </div>
+                              <p className="text-sm font-medium">Nenhum registro encontrado</p>
+                              <p className="text-xs opacity-70">Altere os filtros acima para ver mais resultados.</p>
+                            </div>
+                          </TableCell>
+                        </motion.tr>
+                      ) : (
+                        filteredClosures.map((c) => {
+                          const dueDate = getDueDate(c.created_at);
+                          const status = getStatus(c, dueDate);
+                          const merchant = merchants.data?.find(m => m.id === c.merchant_id);
+                          
+                          return (
+                            <motion.tr 
+                              key={c.id}
+                              initial={{ opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              exit={{ opacity: 0, scale: 0.95 }}
+                              transition={{ duration: 0.2 }}
+                              className="group hover:bg-muted/30 transition-colors"
+                            >
+                              <TableCell className="font-medium">
+                                {merchant?.name || "Desconhecido"}
+                              </TableCell>
+                              <TableCell>
+                                {format(new Date(c.created_at), "dd/MM/yyyy")} <span className="text-muted-foreground text-xs ml-1">({c.reference_month})</span>
+                              </TableCell>
+                              <TableCell>
+                                <span className={isBefore(dueDate, today) && status !== "paid" ? "text-destructive font-medium flex items-center gap-1.5" : "flex items-center gap-1.5"}>
+                                  {isBefore(dueDate, today) && status !== "paid" && <AlertCircle className="w-3.5 h-3.5" />}
+                                  {format(dueDate, "dd/MM/yyyy")}
+                                </span>
+                              </TableCell>
+                              <TableCell>
+                                {status === "paid" && <Badge variant="success" className="bg-success text-success-foreground border-success hover:bg-success/90 px-2 py-0.5"><CheckCircle2 className="w-3 h-3 mr-1" /> Pago</Badge>}
+                                {status === "pending" && <Badge variant="outline" className="text-amber-600 border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-2 py-0.5"><Clock className="w-3 h-3 mr-1" /> Pendente</Badge>}
+                                {status === "overdue" && <Badge variant="destructive" className="px-2 py-0.5 shadow-sm"><AlertCircle className="w-3 h-3 mr-1" /> Vencido</Badge>}
+                              </TableCell>
+                              <TableCell className="text-right font-bold tracking-tight text-[15px] group-hover:text-primary transition-colors">
+                                {BRL(c.net_invoice_amount)}
+                              </TableCell>
+                            </motion.tr>
+                          );
+                        })
+                      )}
+                    </AnimatePresence>
                   </TableBody>
                 </Table>
               </div>
