@@ -81,7 +81,7 @@ export function AppLayout({
   });
 
   return (
-    <div className="flex min-h-screen w-full bg-slate-50/50 dark:bg-slate-950 relative overflow-hidden">
+    <div className="flex min-h-screen w-full bg-slate-50/50 dark:bg-slate-950 relative overflow-hidden print:overflow-visible print:h-auto">
       <aside
         className={cn(
           "relative z-20 print:hidden sticky top-0 hidden h-screen shrink-0 flex-col border-r border-sidebar-border/40 bg-sidebar text-sidebar-foreground transition-all duration-300 md:flex",
@@ -142,7 +142,7 @@ export function AppLayout({
         </div>
       </aside>
 
-      <div className="relative z-10 flex min-w-0 flex-1 flex-col">
+      <div className="relative z-10 flex min-w-0 flex-1 flex-col print:overflow-visible print:h-auto">
         <header className="print:hidden sticky top-0 z-10 border-b border-border/50 bg-background/80 backdrop-blur-md">
           <div className="flex items-center justify-between gap-2 px-3 py-3 md:px-8">
             <div className="flex items-center gap-2 overflow-hidden">
@@ -301,7 +301,7 @@ export function AppLayout({
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -15 }}
               transition={{ duration: 0.3, ease: "easeOut" }}
-              className="h-full"
+              className="h-full print:h-auto print:overflow-visible"
             >
               {children}
             </motion.div>
