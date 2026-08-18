@@ -37,7 +37,9 @@ const TRADITIONAL_RATES = {
   pix: 0.90
 };
 
-export function getTraditionalRate(t: Transaction): number {
+export function getTraditionalRate(t: Transaction, plan?: FeePlan): number {
+  if (plan && plan.traditional_fee_avg > 0) return plan.traditional_fee_avg;
+
   if (t.modality === 'pix') return TRADITIONAL_RATES.pix;
   if (t.modality === 'cash') return 0;
   
@@ -79,9 +81,15 @@ const CPAG59 = {
   pix: 1.39
 };
 
-export function getModalityRate(t: Transaction): number {
-  if (t.modality === 'pix') return CPAG59.pix;
-  if (t.modality === 'cash') return 0;
+export function getModalityRate(t: Transaction, plan?: FeePlan): number {
+  if (t.modality === 'pix') return (plan && plan.pix_rate > 0) ? plan.pix_rate : CPAG59.pix;
+  if (t.modality === 'cash') return (plan && plan.cash_rate > 0) ? plan.cash_rate : 0;
+
+  const installments = t.installments || 1;
+
+  if (t.modality === 'debit' && plan && plan.debit_rate > 0) return plan.debit_rate;
+  if (t.modality === 'credit' && installments === 1 && plan && plan.credit_vista_rate > 0) return plan.credit_vista_rate;
+  if (t.modality === 'credit' && installments > 1 && plan && plan.credit_installment_rate > 0) return plan.credit_installment_rate;
 
   const brand = (t.brand || "").toLowerCase();
   let bKey: keyof typeof CPAG59 = 'vm';
@@ -95,7 +103,6 @@ export function getModalityRate(t: Transaction): number {
   
   if (t.modality === 'debit') return bData.debit;
   
-  const installments = t.installments || 1;
   if (installments >= 1 && installments <= 21) {
     return bData.credit[installments];
   }
@@ -124,12 +131,12 @@ export function calculateClosure(
     grossByModality[mod] += gross;
     totalGross += gross;
 
-    const rate = getModalityRate(t);
+    const rate = getModalityRate(t, plan);
     const fee = (gross * rate) / 100;
     feeByModality[mod] += fee;
     modalityFeeTotal += fee;
 
-    const tradRate = getTraditionalRate(t);
+    const tradRate = getTraditionalRate(t, plan);
     traditionalCost += (gross * tradRate) / 100;
   }
 
