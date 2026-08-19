@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { PiggyBank, FileCheck2, ExternalLink, Download, Settings2, Receipt, TrendingUp, DollarSign, PieChart, Banknote, ArrowDownRight, ArrowUpRight, SearchX } from "lucide-react";
 import { toast } from "sonner";
@@ -43,6 +43,7 @@ import {
   merchantsQuery,
   splitRulesQuery,
   transactionsQuery,
+  importsQuery,
 } from "@/lib/db";
 import { calculateClosure } from "@/lib/closure";
 import { createAsaasCharge } from "@/lib/asaas.functions";
@@ -86,9 +87,19 @@ function ClosuresPage() {
 
   const merchant = (merchants.data ?? []).find((m) => m.id === merchantId);
   const plan = (plans.data ?? []).find((p) => p.merchant_id === merchantId);
-  const txs = (transactions.data ?? []).filter(
-    (t) => t.merchant_id === merchantId && t.transaction_date.slice(0, 7) === month,
-  );
+  const importsData = useQuery(importsQuery);
+
+  const importsMap = useMemo(() => {
+    const map = new Map<string, string>();
+    (importsData.data ?? []).forEach(i => map.set(i.id, i.reference_month));
+    return map;
+  }, [importsData.data]);
+
+  const txs = (transactions.data ?? []).filter((t) => {
+    if (t.merchant_id !== merchantId) return false;
+    const refMonth = t.import_id ? importsMap.get(t.import_id) : t.transaction_date.slice(0, 7);
+    return refMonth === month;
+  });
   const exps = (expenses.data ?? []).filter(
     (e) => e.merchant_id === merchantId && e.reference_month === month,
   );
