@@ -373,7 +373,6 @@ const planFields = [
   { key: "credit_vista_rate", label: "Crédito à vista (%)" },
   { key: "credit_installment_rate", label: "Crédito parcelado (%)" },
   { key: "cash_rate", label: "Dinheiro (%)" },
-  { key: "traditional_fee_avg", label: "Taxa média tradicional (%)" },
 ] as const;
 
 function FeePlanForm({ merchant }: { merchant: Merchant }) {
@@ -428,11 +427,7 @@ function FeePlanForm({ merchant }: { merchant: Merchant }) {
             </div>
           ))}
         </div>
-        <div className="flex items-center justify-between gap-3">
-          <p className="text-xs text-muted-foreground">
-            Comparativo de economia calculado sobre {PCT(Number(values.traditional_fee_avg || 0))} da
-            tabela tradicional.
-          </p>
+        <div className="flex items-center justify-end gap-3">
           <Button onClick={() => save.mutate()} disabled={save.isPending}>
             <Save className="size-4" /> Salvar plano
           </Button>
