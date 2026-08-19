@@ -26,7 +26,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { closuresQuery, merchantsQuery, asaasSettingsQuery } from "@/lib/db";
+import { closuresQuery, merchantsQuery, asaasSettingsQuery, splitRulesQuery } from "@/lib/db";
 import { BRL } from "@/lib/format";
 import { format, isBefore, startOfDay, addDays, subDays, startOfMonth, endOfMonth, isWithinInterval } from "date-fns";
 
@@ -43,6 +43,7 @@ function ReportsPage() {
   const closures = useQuery(closuresQuery);
   const merchants = useQuery(merchantsQuery);
   const settings = useQuery(asaasSettingsQuery);
+  const splitRules = useQuery(splitRulesQuery);
   const dueDay = settings.data?.due_day ?? 10;
 
   const [period, setPeriod] = useState<PeriodType>("month");
@@ -50,6 +51,18 @@ function ReportsPage() {
 
   const [statusFilter, setStatusFilter] = useState("all");
   const [merchantFilter, setMerchantFilter] = useState("all");
+  const [partnerFilter, setPartnerFilter] = useState("all");
+
+  const uniquePartners = useMemo(() => {
+    const rules = splitRules.data ?? [];
+    const map = new Map<string, { wallet_id: string; name: string }>();
+    for (const r of rules) {
+      if (!map.has(r.partner_asaas_wallet_id)) {
+        map.set(r.partner_asaas_wallet_id, { wallet_id: r.partner_asaas_wallet_id, name: r.partner_name });
+      }
+    }
+    return Array.from(map.values());
+  }, [splitRules.data]);
 
   const today = startOfDay(new Date());
   
@@ -68,6 +81,13 @@ function ReportsPage() {
   const filteredClosures = (closures.data ?? []).filter((c) => {
     if (merchantFilter !== "all" && c.merchant_id !== merchantFilter) return false;
 
+    if (partnerFilter !== "all") {
+      const hasSplitForPartner = (splitRules.data ?? []).some(
+        (r) => r.merchant_id === c.merchant_id && r.partner_asaas_wallet_id === partnerFilter
+      );
+      if (!hasSplitForPartner) return false;
+    }
+
     const dueDate = getDueDate(c.created_at);
     
     // Status Filter
@@ -84,21 +104,47 @@ function ReportsPage() {
     return true;
   });
 
+  const getPartnerPercentage = (merchantId: string) => {
+    if (partnerFilter === "all") return null;
+    const rule = (splitRules.data ?? []).find(
+      (r) => r.merchant_id === merchantId && r.partner_asaas_wallet_id === partnerFilter
+    );
+    return rule ? rule.percentage : null;
+  };
+
+  const getClosureAmount = (c: any) => {
+    const pct = getPartnerPercentage(c.merchant_id);
+    const amount = c.net_invoice_amount;
+    if (pct !== null) {
+      return amount * (pct / 100);
+    }
+    return amount;
+  };
+
+  const getClosurePaidAmount = (c: any) => {
+    const pct = getPartnerPercentage(c.merchant_id);
+    const amount = c.paid_amount || c.net_invoice_amount;
+    if (pct !== null) {
+      return amount * (pct / 100);
+    }
+    return amount;
+  };
+
   const totalToReceive = filteredClosures
     .filter((c) => getStatus(c, getDueDate(c.created_at)) !== "paid")
-    .reduce((sum, c) => sum + c.net_invoice_amount, 0);
+    .reduce((sum, c) => sum + getClosureAmount(c), 0);
 
   const totalPending = filteredClosures
     .filter((c) => getStatus(c, getDueDate(c.created_at)) === "pending")
-    .reduce((sum, c) => sum + c.net_invoice_amount, 0);
+    .reduce((sum, c) => sum + getClosureAmount(c), 0);
 
   const totalOverdue = filteredClosures
     .filter((c) => getStatus(c, getDueDate(c.created_at)) === "overdue")
-    .reduce((sum, c) => sum + c.net_invoice_amount, 0);
+    .reduce((sum, c) => sum + getClosureAmount(c), 0);
 
   const totalReceived = filteredClosures
     .filter((c) => getStatus(c, getDueDate(c.created_at)) === "paid")
-    .reduce((sum, c) => sum + (c.paid_amount || c.net_invoice_amount), 0);
+    .reduce((sum, c) => sum + getClosurePaidAmount(c), 0);
 
   const getSubtitle = () => {
     if (period === "month") return `Visão consolidada de ${format(ranges.current.from, "MMMM/yyyy", { locale: ptBR })}`;
@@ -257,7 +303,23 @@ function ReportsPage() {
                 Filtros
               </CardTitle>
             </CardHeader>
-            <CardContent className="pt-5 grid grid-cols-1 md:grid-cols-2 gap-6">
+            <CardContent className="pt-5 grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="space-y-2.5">
+                <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Parceiro / Licenciado</label>
+                <Select value={partnerFilter} onValueChange={setPartnerFilter}>
+                  <SelectTrigger className="bg-background/50 border-border/50 h-10 transition-colors hover:bg-background">
+                    <SelectValue placeholder="Todos os parceiros" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos os parceiros</SelectItem>
+                    {uniquePartners.map((p) => (
+                      <SelectItem key={p.wallet_id} value={p.wallet_id}>
+                        {p.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
               <div className="space-y-2.5">
                 <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Status do Pagamento</label>
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -315,7 +377,14 @@ function ReportsPage() {
                       <TableHead className="py-4 font-semibold text-muted-foreground text-center w-[12%]">Ref</TableHead>
                       <TableHead className="py-4 font-semibold text-muted-foreground text-center w-[15%]">Vencimento</TableHead>
                       <TableHead className="py-4 font-semibold text-muted-foreground text-center w-[15%]">Status</TableHead>
-                      <TableHead className="py-4 pr-6 text-right font-semibold text-muted-foreground w-[15%]">Valor Líquido</TableHead>
+                      {partnerFilter !== "all" ? (
+                        <>
+                          <TableHead className="py-4 text-center font-semibold text-muted-foreground w-[10%]">% Split</TableHead>
+                          <TableHead className="py-4 pr-6 text-right font-semibold text-muted-foreground w-[15%]">Repasse</TableHead>
+                        </>
+                      ) : (
+                        <TableHead className="py-4 pr-6 text-right font-semibold text-muted-foreground w-[15%]">Valor Líquido</TableHead>
+                      )}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -326,7 +395,7 @@ function ReportsPage() {
                           animate={{ opacity: 1 }}
                           exit={{ opacity: 0 }}
                         >
-                          <TableCell colSpan={6} className="h-64 text-center">
+                          <TableCell colSpan={partnerFilter !== "all" ? 7 : 6} className="h-64 text-center">
                             <div className="flex flex-col items-center justify-center text-muted-foreground space-y-3">
                               <div className="p-4 bg-muted/30 rounded-full">
                                 <SearchX className="h-8 w-8 opacity-40" />
@@ -383,9 +452,22 @@ function ReportsPage() {
                                 {status === "pending" && <Badge variant="outline" className="w-[100px] justify-center text-amber-600 border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-1"><Clock className="w-3.5 h-3.5 mr-1.5" /> Pendente</Badge>}
                                 {status === "overdue" && <Badge variant="destructive" className="w-[100px] justify-center px-3 py-1 shadow-sm"><AlertCircle className="w-3.5 h-3.5 mr-1.5" /> Vencido</Badge>}
                               </TableCell>
-                              <TableCell className="py-5 pr-6 text-right font-bold tracking-tight text-[15px] group-hover:text-primary transition-colors">
-                                {BRL(c.net_invoice_amount)}
-                              </TableCell>
+                              {partnerFilter !== "all" ? (
+                                <>
+                                  <TableCell className="py-5 text-center font-medium">
+                                    <Badge variant="outline" className="font-bold bg-muted/50 border-border/50 text-foreground">
+                                      {getPartnerPercentage(c.merchant_id)}%
+                                    </Badge>
+                                  </TableCell>
+                                  <TableCell className="py-5 pr-6 text-right font-bold tracking-tight text-[15px] group-hover:text-primary transition-colors">
+                                    {BRL(getClosureAmount(c))}
+                                  </TableCell>
+                                </>
+                              ) : (
+                                <TableCell className="py-5 pr-6 text-right font-bold tracking-tight text-[15px] group-hover:text-primary transition-colors">
+                                  {BRL(c.net_invoice_amount)}
+                                </TableCell>
+                              )}
                             </motion.tr>
                           );
                         })
