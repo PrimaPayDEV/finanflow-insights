@@ -17,6 +17,9 @@ import {
   Bell,
   LogOut,
   FileBarChart2,
+  CircleDollarSign,
+  FileText,
+  AlertCircle,
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
@@ -244,11 +247,13 @@ export function AppLayout({
                             navigate({ to: "/closures" });
                           }}
                         >
-                          <div className="flex items-center gap-2 w-full">
+                          <div className="flex items-center gap-3 w-full">
+                            <div className="shrink-0 mt-0.5">
+                              {notification.type === 'payment' && <CircleDollarSign className="w-4 h-4 text-emerald-500" />}
+                              {notification.type === 'closure' && <FileText className="w-4 h-4 text-blue-500" />}
+                              {notification.type === 'error' && <AlertCircle className="w-4 h-4 text-destructive" />}
+                            </div>
                             <span className="text-sm font-medium leading-none">
-                              {notification.type === 'payment' && '💰 '}
-                              {notification.type === 'closure' && '📄 '}
-                              {notification.type === 'error' && '⚠️ '}
                               {notification.title}
                             </span>
                             {!notification.is_read && <span className="ml-auto w-2 h-2 rounded-full bg-primary" />}
