@@ -2,7 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Trash2, ArrowDownCircle, ArrowUpCircle, Store, Receipt, SearchX } from "lucide-react";
+import { Plus, Trash2, ArrowDownCircle, ArrowUpCircle, Receipt, SearchX } from "lucide-react";
+import { MerchantIcon } from "@/components/MerchantIcon";
 import { toast } from "sonner";
 import { AppLayout } from "@/components/AppLayout";
 import { Badge } from "@/components/ui/badge";
@@ -216,7 +217,7 @@ function ExpensesPage() {
                           </Badge>
                         </div>
                         <div className="flex items-center gap-1.5 text-xs text-muted-foreground group-hover:text-muted-foreground/80 transition-colors">
-                          <Store className="w-3.5 h-3.5 opacity-70" />
+                          <MerchantIcon name={(merchants.data ?? []).find((m) => m.id === e.merchant_id)?.name ?? ""} className="w-3.5 h-3.5 opacity-70" />
                           <span className="truncate">{(merchants.data ?? []).find((m) => m.id === e.merchant_id)?.name}</span>
                         </div>
                       </div>

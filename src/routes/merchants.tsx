@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus, Search, Smartphone, Users, Save, Percent, Trash2, Settings2, Edit2, Store } from "lucide-react";
+import { MerchantIcon } from "@/components/MerchantIcon";
 import { toast } from "sonner";
 import { AppLayout } from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
@@ -179,10 +180,19 @@ function MerchantsPage() {
                       : "border-border hover:bg-muted/60 hover:border-primary/30"
                   }`}
                 >
-                  <p className="truncate text-sm font-bold">{m.name}</p>
-                  <p className="truncate text-xs text-muted-foreground">
-                    {m.document_cnpj || "sem CNPJ"}
-                  </p>
+                  <div className="flex items-center gap-3">
+                    <div className={`p-2 rounded-lg shrink-0 ${
+                      selected === m.id ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground"
+                    }`}>
+                      <MerchantIcon name={m.name} className="w-4 h-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-bold">{m.name}</p>
+                      <p className="truncate text-xs text-muted-foreground">
+                        {m.document_cnpj || "sem CNPJ"}
+                      </p>
+                    </div>
+                  </div>
                 </motion.button>
               ))}
             </div>
@@ -198,11 +208,16 @@ function MerchantsPage() {
           >
             <Card className="border-none shadow-card">
               <CardHeader className="flex-row items-start justify-between gap-3 space-y-0">
-                <div>
-                  <CardTitle className="text-base font-bold">{active.name}</CardTitle>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    {active.email || "sem e-mail"} · {active.phone_whatsapp || "sem WhatsApp"}
-                  </p>
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 bg-primary/10 text-primary rounded-xl shrink-0">
+                    <MerchantIcon name={active.name} className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-base font-bold">{active.name}</CardTitle>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      {active.email || "sem e-mail"} · {active.phone_whatsapp || "sem WhatsApp"}
+                    </p>
+                  </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <Badge variant={active.status === "active" ? "default" : "secondary"}>

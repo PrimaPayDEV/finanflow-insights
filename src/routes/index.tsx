@@ -1,7 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState, useMemo } from "react";
-import { PiggyBank, TrendingUp, Wallet, FileCheck2, CalendarIcon, Store } from "lucide-react";
+import { PiggyBank, TrendingUp, Wallet, FileCheck2, CalendarIcon } from "lucide-react";
+import { MerchantIcon } from "@/components/MerchantIcon";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { motion } from "framer-motion";
@@ -286,8 +287,8 @@ function Dashboard() {
                   <li key={c.id}>
                     <Link to="/closures" className="flex items-center justify-between gap-3 py-3 px-2 rounded-md hover:bg-muted/60 transition-colors group">
                       <div className="min-w-0 flex items-center gap-3">
-                        <div className="p-1.5 bg-primary/10 text-primary rounded-md shrink-0">
-                          <Store className="w-4 h-4" />
+                        <div className="p-2 bg-primary/10 text-primary rounded-lg">
+                          <MerchantIcon name={merchant?.name} className="w-4 h-4" />
                         </div>
                         <div>
                           <p className="truncate text-sm font-medium group-hover:text-primary transition-colors">{merchant?.name ?? "EC"}</p>

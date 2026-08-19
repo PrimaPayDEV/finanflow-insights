@@ -2,7 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { FileBarChart2, Filter, DollarSign, AlertCircle, CheckCircle2, Clock, CalendarIcon, Inbox, TrendingUp, SearchX, Store, CalendarDays, Receipt } from "lucide-react";
+import { FileBarChart2, Filter, DollarSign, AlertCircle, CheckCircle2, Clock, CalendarIcon, Inbox, TrendingUp, SearchX, CalendarDays, Receipt } from "lucide-react";
+import { MerchantIcon } from "@/components/MerchantIcon";
 import { AppLayout } from "@/components/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -423,7 +424,7 @@ function ReportsPage() {
                               <TableCell className="py-5 pl-6 font-medium">
                                 <div className="flex items-center gap-3">
                                   <div className="p-2 bg-primary/10 text-primary rounded-lg shrink-0">
-                                    <Store className="w-4 h-4" />
+                                    <MerchantIcon name={merchant?.name} className="w-4 h-4" />
                                   </div>
                                   <span className="truncate max-w-[180px]" title={merchant?.name || "Desconhecido"}>
                                     {merchant?.name || "Desconhecido"}
