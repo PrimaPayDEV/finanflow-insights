@@ -46,14 +46,10 @@ export const checkAsaasConfigured = createServerFn({ method: "GET" }).handler(as
   webhookTokenConfigured: Boolean(process.env.ASAAS_WEBHOOK_TOKEN),
 }));
 
+import { getNextBusinessDueDate } from "./dateUtils";
+
 function nextDueDate(dueDay: number) {
-  const now = new Date();
-  const day = Math.min(Math.max(dueDay, 1), 28);
-  let due = new Date(now.getFullYear(), now.getMonth(), day);
-  if (due.getTime() - now.getTime() < 2 * 24 * 60 * 60 * 1000) {
-    due = new Date(now.getFullYear(), now.getMonth() + 1, day);
-  }
-  return due.toISOString().slice(0, 10);
+  return getNextBusinessDueDate(new Date(), dueDay).toISOString().slice(0, 10);
 }
 
 export const createAsaasCharge = createServerFn({ method: "POST" })

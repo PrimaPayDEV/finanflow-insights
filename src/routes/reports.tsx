@@ -16,7 +16,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { PeriodType, DateRange, getPeriodDateRange } from "@/lib/dateUtils";
+import { PeriodType, DateRange, getPeriodDateRange, getNextBusinessDueDate } from "@/lib/dateUtils";
 import { ptBR } from "date-fns/locale";
 import {
   Table,
@@ -26,7 +26,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { closuresQuery, merchantsQuery } from "@/lib/db";
+import { closuresQuery, merchantsQuery, asaasSettingsQuery } from "@/lib/db";
 import { BRL } from "@/lib/format";
 import { format, isBefore, startOfDay, addDays, subDays, startOfMonth, endOfMonth, isWithinInterval } from "date-fns";
 
@@ -42,6 +42,8 @@ export const Route = createFileRoute("/reports")({
 function ReportsPage() {
   const closures = useQuery(closuresQuery);
   const merchants = useQuery(merchantsQuery);
+  const settings = useQuery(asaasSettingsQuery);
+  const dueDay = settings.data?.due_day ?? 10;
 
   const [period, setPeriod] = useState<PeriodType>("month");
   const [customRange, setCustomRange] = useState<{ from?: Date; to?: Date }>();
@@ -54,7 +56,7 @@ function ReportsPage() {
   const ranges = useMemo(() => getPeriodDateRange(period, customRange as DateRange), [period, customRange]);
 
   const getDueDate = (createdAt: string) => {
-    return startOfDay(addDays(new Date(createdAt), 5));
+    return startOfDay(getNextBusinessDueDate(new Date(createdAt), dueDay));
   };
 
   const getStatus = (closure: any, dueDate: Date) => {
@@ -72,8 +74,10 @@ function ReportsPage() {
     const cStatus = getStatus(c, dueDate);
     if (statusFilter !== "all" && cStatus !== statusFilter) return false;
 
-    // Period Filter (based on due date)
-    if (!isWithinInterval(dueDate, { start: startOfDay(ranges.current.from), end: startOfDay(ranges.current.to) })) {
+    // Period Filter (based on created_at or due_date)
+    const createdAtDate = startOfDay(new Date(c.created_at));
+    const interval = { start: startOfDay(ranges.current.from), end: startOfDay(ranges.current.to) };
+    if (!isWithinInterval(dueDate, interval) && !isWithinInterval(createdAtDate, interval)) {
       return false;
     }
 

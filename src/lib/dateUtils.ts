@@ -6,9 +6,23 @@ import {
   format,
   isWithinInterval,
   parseISO,
+  isWeekend,
+  addDays,
 } from "date-fns";
 
 export type PeriodType = "month" | "7d" | "30d" | "90d" | "custom";
+
+export function getNextBusinessDueDate(createdAt: Date, dueDay: number): Date {
+  const day = Math.min(Math.max(dueDay, 1), 28);
+  let due = new Date(createdAt.getFullYear(), createdAt.getMonth(), day);
+  if (due.getTime() - createdAt.getTime() < 2 * 24 * 60 * 60 * 1000) {
+    due = new Date(createdAt.getFullYear(), createdAt.getMonth() + 1, day);
+  }
+  while (isWeekend(due)) {
+    due = addDays(due, 1);
+  }
+  return due;
+}
 
 export interface DateRange {
   from: Date;
