@@ -72,9 +72,9 @@ export function AppLayout({
     onSuccess: () => qc.invalidateQueries({ queryKey: ["notifications"] })
   });
 
-  const clearNotifications = useMutation({
+  const markAllAsRead = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from('notifications').delete().not('id', 'is', null);
+      const { error } = await supabase.from('notifications').update({ is_read: true }).eq('is_read', false);
       if (error) throw new Error(error.message);
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["notifications"] })
@@ -211,18 +211,18 @@ export function AppLayout({
                   <DropdownMenuContent align="end" className="w-72 max-h-96 overflow-y-auto">
                     <div className="flex items-center justify-between px-2 pb-1 pt-2">
                       <DropdownMenuLabel className="p-0">Notificações</DropdownMenuLabel>
-                      {notifications.length > 0 && (
+                      {unreadCount > 0 && (
                         <Button 
                           variant="ghost" 
                           size="sm" 
                           className="h-auto p-1 text-xs text-muted-foreground hover:bg-muted hover:text-foreground"
                           onClick={(e) => {
                             e.preventDefault();
-                            clearNotifications.mutate();
+                            markAllAsRead.mutate();
                           }}
-                          disabled={clearNotifications.isPending}
+                          disabled={markAllAsRead.isPending}
                         >
-                          Limpar todas
+                          Marcar como lidas
                         </Button>
                       )}
                     </div>
