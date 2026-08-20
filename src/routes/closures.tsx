@@ -393,11 +393,11 @@ function ClosuresPage() {
           </motion.section>
           </div>
 
-          {/* Seção 2: Lançamentos (Despesas e Cobranças) */}
+          {/* Seção 2: Lançamentos (Cobranças e Deduções) */}
           <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="print:break-before-page print:pt-8">
             <h2 className="text-xl font-bold tracking-tight mb-4 flex items-center gap-2 print:text-primary">
               <Receipt className="h-5 w-5 text-muted-foreground print:text-primary" />
-              Lançamentos (Despesas e Cobranças)
+              Lançamentos (Cobranças e Deduções)
             </h2>
             <Card className="print:shadow-none print:border print:border-border/50 border-none shadow-card overflow-hidden">
               <CardContent className="p-0">
@@ -441,9 +441,9 @@ function ClosuresPage() {
                               <TableCell>
                                 <Badge variant={exp.category === "cobranca" ? "default" : "destructive"} className="px-2 py-0.5">
                                   {exp.category === "cobranca" ? (
-                                    <span className="flex items-center gap-1"><ArrowDownRight className="w-3 h-3" /> Cobrança (-)</span>
+                                    <span className="flex items-center gap-1"><ArrowDownRight className="w-3 h-3" /> Dedução (-)</span>
                                   ) : (
-                                    <span className="flex items-center gap-1"><ArrowUpRight className="w-3 h-3" /> Despesa (+)</span>
+                                    <span className="flex items-center gap-1"><ArrowUpRight className="w-3 h-3" /> Cobrança (+)</span>
                                   )}
                                 </Badge>
                               </TableCell>
@@ -455,7 +455,7 @@ function ClosuresPage() {
                                   <span>
                                     {exp.description.toLowerCase().includes('pix') ? 'Pix' : 
                                      exp.description.toLowerCase().includes('boleto') ? 'Boleto' : 
-                                     exp.description.toLowerCase().includes('espécie') || exp.description.toLowerCase().includes('dinheiro') ? 'Dinheiro' : 'Despesa/Pagamento'}
+                                     exp.description.toLowerCase().includes('espécie') || exp.description.toLowerCase().includes('dinheiro') ? 'Dinheiro' : 'Cobrança'}
                                   </span>
                                 </div>
                               </TableCell>

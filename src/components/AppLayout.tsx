@@ -41,7 +41,7 @@ const nav = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
   { to: "/merchants", label: "Estabelecimentos", icon: Store },
   { to: "/import", label: "Importar Extrato", icon: Upload },
-  { to: "/expenses", label: "Despesas / Cobranças", icon: Receipt },
+  { to: "/expenses", label: "Lançamentos", icon: Receipt },
   { to: "/closures", label: "Fechamentos", icon: FileCheck2 },
   { to: "/reports", label: "Relatórios", icon: FileBarChart2 },
   { to: "/settings/asaas", label: "Configuração Asaas", icon: Settings },

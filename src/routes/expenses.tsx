@@ -26,13 +26,13 @@ import { translateError } from "@/lib/translateError";
 export const Route = createFileRoute("/expenses")({
   head: () => ({
     meta: [
-      { title: "Despesas e Ajustes | Gestão de ECs" },
+      { title: "Lançamentos | Gestão de ECs" },
       {
         name: "description",
         content:
-          "Lance despesas e créditos extras por estabelecimento e mês, como bobinas e descontos de indicação, que abatem o valor da fatura final.",
+          "Lance cobranças e deduções por estabelecimento e mês, como bobinas e descontos de indicação, que abatem o valor da fatura final.",
       },
-      { property: "og:title", content: "Despesas e Ajustes" },
+      { property: "og:title", content: "Lançamentos" },
       {
         property: "og:description",
         content: "Lançamentos extras que reduzem o valor final cobrado do EC.",
@@ -88,7 +88,7 @@ function ExpensesPage() {
   const total = list.reduce((s, e) => s + (e.category === "cobranca" ? -Number(e.amount) : Number(e.amount)), 0);
 
   return (
-    <AppLayout title="Despesas / Ajustes" subtitle="Débitos e créditos extras que abatem a fatura">
+    <AppLayout title="Lançamentos" subtitle="Débitos e créditos extras que abatem a fatura">
       <div className="grid gap-4 lg:grid-cols-[380px_1fr]">
         <Card className="border-none shadow-card">
           <CardHeader>
@@ -132,8 +132,8 @@ function ExpensesPage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="despesa">Despesa</SelectItem>
-                  <SelectItem value="cobranca">Cobrança</SelectItem>
+                  <SelectItem value="despesa">Cobrança</SelectItem>
+                  <SelectItem value="cobranca">Dedução</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -173,7 +173,7 @@ function ExpensesPage() {
                 Lançamentos de {monthLabel(month)}
               </CardTitle>
               <p className="text-xs text-muted-foreground">
-                Despesas e Cobranças do período
+                Cobranças e Deduções do período
               </p>
             </div>
             <div className="text-right">
@@ -213,7 +213,7 @@ function ExpensesPage() {
                         <div className="flex items-center gap-2">
                           <p className="truncate text-sm font-semibold group-hover:text-primary transition-colors">{e.description}</p>
                           <Badge variant={e.category === "cobranca" ? "outline" : "destructive"} className={`text-[9px] px-1.5 py-0 uppercase tracking-wider h-4 ${e.category === 'cobranca' ? 'text-success border-success/30 bg-success/5' : ''}`}>
-                            {e.category === "cobranca" ? "Cobrança" : "Despesa"}
+                            {e.category === "cobranca" ? "Dedução" : "Cobrança"}
                           </Badge>
                         </div>
                         <div className="flex items-center gap-1.5 text-xs text-muted-foreground group-hover:text-muted-foreground/80 transition-colors">
