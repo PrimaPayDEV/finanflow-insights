@@ -55,11 +55,6 @@ function nextDueDate(dueDay: number) {
 export const createAsaasCharge = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => schema.parse(d))
   .handler(async ({ data }) => {
-    const apiKey = process.env.ASAAS_API_KEY || process.env.ASAAS_API_TESTE;
-    if (!apiKey) {
-      return { ok: false as const, error: "Chave da API do Asaas não configurada no backend." };
-    }
-
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: settings } = await supabaseAdmin
       .from("asaas_settings")
@@ -68,6 +63,13 @@ export const createAsaasCharge = createServerFn({ method: "POST" })
       .maybeSingle();
 
     const sandbox = settings?.sandbox ?? false;
+    const apiKey = sandbox ? process.env.ASAAS_API_TESTE : process.env.ASAAS_API_KEY;
+
+    if (!apiKey) {
+      return { ok: false as const, error: `Chave da API do Asaas (${sandbox ? 'Sandbox' : 'Produção'}) não configurada.` };
+    }
+
+
     const base = sandbox
       ? "https://sandbox.asaas.com/api/v3"
       : "https://api.asaas.com/v3";
@@ -181,11 +183,6 @@ export const createAsaasCharge = createServerFn({ method: "POST" })
 export const createAsaasSubaccount = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => subaccountSchema.parse(d))
   .handler(async ({ data }) => {
-    const apiKey = process.env.ASAAS_API_KEY || process.env.ASAAS_API_TESTE;
-    if (!apiKey) {
-      return { ok: false as const, error: "Chave da API do Asaas não configurada no backend." };
-    }
-
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: settings } = await supabaseAdmin
       .from("asaas_settings")
@@ -194,6 +191,13 @@ export const createAsaasSubaccount = createServerFn({ method: "POST" })
       .maybeSingle();
 
     const sandbox = settings?.sandbox ?? false;
+    const apiKey = sandbox ? process.env.ASAAS_API_TESTE : process.env.ASAAS_API_KEY;
+
+    if (!apiKey) {
+      return { ok: false as const, error: `Chave da API do Asaas (${sandbox ? 'Sandbox' : 'Produção'}) não configurada.` };
+    }
+
+
     const base = sandbox
       ? "https://sandbox.asaas.com/api/v3"
       : "https://api.asaas.com/v3";
