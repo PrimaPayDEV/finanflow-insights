@@ -203,10 +203,15 @@ export function AppLayout({
                 
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="icon" className="relative rounded-full">
-                      <Bell className="h-4 w-4" />
+                    <Button variant="outline" size="icon" className="relative rounded-full border-border/50 hover:bg-muted/50 transition-colors">
+                      <Bell className={cn("h-4 w-4", unreadCount > 0 && "text-primary fill-primary/20")} />
                       {unreadCount > 0 && (
-                        <span className="absolute top-0 right-0 h-2 w-2 rounded-full bg-destructive" />
+                        <>
+                          <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[9px] font-bold text-destructive-foreground z-10 border border-background shadow-sm">
+                            {unreadCount > 9 ? '9+' : unreadCount}
+                          </span>
+                          <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-destructive opacity-75 animate-ping" />
+                        </>
                       )}
                       <span className="sr-only">Notificações</span>
                     </Button>
