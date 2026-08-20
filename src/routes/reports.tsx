@@ -73,6 +73,13 @@ function ReportsPage() {
     return startOfDay(getNextBusinessDueDate(new Date(createdAt), dueDay));
   };
 
+  const getNewDueDate = (reissuedAt: string | null) => {
+    if (!reissuedAt) return null;
+    return startOfDay(getNextBusinessDueDate(new Date(reissuedAt), dueDay));
+  };
+
+  const getEffectiveDueDate = (c: any) => getNewDueDate(c.reissued_at) || getDueDate(c.created_at);
+
   const getStatus = (closure: any, dueDate: Date) => {
     if (closure.status === "paid") return "paid";
     if (isBefore(dueDate, today)) return "overdue";
@@ -90,15 +97,16 @@ function ReportsPage() {
     }
 
     const dueDate = getDueDate(c.created_at);
+    const effectiveDueDate = getEffectiveDueDate(c);
     
     // Status Filter
-    const cStatus = getStatus(c, dueDate);
+    const cStatus = getStatus(c, effectiveDueDate);
     if (statusFilter !== "all" && cStatus !== statusFilter) return false;
 
     // Period Filter (based on created_at or due_date)
     const createdAtDate = startOfDay(new Date(c.created_at));
     const interval = { start: startOfDay(ranges.current.from), end: startOfDay(ranges.current.to) };
-    if (!isWithinInterval(dueDate, interval) && !isWithinInterval(createdAtDate, interval)) {
+    if (!isWithinInterval(effectiveDueDate, interval) && !isWithinInterval(createdAtDate, interval)) {
       return false;
     }
 
@@ -132,19 +140,19 @@ function ReportsPage() {
   };
 
   const totalToReceive = filteredClosures
-    .filter((c) => getStatus(c, getDueDate(c.created_at)) !== "paid")
+    .filter((c) => getStatus(c, getEffectiveDueDate(c)) !== "paid")
     .reduce((sum, c) => sum + getClosureAmount(c), 0);
 
   const totalPending = filteredClosures
-    .filter((c) => getStatus(c, getDueDate(c.created_at)) === "pending")
+    .filter((c) => getStatus(c, getEffectiveDueDate(c)) === "pending")
     .reduce((sum, c) => sum + getClosureAmount(c), 0);
 
   const totalOverdue = filteredClosures
-    .filter((c) => getStatus(c, getDueDate(c.created_at)) === "overdue")
+    .filter((c) => getStatus(c, getEffectiveDueDate(c)) === "overdue")
     .reduce((sum, c) => sum + getClosureAmount(c), 0);
 
   const totalReceived = filteredClosures
-    .filter((c) => getStatus(c, getDueDate(c.created_at)) === "paid")
+    .filter((c) => getStatus(c, getEffectiveDueDate(c)) === "paid")
     .reduce((sum, c) => sum + getClosurePaidAmount(c), 0);
 
   const getSubtitle = () => {
@@ -376,8 +384,9 @@ function ReportsPage() {
                       <TableHead className="py-4 pl-6 font-semibold text-muted-foreground w-[28%]">Estabelecimento</TableHead>
                       <TableHead className="py-4 font-semibold text-muted-foreground text-center w-[15%]">Emissão</TableHead>
                       <TableHead className="py-4 font-semibold text-muted-foreground text-center w-[12%]">Ref</TableHead>
-                      <TableHead className="py-4 font-semibold text-muted-foreground text-center w-[15%]">Vencimento</TableHead>
-                      <TableHead className="py-4 font-semibold text-muted-foreground text-center w-[15%]">Status</TableHead>
+                      <TableHead className="py-4 font-semibold text-muted-foreground text-center w-[12%]">Vencimento Original</TableHead>
+                      <TableHead className="py-4 font-semibold text-muted-foreground text-center w-[12%]">Novo Vencimento</TableHead>
+                      <TableHead className="py-4 font-semibold text-muted-foreground text-center w-[12%]">Status</TableHead>
                       {partnerFilter !== "all" ? (
                         <>
                           <TableHead className="py-4 text-center font-semibold text-muted-foreground w-[10%]">% Split</TableHead>
@@ -396,7 +405,7 @@ function ReportsPage() {
                           animate={{ opacity: 1 }}
                           exit={{ opacity: 0 }}
                         >
-                          <TableCell colSpan={partnerFilter !== "all" ? 7 : 6} className="h-64 text-center">
+                          <TableCell colSpan={partnerFilter !== "all" ? 8 : 7} className="h-64 text-center">
                             <div className="flex flex-col items-center justify-center text-muted-foreground space-y-3">
                               <div className="p-4 bg-muted/30 rounded-full">
                                 <SearchX className="h-8 w-8 opacity-40" />
@@ -409,7 +418,9 @@ function ReportsPage() {
                       ) : (
                         filteredClosures.map((c) => {
                           const dueDate = getDueDate(c.created_at);
-                          const status = getStatus(c, dueDate);
+                          const newDueDate = getNewDueDate(c.reissued_at);
+                          const effectiveDueDate = getEffectiveDueDate(c);
+                          const status = getStatus(c, effectiveDueDate);
                           const merchant = merchants.data?.find(m => m.id === c.merchant_id);
                           
                           return (
@@ -442,12 +453,22 @@ function ReportsPage() {
                                   {c.reference_month}
                                 </Badge>
                               </TableCell>
-                              <TableCell className="py-5">
-                                <div className={isBefore(dueDate, today) && status !== "paid" ? "text-destructive font-medium flex items-center justify-center gap-2.5" : "flex items-center justify-center gap-2.5"}>
-                                  {isBefore(dueDate, today) && status !== "paid" ? <AlertCircle className="w-4 h-4 shrink-0" /> : <CalendarDays className="w-4 h-4 text-muted-foreground shrink-0" />}
-                                  <span>{format(dueDate, "dd/MM/yyyy")}</span>
-                                </div>
-                              </TableCell>
+                                <TableCell className="py-5">
+                                  <div className={!newDueDate && isBefore(dueDate, today) && status !== "paid" ? "text-destructive font-medium flex items-center justify-center gap-2.5" : "flex items-center justify-center gap-2.5"}>
+                                    {!newDueDate && isBefore(dueDate, today) && status !== "paid" ? <AlertCircle className="w-4 h-4 shrink-0" /> : <CalendarDays className="w-4 h-4 text-muted-foreground shrink-0" />}
+                                    <span className={newDueDate ? "line-through text-muted-foreground opacity-70" : ""}>{format(dueDate, "dd/MM/yyyy")}</span>
+                                  </div>
+                                </TableCell>
+                                <TableCell className="py-5">
+                                  {newDueDate ? (
+                                    <div className={isBefore(newDueDate, today) && status !== "paid" ? "text-destructive font-medium flex items-center justify-center gap-2.5" : "flex items-center justify-center gap-2.5"}>
+                                      {isBefore(newDueDate, today) && status !== "paid" ? <AlertCircle className="w-4 h-4 shrink-0" /> : <CalendarDays className="w-4 h-4 text-muted-foreground shrink-0" />}
+                                      <span className="font-bold text-primary">{format(newDueDate, "dd/MM/yyyy")}</span>
+                                    </div>
+                                  ) : (
+                                    <div className="flex items-center justify-center text-muted-foreground/50">-</div>
+                                  )}
+                                </TableCell>
                               <TableCell className="py-5 text-center">
                                 {status === "paid" && <Badge variant="success" className="w-[100px] justify-center bg-success text-success-foreground border-success hover:bg-success/90 px-3 py-1"><CheckCircle2 className="w-3.5 h-3.5 mr-1.5" /> Pago</Badge>}
                                 {status === "pending" && <Badge variant="outline" className="w-[100px] justify-center text-amber-600 border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-1"><Clock className="w-3.5 h-3.5 mr-1.5" /> Pendente</Badge>}

@@ -128,7 +128,9 @@ function ClosuresPage() {
             traditional_cost_estimate: calc.traditionalCost,
             savings_amount: calc.savings,
             status: "closed",
-            created_at: new Date().toISOString(),
+            ...(existing 
+              ? { reissued_at: new Date().toISOString(), created_at: existing.created_at } 
+              : { created_at: new Date().toISOString() }),
           },
           { onConflict: "merchant_id,reference_month" },
         )
