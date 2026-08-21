@@ -85,6 +85,8 @@ export function getModalityRate(t: Transaction, plan?: FeePlan): number {
   if (t.modality === 'pix') return (plan && plan.pix_rate > 0) ? plan.pix_rate : CPAG59.pix;
   if (t.modality === 'cash') return (plan && plan.cash_rate > 0) ? plan.cash_rate : 0;
 
+  const installments = t.installments || 1;
+
   if (t.modality === 'debit' && plan && plan.debit_rate > 0) return plan.debit_rate;
   if (t.modality === 'credit_vista' && plan && plan.credit_vista_rate > 0) return plan.credit_vista_rate;
   if (t.modality === 'credit_installment' && plan && plan.credit_installment_rate > 0) return plan.credit_installment_rate;
