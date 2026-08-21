@@ -129,7 +129,7 @@ function ClosuresPage() {
             savings_amount: calc.savings,
             status: "closed",
             ...(existing 
-              ? { created_at: existing.created_at } // TEMP FIX: Removed reissued_at here to avoid DB error until column is created
+              ? { reissued_at: new Date().toISOString(), created_at: existing.created_at } 
               : { created_at: new Date().toISOString() }),
           },
           { onConflict: "merchant_id,reference_month" },
