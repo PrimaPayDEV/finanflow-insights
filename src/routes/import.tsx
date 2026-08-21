@@ -466,9 +466,22 @@ function ImportPage() {
                   </Table>
                 </div>
                 {!isViewing ? (
-                  <Button onClick={() => confirm.mutate()} disabled={confirm.isPending}>
-                    <CheckCircle2 className="size-4" /> Confirmar importação
-                  </Button>
+                  <div className="flex items-center gap-3">
+                    <Button onClick={() => confirm.mutate()} disabled={confirm.isPending}>
+                      <CheckCircle2 className="size-4" /> Confirmar importação
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => {
+                        setRows([]);
+                        setFileName("");
+                        setSerialFilter("all");
+                      }} 
+                      disabled={confirm.isPending}
+                    >
+                      Cancelar
+                    </Button>
+                  </div>
                 ) : (
                   <Button variant="secondary" onClick={() => {
                     setViewingImport(null);
