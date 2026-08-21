@@ -165,86 +165,98 @@ function ExpensesPage() {
           </CardContent>
         </Card>
 
-        <Card className="flex flex-col h-full border-none shadow-card">
-          <CardHeader className="flex-row items-center justify-between pb-4 border-b border-border/30 bg-muted/20">
-            <div className="space-y-1">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Receipt className="w-4 h-4 text-primary" /> 
-                Lançamentos de {monthLabel(month)}
-              </CardTitle>
-              <p className="text-xs text-muted-foreground">
-                Cobranças e Deduções do período
-              </p>
-            </div>
-            <div className="text-right">
-              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-1">Impacto no Boleto</p>
-              <span className={`text-lg font-bold ${total > 0 ? 'text-destructive' : total < 0 ? 'text-success' : 'text-foreground'}`}>
-                {total > 0 ? '+' : total < 0 ? '-' : ''}{BRL(Math.abs(total))}
-              </span>
-            </div>
-          </CardHeader>
-          <CardContent className="flex-1 p-4 bg-muted/10">
-            <div className="space-y-3">
-              <AnimatePresence mode="popLayout">
-                {list.length === 0 && (
-                  <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="flex flex-col items-center justify-center py-12 text-center">
-                    <div className="p-4 bg-muted/30 rounded-full mb-3">
-                      <SearchX className="h-10 w-10 text-muted-foreground opacity-40" />
-                    </div>
-                    <p className="text-sm font-medium">Nenhum lançamento no período</p>
-                    <p className="text-xs text-muted-foreground mt-1">Os ajustes lançados aparecerão aqui.</p>
-                  </motion.div>
-                )}
-                {list.map((e, i) => (
-                  <motion.li 
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
-                    transition={{ delay: i * 0.05 }}
-                    key={e.id} 
-                    className="flex items-center justify-between gap-4 p-4 rounded-xl bg-card border-none shadow-[0_2px_10px_-2px_rgba(0,0,0,0.04)] hover:shadow-md transition-all group list-none"
-                  >
-                    <div className="flex items-center gap-4 min-w-0">
-                      <div className={`flex-shrink-0 p-2.5 rounded-full ${e.category === 'cobranca' ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'}`}>
-                        {e.category === 'cobranca' ? <ArrowDownCircle className="w-5 h-5" /> : <ArrowUpCircle className="w-5 h-5" />}
+        {merchantId ? (
+          <Card className="flex flex-col h-full border-none shadow-card">
+            <CardHeader className="flex-row items-center justify-between pb-4 border-b border-border/30 bg-muted/20">
+              <div className="space-y-1">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Receipt className="w-4 h-4 text-primary" /> 
+                  Lançamentos de {monthLabel(month)}
+                </CardTitle>
+                <p className="text-xs text-muted-foreground">
+                  Cobranças e Deduções do período
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-1">Impacto no Boleto</p>
+                <span className={`text-lg font-bold ${total > 0 ? 'text-destructive' : total < 0 ? 'text-success' : 'text-foreground'}`}>
+                  {total > 0 ? '+' : total < 0 ? '-' : ''}{BRL(Math.abs(total))}
+                </span>
+              </div>
+            </CardHeader>
+            <CardContent className="flex-1 p-4 bg-muted/10">
+              <div className="space-y-3">
+                <AnimatePresence mode="popLayout">
+                  {list.length === 0 && (
+                    <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="flex flex-col items-center justify-center py-12 text-center">
+                      <div className="p-4 bg-muted/30 rounded-full mb-3">
+                        <SearchX className="h-10 w-10 text-muted-foreground opacity-40" />
+                      </div>
+                      <p className="text-sm font-medium">Nenhum lançamento no período</p>
+                      <p className="text-xs text-muted-foreground mt-1">Os ajustes lançados aparecerão aqui.</p>
+                    </motion.div>
+                  )}
+                  {list.map((e, i) => (
+                    <motion.li 
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.95 }}
+                      transition={{ delay: i * 0.05 }}
+                      key={e.id} 
+                      className="flex items-center justify-between gap-4 p-4 rounded-xl bg-card border-none shadow-[0_2px_10px_-2px_rgba(0,0,0,0.04)] hover:shadow-md transition-all group list-none"
+                    >
+                      <div className="flex items-center gap-4 min-w-0">
+                        <div className={`flex-shrink-0 p-2.5 rounded-full ${e.category === 'cobranca' ? 'bg-success/10 text-success' : 'bg-destructive/10 text-destructive'}`}>
+                          {e.category === 'cobranca' ? <ArrowDownCircle className="w-5 h-5" /> : <ArrowUpCircle className="w-5 h-5" />}
+                        </div>
+                        
+                        <div className="min-w-0 space-y-1">
+                          <div className="flex items-center gap-2">
+                            <p className="truncate text-sm font-semibold group-hover:text-primary transition-colors">{e.description}</p>
+                            <Badge variant={e.category === "cobranca" ? "outline" : "destructive"} className={`text-[9px] px-1.5 py-0 uppercase tracking-wider h-4 ${e.category === 'cobranca' ? 'text-success border-success/30 bg-success/5' : ''}`}>
+                              {e.category === "cobranca" ? "Dedução" : "Cobrança"}
+                            </Badge>
+                          </div>
+                          <div className="flex items-center gap-1.5 text-xs text-muted-foreground group-hover:text-muted-foreground/80 transition-colors">
+                            <MerchantIcon name={(merchants.data ?? []).find((m) => m.id === e.merchant_id)?.name ?? ""} className="w-3.5 h-3.5 opacity-70" />
+                            <span className="truncate">{(merchants.data ?? []).find((m) => m.id === e.merchant_id)?.name}</span>
+                          </div>
+                        </div>
                       </div>
                       
-                      <div className="min-w-0 space-y-1">
-                        <div className="flex items-center gap-2">
-                          <p className="truncate text-sm font-semibold group-hover:text-primary transition-colors">{e.description}</p>
-                          <Badge variant={e.category === "cobranca" ? "outline" : "destructive"} className={`text-[9px] px-1.5 py-0 uppercase tracking-wider h-4 ${e.category === 'cobranca' ? 'text-success border-success/30 bg-success/5' : ''}`}>
-                            {e.category === "cobranca" ? "Dedução" : "Cobrança"}
-                          </Badge>
+                      <div className="flex items-center gap-4">
+                        <div className="text-right">
+                          <span className={`text-base font-bold ${e.category === 'cobranca' ? 'text-success' : 'text-destructive'}`}>
+                            {e.category === 'cobranca' ? '-' : '+'}{BRL(Number(e.amount))}
+                          </span>
                         </div>
-                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground group-hover:text-muted-foreground/80 transition-colors">
-                          <MerchantIcon name={(merchants.data ?? []).find((m) => m.id === e.merchant_id)?.name ?? ""} className="w-3.5 h-3.5 opacity-70" />
-                          <span className="truncate">{(merchants.data ?? []).find((m) => m.id === e.merchant_id)?.name}</span>
-                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          aria-label="Remover"
+                          className="opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive hover:text-destructive-foreground h-8 w-8 rounded-full"
+                          onClick={() => remove.mutate(e.id)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
                       </div>
-                    </div>
-                    
-                    <div className="flex items-center gap-4">
-                      <div className="text-right">
-                        <span className={`text-base font-bold ${e.category === 'cobranca' ? 'text-success' : 'text-destructive'}`}>
-                          {e.category === 'cobranca' ? '-' : '+'}{BRL(Number(e.amount))}
-                        </span>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        aria-label="Remover"
-                        className="opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive hover:text-destructive-foreground h-8 w-8 rounded-full"
-                        onClick={() => remove.mutate(e.id)}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </motion.li>
-                ))}
-              </AnimatePresence>
+                    </motion.li>
+                  ))}
+                </AnimatePresence>
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card className="flex flex-col items-center justify-center h-full border-none shadow-card p-12 text-center bg-muted/5 min-h-[400px]">
+            <div className="p-6 bg-muted/30 rounded-full mb-4">
+              <Receipt className="w-12 h-12 text-muted-foreground opacity-30" />
             </div>
-          </CardContent>
-        </Card>
+            <h3 className="text-xl font-semibold text-foreground/80 mb-2">Selecione um estabelecimento</h3>
+            <p className="text-sm text-muted-foreground max-w-[280px]">
+              Os lançamentos aparecerão aqui após você selecionar o parceiro/licenciado no painel ao lado.
+            </p>
+          </Card>
+        )}
       </div>
     </AppLayout>
   );
