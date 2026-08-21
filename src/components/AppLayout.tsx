@@ -139,9 +139,39 @@ export function AppLayout({
             {isCollapsed ? <PanelLeftOpen className="size-5" /> : <PanelLeftClose className="size-5" />}
           </Button>
           {!isCollapsed && (
-            <p className="px-2 pb-2 pt-1 text-xs text-center text-sidebar-foreground/50">
-              Plataforma de fechamento e cobrança
-            </p>
+            <div className="flex flex-col items-center gap-2 pb-2 px-2">
+              <p className="px-2 pt-1 text-[10px] text-center text-sidebar-foreground/40 uppercase tracking-wider">
+                Ambiente de Testes
+              </p>
+              <Button 
+                variant="destructive" 
+                size="sm" 
+                className="w-full text-[11px] font-bold tracking-wide uppercase h-8"
+                onClick={async () => {
+                  if (!window.confirm('Tem certeza que deseja apagar todas as cobranças, lançamentos e extratos de teste? Esta ação não apaga seus Estabelecimentos.')) return;
+                  try {
+                    import("sonner").then(({ toast }) => {
+                      toast.loading('Limpando a casa...', { id: 'wipe' });
+                    });
+                    await supabase.from('closures').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+                    await supabase.from('expenses_adjustments').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+                    await supabase.from('transactions').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+                    await supabase.from('statements_imports').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+                    
+                    import("sonner").then(({ toast }) => {
+                      toast.success('Ambiente limpo com sucesso! 🧹', { id: 'wipe' });
+                    });
+                    setTimeout(() => window.location.reload(), 1500);
+                  } catch (e: any) {
+                    import("sonner").then(({ toast }) => {
+                      toast.error('Erro ao limpar: ' + e.message, { id: 'wipe' });
+                    });
+                  }
+                }}
+              >
+                Limpar Dados de Teste
+              </Button>
+            </div>
           )}
         </div>
       </aside>
