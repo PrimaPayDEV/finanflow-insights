@@ -88,7 +88,6 @@ export type Database = {
           paid_amount: number | null
           paid_at: string | null
           reference_month: string
-          reissued_at: string | null
           savings_amount: number
           status: Database["public"]["Enums"]["closure_status"]
           total_expenses: number
@@ -106,7 +105,6 @@ export type Database = {
           paid_amount?: number | null
           paid_at?: string | null
           reference_month: string
-          reissued_at?: string | null
           savings_amount?: number
           status?: Database["public"]["Enums"]["closure_status"]
           total_expenses?: number
@@ -124,7 +122,6 @@ export type Database = {
           paid_amount?: number | null
           paid_at?: string | null
           reference_month?: string
-          reissued_at?: string | null
           savings_amount?: number
           status?: Database["public"]["Enums"]["closure_status"]
           total_expenses?: number
