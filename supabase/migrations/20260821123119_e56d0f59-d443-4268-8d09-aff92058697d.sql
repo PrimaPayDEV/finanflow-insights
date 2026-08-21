@@ -1,0 +1,1 @@
+ALTER TABLE public.closures ADD COLUMN IF NOT EXISTS reissued_at timestamp with time zone;
