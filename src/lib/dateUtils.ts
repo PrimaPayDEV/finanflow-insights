@@ -13,11 +13,28 @@ import {
 export type PeriodType = "month" | "7d" | "30d" | "90d" | "custom";
 
 export function getNextBusinessDueDate(createdAt: Date, dueDay: number): Date {
-  const day = Math.min(Math.max(dueDay, 1), 28);
-  let due = new Date(createdAt.getFullYear(), createdAt.getMonth(), day);
-  if (due.getTime() - createdAt.getTime() < 2 * 24 * 60 * 60 * 1000) {
-    due = new Date(createdAt.getFullYear(), createdAt.getMonth() + 1, day);
+  const day = Math.min(Math.max(dueDay, 1), 31);
+  
+  let targetMonth = createdAt.getMonth();
+  let targetYear = createdAt.getFullYear();
+  let due = new Date(targetYear, targetMonth, day);
+  
+  if (due.getMonth() !== targetMonth) {
+    due = new Date(targetYear, targetMonth + 1, 0); // last day of target month
   }
+
+  if (due.getTime() - createdAt.getTime() < 2 * 24 * 60 * 60 * 1000) {
+    targetMonth += 1;
+    if (targetMonth > 11) {
+      targetMonth = 0;
+      targetYear += 1;
+    }
+    due = new Date(targetYear, targetMonth, day);
+    if (due.getMonth() !== targetMonth) {
+      due = new Date(targetYear, targetMonth + 1, 0);
+    }
+  }
+
   while (isWeekend(due)) {
     due = addDays(due, 1);
   }
