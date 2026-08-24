@@ -490,14 +490,14 @@ function ClosuresPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 print:grid-cols-2 print:gap-6">
                 <Card className="print:shadow-none print:border print:border-border/50 border-none shadow-card bg-slate-50/50">
                   <CardContent className="p-6 md:p-8 flex flex-col justify-center text-center">
-                    <h3 className="text-muted-foreground font-bold text-xs md:text-sm uppercase tracking-wider mb-2">Custo no modelo tradicional ({PCT(calc.appliedTraditionalRate)})</h3>
+                    <h3 className="text-muted-foreground font-bold text-xs md:text-sm uppercase tracking-wider mb-2">Custo no modelo tradicional</h3>
                     <p className="text-3xl md:text-4xl font-bold text-destructive line-through decoration-destructive/40">{BRL(calc.traditionalCost)}</p>
                   </CardContent>
                 </Card>
 
                 <Card className="print:shadow-none print:border print:border-border/50 border border-primary/20 shadow-card bg-primary/5">
                   <CardContent className="p-6 md:p-8 flex flex-col justify-center text-center">
-                    <h3 className="text-primary font-bold text-xs md:text-sm uppercase tracking-wider mb-2">Custos com a Solução Prima ({PCT(calc.appliedPrimaRate)})</h3>
+                    <h3 className="text-primary font-bold text-xs md:text-sm uppercase tracking-wider mb-2">Custos com a Solução Prima</h3>
                     <p className="text-3xl md:text-4xl font-bold text-primary">{BRL(calc.totalMerchantCost)}</p>
                   </CardContent>
                 </Card>
