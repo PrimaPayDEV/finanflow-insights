@@ -239,13 +239,13 @@ function MerchantsPage() {
             <Tabs defaultValue="plan">
               <TabsList>
                 <TabsTrigger value="plan">
-                  <Percent className="size-4" /> Plano financeiro
+                  <Percent className="size-4 mr-2" /> Plano financeiro
                 </TabsTrigger>
                 <TabsTrigger value="pos">
-                  <Smartphone className="size-4" /> Terminais
+                  <Smartphone className="size-4 mr-2" /> Terminais
                 </TabsTrigger>
                 <TabsTrigger value="split">
-                  <Users className="size-4" /> Split Asaas
+                  <Users className="size-4 mr-2" /> Split Asaas
                 </TabsTrigger>
               </TabsList>
               <TabsContent value="plan">
