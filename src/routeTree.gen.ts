@@ -20,6 +20,7 @@ import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SettingsAsaasRouteImport } from './routes/settings.asaas'
 import { Route as ApiPublicAsaasWebhookRouteImport } from './routes/api/public/asaas-webhook'
+import { Route as PublicReportClosureIdRouteImport } from './routes/public.report.$closureId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -76,6 +77,11 @@ const ApiPublicAsaasWebhookRoute = ApiPublicAsaasWebhookRouteImport.update({
   path: '/api/public/asaas-webhook',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PublicReportClosureIdRoute = PublicReportClosureIdRouteImport.update({
+  id: '/public/report/$closureId',
+  path: '/public/report/$closureId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -89,6 +95,7 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/settings/asaas': typeof SettingsAsaasRoute
   '/api/public/asaas-webhook': typeof ApiPublicAsaasWebhookRoute
+  '/public/report/$closureId': typeof PublicReportClosureIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -102,6 +109,7 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/settings/asaas': typeof SettingsAsaasRoute
   '/api/public/asaas-webhook': typeof ApiPublicAsaasWebhookRoute
+  '/public/report/$closureId': typeof PublicReportClosureIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -116,6 +124,7 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/settings/asaas': typeof SettingsAsaasRoute
   '/api/public/asaas-webhook': typeof ApiPublicAsaasWebhookRoute
+  '/public/report/$closureId': typeof PublicReportClosureIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -131,6 +140,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/settings/asaas'
     | '/api/public/asaas-webhook'
+    | '/public/report/$closureId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -144,6 +154,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/settings/asaas'
     | '/api/public/asaas-webhook'
+    | '/public/report/$closureId'
   id:
     | '__root__'
     | '/'
@@ -157,6 +168,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/settings/asaas'
     | '/api/public/asaas-webhook'
+    | '/public/report/$closureId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -171,6 +183,7 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   SettingsAsaasRoute: typeof SettingsAsaasRoute
   ApiPublicAsaasWebhookRoute: typeof ApiPublicAsaasWebhookRoute
+  PublicReportClosureIdRoute: typeof PublicReportClosureIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -252,6 +265,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicAsaasWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/public/report/$closureId': {
+      id: '/public/report/$closureId'
+      path: '/public/report/$closureId'
+      fullPath: '/public/report/$closureId'
+      preLoaderRoute: typeof PublicReportClosureIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -267,6 +287,7 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   SettingsAsaasRoute: SettingsAsaasRoute,
   ApiPublicAsaasWebhookRoute: ApiPublicAsaasWebhookRoute,
+  PublicReportClosureIdRoute: PublicReportClosureIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

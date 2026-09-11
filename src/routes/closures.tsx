@@ -148,7 +148,7 @@ function ClosuresPage() {
             phone: merchant.phone_whatsapp,
           },
           value: Number(calc.netInvoice.toFixed(2)),
-          description: `Taxa operacional ${monthLabel(month)} - ${merchant.name}`,
+          description: `Taxa operacional ${monthLabel(month)} - ${merchant.name}\n\nRelatório de Economia: ${window.location.origin}/public/report/${saved.id}`,
           splits: merchantSplits.map((s) => ({
             walletId: s.partner_asaas_wallet_id,
             percentualValue: Number(s.percentage),

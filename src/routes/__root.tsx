@@ -132,7 +132,8 @@ function AuthGuard({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!isLoading) {
-      if (!user && pathname !== "/login") {
+      const isPublicRoute = pathname.startsWith("/public") || pathname.startsWith("/api/public") || pathname === "/login";
+      if (!user && !isPublicRoute) {
         navigate({ to: "/login" });
       } else if (user && pathname === "/login") {
         navigate({ to: "/" });
