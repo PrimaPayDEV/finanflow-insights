@@ -20,6 +20,7 @@ import {
   CircleDollarSign,
   FileText,
   AlertCircle,
+  ShieldCheck,
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
@@ -69,7 +70,7 @@ export function AppLayout({
 
   const currentNav = [...nav];
   if (companyName === "Prima Hub") {
-    currentNav.push({ to: "/admin/companies", label: "Administração", icon: Settings });
+    currentNav.push({ to: "/admin/companies", label: "Administração", icon: ShieldCheck });
   }
 
   const markAsRead = useMutation({
