@@ -32,6 +32,7 @@ import {
 import { PCT, formatCpfCnpj, formatPhone, formatCurrencyInput } from "@/lib/format";
 import { createAsaasSubaccount } from "@/lib/asaas.functions";
 import { translateError } from "@/lib/translateError";
+import { useAuth } from "@/contexts/AuthContext";
 
 export const Route = createFileRoute("/merchants")({
   head: () => ({
@@ -604,6 +605,7 @@ function SplitPanel({ merchant }: { merchant: Merchant }) {
 }
 
 function CreateAsaasSubaccountDialog({ onCreated }: { onCreated: (walletId: string) => void }) {
+  const { companyId } = useAuth();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({
     name: "",
@@ -621,7 +623,7 @@ function CreateAsaasSubaccountDialog({ onCreated }: { onCreated: (walletId: stri
   const create = useMutation({
     mutationFn: async () => {
       const parsedIncome = Number(form.incomeValue.replace(/\D/g, "")) / 100;
-      const res = await createAsaasSubaccount({ data: { ...form, incomeValue: parsedIncome } });
+      const res = await createAsaasSubaccount({ data: { ...form, companyId: companyId!, incomeValue: parsedIncome } });
       if (!res.ok) throw new Error(res.error);
       return res.walletId;
     },

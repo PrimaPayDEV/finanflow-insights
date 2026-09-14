@@ -59,6 +59,7 @@ import {
 
 import { translateError } from "@/lib/translateError";
 import type { Database } from "@/integrations/supabase/types";
+import { useAuth } from "@/contexts/AuthContext";
 
 type FeePlan = Database["public"]["Tables"]["fee_plans"]["Row"];
 
@@ -68,10 +69,11 @@ export const Route = createFileRoute("/closures")({
       { title: "Relatório de Fechamento | Gestão de ECs" },
     ],
   }),
-  component: ClosuresPage,
+  component: RouteComponent,
 });
 
-function ClosuresPage() {
+function RouteComponent() {
+  const { companyId } = useAuth();
   const qc = useQueryClient();
   const merchants = useQuery(merchantsQuery);
   const plans = useQuery(feePlansQuery);
@@ -140,12 +142,13 @@ function ClosuresPage() {
 
       const res = await charge({
         data: {
+          companyId: companyId!,
           closureId: saved.id,
           customer: {
             name: merchant.name,
             cpfCnpj: merchant.document_cnpj.replace(/\D/g, ""),
             email: merchant.email,
-            phone: merchant.phone_whatsapp,
+            phone: merchant.phone_whatsapp?.replace(/\D/g, ""),
           },
           value: Number(calc.netInvoice.toFixed(2)),
           description: `Taxa operacional ${monthLabel(month)} - ${merchant.name}\n\nRelatório de Economia: ${window.location.origin}/public/report/${saved.id}`,

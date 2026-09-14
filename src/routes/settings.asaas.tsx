@@ -16,6 +16,7 @@ import { checkAsaasConfigured } from "@/lib/asaas.functions";
 import { asaasSettingsQuery, asaasEventsQuery, type AsaasSettings } from "@/lib/db";
 import { supabase } from "@/integrations/supabase/client";
 import { translateError } from "@/lib/translateError";
+import { useAuth } from "@/contexts/AuthContext";
 
 export const Route = createFileRoute("/settings/asaas")({
   head: () => ({
@@ -49,9 +50,10 @@ const defaults = {
 };
 
 function AsaasSettingsPage() {
+  const { companyId } = useAuth();
   const qc = useQueryClient();
   const check = useServerFn(checkAsaasConfigured);
-  const status = useQuery({ queryKey: ["asaas-status"], queryFn: () => check({}) });
+  const status = useQuery({ queryKey: ["asaas-status", companyId], queryFn: () => check({ data: { companyId: companyId! } }) });
   const settings = useQuery(asaasSettingsQuery);
   const events = useQuery(asaasEventsQuery);
   const configured = status.data?.configured;

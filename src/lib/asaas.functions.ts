@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
 const schema = z.object({
+  companyId: z.string().uuid(),
   closureId: z.string().uuid(),
   customer: z.object({
     name: z.string().min(1).max(200),
@@ -29,6 +30,7 @@ const schema = z.object({
 });
 
 const subaccountSchema = z.object({
+  companyId: z.string().uuid(),
   name: z.string().min(1, "Nome é obrigatório"),
   email: z.string().email("E-mail inválido"),
   cpfCnpj: z.string().min(11, "Documento inválido"),
@@ -41,10 +43,23 @@ const subaccountSchema = z.object({
   postalCode: z.string().min(8, "CEP inválido"),
 });
 
-export const checkAsaasConfigured = createServerFn({ method: "GET" }).handler(async () => ({
-  configured: Boolean(process.env.ASAAS_API_KEY || process.env.ASAAS_API_TESTE),
-  webhookTokenConfigured: Boolean(process.env.ASAAS_WEBHOOK_TOKEN),
-}));
+export const checkAsaasConfigured = createServerFn({ method: "GET" })
+  .validator((d: { companyId: string }) => d)
+  .handler(async ({ data: { companyId } }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: company } = await supabaseAdmin
+      .from("companies")
+      .select("asaas_api_key")
+      .eq("id", companyId)
+      .single();
+    
+    // For legacy/sandbox we still check process.env as fallback
+    const key = company?.asaas_api_key || process.env.ASAAS_API_KEY || process.env.ASAAS_API_TESTE;
+    return {
+      configured: Boolean(key),
+      webhookTokenConfigured: Boolean(process.env.ASAAS_WEBHOOK_TOKEN),
+    };
+  });
 
 import { getNextBusinessDueDate } from "./dateUtils";
 
@@ -53,20 +68,30 @@ function nextDueDate(dueDay: number) {
 }
 
 export const createAsaasCharge = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => schema.parse(d))
+  .validator((d: unknown) => schema.parse(d))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    
+    // 1. Fetch Company for API Key
+    const { data: company } = await supabaseAdmin
+      .from("companies")
+      .select("asaas_api_key")
+      .eq("id", data.companyId)
+      .single();
+
     const { data: settings } = await supabaseAdmin
       .from("asaas_settings")
       .select("*")
+      .eq("company_id", data.companyId)
       .limit(1)
       .maybeSingle();
 
     const sandbox = settings?.sandbox ?? false;
-    const apiKey = sandbox ? process.env.ASAAS_API_TESTE : process.env.ASAAS_API_KEY;
+    // Use company key, fallback to env for testing
+    const apiKey = company?.asaas_api_key || (sandbox ? process.env.ASAAS_API_TESTE : process.env.ASAAS_API_KEY);
 
     if (!apiKey) {
-      return { ok: false as const, error: `Chave da API do Asaas (${sandbox ? 'Sandbox' : 'Produção'}) não configurada.` };
+      return { ok: false as const, error: `Chave da API do Asaas não configurada para a sua empresa.` };
     }
 
 
@@ -181,20 +206,29 @@ export const createAsaasCharge = createServerFn({ method: "POST" })
   });
 
 export const createAsaasSubaccount = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => subaccountSchema.parse(d))
+  .validator((d: unknown) => subaccountSchema.parse(d))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    // 1. Fetch Company for API Key
+    const { data: company } = await supabaseAdmin
+      .from("companies")
+      .select("asaas_api_key")
+      .eq("id", data.companyId)
+      .single();
+
     const { data: settings } = await supabaseAdmin
       .from("asaas_settings")
       .select("*")
+      .eq("company_id", data.companyId)
       .limit(1)
       .maybeSingle();
 
     const sandbox = settings?.sandbox ?? false;
-    const apiKey = sandbox ? process.env.ASAAS_API_TESTE : process.env.ASAAS_API_KEY;
+    const apiKey = company?.asaas_api_key || (sandbox ? process.env.ASAAS_API_TESTE : process.env.ASAAS_API_KEY);
 
     if (!apiKey) {
-      return { ok: false as const, error: `Chave da API do Asaas (${sandbox ? 'Sandbox' : 'Produção'}) não configurada.` };
+      return { ok: false as const, error: `Chave da API do Asaas não configurada para a sua empresa.` };
     }
 
 

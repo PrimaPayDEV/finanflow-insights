@@ -14,6 +14,62 @@ export type Database = {
   }
   public: {
     Tables: {
+      companies: {
+        Row: {
+          id: string
+          name: string
+          document_cnpj: string | null
+          asaas_api_key: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          document_cnpj?: string | null
+          asaas_api_key?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          document_cnpj?: string | null
+          asaas_api_key?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
+      company_users: {
+        Row: {
+          id: string
+          company_id: string
+          user_id: string
+          role: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          company_id: string
+          user_id: string
+          role?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          company_id?: string
+          user_id?: string
+          role?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_users_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       asaas_settings: {
         Row: {
           created_at: string
@@ -26,6 +82,7 @@ export type Database = {
           interest_percent: number
           sandbox: boolean
           updated_at: string
+                  company_id: string
         }
         Insert: {
           created_at?: string
@@ -38,6 +95,7 @@ export type Database = {
           interest_percent?: number
           sandbox?: boolean
           updated_at?: string
+                  company_id?: string
         }
         Update: {
           created_at?: string
@@ -50,6 +108,7 @@ export type Database = {
           interest_percent?: number
           sandbox?: boolean
           updated_at?: string
+                  company_id?: string
         }
         Relationships: []
       }
@@ -95,6 +154,7 @@ export type Database = {
           total_gross_volume: number
           total_op_fee_amount: number
           traditional_cost_estimate: number
+                  company_id: string
         }
         Insert: {
           asaas_invoice_url?: string | null
@@ -113,6 +173,7 @@ export type Database = {
           total_gross_volume?: number
           total_op_fee_amount?: number
           traditional_cost_estimate?: number
+                  company_id?: string
         }
         Update: {
           asaas_invoice_url?: string | null
@@ -131,6 +192,7 @@ export type Database = {
           total_gross_volume?: number
           total_op_fee_amount?: number
           traditional_cost_estimate?: number
+                  company_id?: string
         }
         Relationships: [
           {
@@ -151,6 +213,7 @@ export type Database = {
           id: string
           merchant_id: string
           reference_month: string
+                  company_id: string
         }
         Insert: {
           amount?: number
@@ -160,6 +223,7 @@ export type Database = {
           id?: string
           merchant_id: string
           reference_month: string
+                  company_id?: string
         }
         Update: {
           amount?: number
@@ -169,6 +233,7 @@ export type Database = {
           id?: string
           merchant_id?: string
           reference_month?: string
+                  company_id?: string
         }
         Relationships: [
           {
@@ -192,6 +257,7 @@ export type Database = {
           merchant_id: string
           pix_rate: number
           traditional_fee_avg: number
+                  company_id: string
         }
         Insert: {
           cash_rate?: number
@@ -204,6 +270,7 @@ export type Database = {
           merchant_id: string
           pix_rate?: number
           traditional_fee_avg?: number
+                  company_id?: string
         }
         Update: {
           cash_rate?: number
@@ -216,6 +283,7 @@ export type Database = {
           merchant_id?: string
           pix_rate?: number
           traditional_fee_avg?: number
+                  company_id?: string
         }
         Relationships: [
           {
@@ -236,6 +304,7 @@ export type Database = {
           name: string
           phone_whatsapp: string
           status: Database["public"]["Enums"]["merchant_status"]
+                  company_id: string
         }
         Insert: {
           created_at?: string
@@ -245,6 +314,7 @@ export type Database = {
           name: string
           phone_whatsapp?: string
           status?: Database["public"]["Enums"]["merchant_status"]
+                  company_id?: string
         }
         Update: {
           created_at?: string
@@ -254,6 +324,7 @@ export type Database = {
           name?: string
           phone_whatsapp?: string
           status?: Database["public"]["Enums"]["merchant_status"]
+                  company_id?: string
         }
         Relationships: []
       }
@@ -265,6 +336,7 @@ export type Database = {
           is_read: boolean
           title: string
           type: string
+                  company_id: string
         }
         Insert: {
           created_at?: string
@@ -273,6 +345,7 @@ export type Database = {
           is_read?: boolean
           title: string
           type?: string
+                  company_id?: string
         }
         Update: {
           created_at?: string
@@ -281,6 +354,7 @@ export type Database = {
           is_read?: boolean
           title?: string
           type?: string
+                  company_id?: string
         }
         Relationships: []
       }
@@ -327,6 +401,7 @@ export type Database = {
           partner_asaas_wallet_id: string
           partner_name: string
           percentage: number
+                  company_id: string
         }
         Insert: {
           created_at?: string
@@ -335,6 +410,7 @@ export type Database = {
           partner_asaas_wallet_id?: string
           partner_name: string
           percentage?: number
+                  company_id?: string
         }
         Update: {
           created_at?: string
@@ -343,6 +419,7 @@ export type Database = {
           partner_asaas_wallet_id?: string
           partner_name?: string
           percentage?: number
+                  company_id?: string
         }
         Relationships: [
           {
@@ -362,6 +439,7 @@ export type Database = {
           merchant_id: string | null
           reference_month: string
           status: Database["public"]["Enums"]["import_status"]
+                  company_id: string
         }
         Insert: {
           created_at?: string
@@ -370,6 +448,7 @@ export type Database = {
           merchant_id?: string | null
           reference_month: string
           status?: Database["public"]["Enums"]["import_status"]
+                  company_id?: string
         }
         Update: {
           created_at?: string
@@ -378,6 +457,7 @@ export type Database = {
           merchant_id?: string | null
           reference_month?: string
           status?: Database["public"]["Enums"]["import_status"]
+                  company_id?: string
         }
         Relationships: [
           {
@@ -401,6 +481,7 @@ export type Database = {
           modality: Database["public"]["Enums"]["payment_modality"]
           pos_serial: string
           transaction_date: string
+                  company_id: string
         }
         Insert: {
           brand?: string
@@ -413,6 +494,7 @@ export type Database = {
           modality: Database["public"]["Enums"]["payment_modality"]
           pos_serial?: string
           transaction_date?: string
+                  company_id?: string
         }
         Update: {
           brand?: string
@@ -425,6 +507,7 @@ export type Database = {
           modality?: Database["public"]["Enums"]["payment_modality"]
           pos_serial?: string
           transaction_date?: string
+                  company_id?: string
         }
         Relationships: [
           {

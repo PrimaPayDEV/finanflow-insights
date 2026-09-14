@@ -60,12 +60,17 @@ export function AppLayout({
 }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const { user, signOut } = useAuth();
+  const { user, companyName, signOut } = useAuth();
   
   const qc = useQueryClient();
   const navigate = useNavigate();
   const { data: notifications = [] } = useQuery(notificationsQuery);
   const unreadCount = notifications.filter(n => !n.is_read).length;
+
+  const currentNav = [...nav];
+  if (companyName === "Prima Hub") {
+    currentNav.push({ to: "/admin/companies", label: "Administração", icon: Settings });
+  }
 
   const markAsRead = useMutation({
     mutationFn: async (id: string) => {
@@ -105,11 +110,11 @@ export function AppLayout({
         </div>
 
         <nav className="flex flex-1 flex-col px-3">
-          {nav.map((item, index) => {
+          {currentNav.map((item, index) => {
             const active =
               item.to === "/" ? pathname === "/" : pathname.startsWith(item.to);
             return (
-              <div key={item.to} className={cn("flex flex-col", index !== nav.length - 1 && "border-b border-sidebar-border/30 pb-2 mb-2")}>
+              <div key={item.to} className={cn("flex flex-col", index !== currentNav.length - 1 && "border-b border-sidebar-border/30 pb-2 mb-2")}>
                 <Link
                   to={item.to}
                   title={isCollapsed ? item.label : undefined}
@@ -166,7 +171,7 @@ export function AppLayout({
                     </div>
                   </div>
                   <nav className="flex flex-1 flex-col gap-1 px-3">
-                    {nav.map((item) => {
+                    {currentNav.map((item) => {
                       const active =
                         item.to === "/" ? pathname === "/" : pathname.startsWith(item.to);
                       return (

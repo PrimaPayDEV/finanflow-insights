@@ -18,6 +18,7 @@ import { Route as MerchantsRouteImport } from './routes/merchants'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as AdminCompaniesRouteImport } from './routes/admin.companies'
 import { Route as SettingsAsaasRouteImport } from './routes/settings.asaas'
 import { Route as ApiPublicAsaasWebhookRouteImport } from './routes/api/public/asaas-webhook'
 import { Route as PublicReportClosureIdRouteImport } from './routes/public.report.$closureId'
@@ -67,6 +68,11 @@ const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   path: '/sitemap.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminCompaniesRoute = AdminCompaniesRouteImport.update({
+  id: '/admin/companies',
+  path: '/admin/companies',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SettingsAsaasRoute = SettingsAsaasRouteImport.update({
   id: '/settings/asaas',
   path: '/settings/asaas',
@@ -93,6 +99,7 @@ export interface FileRoutesByFullPath {
   '/profile': typeof ProfileRoute
   '/reports': typeof ReportsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/admin/companies': typeof AdminCompaniesRoute
   '/settings/asaas': typeof SettingsAsaasRoute
   '/api/public/asaas-webhook': typeof ApiPublicAsaasWebhookRoute
   '/public/report/$closureId': typeof PublicReportClosureIdRoute
@@ -107,6 +114,7 @@ export interface FileRoutesByTo {
   '/profile': typeof ProfileRoute
   '/reports': typeof ReportsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/admin/companies': typeof AdminCompaniesRoute
   '/settings/asaas': typeof SettingsAsaasRoute
   '/api/public/asaas-webhook': typeof ApiPublicAsaasWebhookRoute
   '/public/report/$closureId': typeof PublicReportClosureIdRoute
@@ -122,6 +130,7 @@ export interface FileRoutesById {
   '/profile': typeof ProfileRoute
   '/reports': typeof ReportsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/admin/companies': typeof AdminCompaniesRoute
   '/settings/asaas': typeof SettingsAsaasRoute
   '/api/public/asaas-webhook': typeof ApiPublicAsaasWebhookRoute
   '/public/report/$closureId': typeof PublicReportClosureIdRoute
@@ -138,6 +147,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/reports'
     | '/sitemap.xml'
+    | '/admin/companies'
     | '/settings/asaas'
     | '/api/public/asaas-webhook'
     | '/public/report/$closureId'
@@ -152,6 +162,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/reports'
     | '/sitemap.xml'
+    | '/admin/companies'
     | '/settings/asaas'
     | '/api/public/asaas-webhook'
     | '/public/report/$closureId'
@@ -166,6 +177,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/reports'
     | '/sitemap.xml'
+    | '/admin/companies'
     | '/settings/asaas'
     | '/api/public/asaas-webhook'
     | '/public/report/$closureId'
@@ -181,6 +193,7 @@ export interface RootRouteChildren {
   ProfileRoute: typeof ProfileRoute
   ReportsRoute: typeof ReportsRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  AdminCompaniesRoute: typeof AdminCompaniesRoute
   SettingsAsaasRoute: typeof SettingsAsaasRoute
   ApiPublicAsaasWebhookRoute: typeof ApiPublicAsaasWebhookRoute
   PublicReportClosureIdRoute: typeof PublicReportClosureIdRoute
@@ -251,6 +264,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/companies': {
+      id: '/admin/companies'
+      path: '/admin/companies'
+      fullPath: '/admin/companies'
+      preLoaderRoute: typeof AdminCompaniesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/settings/asaas': {
       id: '/settings/asaas'
       path: '/settings/asaas'
@@ -285,6 +305,7 @@ const rootRouteChildren: RootRouteChildren = {
   ProfileRoute: ProfileRoute,
   ReportsRoute: ReportsRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  AdminCompaniesRoute: AdminCompaniesRoute,
   SettingsAsaasRoute: SettingsAsaasRoute,
   ApiPublicAsaasWebhookRoute: ApiPublicAsaasWebhookRoute,
   PublicReportClosureIdRoute: PublicReportClosureIdRoute,
