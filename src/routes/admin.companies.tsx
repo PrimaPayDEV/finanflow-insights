@@ -14,6 +14,17 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
@@ -92,38 +103,7 @@ function AdminCompaniesPage() {
               </div>
               {company.name !== "Prima Hub" && (
                 <div className="flex gap-2 mt-2 pt-2 border-t">
-                  <Button 
-                    variant={company.is_active ? "secondary" : "default"} 
-                    size="sm" 
-                    className="flex-1"
-                    onClick={async () => {
-                      if (confirm(`Tem certeza que deseja ${company.is_active ? 'bloquear' : 'desbloquear'} a empresa ${company.name}?`)) {
-                        const toggleStatus = await import("@tanstack/react-start").then(m => m.serverFn(toggleCompanyStatus));
-                        await toggleStatus({ data: { companyId: company.id, isActive: !company.is_active } });
-                        qc.invalidateQueries({ queryKey: ["admin_companies"] });
-                        toast.success(`Empresa ${company.is_active ? 'bloqueada' : 'desbloqueada'}`);
-                      }
-                    }}
-                  >
-                    {company.is_active ? <Lock className="size-4 mr-1" /> : <Unlock className="size-4 mr-1" />}
-                    {company.is_active ? "Bloquear" : "Desbloquear"}
-                  </Button>
-                  <Button 
-                    variant="destructive" 
-                    size="sm" 
-                    className="flex-1"
-                    onClick={async () => {
-                      if (confirm(`ATENÇÃO: Deseja EXCLUIR DEFINITIVAMENTE a empresa ${company.name} e todos os seus dados? Esta ação não pode ser desfeita.`)) {
-                        const deleteAction = await import("@tanstack/react-start").then(m => m.serverFn(deleteCompany));
-                        await deleteAction({ data: { companyId: company.id } });
-                        qc.invalidateQueries({ queryKey: ["admin_companies"] });
-                        toast.success("Empresa excluída");
-                      }
-                    }}
-                  >
-                    <Trash2 className="size-4 mr-1" />
-                    Excluir
-                  </Button>
+                  <CompanyActions company={company} />
                 </div>
               )}
             </CardContent>
@@ -244,5 +224,95 @@ function AdminUserDialog({ companyId, companyName }: { companyId: string; compan
         </form>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function CompanyActions({ company }: { company: any }) {
+  const qc = useQueryClient();
+  const toggleAction = useServerFn(toggleCompanyStatus);
+  const deleteActionFn = useServerFn(deleteCompany);
+
+  const toggleMutation = useMutation({
+    mutationFn: async () => {
+      const res = await toggleAction({ data: { companyId: company.id, isActive: !company.is_active } });
+      if (!res.ok) throw new Error("Erro");
+    },
+    onSuccess: () => {
+      toast.success(`Empresa ${company.is_active ? 'bloqueada' : 'desbloqueada'}`);
+      qc.invalidateQueries({ queryKey: ["admin_companies"] });
+    }
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      const res = await deleteActionFn({ data: { companyId: company.id } });
+      if (!res.ok) throw new Error("Erro");
+    },
+    onSuccess: () => {
+      toast.success("Empresa excluída permanentemente");
+      qc.invalidateQueries({ queryKey: ["admin_companies"] });
+    }
+  });
+
+  return (
+    <>
+      <AlertDialog>
+        <AlertDialogTrigger asChild>
+          <Button variant={company.is_active ? "secondary" : "default"} size="sm" className="flex-1">
+            {company.is_active ? <Lock className="size-4 mr-1" /> : <Unlock className="size-4 mr-1" />}
+            {company.is_active ? "Bloquear" : "Desbloquear"}
+          </Button>
+        </AlertDialogTrigger>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {company.is_active ? "Bloquear Empresa" : "Desbloquear Empresa"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {company.is_active 
+                ? `Tem certeza que deseja bloquear o acesso da empresa ${company.name}? Os usuários desta empresa perderão acesso ao sistema e verão uma tela de bloqueio.`
+                : `Deseja restaurar o acesso da empresa ${company.name}? O painel voltará a funcionar normalmente.`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={() => toggleMutation.mutate()}>
+              {company.is_active ? "Sim, bloquear" : "Sim, desbloquear"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog>
+        <AlertDialogTrigger asChild>
+          <Button variant="destructive" size="sm" className="flex-1">
+            <Trash2 className="size-4 mr-1" /> Excluir
+          </Button>
+        </AlertDialogTrigger>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-destructive flex items-center gap-2">
+              <ShieldAlert className="size-5" />
+              Atenção: Exclusão Permanente
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Deseja realmente <strong>excluir definitivamente</strong> a empresa {company.name} e 
+              <strong> TODOS os seus dados</strong> (Lojistas, Extratos, Fechamentos, Usuários)?
+              <br/><br/>
+              Esta ação <strong>não pode ser desfeita</strong> de forma alguma.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={() => deleteMutation.mutate()} 
+              className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+            >
+              Excluir Definitivamente
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
