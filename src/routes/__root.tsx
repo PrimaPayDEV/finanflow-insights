@@ -14,7 +14,7 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
-import { Loader2 } from "lucide-react";
+import { Loader2, ShieldAlert } from "lucide-react";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 
 function NotFoundComponent() {
@@ -126,7 +126,7 @@ function RootShell({ children }: { children: ReactNode }) {
 }
 
 function AuthGuard({ children }: { children: ReactNode }) {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, isActive, companyName } = useAuth();
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
@@ -149,7 +149,22 @@ function AuthGuard({ children }: { children: ReactNode }) {
     );
   }
 
-  if (!user && pathname !== "/login") return null;
+  const isPublicRoute = pathname.startsWith("/public") || pathname.startsWith("/api/public") || pathname === "/login";
+  if (!user && !isPublicRoute) return null;
+
+  if (user && !isActive && companyName !== "Prima Hub") {
+    return (
+      <div className="flex h-screen w-full flex-col items-center justify-center space-y-4 text-center bg-background px-4">
+        <ShieldAlert className="size-16 text-destructive" />
+        <h2 className="text-2xl font-bold">Acesso Bloqueado</h2>
+        <p className="text-muted-foreground max-w-md">
+          A assinatura da sua empresa encontra-se suspensa ou pendente.
+          <br />
+          Por favor, entre em contato com o suporte da Prima Hub para regularizar o seu acesso.
+        </p>
+      </div>
+    );
+  }
 
   return <>{children}</>;
 }

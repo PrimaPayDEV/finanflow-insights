@@ -7,6 +7,7 @@ interface AuthContextType {
   user: User | null;
   companyId: string | null;
   companyName: string | null;
+  isActive: boolean;
   isLoading: boolean;
   signOut: () => Promise<void>;
 }
@@ -18,13 +19,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [companyId, setCompanyId] = useState<string | null>(null);
   const [companyName, setCompanyName] = useState<string | null>(null);
+  const [isActive, setIsActive] = useState<boolean>(true);
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchCompany = async (userId: string) => {
     try {
       const { data } = await supabase
         .from('company_users')
-        .select('company_id, companies(name)')
+        .select('company_id, companies(name, is_active)')
         .eq('user_id', userId)
         .single();
       
@@ -32,6 +34,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setCompanyId(data.company_id);
         // @ts-ignore
         setCompanyName(data.companies?.name ?? null);
+        // @ts-ignore
+        setIsActive(data.companies?.is_active ?? true);
       }
     } catch (e) {
       console.error("Error fetching company", e);
@@ -77,7 +81,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ session, user, companyId, companyName, isLoading, signOut }}>
+    <AuthContext.Provider value={{ session, user, companyId, companyName, isActive, isLoading, signOut }}>
       {children}
     </AuthContext.Provider>
   );

@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
-import { Building2, Plus, Settings, UserPlus, KeyRound, ShieldAlert } from "lucide-react";
+import { Building2, Plus, Settings, UserPlus, KeyRound, ShieldAlert, Lock, Unlock, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { AppLayout } from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
@@ -17,7 +17,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
-import { getCompanies, upsertCompany, createCompanyAdmin } from "@/lib/admin.functions";
+import { getCompanies, upsertCompany, createCompanyAdmin, deleteCompany, toggleCompanyStatus } from "@/lib/admin.functions";
 import { translateError } from "@/lib/translateError";
 
 export const Route = createFileRoute("/admin/companies")({
@@ -78,11 +78,54 @@ function AdminCompaniesPage() {
                     {company.asaas_api_key ? "Configurada" : "Pendente"}
                   </span>
                 </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <ShieldAlert className="size-4 text-muted-foreground" />
+                  <span className="text-muted-foreground">Status:</span>
+                  <span className={`font-medium text-xs ${company.is_active ? 'text-green-600' : 'text-red-600'}`}>
+                    {company.is_active ? "Ativa" : "Bloqueada"}
+                  </span>
+                </div>
               </div>
               <div className="flex gap-2">
                 <CompanyDialog company={company} />
                 <AdminUserDialog companyId={company.id} companyName={company.name} />
               </div>
+              {company.name !== "Prima Hub" && (
+                <div className="flex gap-2 mt-2 pt-2 border-t">
+                  <Button 
+                    variant={company.is_active ? "secondary" : "default"} 
+                    size="sm" 
+                    className="flex-1"
+                    onClick={async () => {
+                      if (confirm(`Tem certeza que deseja ${company.is_active ? 'bloquear' : 'desbloquear'} a empresa ${company.name}?`)) {
+                        const toggleStatus = await import("@tanstack/react-start").then(m => m.serverFn(toggleCompanyStatus));
+                        await toggleStatus({ data: { companyId: company.id, isActive: !company.is_active } });
+                        qc.invalidateQueries({ queryKey: ["admin_companies"] });
+                        toast.success(`Empresa ${company.is_active ? 'bloqueada' : 'desbloqueada'}`);
+                      }
+                    }}
+                  >
+                    {company.is_active ? <Lock className="size-4 mr-1" /> : <Unlock className="size-4 mr-1" />}
+                    {company.is_active ? "Bloquear" : "Desbloquear"}
+                  </Button>
+                  <Button 
+                    variant="destructive" 
+                    size="sm" 
+                    className="flex-1"
+                    onClick={async () => {
+                      if (confirm(`ATENÇÃO: Deseja EXCLUIR DEFINITIVAMENTE a empresa ${company.name} e todos os seus dados? Esta ação não pode ser desfeita.`)) {
+                        const deleteAction = await import("@tanstack/react-start").then(m => m.serverFn(deleteCompany));
+                        await deleteAction({ data: { companyId: company.id } });
+                        qc.invalidateQueries({ queryKey: ["admin_companies"] });
+                        toast.success("Empresa excluída");
+                      }
+                    }}
+                  >
+                    <Trash2 className="size-4 mr-1" />
+                    Excluir
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
         ))}

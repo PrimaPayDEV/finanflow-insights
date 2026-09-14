@@ -108,3 +108,32 @@ export const createCompanyAdmin = createServerFn({ method: "POST" })
 
     return { ok: true };
   });
+
+export const toggleCompanyStatus = createServerFn({ method: "POST" })
+  .validator(z.object({ companyId: z.string().uuid(), isActive: z.boolean() }))
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { error } = await supabaseAdmin
+      .from("companies")
+      .update({ is_active: data.isActive })
+      .eq("id", data.companyId);
+
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const deleteCompany = createServerFn({ method: "POST" })
+  .validator(z.object({ companyId: z.string().uuid() }))
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    // This will cascade delete everything linked to the company
+    const { error } = await supabaseAdmin
+      .from("companies")
+      .delete()
+      .eq("id", data.companyId);
+
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
