@@ -97,9 +97,7 @@ function CompanyDialog({ company }: { company?: any }) {
   const saveAction = useServerFn(upsertCompany);
   
   const save = useMutation({
-    mutationFn: async (e: React.FormEvent<HTMLFormElement>) => {
-      e.preventDefault();
-      const fd = new FormData(e.currentTarget);
+    mutationFn: async (fd: FormData) => {
       const res = await saveAction({
         data: {
           id: company?.id,
@@ -130,7 +128,7 @@ function CompanyDialog({ company }: { company?: any }) {
         <DialogHeader>
           <DialogTitle>{company ? `Configurar ${company.name}` : "Cadastrar Nova Empresa"}</DialogTitle>
         </DialogHeader>
-        <form onSubmit={save.mutate} className="space-y-4">
+        <form onSubmit={(e) => { e.preventDefault(); save.mutate(new FormData(e.currentTarget)); }} className="space-y-4">
           <div className="space-y-2">
             <Label>Nome da Empresa (Fantasia)</Label>
             <Input name="name" defaultValue={company?.name} required />
@@ -160,9 +158,7 @@ function AdminUserDialog({ companyId, companyName }: { companyId: string; compan
   const createUser = useServerFn(createCompanyAdmin);
   
   const create = useMutation({
-    mutationFn: async (e: React.FormEvent<HTMLFormElement>) => {
-      e.preventDefault();
-      const fd = new FormData(e.currentTarget);
+    mutationFn: async (fd: FormData) => {
       const res = await createUser({
         data: {
           companyId,
@@ -190,7 +186,7 @@ function AdminUserDialog({ companyId, companyName }: { companyId: string; compan
         <DialogHeader>
           <DialogTitle>Criar Acesso para {companyName}</DialogTitle>
         </DialogHeader>
-        <form onSubmit={create.mutate} className="space-y-4">
+        <form onSubmit={(e) => { e.preventDefault(); create.mutate(new FormData(e.currentTarget)); }} className="space-y-4">
           <div className="space-y-2">
             <Label>E-mail (Login)</Label>
             <Input name="email" type="email" required placeholder="admin@empresa.com" />
