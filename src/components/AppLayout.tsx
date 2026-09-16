@@ -21,6 +21,7 @@ import {
   FileText,
   AlertCircle,
   ShieldCheck,
+  Users,
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
@@ -61,16 +62,21 @@ export function AppLayout({
 }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const { user, companyName, signOut } = useAuth();
+  const { user, companyName, role, signOut } = useAuth();
   
   const qc = useQueryClient();
   const navigate = useNavigate();
   const { data: notifications = [] } = useQuery(notificationsQuery);
   const unreadCount = notifications.filter(n => !n.is_read).length;
 
-  const currentNav = [...nav];
-  if (companyName === "Prima Hub") {
-    currentNav.push({ to: "/admin/companies", label: "Administração", icon: ShieldCheck });
+  let currentNav = [...nav];
+  if (role === "partner") {
+    currentNav = [{ to: "/reports", label: "Relatórios", icon: FileBarChart2 }];
+  } else {
+    currentNav.push({ to: "/partners", label: "Parceiros", icon: Users });
+    if (companyName === "Prima Hub") {
+      currentNav.push({ to: "/admin/companies", label: "Administração", icon: ShieldCheck });
+    }
   }
 
   const markAsRead = useMutation({

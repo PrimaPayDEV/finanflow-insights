@@ -8,6 +8,8 @@ interface AuthContextType {
   companyId: string | null;
   companyName: string | null;
   isActive: boolean;
+  role: string | null;
+  partnerId: string | null;
   isLoading: boolean;
   signOut: () => Promise<void>;
 }
@@ -20,18 +22,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [companyId, setCompanyId] = useState<string | null>(null);
   const [companyName, setCompanyName] = useState<string | null>(null);
   const [isActive, setIsActive] = useState<boolean>(true);
+  const [role, setRole] = useState<string | null>(null);
+  const [partnerId, setPartnerId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchCompany = async (userId: string) => {
     try {
       const { data } = await supabase
         .from('company_users')
-        .select('company_id, companies(name, is_active)')
+        .select('company_id, role, partner_id, companies(name, is_active)')
         .eq('user_id', userId)
         .single();
       
       if (data?.company_id) {
         setCompanyId(data.company_id);
+        setRole(data.role);
+        setPartnerId(data.partner_id);
         // @ts-ignore
         setCompanyName(data.companies?.name ?? null);
         // @ts-ignore
@@ -66,6 +72,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         } else {
           setCompanyId(null);
           setCompanyName(null);
+          setRole(null);
+          setPartnerId(null);
           setIsLoading(false);
         }
       }
@@ -81,7 +89,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ session, user, companyId, companyName, isActive, isLoading, signOut }}>
+    <AuthContext.Provider value={{ session, user, companyId, companyName, isActive, role, partnerId, isLoading, signOut }}>
       {children}
     </AuthContext.Provider>
   );

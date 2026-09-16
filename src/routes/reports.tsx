@@ -2,9 +2,12 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { FileBarChart2, Filter, DollarSign, AlertCircle, CheckCircle2, Clock, CalendarIcon, Inbox, TrendingUp, SearchX, CalendarDays, Receipt } from "lucide-react";
+import { FileBarChart2, Filter, DollarSign, AlertCircle, CheckCircle2, Clock, CalendarIcon, Inbox, TrendingUp, SearchX, CalendarDays, Receipt, Download } from "lucide-react";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 import { MerchantIcon } from "@/components/MerchantIcon";
 import { AppLayout } from "@/components/AppLayout";
+import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -46,6 +49,8 @@ function ReportsPage() {
   const settings = useQuery(asaasSettingsQuery);
   const splitRules = useQuery(splitRulesQuery);
   const dueDay = settings.data?.due_day ?? 10;
+  
+  const { role, partnerId } = useAuth();
 
   const [period, setPeriod] = useState<PeriodType>("month");
   const [customRange, setCustomRange] = useState<{ from?: Date; to?: Date }>();
@@ -56,10 +61,10 @@ function ReportsPage() {
 
   const uniquePartners = useMemo(() => {
     const rules = splitRules.data ?? [];
-    const map = new Map<string, { wallet_id: string; name: string }>();
+    const map = new Map<string, { id: string; name: string }>();
     for (const r of rules) {
-      if (!map.has(r.partner_asaas_wallet_id)) {
-        map.set(r.partner_asaas_wallet_id, { wallet_id: r.partner_asaas_wallet_id, name: r.partner_name });
+      if (r.partner_id && !map.has(r.partner_id)) {
+        map.set(r.partner_id, { id: r.partner_id, name: r.partner_name });
       }
     }
     return Array.from(map.values());
@@ -89,9 +94,16 @@ function ReportsPage() {
   const filteredClosures = (closures.data ?? []).filter((c) => {
     if (merchantFilter !== "all" && c.merchant_id !== merchantFilter) return false;
 
-    if (partnerFilter !== "all") {
+    // Enforce partner isolation
+    if (role === "partner") {
       const hasSplitForPartner = (splitRules.data ?? []).some(
-        (r) => r.merchant_id === c.merchant_id && r.partner_asaas_wallet_id === partnerFilter
+        (r) => r.merchant_id === c.merchant_id && r.partner_id === partnerId
+      );
+      if (!hasSplitForPartner) return false;
+    } else if (partnerFilter !== "all") {
+      // Normal filtering by admin/owner
+      const hasSplitForPartner = (splitRules.data ?? []).some(
+        (r) => r.merchant_id === c.merchant_id && r.partner_id === partnerFilter
       );
       if (!hasSplitForPartner) return false;
     }
@@ -114,9 +126,15 @@ function ReportsPage() {
   });
 
   const getPartnerPercentage = (merchantId: string) => {
+    if (role === "partner") {
+      const rule = (splitRules.data ?? []).find(
+        (r) => r.merchant_id === merchantId && r.partner_id === partnerId
+      );
+      return rule ? rule.percentage : null;
+    }
     if (partnerFilter === "all") return null;
     const rule = (splitRules.data ?? []).find(
-      (r) => r.merchant_id === merchantId && r.partner_asaas_wallet_id === partnerFilter
+      (r) => r.merchant_id === merchantId && r.partner_id === partnerFilter
     );
     return rule ? rule.percentage : null;
   };
@@ -137,6 +155,69 @@ function ReportsPage() {
       return amount * (pct / 100);
     }
     return amount;
+  };
+
+  const handleExportPDF = () => {
+    const doc = new jsPDF();
+    const isPartner = role === "partner" || partnerFilter !== "all";
+
+    doc.setFontSize(16);
+    doc.text("Relatório de Pagamentos e Recebíveis", 14, 22);
+    
+    doc.setFontSize(10);
+    doc.text(getSubtitle(), 14, 30);
+    if (isPartner) {
+      doc.text(`Visão de Parceiro/Split`, 14, 36);
+    }
+
+    const tableColumn = [
+      "Estabelecimento",
+      "Emissão",
+      "Vencimento",
+      "Status",
+      ...(isPartner ? ["% Split", "Repasse"] : ["Valor Líquido"])
+    ];
+
+    const tableRows = filteredClosures.map(c => {
+      const merchant = merchants.data?.find(m => m.id === c.merchant_id);
+      const effectiveDueDate = getEffectiveDueDate(c);
+      const status = getStatus(c, effectiveDueDate);
+      const statusText = status === "paid" ? "Pago" : status === "overdue" ? "Vencido" : "Pendente";
+      
+      const row = [
+        merchant?.name || "Desconhecido",
+        format(new Date(c.created_at), "dd/MM/yyyy"),
+        format(effectiveDueDate, "dd/MM/yyyy"),
+        statusText
+      ];
+
+      if (isPartner) {
+        const pct = getPartnerPercentage(c.merchant_id) || 0;
+        row.push(`${pct}%`);
+        row.push(BRL(getClosureAmount(c)));
+      } else {
+        row.push(BRL(getClosureAmount(c)));
+      }
+
+      return row;
+    });
+
+    autoTable(doc, {
+      head: [tableColumn],
+      body: tableRows,
+      startY: 42,
+      theme: 'grid',
+      styles: { fontSize: 8 },
+      headStyles: { fillColor: [15, 23, 42] } // primary dark color
+    });
+
+    // Add totals at the end
+    const finalY = (doc as any).lastAutoTable.finalY + 10;
+    doc.setFontSize(12);
+    doc.text(`Total a Receber: ${BRL(totalToReceive)}`, 14, finalY);
+    doc.text(`Total Pago: ${BRL(totalReceived)}`, 14, finalY + 7);
+
+    doc.save(`relatorio_${format(new Date(), "yyyyMMdd")}.pdf`);
   };
 
   const totalToReceive = filteredClosures
@@ -313,22 +394,24 @@ function ReportsPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-5 grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="space-y-2.5">
-                <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Parceiro / Licenciado</label>
-                <Select value={partnerFilter} onValueChange={setPartnerFilter}>
-                  <SelectTrigger className="bg-background/50 border-border/50 h-10 transition-colors hover:bg-background">
-                    <SelectValue placeholder="Todos os parceiros" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos os parceiros</SelectItem>
-                    {uniquePartners.map((p) => (
-                      <SelectItem key={p.wallet_id} value={p.wallet_id}>
-                        {p.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              {role !== "partner" && (
+                <div className="space-y-2.5">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Parceiro / Licenciado</label>
+                  <Select value={partnerFilter} onValueChange={setPartnerFilter}>
+                    <SelectTrigger className="bg-background/50 border-border/50 h-10 transition-colors hover:bg-background">
+                      <SelectValue placeholder="Todos os parceiros" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todos os parceiros</SelectItem>
+                      {uniquePartners.map((p) => (
+                        <SelectItem key={p.id} value={p.id}>
+                          {p.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
               <div className="space-y-2.5">
                 <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Status do Pagamento</label>
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -367,7 +450,7 @@ function ReportsPage() {
         {/* Data Table */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.3 }}>
           <Card className="border-border/40 shadow-sm overflow-hidden">
-            <CardHeader className="bg-muted/20 pb-4 border-b border-border/40">
+            <CardHeader className="bg-muted/20 pb-4 border-b border-border/40 flex flex-row items-center justify-between">
               <CardTitle className="text-base font-semibold flex items-center gap-2">
                 <FileBarChart2 className="h-4 w-4 text-primary" />
                 Listagem de Recebíveis
@@ -375,6 +458,9 @@ function ReportsPage() {
                   {filteredClosures.length} {filteredClosures.length === 1 ? 'registro' : 'registros'}
                 </Badge>
               </CardTitle>
+              <Button variant="outline" size="sm" onClick={handleExportPDF} className="h-8 gap-2 hidden sm:flex">
+                <Download className="h-4 w-4" /> Exportar PDF
+              </Button>
             </CardHeader>
             <CardContent className="p-0">
               <div className="overflow-x-auto">

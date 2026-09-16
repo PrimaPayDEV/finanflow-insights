@@ -15,6 +15,7 @@ import { Route as ExpensesRouteImport } from './routes/expenses'
 import { Route as ImportRouteImport } from './routes/import'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as MerchantsRouteImport } from './routes/merchants'
+import { Route as PartnersRouteImport } from './routes/partners'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
@@ -51,6 +52,11 @@ const LoginRoute = LoginRouteImport.update({
 const MerchantsRoute = MerchantsRouteImport.update({
   id: '/merchants',
   path: '/merchants',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PartnersRoute = PartnersRouteImport.update({
+  id: '/partners',
+  path: '/partners',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProfileRoute = ProfileRouteImport.update({
@@ -96,6 +102,7 @@ export interface FileRoutesByFullPath {
   '/import': typeof ImportRoute
   '/login': typeof LoginRoute
   '/merchants': typeof MerchantsRoute
+  '/partners': typeof PartnersRoute
   '/profile': typeof ProfileRoute
   '/reports': typeof ReportsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -111,6 +118,7 @@ export interface FileRoutesByTo {
   '/import': typeof ImportRoute
   '/login': typeof LoginRoute
   '/merchants': typeof MerchantsRoute
+  '/partners': typeof PartnersRoute
   '/profile': typeof ProfileRoute
   '/reports': typeof ReportsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -127,6 +135,7 @@ export interface FileRoutesById {
   '/import': typeof ImportRoute
   '/login': typeof LoginRoute
   '/merchants': typeof MerchantsRoute
+  '/partners': typeof PartnersRoute
   '/profile': typeof ProfileRoute
   '/reports': typeof ReportsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -144,6 +153,7 @@ export interface FileRouteTypes {
     | '/import'
     | '/login'
     | '/merchants'
+    | '/partners'
     | '/profile'
     | '/reports'
     | '/sitemap.xml'
@@ -159,6 +169,7 @@ export interface FileRouteTypes {
     | '/import'
     | '/login'
     | '/merchants'
+    | '/partners'
     | '/profile'
     | '/reports'
     | '/sitemap.xml'
@@ -174,6 +185,7 @@ export interface FileRouteTypes {
     | '/import'
     | '/login'
     | '/merchants'
+    | '/partners'
     | '/profile'
     | '/reports'
     | '/sitemap.xml'
@@ -190,6 +202,7 @@ export interface RootRouteChildren {
   ImportRoute: typeof ImportRoute
   LoginRoute: typeof LoginRoute
   MerchantsRoute: typeof MerchantsRoute
+  PartnersRoute: typeof PartnersRoute
   ProfileRoute: typeof ProfileRoute
   ReportsRoute: typeof ReportsRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
@@ -241,6 +254,13 @@ declare module '@tanstack/react-router' {
       path: '/merchants'
       fullPath: '/merchants'
       preLoaderRoute: typeof MerchantsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/partners': {
+      id: '/partners'
+      path: '/partners'
+      fullPath: '/partners'
+      preLoaderRoute: typeof PartnersRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/profile': {
@@ -302,6 +322,7 @@ const rootRouteChildren: RootRouteChildren = {
   ImportRoute: ImportRoute,
   LoginRoute: LoginRoute,
   MerchantsRoute: MerchantsRoute,
+  PartnersRoute: PartnersRoute,
   ProfileRoute: ProfileRoute,
   ReportsRoute: ReportsRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,

@@ -44,6 +44,7 @@ export type Database = {
           company_id: string
           user_id: string
           role: string | null
+          partner_id: string | null
           created_at: string
         }
         Insert: {
@@ -51,6 +52,7 @@ export type Database = {
           company_id: string
           user_id: string
           role?: string | null
+          partner_id?: string | null
           created_at?: string
         }
         Update: {
@@ -58,6 +60,7 @@ export type Database = {
           company_id?: string
           user_id?: string
           role?: string | null
+          partner_id?: string | null
           created_at?: string
         }
         Relationships: [
@@ -66,6 +69,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "company_users_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
             referencedColumns: ["id"]
           }
         ]
@@ -358,6 +368,41 @@ export type Database = {
         }
         Relationships: []
       }
+      partners: {
+        Row: {
+          id: string
+          company_id: string
+          name: string
+          email: string | null
+          asaas_wallet_id: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          company_id?: string
+          name: string
+          email?: string | null
+          asaas_wallet_id: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          company_id?: string
+          name?: string
+          email?: string | null
+          asaas_wallet_id?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partners_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       pos_terminals: {
         Row: {
           created_at: string
@@ -398,6 +443,7 @@ export type Database = {
           created_at: string
           id: string
           merchant_id: string
+          partner_id: string | null
           partner_asaas_wallet_id: string
           partner_name: string
           percentage: number
@@ -407,6 +453,7 @@ export type Database = {
           created_at?: string
           id?: string
           merchant_id: string
+          partner_id?: string | null
           partner_asaas_wallet_id?: string
           partner_name: string
           percentage?: number
@@ -416,6 +463,7 @@ export type Database = {
           created_at?: string
           id?: string
           merchant_id?: string
+          partner_id?: string | null
           partner_asaas_wallet_id?: string
           partner_name?: string
           percentage?: number
@@ -429,6 +477,13 @@ export type Database = {
             referencedRelation: "merchants"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "split_rules_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          }
         ]
       }
       statements_imports: {

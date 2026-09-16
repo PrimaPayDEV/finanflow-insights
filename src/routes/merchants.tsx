@@ -30,7 +30,8 @@ import {
   type Merchant,
 } from "@/lib/db";
 import { PCT, formatCpfCnpj, formatPhone, formatCurrencyInput } from "@/lib/format";
-import { createAsaasSubaccount } from "@/lib/asaas.functions";
+import { getPartners } from "@/lib/partner.functions";
+import { useServerFn } from "@tanstack/react-start";
 import { translateError } from "@/lib/translateError";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -513,26 +514,34 @@ function TerminalsPanel({ merchant }: { merchant: Merchant }) {
 function SplitPanel({ merchant }: { merchant: Merchant }) {
   const qc = useQueryClient();
   const splits = useQuery(splitRulesQuery);
-  const [partner, setPartner] = useState("");
-  const [wallet, setWallet] = useState("");
+  const fetchPartners = useServerFn(getPartners);
+  const { data: partners = [] } = useQuery({
+    queryKey: ["partners"],
+    queryFn: () => fetchPartners(),
+  });
+  
+  const [partnerId, setPartnerId] = useState("");
   const [percentage, setPercentage] = useState("");
 
   const list = (splits.data ?? []).filter((s) => s.merchant_id === merchant.id);
 
   const add = useMutation({
     mutationFn: async () => {
+      const selectedPartner = partners.find(p => p.id === partnerId);
+      if (!selectedPartner) throw new Error("Selecione um parceiro");
+
       const { error } = await supabase.from("split_rules").insert({
         merchant_id: merchant.id,
-        partner_name: partner.trim(),
-        partner_asaas_wallet_id: wallet.trim(),
+        partner_id: selectedPartner.id,
+        partner_name: selectedPartner.name,
+        partner_asaas_wallet_id: selectedPartner.asaas_wallet_id,
         percentage: Number(percentage || 0),
       });
       if (error) throw new Error(error.message);
     },
     onSuccess: () => {
       toast.success("Regra de split criada");
-      setPartner("");
-      setWallet("");
+      setPartnerId("");
       setPercentage("");
       qc.invalidateQueries({ queryKey: ["split_rules"] });
     },
@@ -554,16 +563,18 @@ function SplitPanel({ merchant }: { merchant: Merchant }) {
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex flex-wrap items-end gap-3">
-          <div className="grid gap-1.5">
-            <Label>Parceiro</Label>
-            <Input value={partner} onChange={(e) => setPartner(e.target.value)} maxLength={120} />
-          </div>
-          <div className="grid gap-1.5">
-            <div className="flex items-center justify-between">
-              <Label>Wallet ID Asaas</Label>
-              <CreateAsaasSubaccountDialog onCreated={(id) => setWallet(id)} />
-            </div>
-            <Input value={wallet} onChange={(e) => setWallet(e.target.value)} maxLength={80} />
+          <div className="grid gap-1.5 flex-1 min-w-[200px]">
+            <Label>Parceiro Cadastrado</Label>
+            <select 
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              value={partnerId}
+              onChange={(e) => setPartnerId(e.target.value)}
+            >
+              <option value="">Selecione um parceiro...</option>
+              {partners.map(p => (
+                <option key={p.id} value={p.id}>{p.name} ({p.asaas_wallet_id})</option>
+              ))}
+            </select>
           </div>
           <div className="grid w-28 gap-1.5">
             <Label>Comissão (%)</Label>
@@ -576,7 +587,7 @@ function SplitPanel({ merchant }: { merchant: Merchant }) {
               onChange={(e) => setPercentage(e.target.value)}
             />
           </div>
-          <Button onClick={() => add.mutate()} disabled={!partner.trim() || add.isPending}>
+          <Button onClick={() => add.mutate()} disabled={!partnerId || add.isPending}>
             <Plus className="size-4" /> Adicionar
           </Button>
         </div>
