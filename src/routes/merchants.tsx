@@ -513,11 +513,13 @@ function TerminalsPanel({ merchant }: { merchant: Merchant }) {
 
 function SplitPanel({ merchant }: { merchant: Merchant }) {
   const qc = useQueryClient();
+  const { companyId } = useAuth();
   const splits = useQuery(splitRulesQuery);
   const fetchPartners = useServerFn(getPartners);
   const { data: partners = [] } = useQuery({
-    queryKey: ["partners"],
-    queryFn: () => fetchPartners(),
+    queryKey: ["partners", companyId],
+    queryFn: () => fetchPartners({ data: { companyId: companyId! } }),
+    enabled: !!companyId,
   });
   
   const [partnerId, setPartnerId] = useState("");

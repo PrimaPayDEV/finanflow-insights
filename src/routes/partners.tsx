@@ -37,11 +37,13 @@ export const Route = createFileRoute("/partners")({
 
 function PartnersPage() {
   const qc = useQueryClient();
+  const { companyId } = useAuth();
   const fetchPartners = useServerFn(getPartners);
   
   const { data: partners, isLoading } = useQuery({
-    queryKey: ["partners"],
-    queryFn: () => fetchPartners(),
+    queryKey: ["partners", companyId],
+    queryFn: () => fetchPartners({ data: { companyId: companyId! } }),
+    enabled: !!companyId,
   });
 
   return (

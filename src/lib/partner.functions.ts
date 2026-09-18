@@ -2,12 +2,14 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
 export const getPartners = createServerFn({ method: "GET" })
-  .handler(async () => {
+  .validator(z.object({ companyId: z.string().uuid() }))
+  .handler(async ({ data: input }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     const { data, error } = await supabaseAdmin
       .from("partners")
       .select("*")
+      .eq("company_id", input.companyId)
       .order("name");
 
     if (error) throw new Error(error.message);
