@@ -499,11 +499,26 @@ function ImportPage() {
           <CardHeader>
             <CardTitle className="text-base">Histórico de importações</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="space-y-6">
             {(imports.data ?? []).length === 0 && (
               <p className="text-sm text-muted-foreground">Nenhuma importação registrada.</p>
             )}
-            {(imports.data ?? []).map((i) => (
+            
+            {Object.entries(
+              (imports.data ?? []).reduce((acc, current) => {
+                const month = current.reference_month;
+                if (!acc[month]) acc[month] = [];
+                acc[month].push(current);
+                return acc;
+              }, {} as Record<string, typeof imports.data>)
+            )
+            .sort(([monthA], [monthB]) => monthB.localeCompare(monthA))
+            .map(([month, items]) => (
+              <div key={month} className="space-y-3">
+                <h3 className="text-sm font-semibold text-muted-foreground border-b pb-1">
+                  {monthLabel(month)}
+                </h3>
+                {items!.map((i) => (
               <div 
                 key={i.id} 
                 className={`rounded-lg border p-3 group relative cursor-pointer transition-colors hover:bg-muted/50 ${viewingImport?.id === i.id ? 'border-primary bg-primary/5' : 'border-border'}`}
@@ -545,6 +560,8 @@ function ImportPage() {
                   <Trash2 className="size-4" />
                 </Button>
               </div>
+            ))}
+            </div>
             ))}
           </CardContent>
         </Card>
