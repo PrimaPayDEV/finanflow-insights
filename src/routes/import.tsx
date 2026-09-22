@@ -177,6 +177,7 @@ function ImportPage() {
   const [viewingRows, setViewingRows] = useState<PreviewRow[]>([]);
   const [isLoadingView, setIsLoadingView] = useState(false);
   const [serialFilter, setSerialFilter] = useState<string>("all");
+  const [historyMonthFilter, setHistoryMonthFilter] = useState<string>("all");
 
   const resolveMerchant = (serial: string) => {
     const t = (terminals.data ?? []).find((x) => x.serial_number === serial.trim());
@@ -496,8 +497,23 @@ function ImportPage() {
         </Card>
 
         <Card>
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-base">Histórico de importações</CardTitle>
+            <div className="w-[180px]">
+              <Select value={historyMonthFilter} onValueChange={setHistoryMonthFilter}>
+                <SelectTrigger className="h-8">
+                  <SelectValue placeholder="Mês" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os meses</SelectItem>
+                  {Array.from(new Set((imports.data ?? []).map(i => i.reference_month)))
+                    .sort((a, b) => b.localeCompare(a))
+                    .map(m => (
+                      <SelectItem key={m} value={m}>{monthLabel(m)}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </CardHeader>
           <CardContent className="space-y-6">
             {(imports.data ?? []).length === 0 && (
@@ -505,7 +521,9 @@ function ImportPage() {
             )}
             
             {Object.entries(
-              (imports.data ?? []).reduce((acc, current) => {
+              (imports.data ?? [])
+              .filter(i => historyMonthFilter === "all" || i.reference_month === historyMonthFilter)
+              .reduce((acc, current) => {
                 const month = current.reference_month;
                 if (!acc[month]) acc[month] = [];
                 acc[month].push(current);
