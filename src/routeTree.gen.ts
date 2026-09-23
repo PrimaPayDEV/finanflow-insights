@@ -9,59 +9,26 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
-import { Route as ReportsRouteImport } from './routes/reports'
-import { Route as ProfileRouteImport } from './routes/profile'
-import { Route as PartnersRouteImport } from './routes/partners'
-import { Route as MerchantsRouteImport } from './routes/merchants'
-import { Route as LoginRouteImport } from './routes/login'
-import { Route as ImportRouteImport } from './routes/import'
-import { Route as ExpensesRouteImport } from './routes/expenses'
-import { Route as ClosuresRouteImport } from './routes/closures'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as SettingsAsaasRouteImport } from './routes/settings.asaas'
+import { Route as ClosuresRouteImport } from './routes/closures'
+import { Route as ExpensesRouteImport } from './routes/expenses'
+import { Route as ImportRouteImport } from './routes/import'
+import { Route as InvoicesRouteImport } from './routes/invoices'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as MembersRouteImport } from './routes/members'
+import { Route as MerchantsRouteImport } from './routes/merchants'
+import { Route as PartnersRouteImport } from './routes/partners'
+import { Route as ProfileRouteImport } from './routes/profile'
+import { Route as ReportsRouteImport } from './routes/reports'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as AdminCompaniesRouteImport } from './routes/admin.companies'
-import { Route as PublicReportClosureIdRouteImport } from './routes/public.report.$closureId'
+import { Route as SettingsAsaasRouteImport } from './routes/settings.asaas'
 import { Route as ApiPublicAsaasWebhookRouteImport } from './routes/api/public/asaas-webhook'
+import { Route as PublicReportClosureIdRouteImport } from './routes/public.report.$closureId'
 
-const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
-  id: '/sitemap.xml',
-  path: '/sitemap.xml',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ReportsRoute = ReportsRouteImport.update({
-  id: '/reports',
-  path: '/reports',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ProfileRoute = ProfileRouteImport.update({
-  id: '/profile',
-  path: '/profile',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PartnersRoute = PartnersRouteImport.update({
-  id: '/partners',
-  path: '/partners',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MerchantsRoute = MerchantsRouteImport.update({
-  id: '/merchants',
-  path: '/merchants',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LoginRoute = LoginRouteImport.update({
-  id: '/login',
-  path: '/login',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ImportRoute = ImportRouteImport.update({
-  id: '/import',
-  path: '/import',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ExpensesRoute = ExpensesRouteImport.update({
-  id: '/expenses',
-  path: '/expenses',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ClosuresRoute = ClosuresRouteImport.update({
@@ -69,14 +36,54 @@ const ClosuresRoute = ClosuresRouteImport.update({
   path: '/closures',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const ExpensesRoute = ExpensesRouteImport.update({
+  id: '/expenses',
+  path: '/expenses',
   getParentRoute: () => rootRouteImport,
 } as any)
-const SettingsAsaasRoute = SettingsAsaasRouteImport.update({
-  id: '/settings/asaas',
-  path: '/settings/asaas',
+const ImportRoute = ImportRouteImport.update({
+  id: '/import',
+  path: '/import',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InvoicesRoute = InvoicesRouteImport.update({
+  id: '/invoices',
+  path: '/invoices',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MembersRoute = MembersRouteImport.update({
+  id: '/members',
+  path: '/members',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MerchantsRoute = MerchantsRouteImport.update({
+  id: '/merchants',
+  path: '/merchants',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PartnersRoute = PartnersRouteImport.update({
+  id: '/partners',
+  path: '/partners',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfileRoute = ProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReportsRoute = ReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminCompaniesRoute = AdminCompaniesRouteImport.update({
@@ -84,14 +91,19 @@ const AdminCompaniesRoute = AdminCompaniesRouteImport.update({
   path: '/admin/companies',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PublicReportClosureIdRoute = PublicReportClosureIdRouteImport.update({
-  id: '/public/report/$closureId',
-  path: '/public/report/$closureId',
+const SettingsAsaasRoute = SettingsAsaasRouteImport.update({
+  id: '/settings/asaas',
+  path: '/settings/asaas',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicAsaasWebhookRoute = ApiPublicAsaasWebhookRouteImport.update({
   id: '/api/public/asaas-webhook',
   path: '/api/public/asaas-webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PublicReportClosureIdRoute = PublicReportClosureIdRouteImport.update({
+  id: '/public/report/$closureId',
+  path: '/public/report/$closureId',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -100,7 +112,9 @@ export interface FileRoutesByFullPath {
   '/closures': typeof ClosuresRoute
   '/expenses': typeof ExpensesRoute
   '/import': typeof ImportRoute
+  '/invoices': typeof InvoicesRoute
   '/login': typeof LoginRoute
+  '/members': typeof MembersRoute
   '/merchants': typeof MerchantsRoute
   '/partners': typeof PartnersRoute
   '/profile': typeof ProfileRoute
@@ -116,7 +130,9 @@ export interface FileRoutesByTo {
   '/closures': typeof ClosuresRoute
   '/expenses': typeof ExpensesRoute
   '/import': typeof ImportRoute
+  '/invoices': typeof InvoicesRoute
   '/login': typeof LoginRoute
+  '/members': typeof MembersRoute
   '/merchants': typeof MerchantsRoute
   '/partners': typeof PartnersRoute
   '/profile': typeof ProfileRoute
@@ -133,7 +149,9 @@ export interface FileRoutesById {
   '/closures': typeof ClosuresRoute
   '/expenses': typeof ExpensesRoute
   '/import': typeof ImportRoute
+  '/invoices': typeof InvoicesRoute
   '/login': typeof LoginRoute
+  '/members': typeof MembersRoute
   '/merchants': typeof MerchantsRoute
   '/partners': typeof PartnersRoute
   '/profile': typeof ProfileRoute
@@ -151,7 +169,9 @@ export interface FileRouteTypes {
     | '/closures'
     | '/expenses'
     | '/import'
+    | '/invoices'
     | '/login'
+    | '/members'
     | '/merchants'
     | '/partners'
     | '/profile'
@@ -167,7 +187,9 @@ export interface FileRouteTypes {
     | '/closures'
     | '/expenses'
     | '/import'
+    | '/invoices'
     | '/login'
+    | '/members'
     | '/merchants'
     | '/partners'
     | '/profile'
@@ -183,7 +205,9 @@ export interface FileRouteTypes {
     | '/closures'
     | '/expenses'
     | '/import'
+    | '/invoices'
     | '/login'
+    | '/members'
     | '/merchants'
     | '/partners'
     | '/profile'
@@ -200,7 +224,9 @@ export interface RootRouteChildren {
   ClosuresRoute: typeof ClosuresRoute
   ExpensesRoute: typeof ExpensesRoute
   ImportRoute: typeof ImportRoute
+  InvoicesRoute: typeof InvoicesRoute
   LoginRoute: typeof LoginRoute
+  MembersRoute: typeof MembersRoute
   MerchantsRoute: typeof MerchantsRoute
   PartnersRoute: typeof PartnersRoute
   ProfileRoute: typeof ProfileRoute
@@ -214,60 +240,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/sitemap.xml': {
-      id: '/sitemap.xml'
-      path: '/sitemap.xml'
-      fullPath: '/sitemap.xml'
-      preLoaderRoute: typeof SitemapDotxmlRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/reports': {
-      id: '/reports'
-      path: '/reports'
-      fullPath: '/reports'
-      preLoaderRoute: typeof ReportsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/profile': {
-      id: '/profile'
-      path: '/profile'
-      fullPath: '/profile'
-      preLoaderRoute: typeof ProfileRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/partners': {
-      id: '/partners'
-      path: '/partners'
-      fullPath: '/partners'
-      preLoaderRoute: typeof PartnersRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/merchants': {
-      id: '/merchants'
-      path: '/merchants'
-      fullPath: '/merchants'
-      preLoaderRoute: typeof MerchantsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/login': {
-      id: '/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof LoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/import': {
-      id: '/import'
-      path: '/import'
-      fullPath: '/import'
-      preLoaderRoute: typeof ImportRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/expenses': {
-      id: '/expenses'
-      path: '/expenses'
-      fullPath: '/expenses'
-      preLoaderRoute: typeof ExpensesRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/closures': {
@@ -277,18 +254,74 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ClosuresRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/expenses': {
+      id: '/expenses'
+      path: '/expenses'
+      fullPath: '/expenses'
+      preLoaderRoute: typeof ExpensesRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/settings/asaas': {
-      id: '/settings/asaas'
-      path: '/settings/asaas'
-      fullPath: '/settings/asaas'
-      preLoaderRoute: typeof SettingsAsaasRouteImport
+    '/import': {
+      id: '/import'
+      path: '/import'
+      fullPath: '/import'
+      preLoaderRoute: typeof ImportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/invoices': {
+      id: '/invoices'
+      path: '/invoices'
+      fullPath: '/invoices'
+      preLoaderRoute: typeof InvoicesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/members': {
+      id: '/members'
+      path: '/members'
+      fullPath: '/members'
+      preLoaderRoute: typeof MembersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/merchants': {
+      id: '/merchants'
+      path: '/merchants'
+      fullPath: '/merchants'
+      preLoaderRoute: typeof MerchantsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/partners': {
+      id: '/partners'
+      path: '/partners'
+      fullPath: '/partners'
+      preLoaderRoute: typeof PartnersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profile': {
+      id: '/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof ProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reports': {
+      id: '/reports'
+      path: '/reports'
+      fullPath: '/reports'
+      preLoaderRoute: typeof ReportsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/companies': {
@@ -298,11 +331,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminCompaniesRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/public/report/$closureId': {
-      id: '/public/report/$closureId'
-      path: '/public/report/$closureId'
-      fullPath: '/public/report/$closureId'
-      preLoaderRoute: typeof PublicReportClosureIdRouteImport
+    '/settings/asaas': {
+      id: '/settings/asaas'
+      path: '/settings/asaas'
+      fullPath: '/settings/asaas'
+      preLoaderRoute: typeof SettingsAsaasRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/asaas-webhook': {
@@ -310,6 +343,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/asaas-webhook'
       fullPath: '/api/public/asaas-webhook'
       preLoaderRoute: typeof ApiPublicAsaasWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/public/report/$closureId': {
+      id: '/public/report/$closureId'
+      path: '/public/report/$closureId'
+      fullPath: '/public/report/$closureId'
+      preLoaderRoute: typeof PublicReportClosureIdRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -320,7 +360,9 @@ const rootRouteChildren: RootRouteChildren = {
   ClosuresRoute: ClosuresRoute,
   ExpensesRoute: ExpensesRoute,
   ImportRoute: ImportRoute,
+  InvoicesRoute: InvoicesRoute,
   LoginRoute: LoginRoute,
+  MembersRoute: MembersRoute,
   MerchantsRoute: MerchantsRoute,
   PartnersRoute: PartnersRoute,
   ProfileRoute: ProfileRoute,

@@ -76,8 +76,12 @@ export function AppLayout({
   // Filter for billing mode
   if (appMode === "billing") {
     currentNav = currentNav
-      .filter(item => !["/merchants", "/import", "/closures"].includes(item.to))
-      .map(item => item.to === "/expenses" ? { ...item, label: "Cobranças" } : item);
+      .filter(item => !["/merchants", "/import", "/closures", "/expenses"].includes(item.to));
+    // Insert new billing-specific menus before reports
+    currentNav.splice(1, 0, 
+      { to: "/members", label: "Associados", icon: Users },
+      { to: "/invoices", label: "Faturas", icon: Receipt }
+    );
   }
 
   if (role === "partner") {

@@ -343,6 +343,50 @@ export type Database = {
           },
         ]
       }
+      members: {
+        Row: {
+          id: string
+          company_id: string
+          name: string
+          document: string
+          email: string | null
+          phone: string | null
+          asaas_customer_id: string | null
+          status: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          company_id: string
+          name: string
+          document: string
+          email?: string | null
+          phone?: string | null
+          asaas_customer_id?: string | null
+          status?: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          company_id?: string
+          name?: string
+          document?: string
+          email?: string | null
+          phone?: string | null
+          asaas_customer_id?: string | null
+          status?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "members_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       merchants: {
         Row: {
           company_id: string
@@ -676,6 +720,57 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      vehicles: {
+        Row: {
+          id: string
+          company_id: string
+          member_id: string
+          plate: string
+          brand: string
+          model: string
+          year: number | null
+          color: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          company_id: string
+          member_id: string
+          plate: string
+          brand: string
+          model: string
+          year?: number | null
+          color?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          company_id?: string
+          member_id?: string
+          plate?: string
+          brand?: string
+          model?: string
+          year?: number | null
+          color?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicles_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vehicles_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          }
+        ]
       }
     }
     Views: {
