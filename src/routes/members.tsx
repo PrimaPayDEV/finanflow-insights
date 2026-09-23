@@ -2,17 +2,17 @@ import { createFileRoute } from '@tanstack/react-router';
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Plus, Car, Trash2, ShieldCheck, User } from "lucide-react";
+import { Plus, Car, Trash2, ShieldCheck, User, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { AppLayout } from "@/components/AppLayout";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
-import { getMembers, upsertMember, addVehicle } from "@/lib/members.functions";
+import { getMembers, upsertMember, addVehicle, deleteMember } from "@/lib/members.functions";
 import { translateError } from "@/lib/translateError";
 
 export const Route = createFileRoute("/members")({
@@ -22,30 +22,32 @@ export const Route = createFileRoute("/members")({
   component: MembersPage,
 });
 
-function MemberDialog() {
+function MemberDialog({ member }: { member?: any }) {
   const qc = useQueryClient();
   const { companyId } = useAuth();
   const [open, setOpen] = useState(false);
-  const [name, setName] = useState("");
-  const [document, setDocument] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
+  const [name, setName] = useState(member?.name || "");
+  const [document, setDocument] = useState(member?.document || "");
+  const [email, setEmail] = useState(member?.email || "");
+  const [phone, setPhone] = useState(member?.phone || "");
 
   const submit = useMutation({
     mutationFn: async () => {
       if (!companyId) throw new Error("Empresa não identificada");
       const res = await upsertMember({
-        data: { companyId, name, document, email, phone },
+        data: { id: member?.id, companyId, name, document, email, phone },
       });
       if (!res.ok) throw new Error("Erro ao salvar associado.");
     },
     onSuccess: () => {
-      toast.success("Associado cadastrado com sucesso e sincronizado com Asaas!");
+      toast.success(member ? "Associado atualizado!" : "Associado cadastrado com sucesso e sincronizado com Asaas!");
       setOpen(false);
-      setName("");
-      setDocument("");
-      setEmail("");
-      setPhone("");
+      if (!member) {
+        setName("");
+        setDocument("");
+        setEmail("");
+        setPhone("");
+      }
       qc.invalidateQueries({ queryKey: ["members"] });
     },
     onError: (e) => toast.error(translateError(e.message)),
@@ -54,9 +56,15 @@ function MemberDialog() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="gap-2">
-          <Plus className="size-4" /> Novo Associado
-        </Button>
+        {member ? (
+          <Button variant="ghost" size="icon">
+            <Pencil className="size-4" />
+          </Button>
+        ) : (
+          <Button className="gap-2">
+            <Plus className="size-4" /> Novo Associado
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
@@ -162,6 +170,35 @@ function VehicleDialog({ memberId, memberName }: { memberId: string; memberName:
   );
 }
 
+function DeleteMemberButton({ memberId }: { memberId: string }) {
+  const qc = useQueryClient();
+  const { companyId } = useAuth();
+  
+  const remove = useMutation({
+    mutationFn: async () => {
+      if (!companyId) return;
+      if (!window.confirm("Tem certeza que deseja excluir este associado? Esta ação não pode ser desfeita.")) return;
+      
+      const res = await deleteMember({ data: { id: memberId, companyId } });
+      if (!res.ok) throw new Error("Erro ao excluir");
+    },
+    onSuccess: (_, variables, context) => {
+      // The mutation doesn't return anything if confirmed is false, so we check if it actually ran
+      if (qc) {
+        toast.success("Associado excluído.");
+        qc.invalidateQueries({ queryKey: ["members"] });
+      }
+    },
+    onError: (e) => toast.error(translateError(e.message)),
+  });
+
+  return (
+    <Button variant="ghost" size="icon" onClick={() => remove.mutate()} disabled={remove.isPending}>
+      <Trash2 className="size-4 text-destructive" />
+    </Button>
+  );
+}
+
 function MembersPage() {
   const { companyId } = useAuth();
   const fetchMembers = useServerFn(getMembers);
@@ -198,9 +235,13 @@ function MembersPage() {
                     <User className="size-4 text-primary" />
                     <span className="truncate">{m.name}</span>
                   </div>
-                  <Badge variant={m.status === 'active' ? 'default' : 'secondary'}>
-                    {m.status === 'active' ? 'Ativo' : m.status}
-                  </Badge>
+                  <div className="flex items-center gap-2">
+                    <Badge variant={m.status === 'active' ? 'default' : 'secondary'}>
+                      {m.status === 'active' ? 'Ativo' : m.status}
+                    </Badge>
+                    <MemberDialog member={m} />
+                    <DeleteMemberButton memberId={m.id} />
+                  </div>
                 </CardTitle>
                 <CardDescription>Doc: {m.document}</CardDescription>
               </CardHeader>

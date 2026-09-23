@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
 const memberSchema = z.object({
+  id: z.string().uuid().optional(),
   companyId: z.string().uuid(),
   name: z.string().min(1, "Nome é obrigatório"),
   document: z.string().min(11, "Documento inválido").max(18),
@@ -83,17 +84,46 @@ export const upsertMember = createServerFn({ method: "POST" })
       }
     }
 
+    const upsertData = {
+      company_id: data.companyId,
+      name: data.name,
+      document: data.document,
+      email: data.email || null,
+      phone: data.phone || null,
+      asaas_customer_id: asaasCustomerId || null,
+    };
+
+    let error;
+    if (data.id) {
+      // Update existing
+      const { error: updateError } = await supabaseAdmin
+        .from("members")
+        .update(upsertData)
+        .eq("id", data.id)
+        .eq("company_id", data.companyId); // extra safety
+      error = updateError;
+    } else {
+      // Insert new
+      const { error: insertError } = await supabaseAdmin
+        .from("members")
+        .insert(upsertData);
+      error = insertError;
+    }
+
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const deleteMember = createServerFn({ method: "POST" })
+  .validator((d: { id: string; companyId: string }) => d)
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin
       .from("members")
-      .insert({
-        company_id: data.companyId,
-        name: data.name,
-        document: data.document,
-        email: data.email || null,
-        phone: data.phone || null,
-        asaas_customer_id: asaasCustomerId || null,
-      });
-
+      .delete()
+      .eq("id", data.id)
+      .eq("company_id", data.companyId);
+    
     if (error) throw new Error(error.message);
     return { ok: true };
   });
