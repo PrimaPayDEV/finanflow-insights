@@ -20,6 +20,8 @@ export type Database = {
           name: string
           document_cnpj: string | null
           asaas_api_key: string | null
+          segment: string | null
+          app_mode: string | null
           created_at: string
         }
         Insert: {
@@ -27,6 +29,8 @@ export type Database = {
           name: string
           document_cnpj?: string | null
           asaas_api_key?: string | null
+          segment?: string | null
+          app_mode?: string | null
           created_at?: string
         }
         Update: {
@@ -34,6 +38,8 @@ export type Database = {
           name?: string
           document_cnpj?: string | null
           asaas_api_key?: string | null
+          segment?: string | null
+          app_mode?: string | null
           created_at?: string
         }
         Relationships: []

@@ -15,6 +15,13 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -116,6 +123,7 @@ function AdminCompaniesPage() {
 
 function CompanyDialog({ company }: { company?: any }) {
   const [open, setOpen] = useState(false);
+  const [appMode, setAppMode] = useState<string>(company?.app_mode ?? 'full');
   const qc = useQueryClient();
   const saveAction = useServerFn(upsertCompany);
   
@@ -127,6 +135,8 @@ function CompanyDialog({ company }: { company?: any }) {
           name: fd.get("name") as string,
           document_cnpj: fd.get("document_cnpj") as string,
           asaas_api_key: fd.get("asaas_api_key") as string,
+          segment: fd.get("segment") as string,
+          app_mode: fd.get("app_mode") as any,
         },
       });
       if (!res.ok) throw new Error("Erro ao salvar");
@@ -159,6 +169,23 @@ function CompanyDialog({ company }: { company?: any }) {
           <div className="space-y-2">
             <Label>CNPJ</Label>
             <Input name="document_cnpj" defaultValue={company?.document_cnpj} />
+          </div>
+          <div className="space-y-2">
+            <Label>Segmento (Ramo de Atividade)</Label>
+            <Input name="segment" defaultValue={company?.segment} placeholder="Ex: Proteção Veicular, Imobiliária, etc" />
+          </div>
+          <div className="space-y-2">
+            <Label>Finalidade / Uso da Plataforma</Label>
+            <input type="hidden" name="app_mode" value={appMode} />
+            <Select value={appMode} onValueChange={setAppMode}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="full">Completo (Split, Taxas, Máquinas, Economia)</SelectItem>
+                <SelectItem value="billing">Apenas Cobranças (Boletos, Faturas, Carnês)</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <div className="space-y-2">
             <Label>Chave de API do Asaas</Label>

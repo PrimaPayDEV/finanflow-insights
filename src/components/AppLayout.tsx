@@ -62,7 +62,7 @@ export function AppLayout({
 }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const { user, companyName, role, signOut } = useAuth();
+  const { user, companyName, role, appMode, signOut } = useAuth();
   
   const qc = useQueryClient();
   const navigate = useNavigate();
@@ -70,6 +70,14 @@ export function AppLayout({
   const unreadCount = notifications.filter(n => !n.is_read).length;
 
   let currentNav = [...nav];
+  
+  // Filter for billing mode
+  if (appMode === "billing") {
+    currentNav = currentNav.filter(item => 
+      !["/merchants", "/import", "/closures"].includes(item.to)
+    );
+  }
+
   if (role === "partner") {
     currentNav = [{ to: "/reports", label: "Relatórios", icon: FileBarChart2 }];
   } else {

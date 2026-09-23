@@ -10,6 +10,8 @@ interface AuthContextType {
   isActive: boolean;
   role: string | null;
   partnerId: string | null;
+  appMode: string | null;
+  segment: string | null;
   isLoading: boolean;
   signOut: () => Promise<void>;
 }
@@ -24,13 +26,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isActive, setIsActive] = useState<boolean>(true);
   const [role, setRole] = useState<string | null>(null);
   const [partnerId, setPartnerId] = useState<string | null>(null);
+  const [appMode, setAppMode] = useState<string | null>(null);
+  const [segment, setSegment] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchCompany = async (userId: string) => {
     try {
       const { data } = await supabase
         .from('company_users')
-        .select('company_id, role, partner_id, companies(name, is_active)')
+        .select('company_id, role, partner_id, companies(name, is_active, app_mode, segment)')
         .eq('user_id', userId)
         .single();
       
@@ -42,6 +46,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setCompanyName(data.companies?.name ?? null);
         // @ts-ignore
         setIsActive(data.companies?.is_active ?? true);
+        // @ts-ignore
+        setAppMode(data.companies?.app_mode ?? 'full');
+        // @ts-ignore
+        setSegment(data.companies?.segment ?? null);
       }
     } catch (e) {
       console.error("Error fetching company", e);
@@ -74,6 +82,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setCompanyName(null);
           setRole(null);
           setPartnerId(null);
+          setAppMode(null);
+          setSegment(null);
           setIsLoading(false);
         }
       }
@@ -89,7 +99,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ session, user, companyId, companyName, isActive, role, partnerId, isLoading, signOut }}>
+    <AuthContext.Provider value={{ session, user, companyId, companyName, isActive, role, partnerId, appMode, segment, isLoading, signOut }}>
       {children}
     </AuthContext.Provider>
   );

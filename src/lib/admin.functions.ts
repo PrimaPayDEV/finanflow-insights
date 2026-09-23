@@ -6,6 +6,8 @@ const companySchema = z.object({
   name: z.string().min(1, "Nome é obrigatório"),
   document_cnpj: z.string().nullish(),
   asaas_api_key: z.string().nullish(),
+  segment: z.string().nullish(),
+  app_mode: z.enum(['full', 'billing']).default('full').nullish(),
 });
 
 export const getCompanies = createServerFn({ method: "GET" }).handler(async () => {
@@ -34,6 +36,8 @@ export const upsertCompany = createServerFn({ method: "POST" })
           name: data.name,
           document_cnpj: data.document_cnpj,
           asaas_api_key: data.asaas_api_key,
+          segment: data.segment,
+          app_mode: data.app_mode ?? 'full',
         })
         .eq("id", data.id);
       
@@ -45,6 +49,8 @@ export const upsertCompany = createServerFn({ method: "POST" })
           name: data.name,
           document_cnpj: data.document_cnpj,
           asaas_api_key: data.asaas_api_key,
+          segment: data.segment,
+          app_mode: data.app_mode ?? 'full',
         });
 
       if (error) throw new Error(error.message);
