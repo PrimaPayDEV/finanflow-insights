@@ -73,9 +73,9 @@ export function AppLayout({
   
   // Filter for billing mode
   if (appMode === "billing") {
-    currentNav = currentNav.filter(item => 
-      !["/merchants", "/import", "/closures"].includes(item.to)
-    );
+    currentNav = currentNav
+      .filter(item => !["/merchants", "/import", "/closures"].includes(item.to))
+      .map(item => item.to === "/expenses" ? { ...item, label: "Cobranças" } : item);
   }
 
   if (role === "partner") {

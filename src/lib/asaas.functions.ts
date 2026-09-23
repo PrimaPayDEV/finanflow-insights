@@ -279,3 +279,73 @@ export const createAsaasSubaccount = createServerFn({ method: "POST" })
     };
   });
 
+export const getAsaasDashboardMetrics = createServerFn({ method: "GET" })
+  .validator((d: { companyId: string }) => d)
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: company } = await supabaseAdmin
+      .from("companies")
+      .select("asaas_api_key")
+      .eq("id", data.companyId)
+      .single();
+
+    const { data: settings } = await supabaseAdmin
+      .from("asaas_settings")
+      .select("*")
+      .eq("company_id", data.companyId)
+      .limit(1)
+      .maybeSingle();
+
+    const sandbox = settings?.sandbox ?? false;
+    const apiKey = company?.asaas_api_key || (sandbox ? process.env.ASAAS_API_TESTE : process.env.ASAAS_API_KEY);
+
+    if (!apiKey) {
+      return { ok: false as const, error: `Chave da API não configurada.` };
+    }
+
+    const base = sandbox
+      ? "https://sandbox.asaas.com/api/v3"
+      : "https://api.asaas.com/v3";
+
+    try {
+      const balRes = await fetch(`${base}/finance/balance`, {
+        headers: { access_token: apiKey },
+      });
+      const balanceData = await balRes.json();
+
+      const payRes = await fetch(`${base}/payments?limit=100`, {
+        headers: { access_token: apiKey },
+      });
+      const paymentsData = await payRes.json();
+
+      let totalPending = 0;
+      let totalOverdue = 0;
+      let totalReceived = 0;
+      let countAssociados = 0;
+
+      if (paymentsData && paymentsData.data) {
+        const uniqueCustomers = new Set();
+        for (const p of paymentsData.data) {
+          uniqueCustomers.add(p.customer);
+          if (p.status === "PENDING") totalPending += p.value;
+          else if (p.status === "OVERDUE") totalOverdue += p.value;
+          else if (p.status === "RECEIVED" || p.status === "CONFIRMED" || p.status === "RECEIVED_IN_CASH") totalReceived += p.value;
+        }
+        countAssociados = uniqueCustomers.size;
+      }
+
+      return {
+        ok: true as const,
+        data: {
+          balance: balanceData.balance || 0,
+          totalPending,
+          totalOverdue,
+          totalReceived,
+          countAssociados,
+          recentPayments: paymentsData.data?.slice(0, 5) || []
+        }
+      };
+    } catch (error: any) {
+      return { ok: false as const, error: error.message };
+    }
+  });

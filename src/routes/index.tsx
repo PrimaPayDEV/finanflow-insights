@@ -45,6 +45,9 @@ import {
   modalityLabel,
   monthLabel,
 } from "@/lib/format";
+import { useAuth } from "@/contexts/AuthContext";
+import { useServerFn } from "@tanstack/react-start";
+import { getAsaasDashboardMetrics } from "@/lib/asaas.functions";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -67,7 +70,92 @@ export const Route = createFileRoute("/")({
 
 const COLORS = ["var(--chart-1)", "var(--chart-2)", "var(--chart-3)", "var(--chart-4)", "var(--chart-5)"];
 
+function BillingDashboard({ companyId }: { companyId: string }) {
+  const fetchMetrics = useServerFn(getAsaasDashboardMetrics);
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["billing_metrics", companyId],
+    queryFn: () => fetchMetrics({ data: { companyId } }),
+  });
+
+  return (
+    <AppLayout title="Dashboard" subtitle="Visão consolidada de Boletos e Cobranças">
+      {isLoading ? (
+        <div className="flex h-64 items-center justify-center">
+          <p className="text-muted-foreground">Carregando métricas...</p>
+        </div>
+      ) : data?.ok ? (
+        <div className="space-y-6">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <KpiCard
+              title="Saldo Asaas"
+              value={BRL(data.data.balance)}
+              icon={Wallet}
+              trend={{ value: 0, label: "Atualizado agora" }}
+            />
+            <KpiCard
+              title="Total Recebido (Mês)"
+              value={BRL(data.data.totalReceived)}
+              icon={TrendingUp}
+              trend={{ value: 0, label: "Em cobranças pagas" }}
+            />
+            <KpiCard
+              title="Inadimplência / Vencido"
+              value={BRL(data.data.totalOverdue)}
+              icon={FileCheck2}
+              trend={{ value: 0, label: "Atrasados" }}
+            />
+            <KpiCard
+              title="Pendentes a Receber"
+              value={BRL(data.data.totalPending)}
+              icon={PiggyBank}
+              trend={{ value: 0, label: "Aguardando pagamento" }}
+            />
+          </div>
+          <Card>
+            <CardHeader>
+              <CardTitle>Últimas Cobranças</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {data.data.recentPayments.length === 0 ? (
+                <p className="text-muted-foreground text-sm">Nenhuma cobrança encontrada.</p>
+              ) : (
+                <div className="space-y-4">
+                  {data.data.recentPayments.map((p: any) => (
+                    <div key={p.id} className="flex items-center justify-between border-b pb-2 last:border-0 last:pb-0">
+                      <div>
+                        <p className="font-medium text-sm">{p.customer}</p>
+                        <p className="text-xs text-muted-foreground">{p.description || "Cobrança"}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-bold text-sm">{BRL(p.value)}</p>
+                        <Badge variant={p.status === "RECEIVED" || p.status === "CONFIRMED" ? "default" : p.status === "OVERDUE" ? "destructive" : "secondary"}>
+                          {p.status}
+                        </Badge>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      ) : (
+        <div className="flex h-64 flex-col items-center justify-center space-y-4">
+          <p className="text-destructive font-medium">Erro ao carregar dados do Asaas</p>
+          <p className="text-sm text-muted-foreground">{data?.error || (error as Error)?.message}</p>
+        </div>
+      )}
+    </AppLayout>
+  );
+}
+
 function Dashboard() {
+  const { appMode, companyId } = useAuth();
+  
+  if (appMode === "billing" && companyId) {
+    return <BillingDashboard companyId={companyId} />;
+  }
+
   const [period, setPeriod] = useState<PeriodType>("month");
   const [customRange, setCustomRange] = useState<{ from?: Date; to?: Date }>();
 
