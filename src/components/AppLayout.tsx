@@ -49,7 +49,7 @@ const nav: NavItem[] = [
   { to: "/closures", label: "Fechamentos", icon: FileCheck2 },
   { to: "/reports", label: "Relatórios", icon: FileBarChart2 },
   { to: "/settings/asaas", label: "Configuração Asaas", icon: Settings },
-] as const;
+];
 
 export function AppLayout({
   title,
