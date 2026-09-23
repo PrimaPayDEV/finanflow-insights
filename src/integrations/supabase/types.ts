@@ -165,28 +165,34 @@ export type Database = {
       }
       companies: {
         Row: {
+          app_mode: string
           asaas_api_key: string | null
           created_at: string | null
           document_cnpj: string | null
           id: string
           is_active: boolean
           name: string
+          segment: string | null
         }
         Insert: {
+          app_mode?: string
           asaas_api_key?: string | null
           created_at?: string | null
           document_cnpj?: string | null
           id?: string
           is_active?: boolean
           name: string
+          segment?: string | null
         }
         Update: {
+          app_mode?: string
           asaas_api_key?: string | null
           created_at?: string | null
           document_cnpj?: string | null
           id?: string
           is_active?: boolean
           name?: string
+          segment?: string | null
         }
         Relationships: []
       }
