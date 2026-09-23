@@ -39,7 +39,9 @@ import {
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
 
-const nav = [
+type NavItem = { to: string; label: string; icon: typeof LayoutDashboard };
+
+const nav: NavItem[] = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
   { to: "/merchants", label: "Estabelecimentos", icon: Store },
   { to: "/import", label: "Importar Extrato", icon: Upload },
@@ -47,7 +49,7 @@ const nav = [
   { to: "/closures", label: "Fechamentos", icon: FileCheck2 },
   { to: "/reports", label: "Relatórios", icon: FileBarChart2 },
   { to: "/settings/asaas", label: "Configuração Asaas", icon: Settings },
-] as const;
+];
 
 export function AppLayout({
   title,

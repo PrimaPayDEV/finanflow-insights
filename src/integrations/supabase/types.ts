@@ -14,80 +14,9 @@ export type Database = {
   }
   public: {
     Tables: {
-      companies: {
-        Row: {
-          id: string
-          name: string
-          document_cnpj: string | null
-          asaas_api_key: string | null
-          segment: string | null
-          app_mode: string | null
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          name: string
-          document_cnpj?: string | null
-          asaas_api_key?: string | null
-          segment?: string | null
-          app_mode?: string | null
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          name?: string
-          document_cnpj?: string | null
-          asaas_api_key?: string | null
-          segment?: string | null
-          app_mode?: string | null
-          created_at?: string
-        }
-        Relationships: []
-      }
-      company_users: {
-        Row: {
-          id: string
-          company_id: string
-          user_id: string
-          role: string | null
-          partner_id: string | null
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          company_id: string
-          user_id: string
-          role?: string | null
-          partner_id?: string | null
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          company_id?: string
-          user_id?: string
-          role?: string | null
-          partner_id?: string | null
-          created_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "company_users_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "company_users_partner_id_fkey"
-            columns: ["partner_id"]
-            isOneToOne: false
-            referencedRelation: "partners"
-            referencedColumns: ["id"]
-          }
-        ]
-      }
       asaas_settings: {
         Row: {
+          company_id: string
           created_at: string
           default_description: string
           discount_deadline_days: number
@@ -98,9 +27,9 @@ export type Database = {
           interest_percent: number
           sandbox: boolean
           updated_at: string
-                  company_id: string
         }
         Insert: {
+          company_id?: string
           created_at?: string
           default_description?: string
           discount_deadline_days?: number
@@ -111,9 +40,9 @@ export type Database = {
           interest_percent?: number
           sandbox?: boolean
           updated_at?: string
-                  company_id?: string
         }
         Update: {
+          company_id?: string
           created_at?: string
           default_description?: string
           discount_deadline_days?: number
@@ -124,9 +53,16 @@ export type Database = {
           interest_percent?: number
           sandbox?: boolean
           updated_at?: string
-                  company_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "asaas_settings_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       asaas_webhook_events: {
         Row: {
@@ -156,6 +92,7 @@ export type Database = {
         Row: {
           asaas_invoice_url: string | null
           asaas_payment_id: string | null
+          company_id: string
           created_at: string
           id: string
           merchant_id: string
@@ -170,11 +107,11 @@ export type Database = {
           total_gross_volume: number
           total_op_fee_amount: number
           traditional_cost_estimate: number
-                  company_id: string
         }
         Insert: {
           asaas_invoice_url?: string | null
           asaas_payment_id?: string | null
+          company_id?: string
           created_at?: string
           id?: string
           merchant_id: string
@@ -189,11 +126,11 @@ export type Database = {
           total_gross_volume?: number
           total_op_fee_amount?: number
           traditional_cost_estimate?: number
-                  company_id?: string
         }
         Update: {
           asaas_invoice_url?: string | null
           asaas_payment_id?: string | null
+          company_id?: string
           created_at?: string
           id?: string
           merchant_id?: string
@@ -208,9 +145,15 @@ export type Database = {
           total_gross_volume?: number
           total_op_fee_amount?: number
           traditional_cost_estimate?: number
-                  company_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "closures_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "closures_merchant_id_fkey"
             columns: ["merchant_id"]
@@ -220,38 +163,120 @@ export type Database = {
           },
         ]
       }
+      companies: {
+        Row: {
+          app_mode: string
+          asaas_api_key: string | null
+          created_at: string | null
+          document_cnpj: string | null
+          id: string
+          is_active: boolean
+          name: string
+          segment: string | null
+        }
+        Insert: {
+          app_mode?: string
+          asaas_api_key?: string | null
+          created_at?: string | null
+          document_cnpj?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          segment?: string | null
+        }
+        Update: {
+          app_mode?: string
+          asaas_api_key?: string | null
+          created_at?: string | null
+          document_cnpj?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          segment?: string | null
+        }
+        Relationships: []
+      }
+      company_users: {
+        Row: {
+          company_id: string
+          created_at: string | null
+          id: string
+          partner_id: string | null
+          role: string | null
+          user_id: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string | null
+          id?: string
+          partner_id?: string | null
+          role?: string | null
+          user_id: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string | null
+          id?: string
+          partner_id?: string | null
+          role?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_users_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "company_users_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       expenses_adjustments: {
         Row: {
           amount: number
           category: string
+          company_id: string
           created_at: string
           description: string
           id: string
           merchant_id: string
           reference_month: string
-                  company_id: string
         }
         Insert: {
           amount?: number
           category?: string
+          company_id?: string
           created_at?: string
           description: string
           id?: string
           merchant_id: string
           reference_month: string
-                  company_id?: string
         }
         Update: {
           amount?: number
           category?: string
+          company_id?: string
           created_at?: string
           description?: string
           id?: string
           merchant_id?: string
           reference_month?: string
-                  company_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "expenses_adjustments_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "expenses_adjustments_merchant_id_fkey"
             columns: ["merchant_id"]
@@ -264,6 +289,7 @@ export type Database = {
       fee_plans: {
         Row: {
           cash_rate: number
+          company_id: string
           created_at: string
           credit_installment_rate: number
           credit_vista_rate: number
@@ -273,10 +299,10 @@ export type Database = {
           merchant_id: string
           pix_rate: number
           traditional_fee_avg: number
-                  company_id: string
         }
         Insert: {
           cash_rate?: number
+          company_id?: string
           created_at?: string
           credit_installment_rate?: number
           credit_vista_rate?: number
@@ -286,10 +312,10 @@ export type Database = {
           merchant_id: string
           pix_rate?: number
           traditional_fee_avg?: number
-                  company_id?: string
         }
         Update: {
           cash_rate?: number
+          company_id?: string
           created_at?: string
           credit_installment_rate?: number
           credit_vista_rate?: number
@@ -299,9 +325,15 @@ export type Database = {
           merchant_id?: string
           pix_rate?: number
           traditional_fee_avg?: number
-                  company_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "fee_plans_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "fee_plans_merchant_id_fkey"
             columns: ["merchant_id"]
@@ -313,6 +345,7 @@ export type Database = {
       }
       merchants: {
         Row: {
+          company_id: string
           created_at: string
           document_cnpj: string
           email: string
@@ -320,9 +353,9 @@ export type Database = {
           name: string
           phone_whatsapp: string
           status: Database["public"]["Enums"]["merchant_status"]
-                  company_id: string
         }
         Insert: {
+          company_id?: string
           created_at?: string
           document_cnpj?: string
           email?: string
@@ -330,9 +363,9 @@ export type Database = {
           name: string
           phone_whatsapp?: string
           status?: Database["public"]["Enums"]["merchant_status"]
-                  company_id?: string
         }
         Update: {
+          company_id?: string
           created_at?: string
           document_cnpj?: string
           email?: string
@@ -340,64 +373,79 @@ export type Database = {
           name?: string
           phone_whatsapp?: string
           status?: Database["public"]["Enums"]["merchant_status"]
-                  company_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "merchants_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       notifications: {
         Row: {
+          company_id: string
           created_at: string
           description: string
           id: string
           is_read: boolean
           title: string
           type: string
-                  company_id: string
         }
         Insert: {
+          company_id?: string
           created_at?: string
           description?: string
           id?: string
           is_read?: boolean
           title: string
           type?: string
-                  company_id?: string
         }
         Update: {
+          company_id?: string
           created_at?: string
           description?: string
           id?: string
           is_read?: boolean
           title?: string
           type?: string
-                  company_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "notifications_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       partners: {
         Row: {
-          id: string
-          company_id: string
-          name: string
-          email: string | null
           asaas_wallet_id: string
+          company_id: string
           created_at: string
+          email: string | null
+          id: string
+          name: string
         }
         Insert: {
-          id?: string
-          company_id?: string
-          name: string
-          email?: string | null
           asaas_wallet_id: string
+          company_id: string
           created_at?: string
+          email?: string | null
+          id?: string
+          name: string
         }
         Update: {
-          id?: string
-          company_id?: string
-          name?: string
-          email?: string | null
           asaas_wallet_id?: string
+          company_id?: string
           created_at?: string
+          email?: string | null
+          id?: string
+          name?: string
         }
         Relationships: [
           {
@@ -406,7 +454,7 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "companies"
             referencedColumns: ["id"]
-          }
+          },
         ]
       }
       pos_terminals: {
@@ -446,36 +494,43 @@ export type Database = {
       }
       split_rules: {
         Row: {
+          company_id: string
           created_at: string
           id: string
           merchant_id: string
-          partner_id: string | null
           partner_asaas_wallet_id: string
+          partner_id: string | null
           partner_name: string
           percentage: number
-                  company_id: string
         }
         Insert: {
+          company_id?: string
           created_at?: string
           id?: string
           merchant_id: string
-          partner_id?: string | null
           partner_asaas_wallet_id?: string
+          partner_id?: string | null
           partner_name: string
           percentage?: number
-                  company_id?: string
         }
         Update: {
+          company_id?: string
           created_at?: string
           id?: string
           merchant_id?: string
-          partner_id?: string | null
           partner_asaas_wallet_id?: string
+          partner_id?: string | null
           partner_name?: string
           percentage?: number
-                  company_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "split_rules_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "split_rules_merchant_id_fkey"
             columns: ["merchant_id"]
@@ -489,38 +544,45 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "partners"
             referencedColumns: ["id"]
-          }
+          },
         ]
       }
       statements_imports: {
         Row: {
+          company_id: string
           created_at: string
           file_name: string
           id: string
           merchant_id: string | null
           reference_month: string
           status: Database["public"]["Enums"]["import_status"]
-                  company_id: string
         }
         Insert: {
+          company_id?: string
           created_at?: string
           file_name: string
           id?: string
           merchant_id?: string | null
           reference_month: string
           status?: Database["public"]["Enums"]["import_status"]
-                  company_id?: string
         }
         Update: {
+          company_id?: string
           created_at?: string
           file_name?: string
           id?: string
           merchant_id?: string | null
           reference_month?: string
           status?: Database["public"]["Enums"]["import_status"]
-                  company_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "statements_imports_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "statements_imports_merchant_id_fkey"
             columns: ["merchant_id"]
@@ -533,6 +595,7 @@ export type Database = {
       transactions: {
         Row: {
           brand: string
+          company_id: string
           created_at: string
           gross_amount: number
           id: string
@@ -542,10 +605,10 @@ export type Database = {
           modality: Database["public"]["Enums"]["payment_modality"]
           pos_serial: string
           transaction_date: string
-                  company_id: string
         }
         Insert: {
           brand?: string
+          company_id?: string
           created_at?: string
           gross_amount?: number
           id?: string
@@ -555,10 +618,10 @@ export type Database = {
           modality: Database["public"]["Enums"]["payment_modality"]
           pos_serial?: string
           transaction_date?: string
-                  company_id?: string
         }
         Update: {
           brand?: string
+          company_id?: string
           created_at?: string
           gross_amount?: number
           id?: string
@@ -568,9 +631,15 @@ export type Database = {
           modality?: Database["public"]["Enums"]["payment_modality"]
           pos_serial?: string
           transaction_date?: string
-                  company_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "transactions_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "transactions_import_id_fkey"
             columns: ["import_id"]
@@ -613,6 +682,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      current_company_id: { Args: never; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -648,12 +718,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -677,11 +747,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -702,11 +772,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -727,11 +797,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -744,11 +814,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
