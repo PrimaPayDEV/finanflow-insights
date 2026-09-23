@@ -210,7 +210,7 @@ export function AppLayout({
             <div className="flex items-center gap-1.5 sm:gap-4 shrink-0">
               {actions && <div className="hidden sm:block">{actions}</div>}
               
-              <div className="flex items-center gap-1 pl-1.5 sm:pl-4 border-l shrink-0">
+              <div className="flex items-center gap-3 pl-3 sm:pl-6 border-l shrink-0">
                 <ThemeToggle />
                 
                 <DropdownMenu>
