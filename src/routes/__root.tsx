@@ -152,7 +152,7 @@ function AuthGuard({ children }: { children: ReactNode }) {
   const isPublicRoute = pathname.startsWith("/public") || pathname.startsWith("/api/public") || pathname === "/login";
   if (!user && !isPublicRoute) return null;
 
-  if (user && !isActive && companyName !== "Prima Hub") {
+  if (user && !isActive && companyName !== "Prima Hub" && companyName !== "PrimaPay") {
     return (
       <div className="flex h-screen w-full flex-col items-center justify-center space-y-4 text-center bg-background px-4">
         <ShieldAlert className="size-16 text-destructive" />
@@ -160,7 +160,7 @@ function AuthGuard({ children }: { children: ReactNode }) {
         <p className="text-muted-foreground max-w-md">
           A assinatura da sua empresa encontra-se suspensa ou pendente.
           <br />
-          Por favor, entre em contato com o suporte da Prima Hub para regularizar o seu acesso.
+          Por favor, entre em contato com o suporte da PrimaPay para regularizar o seu acesso.
         </p>
       </div>
     );

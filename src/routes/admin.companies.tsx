@@ -45,14 +45,14 @@ export const Route = createFileRoute("/admin/companies")({
 function AdminCompaniesPage() {
   const { companyName } = useAuth();
   
-  if (companyName !== "Prima Hub") {
+  if (companyName !== "Prima Hub" && companyName !== "PrimaPay") {
     return (
       <AppLayout title="Acesso Negado">
         <div className="flex flex-col items-center justify-center h-[50vh] space-y-4 text-center">
           <ShieldAlert className="size-16 text-destructive" />
           <h2 className="text-2xl font-bold">Acesso Restrito</h2>
           <p className="text-muted-foreground max-w-md">
-            Esta página é exclusiva para administradores da Prima Hub.
+            Esta página é exclusiva para administradores da Prima Hub / PrimaPay.
           </p>
         </div>
       </AppLayout>
@@ -69,13 +69,13 @@ function AdminCompaniesPage() {
   return (
     <AppLayout 
       title="Gestão de Empresas" 
-      subtitle="Painel exclusivo Prima Hub para criar e gerenciar as empresas clientes (Multi-Tenant)"
+      subtitle="Painel exclusivo de administração para criar e gerenciar as empresas clientes (Multi-Tenant)"
       actions={<CompanyDialog />}
     >
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {companies?.map((company) => (
           <Card key={company.id} className="relative overflow-hidden">
-            {company.name === "Prima Hub" && (
+            {(company.name === "Prima Hub" || company.name === "PrimaPay") && (
               <div className="absolute top-0 right-0 bg-primary text-primary-foreground text-xs font-bold px-3 py-1 rounded-bl-lg">
                 Sua Empresa
               </div>
@@ -108,7 +108,7 @@ function AdminCompaniesPage() {
                 <CompanyDialog company={company} />
                 <AdminUserDialog companyId={company.id} companyName={company.name} />
               </div>
-              {company.name !== "Prima Hub" && (
+              {(company.name !== "Prima Hub" && company.name !== "PrimaPay") && (
                 <div className="flex gap-2 mt-2 pt-2 border-t">
                   <CompanyActions company={company} />
                 </div>
