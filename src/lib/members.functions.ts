@@ -10,23 +10,14 @@ const memberSchema = z.object({
 });
 
 export const getMembers = createServerFn({ method: "GET" })
-  .handler(async () => {
+  .validator((d: { companyId: string }) => d)
+  .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: user, error: authErr } = await supabaseAdmin.auth.getUser();
-    if (authErr || !user?.user) throw new Error("Não autorizado");
-
-    const { data: roles } = await supabaseAdmin
-      .from("company_users")
-      .select("company_id")
-      .eq("user_id", user.user.id);
-    
-    const companyIds = roles?.map((r) => r.company_id) || [];
-    if (companyIds.length === 0) return [];
 
     const { data: members, error } = await supabaseAdmin
       .from("members")
       .select("*, vehicles(*)")
-      .in("company_id", companyIds)
+      .eq("company_id", data.companyId)
       .order("name");
 
     if (error) throw new Error(error.message);

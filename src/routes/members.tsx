@@ -163,10 +163,12 @@ function VehicleDialog({ memberId, memberName }: { memberId: string; memberName:
 }
 
 function MembersPage() {
+  const { companyId } = useAuth();
   const fetchMembers = useServerFn(getMembers);
   const { data: members, isLoading } = useQuery({
-    queryKey: ["members"],
-    queryFn: () => fetchMembers(),
+    queryKey: ["members", companyId],
+    queryFn: () => fetchMembers({ data: { companyId: companyId! } }),
+    enabled: !!companyId,
   });
 
   return (

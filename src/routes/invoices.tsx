@@ -35,8 +35,9 @@ function NewInvoiceDialog() {
 
   const fetchMembers = useServerFn(getMembers);
   const { data: members } = useQuery({
-    queryKey: ["members"],
-    queryFn: () => fetchMembers(),
+    queryKey: ["members", companyId],
+    queryFn: () => fetchMembers({ data: { companyId: companyId! } }),
+    enabled: !!companyId,
   });
 
   const generate = useMutation({
