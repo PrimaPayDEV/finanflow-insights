@@ -173,6 +173,8 @@ export type Database = {
           is_active: boolean
           name: string
           segment: string | null
+          logo_url: string | null
+          primary_color: string | null
         }
         Insert: {
           app_mode?: string
@@ -183,6 +185,8 @@ export type Database = {
           is_active?: boolean
           name: string
           segment?: string | null
+          logo_url?: string | null
+          primary_color?: string | null
         }
         Update: {
           app_mode?: string
@@ -193,6 +197,8 @@ export type Database = {
           is_active?: boolean
           name?: string
           segment?: string | null
+          logo_url?: string | null
+          primary_color?: string | null
         }
         Relationships: []
       }

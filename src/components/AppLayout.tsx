@@ -64,7 +64,7 @@ export function AppLayout({
 }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const { user, companyName, role, appMode, signOut } = useAuth();
+  const { user, companyName, role, appMode, logoUrl, signOut } = useAuth();
   
   const qc = useQueryClient();
   const navigate = useNavigate();
@@ -119,13 +119,19 @@ export function AppLayout({
       >
         <div className="flex items-center justify-between px-5 py-6">
           <div className="flex items-center gap-2 overflow-hidden">
-            <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-sidebar-primary text-sidebar-primary-foreground">
-              <Wallet className="size-5" />
-            </span>
-            {!isCollapsed && (
-              <div className="leading-tight whitespace-nowrap">
-                <p className="text-xl font-extrabold tracking-tight" style={{ fontFamily: '"Montserrat Arabic", Montserrat, sans-serif' }}>PrimaHub</p>
-              </div>
+            {logoUrl ? (
+              <img src={logoUrl} alt={companyName || "Logo"} className="h-8 w-auto max-w-[140px] object-contain" />
+            ) : (
+              <>
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-sidebar-primary text-sidebar-primary-foreground">
+                  <Wallet className="size-5" />
+                </span>
+                {!isCollapsed && (
+                  <div className="leading-tight whitespace-nowrap">
+                    <p className="text-xl font-extrabold tracking-tight" style={{ fontFamily: '"Montserrat Arabic", Montserrat, sans-serif' }}>{companyName === 'PrimaPay' ? 'PrimaHub' : companyName}</p>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>
@@ -184,12 +190,18 @@ export function AppLayout({
                 </SheetTrigger>
                 <SheetContent side="left" className="w-64 p-0 bg-sidebar text-sidebar-foreground border-r-0">
                   <div className="flex items-center gap-2 overflow-hidden px-5 py-6">
-                    <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-sidebar-primary text-sidebar-primary-foreground">
-                      <Wallet className="size-5" />
-                    </span>
-                    <div className="leading-tight whitespace-nowrap">
-                      <p className="text-xl font-extrabold tracking-tight" style={{ fontFamily: '"Montserrat Arabic", Montserrat, sans-serif' }}>PrimaHub</p>
-                    </div>
+                    {logoUrl ? (
+                      <img src={logoUrl} alt={companyName || "Logo"} className="h-8 w-auto max-w-[140px] object-contain" />
+                    ) : (
+                      <>
+                        <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-sidebar-primary text-sidebar-primary-foreground">
+                          <Wallet className="size-5" />
+                        </span>
+                        <div className="leading-tight whitespace-nowrap">
+                          <p className="text-xl font-extrabold tracking-tight" style={{ fontFamily: '"Montserrat Arabic", Montserrat, sans-serif' }}>{companyName === 'PrimaPay' ? 'PrimaHub' : companyName}</p>
+                        </div>
+                      </>
+                    )}
                   </div>
                   <nav className="flex flex-1 flex-col gap-1 px-3">
                     {currentNav.map((item) => {
@@ -319,6 +331,13 @@ export function AppLayout({
                         Meu Perfil
                       </Link>
                     </DropdownMenuItem>
+                    {role === 'admin' && (
+                      <DropdownMenuItem asChild>
+                        <Link to="/settings/appearance" className="w-full cursor-pointer font-medium">
+                          Personalizar Ambiente
+                        </Link>
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuItem onClick={signOut} className="text-destructive focus:text-destructive cursor-pointer font-medium">
                       <LogOut className="mr-2 h-4 w-4" />
                       Sair

@@ -5,8 +5,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { FileBarChart2, Filter, DollarSign, AlertCircle, CheckCircle2, Clock, CalendarIcon, Inbox, TrendingUp, SearchX, CalendarDays, Receipt, Download } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-import { MerchantIcon } from "@/components/MerchantIcon";
 import { AppLayout } from "@/components/AppLayout";
+import { BillingReports } from "@/components/BillingReports";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -50,7 +50,7 @@ function ReportsPage() {
   const splitRules = useQuery(splitRulesQuery);
   const dueDay = settings.data?.due_day ?? 10;
   
-  const { role, partnerId } = useAuth();
+  const { role, partnerId, appMode } = useAuth();
 
   const [period, setPeriod] = useState<PeriodType>("month");
   const [customRange, setCustomRange] = useState<{ from?: Date; to?: Date }>();
@@ -299,6 +299,9 @@ function ReportsPage() {
         </div>
       }
     >
+      {appMode === "billing" ? (
+        <BillingReports />
+      ) : (
       <div className="space-y-6">
         {/* Total a Receber Highlight */}
         <motion.div 
@@ -588,6 +591,7 @@ function ReportsPage() {
           </Card>
         </motion.div>
       </div>
+      )}
     </AppLayout>
   );
 }

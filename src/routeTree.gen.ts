@@ -22,6 +22,7 @@ import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as AdminCompaniesRouteImport } from './routes/admin.companies'
+import { Route as SettingsAppearanceRouteImport } from './routes/settings/appearance'
 import { Route as SettingsAsaasRouteImport } from './routes/settings.asaas'
 import { Route as ApiPublicAsaasWebhookRouteImport } from './routes/api/public/asaas-webhook'
 import { Route as PublicReportClosureIdRouteImport } from './routes/public.report.$closureId'
@@ -91,6 +92,11 @@ const AdminCompaniesRoute = AdminCompaniesRouteImport.update({
   path: '/admin/companies',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SettingsAppearanceRoute = SettingsAppearanceRouteImport.update({
+  id: '/settings/appearance',
+  path: '/settings/appearance',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SettingsAsaasRoute = SettingsAsaasRouteImport.update({
   id: '/settings/asaas',
   path: '/settings/asaas',
@@ -121,6 +127,7 @@ export interface FileRoutesByFullPath {
   '/reports': typeof ReportsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin/companies': typeof AdminCompaniesRoute
+  '/settings/appearance': typeof SettingsAppearanceRoute
   '/settings/asaas': typeof SettingsAsaasRoute
   '/api/public/asaas-webhook': typeof ApiPublicAsaasWebhookRoute
   '/public/report/$closureId': typeof PublicReportClosureIdRoute
@@ -139,6 +146,7 @@ export interface FileRoutesByTo {
   '/reports': typeof ReportsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin/companies': typeof AdminCompaniesRoute
+  '/settings/appearance': typeof SettingsAppearanceRoute
   '/settings/asaas': typeof SettingsAsaasRoute
   '/api/public/asaas-webhook': typeof ApiPublicAsaasWebhookRoute
   '/public/report/$closureId': typeof PublicReportClosureIdRoute
@@ -158,6 +166,7 @@ export interface FileRoutesById {
   '/reports': typeof ReportsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin/companies': typeof AdminCompaniesRoute
+  '/settings/appearance': typeof SettingsAppearanceRoute
   '/settings/asaas': typeof SettingsAsaasRoute
   '/api/public/asaas-webhook': typeof ApiPublicAsaasWebhookRoute
   '/public/report/$closureId': typeof PublicReportClosureIdRoute
@@ -178,6 +187,7 @@ export interface FileRouteTypes {
     | '/reports'
     | '/sitemap.xml'
     | '/admin/companies'
+    | '/settings/appearance'
     | '/settings/asaas'
     | '/api/public/asaas-webhook'
     | '/public/report/$closureId'
@@ -196,6 +206,7 @@ export interface FileRouteTypes {
     | '/reports'
     | '/sitemap.xml'
     | '/admin/companies'
+    | '/settings/appearance'
     | '/settings/asaas'
     | '/api/public/asaas-webhook'
     | '/public/report/$closureId'
@@ -214,6 +225,7 @@ export interface FileRouteTypes {
     | '/reports'
     | '/sitemap.xml'
     | '/admin/companies'
+    | '/settings/appearance'
     | '/settings/asaas'
     | '/api/public/asaas-webhook'
     | '/public/report/$closureId'
@@ -233,6 +245,7 @@ export interface RootRouteChildren {
   ReportsRoute: typeof ReportsRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   AdminCompaniesRoute: typeof AdminCompaniesRoute
+  SettingsAppearanceRoute: typeof SettingsAppearanceRoute
   SettingsAsaasRoute: typeof SettingsAsaasRoute
   ApiPublicAsaasWebhookRoute: typeof ApiPublicAsaasWebhookRoute
   PublicReportClosureIdRoute: typeof PublicReportClosureIdRoute
@@ -331,6 +344,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminCompaniesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/settings/appearance': {
+      id: '/settings/appearance'
+      path: '/settings/appearance'
+      fullPath: '/settings/appearance'
+      preLoaderRoute: typeof SettingsAppearanceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/settings/asaas': {
       id: '/settings/asaas'
       path: '/settings/asaas'
@@ -369,6 +389,7 @@ const rootRouteChildren: RootRouteChildren = {
   ReportsRoute: ReportsRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   AdminCompaniesRoute: AdminCompaniesRoute,
+  SettingsAppearanceRoute: SettingsAppearanceRoute,
   SettingsAsaasRoute: SettingsAsaasRoute,
   ApiPublicAsaasWebhookRoute: ApiPublicAsaasWebhookRoute,
   PublicReportClosureIdRoute: PublicReportClosureIdRoute,

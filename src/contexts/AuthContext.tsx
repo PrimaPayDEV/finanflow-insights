@@ -12,6 +12,8 @@ interface AuthContextType {
   partnerId: string | null;
   appMode: string | null;
   segment: string | null;
+  logoUrl: string | null;
+  primaryColor: string | null;
   isLoading: boolean;
   signOut: () => Promise<void>;
 }
@@ -28,13 +30,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [partnerId, setPartnerId] = useState<string | null>(null);
   const [appMode, setAppMode] = useState<string | null>(null);
   const [segment, setSegment] = useState<string | null>(null);
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [primaryColor, setPrimaryColor] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchCompany = async (userId: string) => {
     try {
       const { data } = await supabase
         .from('company_users')
-        .select('company_id, role, partner_id, companies(name, is_active, app_mode, segment)')
+        .select('company_id, role, partner_id, companies(name, is_active, app_mode, segment, logo_url, primary_color)')
         .eq('user_id', userId)
         .single();
       
@@ -50,6 +54,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setAppMode(data.companies?.app_mode ?? 'full');
         // @ts-ignore
         setSegment(data.companies?.segment ?? null);
+        // @ts-ignore
+        setLogoUrl(data.companies?.logo_url ?? null);
+        // @ts-ignore
+        setPrimaryColor(data.companies?.primary_color ?? null);
+
+        // Apply primary color as a CSS variable if exists
+        // @ts-ignore
+        const color = data.companies?.primary_color;
+        if (color) {
+          document.documentElement.style.setProperty('--primary', color);
+          document.documentElement.style.setProperty('--sidebar-primary', color);
+        }
       }
     } catch (e) {
       console.error("Error fetching company", e);
@@ -84,6 +100,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setPartnerId(null);
           setAppMode(null);
           setSegment(null);
+          setLogoUrl(null);
+          setPrimaryColor(null);
+          document.documentElement.style.removeProperty('--primary');
+          document.documentElement.style.removeProperty('--sidebar-primary');
           setIsLoading(false);
         }
       }
@@ -99,7 +119,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ session, user, companyId, companyName, isActive, role, partnerId, appMode, segment, isLoading, signOut }}>
+    <AuthContext.Provider value={{ session, user, companyId, companyName, isActive, role, partnerId, appMode, segment, logoUrl, primaryColor, isLoading, signOut }}>
       {children}
     </AuthContext.Provider>
   );
