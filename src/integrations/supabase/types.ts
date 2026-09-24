@@ -352,6 +352,7 @@ export type Database = {
           email: string | null
           phone: string | null
           asaas_customer_id: string | null
+          partner_id: string | null
           status: string
           created_at: string
         }
@@ -363,6 +364,7 @@ export type Database = {
           email?: string | null
           phone?: string | null
           asaas_customer_id?: string | null
+          partner_id?: string | null
           status?: string
           created_at?: string
         }
@@ -374,6 +376,7 @@ export type Database = {
           email?: string | null
           phone?: string | null
           asaas_customer_id?: string | null
+          partner_id?: string | null
           status?: string
           created_at?: string
         }
@@ -383,6 +386,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "members_partner_id_fkey"
+            columns: ["partner_id"]
+            isOneToOne: false
+            referencedRelation: "partners"
             referencedColumns: ["id"]
           }
         ]
@@ -474,6 +484,7 @@ export type Database = {
           email: string | null
           id: string
           name: string
+          split_percent: number | null
         }
         Insert: {
           asaas_wallet_id: string
@@ -482,6 +493,7 @@ export type Database = {
           email?: string | null
           id?: string
           name: string
+          split_percent?: number | null
         }
         Update: {
           asaas_wallet_id?: string
@@ -490,6 +502,7 @@ export type Database = {
           email?: string | null
           id?: string
           name?: string
+          split_percent?: number | null
         }
         Relationships: [
           {

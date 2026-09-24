@@ -71,6 +71,14 @@ function PartnersPage() {
                     {partner.asaas_wallet_id}
                   </span>
                 </div>
+                {partner.split_percent > 0 && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="text-muted-foreground">Repasse Fixo:</span>
+                    <span className="font-semibold text-xs text-green-600">
+                      {partner.split_percent}%
+                    </span>
+                  </div>
+                )}
               </div>
               <div className="flex gap-2">
                 <PartnerDialog partner={partner} />
@@ -106,6 +114,7 @@ function PartnerDialog({ partner }: { partner?: any }) {
           name: fd.get("name") as string,
           email: fd.get("email") as string,
           asaas_wallet_id: fd.get("asaas_wallet_id") as string,
+          split_percent: fd.get("split_percent") ? Number(fd.get("split_percent")) : undefined,
           companyId: companyId!,
         },
       });
@@ -140,9 +149,15 @@ function PartnerDialog({ partner }: { partner?: any }) {
             <Label>E-mail (Opcional)</Label>
             <Input name="email" type="email" defaultValue={partner?.email} />
           </div>
-          <div className="space-y-2">
-            <Label>Wallet ID do Asaas</Label>
-            <Input name="asaas_wallet_id" defaultValue={partner?.asaas_wallet_id} required />
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Wallet ID do Asaas</Label>
+              <Input name="asaas_wallet_id" defaultValue={partner?.asaas_wallet_id} required />
+            </div>
+            <div className="space-y-2">
+              <Label>Repasse (%)</Label>
+              <Input name="split_percent" type="number" step="0.01" defaultValue={partner?.split_percent} placeholder="Ex: 10" />
+            </div>
           </div>
           <Button type="submit" disabled={save.isPending} className="w-full">
             Salvar Parceiro

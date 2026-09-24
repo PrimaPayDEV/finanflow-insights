@@ -8,6 +8,7 @@ const memberSchema = z.object({
   document: z.string().min(11, "Documento inválido").max(18),
   email: z.string().email("E-mail inválido").optional().or(z.literal("")),
   phone: z.string().optional().or(z.literal("")),
+  partner_id: z.string().uuid().optional().or(z.literal("")),
 });
 
 export const getMembers = createServerFn({ method: "GET" })
@@ -91,6 +92,7 @@ export const upsertMember = createServerFn({ method: "POST" })
       email: data.email || null,
       phone: data.phone || null,
       asaas_customer_id: asaasCustomerId || null,
+      partner_id: data.partner_id || null,
     };
 
     let error;
@@ -149,7 +151,7 @@ export const generateInvoice = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    const { data: member } = await supabaseAdmin.from("members").select("asaas_customer_id, document, name, email, phone").eq("id", data.memberId).single();
+    const { data: member } = await supabaseAdmin.from("members").select("asaas_customer_id, document, name, email, phone, partners(asaas_wallet_id, split_percent)").eq("id", data.memberId).single();
     if (!member) throw new Error("Associado não encontrado");
 
     let customerId = member.asaas_customer_id;
@@ -181,16 +183,29 @@ export const generateInvoice = createServerFn({ method: "POST" })
     }
 
     const dueDate = data.dueDate || new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    const partner = member.partners as any;
+    
+    const paymentPayload: any = {
+      customer: customerId,
+      billingType: "BOLETO",
+      value: Number(data.amount.toFixed(2)),
+      dueDate,
+      description: data.description,
+    };
+
+    if (partner?.asaas_wallet_id && partner?.split_percent > 0) {
+      paymentPayload.split = [
+        {
+          walletId: partner.asaas_wallet_id,
+          percentValue: Number(partner.split_percent)
+        }
+      ];
+    }
+
     const paymentRes = await fetch(`${base}/payments`, {
       method: "POST",
       headers,
-      body: JSON.stringify({
-        customer: customerId,
-        billingType: "BOLETO",
-        value: Number(data.amount.toFixed(2)),
-        dueDate,
-        description: data.description,
-      }),
+      body: JSON.stringify(paymentPayload),
     });
 
     const paymentJson = (await paymentRes.json()) as { id?: string; errors?: any[] };

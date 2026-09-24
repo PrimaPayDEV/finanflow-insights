@@ -23,6 +23,7 @@ export const upsertPartner = createServerFn({ method: "POST" })
       name: z.string().min(1, "Nome é obrigatório"),
       email: z.string().email("E-mail inválido").optional().or(z.literal("")),
       asaas_wallet_id: z.string().min(1, "Wallet ID é obrigatório"),
+      split_percent: z.number().min(0).max(100).optional(),
       companyId: z.string().uuid(),
     })
   )
@@ -32,6 +33,7 @@ export const upsertPartner = createServerFn({ method: "POST" })
       name: data.name,
       email: data.email || null,
       asaas_wallet_id: data.asaas_wallet_id,
+      split_percent: data.split_percent ?? 0,
       company_id: data.companyId,
     };
 

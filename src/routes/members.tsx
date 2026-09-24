@@ -10,9 +10,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
 import { getMembers, upsertMember, addVehicle, deleteMember } from "@/lib/members.functions";
+import { getPartners } from "@/lib/partner.functions";
 import { translateError } from "@/lib/translateError";
 
 export const Route = createFileRoute("/members")({
@@ -30,12 +32,20 @@ function MemberDialog({ member }: { member?: any }) {
   const [document, setDocument] = useState(member?.document || "");
   const [email, setEmail] = useState(member?.email || "");
   const [phone, setPhone] = useState(member?.phone || "");
+  const [partnerId, setPartnerId] = useState(member?.partner_id || "");
+
+  const fetchPartners = useServerFn(getPartners);
+  const { data: partners } = useQuery({
+    queryKey: ["partners", companyId],
+    queryFn: () => fetchPartners({ data: { companyId: companyId! } }),
+    enabled: !!companyId,
+  });
 
   const submit = useMutation({
     mutationFn: async () => {
       if (!companyId) throw new Error("Empresa não identificada");
       const res = await upsertMember({
-        data: { id: member?.id, companyId, name, document, email, phone },
+        data: { id: member?.id, companyId, name, document, email, phone, partner_id: (partnerId && partnerId !== "none") ? partnerId : undefined },
       });
       if (!res.ok) throw new Error("Erro ao salvar associado.");
     },
@@ -47,6 +57,7 @@ function MemberDialog({ member }: { member?: any }) {
         setDocument("");
         setEmail("");
         setPhone("");
+        setPartnerId("");
       }
       qc.invalidateQueries({ queryKey: ["members"] });
     },
@@ -87,6 +98,20 @@ function MemberDialog({ member }: { member?: any }) {
           <div className="space-y-2">
             <Label>Celular</Label>
             <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="(00) 00000-0000" />
+          </div>
+          <div className="space-y-2">
+            <Label>Parceiro / Consultor</Label>
+            <Select value={partnerId} onValueChange={setPartnerId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione um parceiro (opcional)" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Nenhum</SelectItem>
+                {partners?.map((p: any) => (
+                  <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
         <div className="flex justify-end gap-2">
