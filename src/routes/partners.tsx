@@ -71,7 +71,7 @@ function PartnersPage() {
                     {partner.asaas_wallet_id}
                   </span>
                 </div>
-                {partner.split_percent > 0 && (
+                {(partner.split_percent ?? 0) > 0 && (
                   <div className="flex items-center gap-2 text-sm">
                     <span className="text-muted-foreground">Repasse Fixo:</span>
                     <span className="font-semibold text-xs text-green-600">
