@@ -87,28 +87,28 @@ function BillingDashboard({ companyId }: { companyId: string }) {
         <div className="space-y-6">
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <KpiCard
-              title="Saldo Asaas"
+              label="Saldo Asaas"
               value={BRL(data.data.balance)}
               icon={Wallet}
-              trend={{ value: 0, label: "Atualizado agora" }}
+              hint="Atualizado agora"
             />
             <KpiCard
-              title="Total Recebido (Mês)"
+              label="Total Recebido (Mês)"
               value={BRL(data.data.totalReceived)}
               icon={TrendingUp}
-              trend={{ value: 0, label: "Em cobranças pagas" }}
+              hint="Em cobranças pagas"
             />
             <KpiCard
-              title="Inadimplência / Vencido"
+              label="Inadimplência / Vencido"
               value={BRL(data.data.totalOverdue)}
               icon={FileCheck2}
-              trend={{ value: 0, label: "Atrasados" }}
+              hint="Atrasados"
             />
             <KpiCard
-              title="Pendentes a Receber"
+              label="Pendentes a Receber"
               value={BRL(data.data.totalPending)}
               icon={PiggyBank}
-              trend={{ value: 0, label: "Aguardando pagamento" }}
+              hint="Aguardando pagamento"
             />
           </div>
           <Card>
