@@ -171,10 +171,10 @@ export type Database = {
           document_cnpj: string | null
           id: string
           is_active: boolean
-          name: string
-          segment: string | null
           logo_url: string | null
+          name: string
           primary_color: string | null
+          segment: string | null
         }
         Insert: {
           app_mode?: string
@@ -183,10 +183,10 @@ export type Database = {
           document_cnpj?: string | null
           id?: string
           is_active?: boolean
-          name: string
-          segment?: string | null
           logo_url?: string | null
+          name: string
           primary_color?: string | null
+          segment?: string | null
         }
         Update: {
           app_mode?: string
@@ -195,10 +195,10 @@ export type Database = {
           document_cnpj?: string | null
           id?: string
           is_active?: boolean
-          name?: string
-          segment?: string | null
           logo_url?: string | null
+          name?: string
           primary_color?: string | null
+          segment?: string | null
         }
         Relationships: []
       }
@@ -351,40 +351,40 @@ export type Database = {
       }
       members: {
         Row: {
-          id: string
+          asaas_customer_id: string | null
           company_id: string
-          name: string
+          created_at: string
           document: string
           email: string | null
-          phone: string | null
-          asaas_customer_id: string | null
+          id: string
+          name: string
           partner_id: string | null
+          phone: string | null
           status: string
-          created_at: string
         }
         Insert: {
-          id?: string
+          asaas_customer_id?: string | null
           company_id: string
-          name: string
+          created_at?: string
           document: string
           email?: string | null
-          phone?: string | null
-          asaas_customer_id?: string | null
+          id?: string
+          name: string
           partner_id?: string | null
+          phone?: string | null
           status?: string
-          created_at?: string
         }
         Update: {
-          id?: string
+          asaas_customer_id?: string | null
           company_id?: string
-          name?: string
+          created_at?: string
           document?: string
           email?: string | null
-          phone?: string | null
-          asaas_customer_id?: string | null
+          id?: string
+          name?: string
           partner_id?: string | null
+          phone?: string | null
           status?: string
-          created_at?: string
         }
         Relationships: [
           {
@@ -400,7 +400,7 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "partners"
             referencedColumns: ["id"]
-          }
+          },
         ]
       }
       merchants: {
@@ -742,37 +742,37 @@ export type Database = {
       }
       vehicles: {
         Row: {
-          id: string
-          company_id: string
-          member_id: string
-          plate: string
           brand: string
-          model: string
-          year: number | null
           color: string | null
+          company_id: string
           created_at: string
+          id: string
+          member_id: string
+          model: string
+          plate: string
+          year: number | null
         }
         Insert: {
-          id?: string
-          company_id: string
-          member_id: string
-          plate: string
           brand: string
-          model: string
-          year?: number | null
           color?: string | null
+          company_id: string
           created_at?: string
+          id?: string
+          member_id: string
+          model: string
+          plate: string
+          year?: number | null
         }
         Update: {
-          id?: string
-          company_id?: string
-          member_id?: string
-          plate?: string
           brand?: string
-          model?: string
-          year?: number | null
           color?: string | null
+          company_id?: string
           created_at?: string
+          id?: string
+          member_id?: string
+          model?: string
+          plate?: string
+          year?: number | null
         }
         Relationships: [
           {
@@ -788,7 +788,7 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "members"
             referencedColumns: ["id"]
-          }
+          },
         ]
       }
     }
