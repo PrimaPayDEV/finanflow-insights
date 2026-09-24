@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Loader2, Palette, Image as ImageIcon, PaintBucket } from "lucide-react";
+import { Loader2, Palette, Image as ImageIcon, PaintBucket, Store } from "lucide-react";
 import { translateError } from "@/lib/translateError";
 
 export const Route = createFileRoute("/settings/appearance")({
@@ -19,9 +19,10 @@ export const Route = createFileRoute("/settings/appearance")({
 });
 
 function AppearancePage() {
-  const { companyId, logoUrl, primaryColor, role } = useAuth();
+  const { companyId, logoUrl, primaryColor, role, companyName } = useAuth();
   const [loading, setLoading] = useState(false);
   const [color, setColor] = useState(primaryColor || "#4f46e5");
+  const [name, setName] = useState(companyName || "");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (role !== "admin") {
@@ -47,6 +48,28 @@ function AppearancePage() {
       document.documentElement.style.setProperty("--sidebar-primary", color);
       
       toast.success("Cor atualizada com sucesso!");
+    } catch (e: any) {
+      toast.error(translateError(e.message));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleNameChange = async () => {
+    if (!companyId) return;
+    if (!name.trim()) return toast.error("O nome não pode ser vazio.");
+    
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from("companies")
+        .update({ name: name.trim() })
+        .eq("id", companyId);
+
+      if (error) throw error;
+      
+      toast.success("Nome atualizado com sucesso! Recarregue a página para ver a mudança.", { duration: 5000 });
+      setTimeout(() => window.location.reload(), 1500);
     } catch (e: any) {
       toast.error(translateError(e.message));
     } finally {
@@ -116,6 +139,35 @@ function AppearancePage() {
       subtitle="Altere as cores e a logo para deixar com a cara da sua empresa."
     >
       <div className="max-w-2xl space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Store className="size-5 text-primary" />
+              Nome da Empresa
+            </CardTitle>
+            <CardDescription>
+              O nome que será exibido no menu lateral e em outras áreas da plataforma.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center gap-4">
+              <div className="flex-1 space-y-2">
+                <Label>Nome de Exibição</Label>
+                <Input 
+                  type="text" 
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Ex: Planmais - Proteção Veicular"
+                />
+              </div>
+            </div>
+            <Button onClick={handleNameChange} disabled={loading || name === companyName}>
+              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Salvar Nome
+            </Button>
+          </CardContent>
+        </Card>
+
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">

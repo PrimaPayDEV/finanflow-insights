@@ -127,8 +127,8 @@ export function AppLayout({
                   <Wallet className="size-5" />
                 </span>
                 {!isCollapsed && (
-                  <div className="leading-tight whitespace-nowrap">
-                    <p className="text-xl font-extrabold tracking-tight" style={{ fontFamily: '"Montserrat Arabic", Montserrat, sans-serif' }}>{companyName === 'PrimaPay' ? 'PrimaHub' : companyName}</p>
+                  <div className="leading-tight">
+                    <p className="text-lg md:text-xl font-extrabold tracking-tight line-clamp-2 break-words" style={{ fontFamily: '"Montserrat Arabic", Montserrat, sans-serif' }}>{companyName === 'PrimaPay' ? 'PrimaHub' : companyName}</p>
                   </div>
                 )}
               </>
@@ -197,8 +197,8 @@ export function AppLayout({
                         <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-sidebar-primary text-sidebar-primary-foreground">
                           <Wallet className="size-5" />
                         </span>
-                        <div className="leading-tight whitespace-nowrap">
-                          <p className="text-xl font-extrabold tracking-tight" style={{ fontFamily: '"Montserrat Arabic", Montserrat, sans-serif' }}>{companyName === 'PrimaPay' ? 'PrimaHub' : companyName}</p>
+                        <div className="leading-tight">
+                          <p className="text-lg font-extrabold tracking-tight line-clamp-2 break-words" style={{ fontFamily: '"Montserrat Arabic", Montserrat, sans-serif' }}>{companyName === 'PrimaPay' ? 'PrimaHub' : companyName}</p>
                         </div>
                       </>
                     )}
