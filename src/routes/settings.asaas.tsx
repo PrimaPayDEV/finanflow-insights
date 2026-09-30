@@ -111,7 +111,7 @@ function AsaasSettingsPage() {
   };
 
   const webhookUrl =
-    typeof window !== "undefined" ? `${window.location.origin}/api/public/asaas-webhook` : "";
+    typeof window !== "undefined" ? `${window.location.origin}/api/public/asaas-webhook?company_id=${companyId}` : "";
 
   return (
     <AppLayout title="Configuração Asaas" subtitle="Preferências de cobrança, split e sincronização">

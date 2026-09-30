@@ -30,7 +30,23 @@ export const Route = createFileRoute("/api/public/asaas-webhook")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const expectedToken = process.env["ASAAS_WEBHOOK_TOKEN"];
+        const url = new URL(request.url);
+        const companyId = url.searchParams.get("company_id");
+        
+        if (!companyId) {
+          return new Response("Missing company_id", { status: 400 });
+        }
+
+        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+        const { data: company } = await supabaseAdmin
+          .from("companies")
+          .select("asaas_webhook_token")
+          .eq("id", companyId)
+          .single();
+
+        const expectedToken = company?.asaas_webhook_token || process.env["ASAAS_WEBHOOK_TOKEN"];
+        
         if (expectedToken) {
           const token = request.headers.get("asaas-access-token");
           if (token !== expectedToken) {
@@ -51,6 +67,7 @@ export const Route = createFileRoute("/api/public/asaas-webhook")({
           event: parsed.event,
           asaas_payment_id: parsed.payment?.id ?? null,
           payload: JSON.parse(JSON.stringify(parsed)),
+          company_id: companyId,
         });
 
         const paymentId = parsed.payment?.id;
@@ -66,11 +83,13 @@ export const Route = createFileRoute("/api/public/asaas-webhook")({
                 paid_amount: parsed.payment?.value ?? null,
               })
               .eq("asaas_payment_id", paymentId)
+              .eq("company_id", companyId)
               .select("merchants(name)")
               .single();
               
             if (closureUpdate.data?.merchants?.name) {
               await supabaseAdmin.from("notifications").insert({
+                company_id: companyId,
                 type: "payment",
                 title: "Pagamento Recebido",
                 description: `Fatura de R$ ${parsed.payment?.value?.toFixed(2)} do EC ${closureUpdate.data.merchants.name} foi paga.`,
@@ -81,11 +100,13 @@ export const Route = createFileRoute("/api/public/asaas-webhook")({
               .from("closures")
               .update({ status: "invoice_generated", paid_at: null, paid_amount: null })
               .eq("asaas_payment_id", paymentId)
+              .eq("company_id", companyId)
               .select("merchants(name)")
               .single();
               
             if (closureUpdate.data?.merchants?.name) {
               await supabaseAdmin.from("notifications").insert({
+                company_id: companyId,
                 type: "error",
                 title: "Pagamento Revertido",
                 description: `A cobrança do EC ${closureUpdate.data.merchants.name} teve seu status revertido no Asaas.`,
