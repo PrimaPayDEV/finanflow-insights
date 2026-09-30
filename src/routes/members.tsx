@@ -16,6 +16,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { getMembers, upsertMember, addVehicle, deleteMember } from "@/lib/members.functions";
 import { getPartners } from "@/lib/partner.functions";
 import { translateError } from "@/lib/translateError";
+import { formatCpfCnpj, formatPhone } from "@/lib/format";
 
 export const Route = createFileRoute("/members")({
   head: () => ({
@@ -89,7 +90,7 @@ function MemberDialog({ member }: { member?: any }) {
           </div>
           <div className="space-y-2">
             <Label>CPF / CNPJ</Label>
-            <Input value={document} onChange={(e) => setDocument(e.target.value)} placeholder="000.000.000-00" />
+            <Input value={document} onChange={(e) => setDocument(formatCpfCnpj(e.target.value))} placeholder="000.000.000-00" maxLength={18} />
           </div>
           <div className="space-y-2">
             <Label>E-mail</Label>
@@ -97,7 +98,7 @@ function MemberDialog({ member }: { member?: any }) {
           </div>
           <div className="space-y-2">
             <Label>Celular</Label>
-            <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="(00) 00000-0000" />
+            <Input value={phone} onChange={(e) => setPhone(formatPhone(e.target.value))} placeholder="(00) 00000-0000" maxLength={15} />
           </div>
           <div className="space-y-2">
             <Label>Parceiro / Consultor</Label>
@@ -167,7 +168,7 @@ function VehicleDialog({ memberId, memberName }: { memberId: string; memberName:
         <div className="grid gap-4 py-4">
           <div className="space-y-2">
             <Label>Placa</Label>
-            <Input value={plate} onChange={(e) => setPlate(e.target.value.toUpperCase())} placeholder="ABC1234" maxLength={7} />
+            <Input value={plate} onChange={(e) => setPlate(e.target.value.replace(/[^a-zA-Z0-9]/g, "").toUpperCase())} placeholder="ABC1234" maxLength={7} />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">

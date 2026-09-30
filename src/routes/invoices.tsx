@@ -16,7 +16,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { getMembers, generateInvoice } from "@/lib/members.functions";
 import { getAsaasDashboardMetrics } from "@/lib/asaas.functions";
 import { translateError } from "@/lib/translateError";
-import { BRL } from "@/lib/format";
+import { BRL, formatCurrencyInput } from "@/lib/format";
 
 export const Route = createFileRoute("/invoices")({
   head: () => ({
@@ -44,7 +44,8 @@ function NewInvoiceDialog() {
     mutationFn: async () => {
       if (!companyId) throw new Error("Empresa não identificada");
       if (!memberId) throw new Error("Selecione o associado");
-      if (!amount || Number(amount) <= 0) throw new Error("Valor inválido");
+      const numAmount = Number(amount.replace(/\D/g, "")) / 100;
+      if (!amount || numAmount <= 0) throw new Error("Valor inválido");
 
       const member = members?.find(m => m.id === memberId);
       if (!member) throw new Error("Associado não encontrado");
@@ -53,7 +54,7 @@ function NewInvoiceDialog() {
         data: {
           companyId,
           memberId,
-          amount: Number(amount),
+          amount: numAmount,
           description: description || "Cobrança de Proteção Veicular"
         }
       });
@@ -99,7 +100,7 @@ function NewInvoiceDialog() {
           </div>
           <div className="space-y-2">
             <Label>Valor (R$)</Label>
-            <Input type="number" step="0.01" value={amount} onChange={e => setAmount(e.target.value)} placeholder="0.00" />
+            <Input type="text" value={amount} onChange={e => setAmount(formatCurrencyInput(e.target.value))} placeholder="R$ 0,00" />
           </div>
           <div className="space-y-2">
             <Label>Descrição / Referência</Label>
