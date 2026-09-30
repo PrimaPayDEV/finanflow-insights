@@ -67,6 +67,7 @@ export type Database = {
       asaas_webhook_events: {
         Row: {
           asaas_payment_id: string | null
+          company_id: string | null
           created_at: string
           event: string
           id: string
@@ -74,6 +75,7 @@ export type Database = {
         }
         Insert: {
           asaas_payment_id?: string | null
+          company_id?: string | null
           created_at?: string
           event: string
           id?: string
@@ -81,12 +83,21 @@ export type Database = {
         }
         Update: {
           asaas_payment_id?: string | null
+          company_id?: string | null
           created_at?: string
           event?: string
           id?: string
           payload?: Json
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "asaas_webhook_events_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       closures: {
         Row: {
@@ -167,6 +178,7 @@ export type Database = {
         Row: {
           app_mode: string
           asaas_api_key: string | null
+          asaas_webhook_token: string | null
           created_at: string | null
           document_cnpj: string | null
           id: string
@@ -179,6 +191,7 @@ export type Database = {
         Insert: {
           app_mode?: string
           asaas_api_key?: string | null
+          asaas_webhook_token?: string | null
           created_at?: string | null
           document_cnpj?: string | null
           id?: string
@@ -191,6 +204,7 @@ export type Database = {
         Update: {
           app_mode?: string
           asaas_api_key?: string | null
+          asaas_webhook_token?: string | null
           created_at?: string | null
           document_cnpj?: string | null
           id?: string

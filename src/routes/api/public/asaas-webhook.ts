@@ -61,7 +61,6 @@ export const Route = createFileRoute("/api/public/asaas-webhook")({
           return new Response("Invalid payload", { status: 400 });
         }
 
-        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
         await supabaseAdmin.from("asaas_webhook_events").insert({
           event: parsed.event,
