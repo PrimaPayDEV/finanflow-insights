@@ -323,8 +323,8 @@ export const getAsaasDashboardMetrics = createServerFn({ method: "GET" })
       let totalReceived = 0;
       let countAssociados = 0;
 
+      const uniqueCustomers = new Set<string>();
       if (paymentsData && paymentsData.data) {
-        const uniqueCustomers = new Set();
         for (const p of paymentsData.data) {
           uniqueCustomers.add(p.customer);
           if (p.status === "PENDING") totalPending += p.value;
