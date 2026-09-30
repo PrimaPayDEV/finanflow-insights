@@ -9,6 +9,13 @@ const memberSchema = z.object({
   email: z.string().email("E-mail inválido").optional().or(z.literal("")),
   phone: z.string().optional().or(z.literal("")),
   partner_id: z.string().uuid().optional().or(z.literal("")),
+  vehicle: z.object({
+    id: z.string().uuid().optional(),
+    plate: z.string().max(7).optional().or(z.literal("")),
+    brand: z.string().optional().or(z.literal("")),
+    model: z.string().optional().or(z.literal("")),
+    year: z.number().optional()
+  }).optional()
 });
 
 export const getMembers = createServerFn({ method: "GET" })
@@ -106,10 +113,33 @@ export const upsertMember = createServerFn({ method: "POST" })
       error = updateError;
     } else {
       // Insert new
-      const { error: insertError } = await supabaseAdmin
+      const { data: newMember, error: insertError } = await supabaseAdmin
         .from("members")
-        .insert(upsertData);
+        .insert(upsertData)
+        .select("id")
+        .single();
       error = insertError;
+      if (newMember?.id) data.id = newMember.id;
+    }
+
+    if (error) throw new Error(error.message);
+
+    // Upsert vehicle if provided
+    if (data.id && data.vehicle && (data.vehicle.plate || data.vehicle.brand || data.vehicle.model)) {
+      const vData = {
+        member_id: data.id,
+        company_id: data.companyId,
+        plate: (data.vehicle.plate || "").toUpperCase(),
+        brand: data.vehicle.brand || "",
+        model: data.vehicle.model || "",
+        year: data.vehicle.year,
+      };
+      
+      if (data.vehicle.id) {
+        await supabaseAdmin.from("vehicles").update(vData).eq("id", data.vehicle.id).eq("company_id", data.companyId);
+      } else {
+        await supabaseAdmin.from("vehicles").insert(vData);
+      }
     }
 
     if (error) throw new Error(error.message);

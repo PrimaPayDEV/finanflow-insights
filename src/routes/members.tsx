@@ -29,11 +29,22 @@ function MemberDialog({ member }: { member?: any }) {
   const qc = useQueryClient();
   const { companyId } = useAuth();
   const [open, setOpen] = useState(false);
+  
+  // Associado state
   const [name, setName] = useState(member?.name || "");
   const [document, setDocument] = useState(member?.document || "");
   const [email, setEmail] = useState(member?.email || "");
   const [phone, setPhone] = useState(member?.phone || "");
   const [partnerId, setPartnerId] = useState(member?.partner_id || "");
+
+  // Veículo state
+  const firstVehicle = member?.vehicles?.[0];
+  const [vehicleId, setVehicleId] = useState(firstVehicle?.id || "");
+  const [plate, setPlate] = useState(firstVehicle?.plate || "");
+  const [brandName, setBrandName] = useState(firstVehicle?.brand || "");
+  const [modelName, setModelName] = useState(firstVehicle?.model || "");
+  const [year, setYear] = useState(firstVehicle?.year?.toString() || "");
+  const [brandCode, setBrandCode] = useState("");
 
   const fetchPartners = useServerFn(getPartners);
   const { data: partners } = useQuery({
@@ -42,11 +53,55 @@ function MemberDialog({ member }: { member?: any }) {
     enabled: !!companyId,
   });
 
+  // FIPE API integration
+  const { data: fipeBrands } = useQuery({
+    queryKey: ["fipe-brands"],
+    queryFn: async () => {
+      const res = await fetch("https://parallelum.com.br/fipe/api/v1/carros/marcas");
+      return (await res.json()) as Array<{ codigo: string; nome: string }>;
+    },
+    staleTime: Infinity,
+  });
+
+  import { useEffect } from "react";
+  useEffect(() => {
+    if (fipeBrands && brandName && !brandCode) {
+      const b = fipeBrands.find((x) => x.nome === brandName);
+      if (b) setBrandCode(b.codigo);
+    }
+  }, [fipeBrands, brandName, brandCode]);
+
+  const { data: fipeModels } = useQuery({
+    queryKey: ["fipe-models", brandCode],
+    queryFn: async () => {
+      const res = await fetch(`https://parallelum.com.br/fipe/api/v1/carros/marcas/${brandCode}/modelos`);
+      const data = await res.json();
+      return data.modelos as Array<{ codigo: string; nome: string }>;
+    },
+    enabled: !!brandCode,
+    staleTime: Infinity,
+  });
+
   const submit = useMutation({
     mutationFn: async () => {
       if (!companyId) throw new Error("Empresa não identificada");
       const res = await upsertMember({
-        data: { id: member?.id, companyId, name, document, email, phone, partner_id: (partnerId && partnerId !== "none") ? partnerId : undefined },
+        data: { 
+          id: member?.id, 
+          companyId, 
+          name, 
+          document, 
+          email, 
+          phone, 
+          partner_id: (partnerId && partnerId !== "none") ? partnerId : undefined,
+          vehicle: {
+            id: vehicleId || undefined,
+            plate,
+            brand: brandName,
+            model: modelName,
+            year: year ? parseInt(year) : undefined
+          }
+        },
       });
       if (!res.ok) throw new Error("Erro ao salvar associado.");
     },
@@ -54,11 +109,8 @@ function MemberDialog({ member }: { member?: any }) {
       toast.success(member ? "Associado atualizado!" : "Associado cadastrado com sucesso e sincronizado com Asaas!");
       setOpen(false);
       if (!member) {
-        setName("");
-        setDocument("");
-        setEmail("");
-        setPhone("");
-        setPartnerId("");
+        setName(""); setDocument(""); setEmail(""); setPhone(""); setPartnerId("");
+        setVehicleId(""); setPlate(""); setBrandName(""); setModelName(""); setYear(""); setBrandCode("");
       }
       qc.invalidateQueries({ queryKey: ["members"] });
     },
@@ -78,44 +130,103 @@ function MemberDialog({ member }: { member?: any }) {
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Cadastrar Associado</DialogTitle>
+          <DialogTitle>{member ? "Editar Associado" : "Cadastrar Associado e Veículo"}</DialogTitle>
           <DialogDescription>O associado será automaticamente criado no Asaas para emissão de faturas.</DialogDescription>
         </DialogHeader>
-        <div className="grid gap-4 py-4">
-          <div className="space-y-2">
-            <Label>Nome Completo</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="João da Silva" />
+        
+        <div className="grid md:grid-cols-2 gap-8 py-4">
+          {/* Lado Esquerdo: Associado */}
+          <div className="space-y-4">
+            <h3 className="font-semibold text-lg border-b pb-2">Informações do Associado</h3>
+            
+            <div className="space-y-2">
+              <Label>Nome Completo</Label>
+              <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="João da Silva" />
+            </div>
+            <div className="space-y-2">
+              <Label>CPF / CNPJ</Label>
+              <Input value={document} onChange={(e) => setDocument(formatCpfCnpj(e.target.value))} placeholder="000.000.000-00" maxLength={18} />
+            </div>
+            <div className="space-y-2">
+              <Label>E-mail</Label>
+              <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="joao@email.com" />
+            </div>
+            <div className="space-y-2">
+              <Label>Celular</Label>
+              <Input value={phone} onChange={(e) => setPhone(formatPhone(e.target.value))} placeholder="(00) 00000-0000" maxLength={15} />
+            </div>
+            <div className="space-y-2">
+              <Label>Parceiro / Consultor</Label>
+              <Select value={partnerId} onValueChange={setPartnerId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione um parceiro (opcional)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Nenhum</SelectItem>
+                  {partners?.map((p: any) => (
+                    <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
-          <div className="space-y-2">
-            <Label>CPF / CNPJ</Label>
-            <Input value={document} onChange={(e) => setDocument(formatCpfCnpj(e.target.value))} placeholder="000.000.000-00" maxLength={18} />
-          </div>
-          <div className="space-y-2">
-            <Label>E-mail</Label>
-            <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="joao@email.com" />
-          </div>
-          <div className="space-y-2">
-            <Label>Celular</Label>
-            <Input value={phone} onChange={(e) => setPhone(formatPhone(e.target.value))} placeholder="(00) 00000-0000" maxLength={15} />
-          </div>
-          <div className="space-y-2">
-            <Label>Parceiro / Consultor</Label>
-            <Select value={partnerId} onValueChange={setPartnerId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione um parceiro (opcional)" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">Nenhum</SelectItem>
-                {partners?.map((p: any) => (
-                  <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+
+          {/* Lado Direito: Veículo Principal */}
+          <div className="space-y-4">
+            <h3 className="font-semibold text-lg border-b pb-2">Informações do Veículo</h3>
+            
+            <div className="space-y-2">
+              <Label>Placa</Label>
+              <Input value={plate} onChange={(e) => setPlate(e.target.value.replace(/[^a-zA-Z0-9]/g, "").toUpperCase())} placeholder="ABC1234" maxLength={7} />
+            </div>
+            <div className="space-y-2">
+              <Label>Marca</Label>
+              <Select 
+                value={brandCode} 
+                onValueChange={(val) => {
+                  setBrandCode(val);
+                  const b = fipeBrands?.find(x => x.codigo === val);
+                  setBrandName(b?.nome || "");
+                  setModelName(""); // reseta modelo ao trocar marca
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione a marca" />
+                </SelectTrigger>
+                <SelectContent>
+                  {fipeBrands?.map((b) => (
+                    <SelectItem key={b.codigo} value={b.codigo}>{b.nome}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Modelo</Label>
+              <Select 
+                value={modelName} 
+                onValueChange={setModelName} 
+                disabled={!brandCode || !fipeModels}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={!brandCode ? "Selecione a marca primeiro" : "Selecione o modelo"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {fipeModels?.map((m) => (
+                    <SelectItem key={m.codigo} value={m.nome}>{m.nome}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Ano de Fabricação</Label>
+              <Input value={year} onChange={(e) => setYear(e.target.value)} placeholder="2020" type="number" />
+            </div>
           </div>
         </div>
-        <div className="flex justify-end gap-2">
+
+        <div className="flex justify-end gap-2 border-t pt-4">
           <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
           <Button onClick={() => submit.mutate()} disabled={submit.isPending}>
             {submit.isPending ? "Salvando..." : "Salvar"}
