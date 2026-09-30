@@ -127,8 +127,10 @@ export const Route = createFileRoute("/api/public/asaas-webhook")({
                 await supabaseAdmin.from("notifications").insert({
                   company_id: companyId,
                   type: "error",
-                  title: "Pagamento Revertido",
-                  description: `A cobrança do associado ${memberRes.data.name} teve seu status revertido no Asaas.`,
+                  title: parsed.event === "PAYMENT_OVERDUE" ? "Fatura Vencida" : "Pagamento Revertido",
+                  description: parsed.event === "PAYMENT_OVERDUE"
+                    ? `A fatura de R$ ${parsed.payment?.value?.toFixed(2)} do associado ${memberRes.data.name} venceu sem pagamento.`
+                    : `A cobrança do associado ${memberRes.data.name} teve seu status revertido no Asaas.`,
                 });
               }
             }
