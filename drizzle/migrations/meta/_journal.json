@@ -8,6 +8,13 @@
       "when": 1790174729693,
       "tag": "0000_add_company_segment_app_mode",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1790794485898,
+      "tag": "0001_notifications_drop_open_policy",
+      "breakpoints": true
     }
   ]
 }

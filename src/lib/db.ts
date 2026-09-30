@@ -70,13 +70,18 @@ export const importsQuery = {
     ) as StatementImport[],
 };
 
-export const notificationsQuery = {
-  queryKey: ["notifications"],
+export const notificationsQuery = (companyId: string | null | undefined) => ({
+  queryKey: ["notifications", companyId],
+  enabled: !!companyId,
   queryFn: async () =>
     unwrap(
-      await supabase.from("notifications").select("*").order("created_at", { ascending: false }),
+      await supabase
+        .from("notifications")
+        .select("*")
+        .eq("company_id", companyId!)
+        .order("created_at", { ascending: false }),
     ) as Notification[],
-};
+});
 
 export { unwrap };
 

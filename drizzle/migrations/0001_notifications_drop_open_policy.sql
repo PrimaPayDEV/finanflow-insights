@@ -1,0 +1,1 @@
+DROP POLICY IF EXISTS "notifications open" ON public.notifications;
