@@ -93,6 +93,16 @@ export const Route = createFileRoute("/api/public/asaas-webhook")({
                 title: "Pagamento Recebido",
                 description: `Fatura de R$ ${parsed.payment?.value?.toFixed(2)} do EC ${closureUpdate.data.merchants.name} foi paga.`,
               });
+            } else if (parsed.payment?.customer) {
+              const memberRes = await supabaseAdmin.from("members").select("name").eq("asaas_customer_id", parsed.payment.customer).eq("company_id", companyId).maybeSingle();
+              if (memberRes.data?.name) {
+                await supabaseAdmin.from("notifications").insert({
+                  company_id: companyId,
+                  type: "payment",
+                  title: "Pagamento Recebido",
+                  description: `A fatura de R$ ${parsed.payment?.value?.toFixed(2)} do associado ${memberRes.data.name} foi paga.`,
+                });
+              }
             }
           } else if (REVERTED_EVENTS.has(parsed.event)) {
             const closureUpdate = await supabaseAdmin
@@ -110,6 +120,16 @@ export const Route = createFileRoute("/api/public/asaas-webhook")({
                 title: "Pagamento Revertido",
                 description: `A cobrança do EC ${closureUpdate.data.merchants.name} teve seu status revertido no Asaas.`,
               });
+            } else if (parsed.payment?.customer) {
+              const memberRes = await supabaseAdmin.from("members").select("name").eq("asaas_customer_id", parsed.payment.customer).eq("company_id", companyId).maybeSingle();
+              if (memberRes.data?.name) {
+                await supabaseAdmin.from("notifications").insert({
+                  company_id: companyId,
+                  type: "error",
+                  title: "Pagamento Revertido",
+                  description: `A cobrança do associado ${memberRes.data.name} teve seu status revertido no Asaas.`,
+                });
+              }
             }
           }
         }
