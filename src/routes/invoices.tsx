@@ -175,23 +175,27 @@ function InvoicesPage() {
               <CardDescription>As últimas 100 cobranças geradas na sua conta Asaas</CardDescription>
             </CardHeader>
             <CardContent>
-              {data.data.recentPayments.length === 0 ? (
-                <p className="text-muted-foreground text-sm text-center py-4">Nenhuma fatura encontrada.</p>
-              ) : (
-                <div className="relative w-full overflow-auto">
-                  <table className="w-full caption-bottom text-sm">
-                    <thead className="[&_tr]:border-b">
-                      <tr className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
-                        <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Cliente</th>
-                        <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Descrição</th>
-                        <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Vencimento</th>
-                        <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Valor</th>
-                        <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Status</th>
-                        <th className="h-12 px-4 text-center align-middle font-medium text-muted-foreground">Ações</th>
+              <div className="relative w-full overflow-auto">
+                <table className="w-full caption-bottom text-sm">
+                  <thead className="[&_tr]:border-b">
+                    <tr className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
+                      <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Cliente</th>
+                      <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Descrição</th>
+                      <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Vencimento</th>
+                      <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Valor</th>
+                      <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Status</th>
+                      <th className="h-12 px-4 text-center align-middle font-medium text-muted-foreground">Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody className="[&_tr:last-child]:border-0">
+                    {data.data.recentPayments.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} className="text-muted-foreground text-sm text-center py-8">
+                          Nenhuma fatura encontrada. (Ambiente Atualizado)
+                        </td>
                       </tr>
-                    </thead>
-                    <tbody className="[&_tr:last-child]:border-0">
-                      {data.data.recentPayments.map((p: any) => (
+                    ) : (
+                      data.data.recentPayments.map((p: any) => (
                         <tr key={p.id} className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
                           <td className="p-4 align-middle font-medium">{p.customerName || p.customer}</td>
                           <td className="p-4 align-middle">{p.description || "-"}</td>
@@ -216,11 +220,11 @@ function InvoicesPage() {
                             </Button>
                           </td>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </CardContent>
           </Card>
         </div>
