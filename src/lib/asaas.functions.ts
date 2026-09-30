@@ -280,7 +280,7 @@ export const createAsaasSubaccount = createServerFn({ method: "POST" })
     };
   });
 
-export const getAsaasDashboardMetrics = createServerFn({ method: "GET" })
+export const getAsaasDashboardMetrics = createServerFn({ method: "POST" })
   .validator((d: { companyId: string }) => d)
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
