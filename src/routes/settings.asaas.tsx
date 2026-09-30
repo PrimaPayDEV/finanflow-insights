@@ -61,6 +61,8 @@ function AsaasSettingsPage() {
   const [form, setForm] = useState(defaults);
   const [apiKey, setApiKey] = useState("");
   const [savingKey, setSavingKey] = useState(false);
+  const [webhookToken, setWebhookToken] = useState("");
+  const [savingWebhookToken, setSavingWebhookToken] = useState(false);
 
   useEffect(() => {
     if (settings.data) {
@@ -107,6 +109,24 @@ function AsaasSettingsPage() {
       toast.error(translateError(e.message));
     } finally {
       setSavingKey(false);
+    }
+  };
+
+  const saveWebhookToken = async () => {
+    if (!companyId) return;
+    if (!webhookToken.trim()) return toast.error("Insira um token válido");
+    
+    setSavingWebhookToken(true);
+    try {
+      const { error } = await supabase.from("companies").update({ asaas_webhook_token: webhookToken.trim() }).eq("id", companyId);
+      if (error) throw error;
+      toast.success("Token do Webhook salvo com sucesso!");
+      setWebhookToken("");
+      qc.invalidateQueries({ queryKey: ["asaas-status", companyId] });
+    } catch (e: any) {
+      toast.error(translateError(e.message));
+    } finally {
+      setSavingWebhookToken(false);
     }
   };
 
@@ -241,11 +261,23 @@ function AsaasSettingsPage() {
                 <Copy className="size-4" />
               </Button>
             </div>
-            <p className="text-xs">
-              Recomendado: no Asaas, defina um <strong>token de autenticação</strong> do webhook e
-              peça no chat “cadastrar o token do webhook do Asaas” para guardá-lo no backend.
-              {status.data?.webhookTokenConfigured ? " (token já configurado)" : ""}
-            </p>
+            <div className="space-y-2 mt-4">
+              <p className="text-xs">
+                No Asaas, defina um <strong>token de autenticação</strong> do webhook e salve aqui:
+                {status.data?.webhookTokenConfigured ? " (token configurado)" : " (não configurado)"}
+              </p>
+              <div className="flex gap-2">
+                <Input
+                  type="password"
+                  placeholder="Token do Webhook"
+                  value={webhookToken}
+                  onChange={(e) => setWebhookToken(e.target.value)}
+                />
+                <Button onClick={saveWebhookToken} disabled={savingWebhookToken || !webhookToken.trim()}>
+                  Salvar
+                </Button>
+              </div>
+            </div>
             <div className="space-y-1">
               <p className="text-xs font-medium text-foreground">Últimos eventos recebidos</p>
               {events.data?.length ? (

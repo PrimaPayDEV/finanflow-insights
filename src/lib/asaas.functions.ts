@@ -49,7 +49,7 @@ export const checkAsaasConfigured = createServerFn({ method: "GET" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: company } = await supabaseAdmin
       .from("companies")
-      .select("asaas_api_key")
+      .select("asaas_api_key, asaas_webhook_token")
       .eq("id", companyId)
       .single();
     
@@ -57,7 +57,7 @@ export const checkAsaasConfigured = createServerFn({ method: "GET" })
     const key = company?.asaas_api_key || process.env.ASAAS_API_KEY || process.env.ASAAS_API_TESTE;
     return {
       configured: Boolean(key),
-      webhookTokenConfigured: Boolean(process.env.ASAAS_WEBHOOK_TOKEN),
+      webhookTokenConfigured: Boolean(company?.asaas_webhook_token || process.env.ASAAS_WEBHOOK_TOKEN),
     };
   });
 
