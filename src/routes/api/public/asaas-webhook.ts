@@ -6,6 +6,7 @@ const payloadSchema = z.object({
   payment: z
     .object({
       id: z.string().max(100),
+      customer: z.string().max(100).optional(),
       value: z.number().optional(),
       paymentDate: z.string().max(40).optional().nullable(),
       status: z.string().max(50).optional(),
