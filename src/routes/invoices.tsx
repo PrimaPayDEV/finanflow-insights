@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Plus, Receipt, AlertCircle } from "lucide-react";
+import { Plus, Receipt, AlertCircle, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 import { AppLayout } from "@/components/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -187,6 +187,7 @@ function InvoicesPage() {
                         <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Vencimento</th>
                         <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Valor</th>
                         <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Status</th>
+                        <th className="h-12 px-4 text-center align-middle font-medium text-muted-foreground">Ações</th>
                       </tr>
                     </thead>
                     <tbody className="[&_tr:last-child]:border-0">
@@ -198,6 +199,21 @@ function InvoicesPage() {
                           <td className="p-4 align-middle">{BRL(p.value)}</td>
                           <td className="p-4 align-middle">
                             {getStatusBadge(p.status)}
+                          </td>
+                          <td className="p-4 align-middle text-center">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-emerald-600 border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-300"
+                              onClick={() => {
+                                const text = encodeURIComponent(
+                                  `Olá! Aqui está sua fatura no valor de ${BRL(p.value)}.\n\nVocê pode acessar e pagar através do link seguro abaixo:\n${p.invoiceUrl || p.bankSlipUrl || ""}`
+                                );
+                                window.open(`https://wa.me/?text=${text}`, "_blank");
+                              }}
+                            >
+                              <MessageCircle className="size-4 mr-2" /> Enviar
+                            </Button>
                           </td>
                         </tr>
                       ))}
