@@ -18,6 +18,27 @@ import { getAsaasDashboardMetrics } from "@/lib/asaas.functions";
 import { translateError } from "@/lib/translateError";
 import { BRL, formatCurrencyInput } from "@/lib/format";
 
+function getStatusBadge(status: string) {
+  switch (status) {
+    case "PENDING":
+      return <Badge className="bg-yellow-500 hover:bg-yellow-600 text-white">Pendente</Badge>;
+    case "OVERDUE":
+      return <Badge variant="destructive">Vencida</Badge>;
+    case "RECEIVED":
+    case "CONFIRMED":
+    case "RECEIVED_IN_CASH":
+      return <Badge className="bg-emerald-500 hover:bg-emerald-600 text-white">Recebida</Badge>;
+    case "REFUNDED":
+      return <Badge variant="secondary">Reembolsada</Badge>;
+    case "REFUND_REQUESTED":
+      return <Badge variant="secondary">Reembolso Solicitado</Badge>;
+    case "AWAITING_RISK_ANALYSIS":
+      return <Badge className="bg-blue-500 hover:bg-blue-600 text-white">Em análise</Badge>;
+    default:
+      return <Badge variant="outline">{status}</Badge>;
+  }
+}
+
 export const Route = createFileRoute("/invoices")({
   head: () => ({
     meta: [{ title: "Faturas | Gestão de Cobranças" }],
@@ -171,14 +192,12 @@ function InvoicesPage() {
                     <tbody className="[&_tr:last-child]:border-0">
                       {data.data.recentPayments.map((p: any) => (
                         <tr key={p.id} className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
-                          <td className="p-4 align-middle font-medium">{p.customer}</td>
+                          <td className="p-4 align-middle font-medium">{p.customerName || p.customer}</td>
                           <td className="p-4 align-middle">{p.description || "-"}</td>
-                          <td className="p-4 align-middle">{p.dueDate}</td>
+                          <td className="p-4 align-middle">{p.dueDate ? p.dueDate.split('-').reverse().join('/') : "-"}</td>
                           <td className="p-4 align-middle">{BRL(p.value)}</td>
                           <td className="p-4 align-middle">
-                            <Badge variant={p.status === "RECEIVED" || p.status === "CONFIRMED" ? "default" : p.status === "OVERDUE" ? "destructive" : "secondary"}>
-                              {p.status}
-                            </Badge>
+                            {getStatusBadge(p.status)}
                           </td>
                         </tr>
                       ))}

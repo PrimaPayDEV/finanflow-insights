@@ -334,6 +334,19 @@ export const getAsaasDashboardMetrics = createServerFn({ method: "GET" })
         countAssociados = uniqueCustomers.size;
       }
 
+      let recentPayments = paymentsData.data || [];
+
+      if (recentPayments.length > 0) {
+        const customerIds = [...uniqueCustomers] as string[];
+        const { data: members } = await supabaseAdmin.from("members").select("asaas_customer_id, name").in("asaas_customer_id", customerIds);
+        const memberMap = new Map(members?.map(m => [m.asaas_customer_id, m.name]));
+
+        recentPayments = recentPayments.map((p: any) => ({
+          ...p,
+          customerName: memberMap.get(p.customer) || p.customer
+        }));
+      }
+
       return {
         ok: true as const,
         data: {
@@ -342,7 +355,7 @@ export const getAsaasDashboardMetrics = createServerFn({ method: "GET" })
           totalOverdue,
           totalReceived,
           countAssociados,
-          recentPayments: paymentsData.data?.slice(0, 5) || []
+          recentPayments
         }
       };
     } catch (error: any) {
