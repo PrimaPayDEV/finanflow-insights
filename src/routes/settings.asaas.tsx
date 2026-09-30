@@ -59,6 +59,8 @@ function AsaasSettingsPage() {
   const configured = status.data?.configured;
 
   const [form, setForm] = useState(defaults);
+  const [apiKey, setApiKey] = useState("");
+  const [savingKey, setSavingKey] = useState(false);
 
   useEffect(() => {
     if (settings.data) {
@@ -90,6 +92,24 @@ function AsaasSettingsPage() {
     onError: (e: Error) => toast.error(translateError(e.message)),
   });
 
+  const saveApiKey = async () => {
+    if (!companyId) return;
+    if (!apiKey.trim()) return toast.error("Insira uma chave válida");
+    
+    setSavingKey(true);
+    try {
+      const { error } = await supabase.from("companies").update({ asaas_api_key: apiKey.trim() }).eq("id", companyId);
+      if (error) throw error;
+      toast.success("Chave de API salva com sucesso!");
+      setApiKey("");
+      qc.invalidateQueries({ queryKey: ["asaas-status", companyId] });
+    } catch (e: any) {
+      toast.error(translateError(e.message));
+    } finally {
+      setSavingKey(false);
+    }
+  };
+
   const webhookUrl =
     typeof window !== "undefined" ? `${window.location.origin}/api/public/asaas-webhook` : "";
 
@@ -113,14 +133,21 @@ function AsaasSettingsPage() {
               </Badge>
             )}
           </CardHeader>
-          <CardContent className="space-y-3 text-sm text-muted-foreground">
-            <p>
-              A chave da API do Asaas é guardada como segredo no backend (nunca no navegador nem no
-              banco de dados) e usada apenas pelo servidor ao criar as cobranças.
+          <CardContent className="space-y-4 text-sm">
+            <p className="text-muted-foreground">
+              Insira a chave da sua API do Asaas para integrar a plataforma. Certifique-se de usar a chave correta (Produção ou Sandbox).
             </p>
-            <p>
-              Para trocar a chave, peça no chat: <em>“atualizar minha chave do Asaas”</em>.
-            </p>
+            <div className="flex gap-2">
+              <Input
+                type="password"
+                placeholder="Ex: $aact_..."
+                value={apiKey}
+                onChange={(e) => setApiKey(e.target.value)}
+              />
+              <Button onClick={saveApiKey} disabled={savingKey || !apiKey.trim()}>
+                Salvar
+              </Button>
+            </div>
           </CardContent>
         </Card>
 
