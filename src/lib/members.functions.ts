@@ -119,7 +119,15 @@ export const upsertMember = createServerFn({ method: "POST" })
         .select("id")
         .single();
       error = insertError;
-      if (newMember?.id) data.id = newMember.id;
+      if (newMember?.id) {
+        data.id = newMember.id;
+        await supabaseAdmin.from("notifications").insert({
+          company_id: data.companyId,
+          type: "info",
+          title: "Novo Associado",
+          description: `O associado ${upsertData.name} foi cadastrado.`,
+        });
+      }
     }
 
     if (error) throw new Error(error.message);
@@ -241,6 +249,13 @@ export const generateInvoice = createServerFn({ method: "POST" })
     if (!paymentJson.id) {
       throw new Error("Erro do Asaas: " + (paymentJson.errors?.[0]?.description ?? JSON.stringify(paymentJson.errors)));
     }
+
+    await supabaseAdmin.from("notifications").insert({
+      company_id: data.companyId,
+      type: "closure",
+      title: "Fatura Gerada",
+      description: `Fatura de R$ ${data.amount.toFixed(2)} gerada para o associado ${member.name}.`,
+    });
 
     return { ok: true, invoiceId: paymentJson.id };
   });
