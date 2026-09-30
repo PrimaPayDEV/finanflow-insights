@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Plus, Car, Trash2, ShieldCheck, User, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { AppLayout } from "@/components/AppLayout";
@@ -63,7 +63,6 @@ function MemberDialog({ member }: { member?: any }) {
     staleTime: Infinity,
   });
 
-  import { useEffect } from "react";
   useEffect(() => {
     if (fipeBrands && brandName && !brandCode) {
       const b = fipeBrands.find((x) => x.nome === brandName);
