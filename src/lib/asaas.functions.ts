@@ -192,6 +192,7 @@ export const createAsaasCharge = createServerFn({ method: "POST" })
 
     if (closureUpdate.data?.merchants?.name) {
       await supabaseAdmin.from("notifications").insert({
+        company_id: data.companyId,
         type: "closure",
         title: "Boleto Gerado",
         description: `Boleto gerado para o estabelecimento ${closureUpdate.data.merchants.name} no valor de R$ ${data.value.toFixed(2)}.`
