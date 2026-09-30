@@ -64,11 +64,11 @@ export function AppLayout({
 }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const { user, companyName, role, appMode, logoUrl, signOut } = useAuth();
+  const { user, companyId, companyName, role, appMode, logoUrl, signOut } = useAuth();
   
   const qc = useQueryClient();
   const navigate = useNavigate();
-  const { data: notifications = [] } = useQuery(notificationsQuery);
+  const { data: notifications = [] } = useQuery(notificationsQuery(companyId));
   const unreadCount = notifications.filter(n => !n.is_read).length;
 
   let currentNav = [...nav];
@@ -103,7 +103,7 @@ export function AppLayout({
 
   const markAllAsRead = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from('notifications').update({ is_read: true }).eq('is_read', false);
+      const { error } = await supabase.from('notifications').update({ is_read: true }).eq('is_read', false).eq('company_id', companyId!);
       if (error) throw new Error(error.message);
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["notifications"] })
