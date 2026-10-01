@@ -35,7 +35,7 @@ export const getBillingReports = createServerFn({ method: "POST" })
 
     // 1. Fetch payments
     const payRes = await fetch(`${base}/payments?limit=100`, {
-      headers: { access_token: apiKey },
+      headers: { access_token: apiKey, "User-Agent": "PrimaHub" },
     });
     const paymentsData = await payRes.json();
     const payments = paymentsData.data || [];
