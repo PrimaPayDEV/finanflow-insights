@@ -38,10 +38,9 @@ const TRADITIONAL_RATES = {
 };
 
 export function getTraditionalRate(t: Transaction, plan?: FeePlan): number {
-  if (plan && plan.traditional_fee_avg > 0) return plan.traditional_fee_avg;
+  if (plan) return plan.traditional_fee_avg;
 
   if (t.modality === 'pix') return TRADITIONAL_RATES.pix;
-  if (t.modality === 'cash') return 0;
   
   if (t.modality === 'debit') {
     return TRADITIONAL_RATES.debit;
@@ -82,14 +81,19 @@ const CPAG59 = {
 };
 
 export function getModalityRate(t: Transaction, plan?: FeePlan): number {
-  if (t.modality === 'pix') return (plan && plan.pix_rate > 0) ? plan.pix_rate : CPAG59.pix;
-  if (t.modality === 'cash') return (plan && plan.cash_rate > 0) ? plan.cash_rate : 0;
+  if (plan) {
+    if (t.modality === 'pix') return plan.pix_rate;
+    if (t.modality === 'cash') return plan.cash_rate;
+    if (t.modality === 'debit') return plan.debit_rate;
+    if (t.modality === 'credit_vista') return plan.credit_vista_rate;
+    if (t.modality === 'credit_installment') return plan.credit_installment_rate;
+    return 0; // fallback if unknown modality with a custom plan
+  }
+
+  if (t.modality === 'pix') return CPAG59.pix;
+  if (t.modality === 'cash') return 0;
 
   const installments = t.installments || 1;
-
-  if (t.modality === 'debit' && plan && plan.debit_rate > 0) return plan.debit_rate;
-  if (t.modality === 'credit_vista' && plan && plan.credit_vista_rate > 0) return plan.credit_vista_rate;
-  if (t.modality === 'credit_installment' && plan && plan.credit_installment_rate > 0) return plan.credit_installment_rate;
 
   const brand = (t.brand || "").toLowerCase();
   let bKey: keyof typeof CPAG59 = 'vm';
@@ -141,7 +145,7 @@ export function calculateClosure(
   }
 
   const { primaRate, traditionalRate } = getTierRates(totalGross);
-  const customPrimaRate = plan?.fixed_rate_percent && plan.fixed_rate_percent > 0 ? plan.fixed_rate_percent : primaRate;
+  const customPrimaRate = plan ? plan.fixed_rate_percent : primaRate;
   const fixedFeeAmount = (totalGross * customPrimaRate) / 100;
   
   // O valor a ser cobrado na plataforma é a taxa operacional vezes o faturamento
