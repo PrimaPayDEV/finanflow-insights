@@ -51,24 +51,45 @@ function ExpensesPage() {
   const [month, setMonth] = useState(currentMonth());
   const [description, setDescription] = useState("");
   const [amount, setAmount] = useState("");
+  const [durationMonths, setDurationMonths] = useState("1");
   const [category, setCategory] = useState<"despesa" | "cobranca">("despesa");
 
   const add = useMutation({
     mutationFn: async () => {
       if (!merchantId) throw new Error("Selecione o estabelecimento.");
-      const { error } = await supabase.from("expenses_adjustments").insert({
-        merchant_id: merchantId,
-        description: description.trim(),
-        amount: Number(amount || 0),
-        reference_month: month,
-        category,
-      });
+      
+      const numMonths = parseInt(durationMonths, 10) || 1;
+      const baseMonth = month;
+      
+      const recordsToInsert = [];
+      for (let i = 0; i < numMonths; i++) {
+        const [yStr, mStr] = baseMonth.split("-");
+        let y = parseInt(yStr, 10);
+        let m = parseInt(mStr, 10);
+        m += i;
+        while (m > 12) {
+          m -= 12;
+          y++;
+        }
+        const targetMonth = `${y}-${m.toString().padStart(2, "0")}`;
+        
+        recordsToInsert.push({
+          merchant_id: merchantId,
+          description: description.trim() + (numMonths > 1 ? ` (${i + 1}/${numMonths})` : ""),
+          amount: Number(amount || 0),
+          reference_month: targetMonth,
+          category,
+        });
+      }
+
+      const { error } = await supabase.from("expenses_adjustments").insert(recordsToInsert);
       if (error) throw new Error(error.message);
     },
     onSuccess: () => {
       toast.success("Lançamento registrado");
       setDescription("");
       setAmount("");
+      setDurationMonths("1");
       qc.invalidateQueries({ queryKey: ["expenses"] });
     },
     onError: (e: Error) => toast.error(translateError(e.message)),
@@ -146,14 +167,26 @@ function ExpensesPage() {
                 maxLength={200}
               />
             </div>
-            <div className="grid gap-1.5">
-              <Label>Valor (R$)</Label>
-              <Input
-                type="number"
-                step="0.01"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-              />
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="grid gap-1.5">
+                <Label>Valor (R$)</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                />
+              </div>
+              <div className="grid gap-1.5">
+                <Label>Duração (meses)</Label>
+                <Input
+                  type="number"
+                  min="1"
+                  step="1"
+                  value={durationMonths}
+                  onChange={(e) => setDurationMonths(e.target.value)}
+                />
+              </div>
             </div>
             <Button
               className="w-full"
