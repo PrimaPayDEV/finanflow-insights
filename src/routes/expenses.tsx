@@ -116,10 +116,10 @@ function ExpensesPage() {
             <CardTitle className="text-base">Novo lançamento</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <div className="grid gap-1.5">
+            <div className="grid gap-1.5 min-w-0">
               <Label>Estabelecimento</Label>
               <Select value={merchantId} onValueChange={setMerchantId}>
-                <SelectTrigger>
+                <SelectTrigger className="[&>span]:truncate">
                   <SelectValue placeholder="Selecione" />
                 </SelectTrigger>
                 <SelectContent>
