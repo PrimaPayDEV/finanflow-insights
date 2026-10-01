@@ -310,12 +310,12 @@ export const getAsaasDashboardMetrics = createServerFn({ method: "POST" })
 
     try {
       const balRes = await fetch(`${base}/finance/balance`, {
-        headers: { access_token: apiKey },
+        headers: { access_token: apiKey, "User-Agent": "PrimaHub" },
       });
       const balanceData = await balRes.json();
 
       const payRes = await fetch(`${base}/payments?limit=100`, {
-        headers: { access_token: apiKey },
+        headers: { access_token: apiKey, "User-Agent": "PrimaHub" },
       });
       const paymentsData = await payRes.json();
 
