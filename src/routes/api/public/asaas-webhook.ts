@@ -51,6 +51,14 @@ export const Route = createFileRoute("/api/public/asaas-webhook")({
         if (expectedToken) {
           const token = request.headers.get("asaas-access-token");
           if (token !== expectedToken) {
+            // Save a notification so the user knows exactly what mismatched
+            await supabaseAdmin.from("notifications").insert({
+              company_id: companyId,
+              title: "Erro de Autenticação no Webhook",
+              description: `O token enviado pelo Asaas (${token?.substring(0, 5) || "vazio"}...) não confere com o token salvo na plataforma (${expectedToken.substring(0, 5)}...). Verifique na Configuração Asaas.`,
+              type: "webhook_error",
+              is_read: false,
+            });
             return new Response("Unauthorized", { status: 401 });
           }
         }
