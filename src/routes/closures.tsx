@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { PiggyBank, FileCheck2, ExternalLink, Download, Settings2, Receipt, TrendingUp, DollarSign, PieChart, Banknote, ArrowDownRight, ArrowUpRight, SearchX } from "lucide-react";
+import { PiggyBank, FileCheck2, ExternalLink, Download, Settings2, Receipt, TrendingUp, DollarSign, PieChart, Banknote, ArrowDownRight, ArrowUpRight, SearchX, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 import { AppLayout } from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
@@ -545,11 +545,25 @@ function RouteComponent() {
                   </div>
                   <div className="flex gap-3 w-full sm:w-auto">
                     {existing?.asaas_invoice_url && (
-                      <Button variant="outline" asChild className="w-full sm:w-auto">
-                        <a href={existing.asaas_invoice_url} target="_blank" rel="noopener noreferrer">
-                          Ver Fatura <ExternalLink className="ml-2 h-4 w-4" />
-                        </a>
-                      </Button>
+                      <>
+                        <Button
+                          variant="outline"
+                          className="w-full sm:w-auto text-emerald-600 border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-300"
+                          onClick={() => {
+                            const text = encodeURIComponent(
+                              `Olá! Aqui está o relatório de economia e a fatura referente ao uso da plataforma PrimaPay.\n\nValor: ${BRL(calc.netInvoice)}\n\nVocê pode acessar o detalhamento e pagar a fatura através do link seguro abaixo:\n${existing.asaas_invoice_url}`
+                            );
+                            window.open(`https://wa.me/${merchant.phone_whatsapp?.replace(/\D/g, "") || ""}?text=${text}`, "_blank");
+                          }}
+                        >
+                          <MessageCircle className="mr-2 h-4 w-4" /> Enviar
+                        </Button>
+                        <Button variant="outline" asChild className="w-full sm:w-auto">
+                          <a href={existing.asaas_invoice_url} target="_blank" rel="noopener noreferrer">
+                            Ver Fatura <ExternalLink className="ml-2 h-4 w-4" />
+                          </a>
+                        </Button>
+                      </>
                     )}
                     <Button
                       className="w-full sm:w-auto"
