@@ -81,20 +81,14 @@ const CPAG59 = {
 };
 
 export function getModalityRate(t: Transaction, plan?: FeePlan): number {
-  if (plan) {
-    if (t.modality === 'pix') return plan.pix_rate;
-    if (t.modality === 'cash') return plan.cash_rate;
-    if (t.modality === 'debit') return plan.debit_rate;
-    if (t.modality === 'credit_vista') return plan.credit_vista_rate;
-    if (t.modality === 'credit_installment') return plan.credit_installment_rate;
-    return 0; // fallback if unknown modality with a custom plan
-  }
-
-  if (t.modality === 'pix') return CPAG59.pix;
-  if (t.modality === 'cash') return 0;
+  if (t.modality === 'pix') return (plan && plan.pix_rate > 0) ? plan.pix_rate : CPAG59.pix;
+  if (t.modality === 'cash') return plan ? plan.cash_rate : 0;
 
   const installments = t.installments || 1;
 
+  if (t.modality === 'debit' && plan && plan.debit_rate > 0) return plan.debit_rate;
+  if (t.modality === 'credit_vista' && plan && plan.credit_vista_rate > 0) return plan.credit_vista_rate;
+  if (t.modality === 'credit_installment' && plan && plan.credit_installment_rate > 0) return plan.credit_installment_rate;
   const brand = (t.brand || "").toLowerCase();
   let bKey: keyof typeof CPAG59 = 'vm';
   if (brand.includes('elo')) bKey = 'elo';
