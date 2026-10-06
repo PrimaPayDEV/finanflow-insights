@@ -30,6 +30,7 @@ import { Route as RecebiveisPosRouteImport } from './routes/recebiveis.pos'
 import { Route as RecebiveisVendasRouteImport } from './routes/recebiveis.vendas'
 import { Route as SettingsAppearanceRouteImport } from './routes/settings/appearance'
 import { Route as SettingsAsaasRouteImport } from './routes/settings.asaas'
+import { Route as AdminRecebiveisImportRouteImport } from './routes/admin.recebiveis.import'
 import { Route as ApiPublicAsaasWebhookRouteImport } from './routes/api/public/asaas-webhook'
 import { Route as PublicReportClosureIdRouteImport } from './routes/public.report.$closureId'
 
@@ -138,6 +139,11 @@ const SettingsAsaasRoute = SettingsAsaasRouteImport.update({
   path: '/settings/asaas',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminRecebiveisImportRoute = AdminRecebiveisImportRouteImport.update({
+  id: '/admin/recebiveis/import',
+  path: '/admin/recebiveis/import',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicAsaasWebhookRoute = ApiPublicAsaasWebhookRouteImport.update({
   id: '/api/public/asaas-webhook',
   path: '/api/public/asaas-webhook',
@@ -171,6 +177,7 @@ export interface FileRoutesByFullPath {
   '/recebiveis/vendas': typeof RecebiveisVendasRoute
   '/settings/appearance': typeof SettingsAppearanceRoute
   '/settings/asaas': typeof SettingsAsaasRoute
+  '/admin/recebiveis/import': typeof AdminRecebiveisImportRoute
   '/api/public/asaas-webhook': typeof ApiPublicAsaasWebhookRoute
   '/public/report/$closureId': typeof PublicReportClosureIdRoute
 }
@@ -196,6 +203,7 @@ export interface FileRoutesByTo {
   '/recebiveis/vendas': typeof RecebiveisVendasRoute
   '/settings/appearance': typeof SettingsAppearanceRoute
   '/settings/asaas': typeof SettingsAsaasRoute
+  '/admin/recebiveis/import': typeof AdminRecebiveisImportRoute
   '/api/public/asaas-webhook': typeof ApiPublicAsaasWebhookRoute
   '/public/report/$closureId': typeof PublicReportClosureIdRoute
 }
@@ -222,6 +230,7 @@ export interface FileRoutesById {
   '/recebiveis/vendas': typeof RecebiveisVendasRoute
   '/settings/appearance': typeof SettingsAppearanceRoute
   '/settings/asaas': typeof SettingsAsaasRoute
+  '/admin/recebiveis/import': typeof AdminRecebiveisImportRoute
   '/api/public/asaas-webhook': typeof ApiPublicAsaasWebhookRoute
   '/public/report/$closureId': typeof PublicReportClosureIdRoute
 }
@@ -249,6 +258,7 @@ export interface FileRouteTypes {
     | '/recebiveis/vendas'
     | '/settings/appearance'
     | '/settings/asaas'
+    | '/admin/recebiveis/import'
     | '/api/public/asaas-webhook'
     | '/public/report/$closureId'
   fileRoutesByTo: FileRoutesByTo
@@ -274,6 +284,7 @@ export interface FileRouteTypes {
     | '/recebiveis/vendas'
     | '/settings/appearance'
     | '/settings/asaas'
+    | '/admin/recebiveis/import'
     | '/api/public/asaas-webhook'
     | '/public/report/$closureId'
   id:
@@ -299,6 +310,7 @@ export interface FileRouteTypes {
     | '/recebiveis/vendas'
     | '/settings/appearance'
     | '/settings/asaas'
+    | '/admin/recebiveis/import'
     | '/api/public/asaas-webhook'
     | '/public/report/$closureId'
   fileRoutesById: FileRoutesById
@@ -325,6 +337,7 @@ export interface RootRouteChildren {
   RecebiveisVendasRoute: typeof RecebiveisVendasRoute
   SettingsAppearanceRoute: typeof SettingsAppearanceRoute
   SettingsAsaasRoute: typeof SettingsAsaasRoute
+  AdminRecebiveisImportRoute: typeof AdminRecebiveisImportRoute
   ApiPublicAsaasWebhookRoute: typeof ApiPublicAsaasWebhookRoute
   PublicReportClosureIdRoute: typeof PublicReportClosureIdRoute
 }
@@ -478,6 +491,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SettingsAsaasRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/recebiveis/import': {
+      id: '/admin/recebiveis/import'
+      path: '/admin/recebiveis/import'
+      fullPath: '/admin/recebiveis/import'
+      preLoaderRoute: typeof AdminRecebiveisImportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/asaas-webhook': {
       id: '/api/public/asaas-webhook'
       path: '/api/public/asaas-webhook'
@@ -517,6 +537,7 @@ const rootRouteChildren: RootRouteChildren = {
   RecebiveisVendasRoute: RecebiveisVendasRoute,
   SettingsAppearanceRoute: SettingsAppearanceRoute,
   SettingsAsaasRoute: SettingsAsaasRoute,
+  AdminRecebiveisImportRoute: AdminRecebiveisImportRoute,
   ApiPublicAsaasWebhookRoute: ApiPublicAsaasWebhookRoute,
   PublicReportClosureIdRoute: PublicReportClosureIdRoute,
 }

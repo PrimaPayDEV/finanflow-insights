@@ -96,6 +96,7 @@ export function AppLayout({
   } else if (role === "partner") {
     currentNav = [{ to: "/reports", label: "Relatórios", icon: FileBarChart2 }];
   } else {
+    currentNav.push({ to: "/admin/recebiveis/import", label: "Importar Recebíveis", icon: Upload });
     currentNav.push({ to: "/partners", label: "Parceiros", icon: Users });
     if (companyName === "Prima Hub" || companyName === "PrimaPay") {
       currentNav.push({ to: "/admin/companies", label: "Administração", icon: ShieldCheck });
