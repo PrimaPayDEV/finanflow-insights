@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Search, Smartphone, Users, Save, Percent, Trash2, Settings2, Edit2, Store } from "lucide-react";
+import { Plus, Search, Smartphone, Users, Save, Percent, Trash2, Settings2, Edit2, Store, Key } from "lucide-react";
 import { MerchantIcon } from "@/components/MerchantIcon";
 import { toast } from "sonner";
 import { AppLayout } from "@/components/AppLayout";
@@ -35,6 +35,7 @@ import { getPartners } from "@/lib/partner.functions";
 import { useServerFn } from "@tanstack/react-start";
 import { translateError } from "@/lib/translateError";
 import { useAuth } from "@/contexts/AuthContext";
+import { createMerchantAccess } from "@/lib/merchant.functions";
 
 export const Route = createFileRoute("/merchants")({
   head: () => ({
@@ -56,6 +57,61 @@ export const Route = createFileRoute("/merchants")({
 });
 
 const emptyMerchant = { name: "", document_cnpj: "", phone_whatsapp: "", email: "" };
+
+function WebAccessDialog({ merchant }: { merchant: Merchant }) {
+  const { companyId } = useAuth();
+  const [open, setOpen] = useState(false);
+  const [email, setEmail] = useState(merchant.email || "");
+  const [password, setPassword] = useState("");
+
+  const accessMutation = useMutation({
+    mutationFn: async () => {
+      if (!companyId) throw new Error("companyId is required");
+      return createMerchantAccess({ data: { companyId, merchantId: merchant.id, email, password } });
+    },
+    onSuccess: () => {
+      toast.success("Acesso web gerado com sucesso! O EC já pode fazer login.");
+      setOpen(false);
+      setPassword("");
+    },
+    onError: (e: Error) => toast.error(translateError(e.message))
+  });
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <Button variant="outline" size="sm" className="hidden sm:flex gap-2 border-primary/20 text-primary hover:bg-primary/5">
+          <Key className="size-4" />
+          Gerar Acesso
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Acesso Web: {merchant.name}</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 py-4">
+          <p className="text-sm text-muted-foreground">
+            Crie um login para o estabelecimento acessar o painel blindado (Gestão de Recebíveis).
+          </p>
+          <div className="grid gap-2">
+            <Label>E-mail de Acesso</Label>
+            <Input type="email" placeholder="email@exemplo.com" value={email} onChange={e => setEmail(e.target.value)} />
+          </div>
+          <div className="grid gap-2">
+            <Label>Senha Temporária</Label>
+            <Input type="text" placeholder="Mínimo 6 caracteres" value={password} onChange={e => setPassword(e.target.value)} />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
+          <Button onClick={() => accessMutation.mutate()} disabled={accessMutation.isPending || !email || password.length < 6}>
+            {accessMutation.isPending ? "Gerando..." : "Criar Acesso"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 function MerchantsPage() {
   const qc = useQueryClient();
@@ -226,6 +282,7 @@ function MerchantsPage() {
                   <Badge variant={active.status === "active" ? "default" : "secondary"}>
                     {active.status === "active" ? "Ativo" : "Inativo"}
                   </Badge>
+                  <WebAccessDialog merchant={active} />
                   <EditMerchantDialog merchant={active} />
                   <Button
                     variant="ghost"
