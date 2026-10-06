@@ -109,15 +109,15 @@ function AdminRecebiveisImportPage() {
       const iDate = idx(["data de captura"]);
       const iGross = idx(["valor"]);
       const iNet = idx(["valor líquido", "valor liquido"]);
-      const iDoc = idx(["documento"]);
-      const iName = idx(["nome comercial"]);
-      const iSn = idx(["sn equipamento", "sn", "serial"]);
-      const iType = idx(["tipo de pagamento"]);
-      const iBrand = idx(["bandeira"]);
-      const iInstallments = idx(["parcelamento"]);
+      const iDoc = idx(["documento", "cpf", "cnpj", "cpf/cnpj", "cpf / cnpj", "doc"]);
+      const iName = idx(["nome comercial", "estabelecimento", "nome fantasia", "fantasia", "nome"]);
+      const iSn = idx(["sn equipamento", "sn", "serial", "número lógico", "numero logico", "pos", "terminal"]);
+      const iType = idx(["tipo de pagamento", "modalidade", "tipo"]);
+      const iBrand = idx(["bandeira", "produto", "marca"]);
+      const iInstallments = idx(["parcelamento", "parcelas", "nº parcelas"]);
 
-      if (iId === -1 || iSn === -1 || iNet === -1) {
-        throw new Error("Colunas obrigatórias não encontradas (ID, SN Equipamento, Valor líquido)");
+      if (iId === -1 || (iSn === -1 && iDoc === -1) || iNet === -1) {
+        throw new Error("Colunas obrigatórias não encontradas. O arquivo precisa ter 'ID', 'Valor líquido', e ('SN Equipamento' ou 'Documento/CNPJ').");
       }
 
       const parsed: ProcessedRow[] = [];
@@ -129,9 +129,11 @@ function AdminRecebiveisImportPage() {
         const row = rawData[i];
         if (!row || row.length === 0 || !row[iId]) continue;
 
-        const status = String(row[iStatus] || "");
-        const externalId = String(row[iId]);
-        const serialNumber = String(row[iSn]);
+        const status = String(row[iStatus] || "").trim();
+        const externalId = String(row[iId] || "").trim();
+        const serialNumber = String(row[iSn] || "").trim();
+        const rawDocument = String(row[iDoc] || "").trim();
+        const cleanDocument = rawDocument.replace(/[^\d]/g, "");
         const netValue = parseValue(row[iNet]);
         
         let merchantId: string | null = null;
@@ -146,29 +148,41 @@ function AdminRecebiveisImportPage() {
         if (status.toLowerCase() !== "sucesso") {
           error = "Status não é sucesso";
         } else {
-          // Achar POS
-          const term = tList.find((t) => t.serial_number === serialNumber);
-          if (!term) {
-            error = "POS não vinculada";
-          } else {
+          // 1. Tentar achar por POS
+          const term = tList.find((t) => t.serial_number && t.serial_number.trim() === serialNumber);
+          
+          let merch = null;
+
+          if (term) {
             posId = term.id;
             merchantId = term.merchant_id;
-            const merch = mList.find((m) => m.id === merchantId);
+            merch = mList.find((m) => m.id === merchantId);
+          } 
+          // 2. Tentar achar por Documento (CNPJ/CPF) se POS não encontrou
+          else if (cleanDocument) {
+            merch = mList.find((m) => {
+              const mDoc = (m.document_cnpj || "").replace(/[^\d]/g, "");
+              return mDoc === cleanDocument;
+            });
             if (merch) {
-              merchantNameDb = merch.name;
-              // Achar Taxa Operacional
-              const plan = fList.find((p) => p.merchant_id === merchantId);
-              if (plan && plan.fixed_rate_percent !== null) {
-                feePercent = Number(plan.fixed_rate_percent);
-              }
-              
-              // Calcular
-              const feeAmount = (netValue * feePercent) / 100;
-              creditedValue = netValue - feeAmount;
-              isValid = true;
-            } else {
-              error = "Estabelecimento não encontrado no DB";
+              merchantId = merch.id;
             }
+          }
+
+          if (!merch) {
+            error = serialNumber ? "POS ou EC não encontrados" : "Documento do EC não encontrado";
+          } else {
+            merchantNameDb = merch.name;
+            // Achar Taxa Operacional
+            const plan = fList.find((p) => p.merchant_id === merchantId);
+            if (plan && plan.fixed_rate_percent !== null) {
+              feePercent = Number(plan.fixed_rate_percent);
+            }
+            
+            // Calcular
+            const feeAmount = (netValue * feePercent) / 100;
+            creditedValue = netValue - feeAmount;
+            isValid = true;
           }
         }
 
