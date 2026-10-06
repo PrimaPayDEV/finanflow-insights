@@ -18,6 +18,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { merchantsQuery, terminalsQuery, feePlansQuery } from "@/lib/db";
 import { BRL } from "@/lib/format";
@@ -76,6 +83,8 @@ function AdminRecebiveisImportPage() {
 
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
+  const [selectedMerchantId, setSelectedMerchantId] = useState<string>("auto");
+
   const [rows, setRows] = useState<ProcessedRow[]>([]);
 
   const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -153,24 +162,35 @@ function AdminRecebiveisImportPage() {
           
           let merch = null;
 
-          if (term) {
-            posId = term.id;
-            merchantId = term.merchant_id;
-            merch = mList.find((m) => m.id === merchantId);
-          } 
-          // 2. Tentar achar por Documento (CNPJ/CPF) se POS não encontrou
-          else if (cleanDocument) {
-            merch = mList.find((m) => {
-              const mDoc = (m.document_cnpj || "").replace(/[^\d]/g, "");
-              return mDoc === cleanDocument;
-            });
+          // Se tiver um estabelecimento forçado pelo usuário
+          if (selectedMerchantId !== "auto") {
+            merch = mList.find((m) => m.id === selectedMerchantId);
             if (merch) {
               merchantId = merch.id;
+              if (term && term.merchant_id === merch.id) {
+                posId = term.id;
+              }
+            }
+          } 
+          // Se for automático, cruzar os dados
+          else {
+            if (term) {
+              posId = term.id;
+              merchantId = term.merchant_id;
+              merch = mList.find((m) => m.id === merchantId);
+            } else if (cleanDocument) {
+              merch = mList.find((m) => {
+                const mDoc = (m.document_cnpj || "").replace(/[^\d]/g, "");
+                return mDoc === cleanDocument;
+              });
+              if (merch) merchantId = merch.id;
             }
           }
 
           if (!merch) {
-            error = serialNumber ? "POS ou EC não encontrados" : "Documento do EC não encontrado";
+            error = selectedMerchantId !== "auto" 
+              ? "Estabelecimento selecionado não encontrado"
+              : (serialNumber ? "POS ou EC não encontrados" : "Documento do EC não encontrado");
           } else {
             merchantNameDb = merch.name;
             // Achar Taxa Operacional
@@ -336,7 +356,32 @@ function AdminRecebiveisImportPage() {
           <CardHeader>
             <CardTitle className="text-base">Upload de Relatório</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-6">
+            <div className="grid gap-2 max-w-md">
+              <Label>Vincular a um Estabelecimento (Opcional)</Label>
+              <Select 
+                value={selectedMerchantId} 
+                onValueChange={(val) => {
+                  setSelectedMerchantId(val);
+                  setFile(null);
+                  setRows([]);
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Automático (Lido da planilha)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="auto">Automático (Pela maquininha ou CNPJ)</SelectItem>
+                  {merchants.data?.map(m => (
+                    <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Se a planilha não possuir o CNPJ ou a Máquina em cada linha, force o estabelecimento aqui.
+              </p>
+            </div>
+
             <div 
               className="relative group cursor-pointer" 
               onClick={() => document.getElementById("file-upload")?.click()}
