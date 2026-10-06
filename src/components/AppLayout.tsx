@@ -84,7 +84,16 @@ export function AppLayout({
     );
   }
 
-  if (role === "partner") {
+  if (role === "merchant") {
+    currentNav = [
+      { to: "/recebiveis/dashboard", label: "Dashboard", icon: LayoutDashboard },
+      { to: "/recebiveis/vendas", label: "Recebíveis", icon: Store },
+      { to: "/recebiveis/lancamentos", label: "Lançamentos", icon: Receipt },
+      { to: "/recebiveis/extrato", label: "Extrato", icon: FileText },
+      { to: "/recebiveis/pos", label: "Minhas POS", icon: Wallet },
+      { to: "/recebiveis/perfil", label: "Meu Cadastro", icon: Settings },
+    ];
+  } else if (role === "partner") {
     currentNav = [{ to: "/reports", label: "Relatórios", icon: FileBarChart2 }];
   } else {
     currentNav.push({ to: "/partners", label: "Parceiros", icon: Users });
