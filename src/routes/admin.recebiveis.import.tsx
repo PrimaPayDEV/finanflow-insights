@@ -134,7 +134,7 @@ function AdminRecebiveisImportPage() {
         const serialNumber = String(row[iSn]);
         const netValue = parseValue(row[iNet]);
         
-        let merchantId = null;
+        let merchantId: string | null = null;
         let posId = null;
         let merchantNameDb = null;
         let feePercent = 0;
@@ -280,7 +280,7 @@ function AdminRecebiveisImportPage() {
           .from("receivables_ledgers")
           .insert({
             company_id: companyId,
-            merchant_id: row.merchantId,
+            merchant_id: row.merchantId!,
             type: "CREDIT",
             amount: row.creditedValue,
             status: "LIQUIDATED",

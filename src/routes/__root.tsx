@@ -126,7 +126,7 @@ function RootShell({ children }: { children: ReactNode }) {
 }
 
 function AuthGuard({ children }: { children: ReactNode }) {
-  const { user, isLoading, isActive, companyName } = useAuth();
+  const { user, isLoading, isActive, companyName, role } = useAuth();
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 

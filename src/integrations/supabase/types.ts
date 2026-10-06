@@ -221,6 +221,7 @@ export type Database = {
           company_id: string
           created_at: string | null
           id: string
+          merchant_id: string | null
           partner_id: string | null
           role: string | null
           user_id: string
@@ -229,6 +230,7 @@ export type Database = {
           company_id: string
           created_at?: string | null
           id?: string
+          merchant_id?: string | null
           partner_id?: string | null
           role?: string | null
           user_id: string
@@ -237,6 +239,7 @@ export type Database = {
           company_id?: string
           created_at?: string | null
           id?: string
+          merchant_id?: string | null
           partner_id?: string | null
           role?: string | null
           user_id?: string
@@ -247,6 +250,13 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "company_users_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
             referencedColumns: ["id"]
           },
           {
@@ -417,6 +427,45 @@ export type Database = {
           },
         ]
       }
+      merchant_pos: {
+        Row: {
+          company_id: string
+          created_at: string | null
+          id: string
+          merchant_id: string
+          serial_number: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string | null
+          id?: string
+          merchant_id: string
+          serial_number: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string | null
+          id?: string
+          merchant_id?: string
+          serial_number?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "merchant_pos_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "merchant_pos_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       merchants: {
         Row: {
           company_id: string
@@ -565,6 +614,343 @@ export type Database = {
             columns: ["merchant_id"]
             isOneToOne: false
             referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      receivables_expenses: {
+        Row: {
+          amount: number
+          category: string | null
+          company_id: string
+          created_at: string | null
+          created_by: string | null
+          description: string
+          expense_date: string
+          id: string
+          ledger_id: string | null
+          merchant_id: string
+        }
+        Insert: {
+          amount: number
+          category?: string | null
+          company_id: string
+          created_at?: string | null
+          created_by?: string | null
+          description: string
+          expense_date: string
+          id?: string
+          ledger_id?: string | null
+          merchant_id: string
+        }
+        Update: {
+          amount?: number
+          category?: string | null
+          company_id?: string
+          created_at?: string | null
+          created_by?: string | null
+          description?: string
+          expense_date?: string
+          id?: string
+          ledger_id?: string | null
+          merchant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "receivables_expenses_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receivables_expenses_ledger_id_fkey"
+            columns: ["ledger_id"]
+            isOneToOne: false
+            referencedRelation: "receivables_ledgers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receivables_expenses_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      receivables_imports: {
+        Row: {
+          company_id: string
+          created_at: string | null
+          created_by: string | null
+          duplicated_rows: number | null
+          filename: string
+          id: string
+          imported_rows: number | null
+          processed_rows: number | null
+          rejected_rows: number | null
+        }
+        Insert: {
+          company_id: string
+          created_at?: string | null
+          created_by?: string | null
+          duplicated_rows?: number | null
+          filename: string
+          id?: string
+          imported_rows?: number | null
+          processed_rows?: number | null
+          rejected_rows?: number | null
+        }
+        Update: {
+          company_id?: string
+          created_at?: string | null
+          created_by?: string | null
+          duplicated_rows?: number | null
+          filename?: string
+          id?: string
+          imported_rows?: number | null
+          processed_rows?: number | null
+          rejected_rows?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "receivables_imports_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      receivables_ledgers: {
+        Row: {
+          amount: number
+          company_id: string
+          created_at: string | null
+          description: string | null
+          id: string
+          liquidated_at: string | null
+          liquidated_by: string | null
+          merchant_id: string
+          status: string
+          transaction_id: string | null
+          type: string
+        }
+        Insert: {
+          amount: number
+          company_id: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          liquidated_at?: string | null
+          liquidated_by?: string | null
+          merchant_id: string
+          status: string
+          transaction_id?: string | null
+          type: string
+        }
+        Update: {
+          amount?: number
+          company_id?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          liquidated_at?: string | null
+          liquidated_by?: string | null
+          merchant_id?: string
+          status?: string
+          transaction_id?: string | null
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "receivables_ledgers_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receivables_ledgers_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receivables_ledgers_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "receivables_transactions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      receivables_requests: {
+        Row: {
+          amount: number
+          barcode: string | null
+          company_id: string
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          due_date: string | null
+          favored_document: string | null
+          favored_name: string | null
+          id: string
+          ledger_id: string | null
+          liquidated_at: string | null
+          liquidated_by: string | null
+          merchant_id: string
+          pix_key: string | null
+          status: string
+          type: string
+        }
+        Insert: {
+          amount: number
+          barcode?: string | null
+          company_id: string
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          due_date?: string | null
+          favored_document?: string | null
+          favored_name?: string | null
+          id?: string
+          ledger_id?: string | null
+          liquidated_at?: string | null
+          liquidated_by?: string | null
+          merchant_id: string
+          pix_key?: string | null
+          status: string
+          type: string
+        }
+        Update: {
+          amount?: number
+          barcode?: string | null
+          company_id?: string
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          due_date?: string | null
+          favored_document?: string | null
+          favored_name?: string | null
+          id?: string
+          ledger_id?: string | null
+          liquidated_at?: string | null
+          liquidated_by?: string | null
+          merchant_id?: string
+          pix_key?: string | null
+          status?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "receivables_requests_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receivables_requests_ledger_id_fkey"
+            columns: ["ledger_id"]
+            isOneToOne: false
+            referencedRelation: "receivables_ledgers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receivables_requests_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      receivables_transactions: {
+        Row: {
+          acquirer: string | null
+          applied_fee_percent: number
+          capture_date: string | null
+          company_id: string
+          created_at: string | null
+          credited_value: number
+          external_id: string
+          gross_value: number
+          id: string
+          import_id: string
+          merchant_id: string | null
+          metadata: Json | null
+          net_value: number
+          nsu: string | null
+          pos_id: string | null
+          status: string
+        }
+        Insert: {
+          acquirer?: string | null
+          applied_fee_percent: number
+          capture_date?: string | null
+          company_id: string
+          created_at?: string | null
+          credited_value: number
+          external_id: string
+          gross_value: number
+          id?: string
+          import_id: string
+          merchant_id?: string | null
+          metadata?: Json | null
+          net_value: number
+          nsu?: string | null
+          pos_id?: string | null
+          status: string
+        }
+        Update: {
+          acquirer?: string | null
+          applied_fee_percent?: number
+          capture_date?: string | null
+          company_id?: string
+          created_at?: string | null
+          credited_value?: number
+          external_id?: string
+          gross_value?: number
+          id?: string
+          import_id?: string
+          merchant_id?: string | null
+          metadata?: Json | null
+          net_value?: number
+          nsu?: string | null
+          pos_id?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "receivables_transactions_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receivables_transactions_import_id_fkey"
+            columns: ["import_id"]
+            isOneToOne: false
+            referencedRelation: "receivables_imports"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receivables_transactions_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "receivables_transactions_pos_id_fkey"
+            columns: ["pos_id"]
+            isOneToOne: false
+            referencedRelation: "merchant_pos"
             referencedColumns: ["id"]
           },
         ]
