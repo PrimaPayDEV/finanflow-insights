@@ -22,6 +22,7 @@ import {
   AlertCircle,
   ShieldCheck,
   Users,
+  ArrowDownToLine,
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
@@ -39,15 +40,15 @@ import {
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
 
-type NavItem = { to: string; label: string; icon: typeof LayoutDashboard };
+type NavItem = { to: string; label: string; icon: typeof LayoutDashboard; section?: string };
 
 const nav: NavItem[] = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
   { to: "/merchants", label: "Estabelecimentos", icon: Store },
-  { to: "/import", label: "Importar Extrato", icon: Upload },
-  { to: "/expenses", label: "Lançamentos", icon: Receipt },
-  { to: "/closures", label: "Fechamentos", icon: FileCheck2 },
-  { to: "/reports", label: "Relatórios", icon: FileBarChart2 },
+  { to: "/import", label: "Importar Extrato", icon: Upload, section: "Cobranças" },
+  { to: "/expenses", label: "Lançamentos", icon: Receipt, section: "Cobranças" },
+  { to: "/closures", label: "Fechamentos", icon: FileCheck2, section: "Cobranças" },
+  { to: "/reports", label: "Relatórios", icon: FileBarChart2, section: "Cobranças" },
   { to: "/settings/asaas", label: "Configuração Asaas", icon: Settings },
 ];
 
@@ -87,19 +88,19 @@ export function AppLayout({
   if (role === "merchant") {
     currentNav = [
       { to: "/recebiveis/dashboard", label: "Dashboard", icon: LayoutDashboard },
-      { to: "/recebiveis/vendas", label: "Recebíveis", icon: Store },
-      { to: "/recebiveis/lancamentos", label: "Lançamentos", icon: Receipt },
-      { to: "/recebiveis/extrato", label: "Extrato", icon: FileText },
-      { to: "/recebiveis/pos", label: "Minhas POS", icon: Wallet },
-      { to: "/recebiveis/perfil", label: "Meu Cadastro", icon: Settings },
+      { to: "/recebiveis/vendas", label: "Recebíveis", icon: Store, section: "Gestão de Recebíveis" },
+      { to: "/recebiveis/lancamentos", label: "Lançamentos", icon: Receipt, section: "Gestão de Recebíveis" },
+      { to: "/recebiveis/extrato", label: "Extrato", icon: FileText, section: "Gestão de Recebíveis" },
+      { to: "/recebiveis/pos", label: "Minhas POS", icon: Wallet, section: "Configurações" },
+      { to: "/recebiveis/perfil", label: "Meu Cadastro", icon: Settings, section: "Configurações" },
     ];
   } else if (role === "partner") {
     currentNav = [{ to: "/reports", label: "Relatórios", icon: FileBarChart2 }];
   } else {
-    currentNav.push({ to: "/admin/recebiveis/import", label: "Importar Recebíveis", icon: Upload });
-    currentNav.push({ to: "/partners", label: "Parceiros", icon: Users });
+    currentNav.push({ to: "/admin/recebiveis/import", label: "Importar Vendas POS", icon: ArrowDownToLine, section: "Gestão de Recebíveis" });
+    currentNav.push({ to: "/partners", label: "Parceiros", icon: Users, section: "Administração" });
     if (companyName === "Prima Hub" || companyName === "PrimaPay") {
-      currentNav.push({ to: "/admin/companies", label: "Administração", icon: ShieldCheck });
+      currentNav.push({ to: "/admin/companies", label: "Administração", icon: ShieldCheck, section: "Administração" });
     }
   }
 
@@ -146,29 +147,45 @@ export function AppLayout({
           </div>
         </div>
 
-        <nav className="flex flex-1 flex-col px-3">
-          {currentNav.map((item, index) => {
-            const active =
-              item.to === "/" ? pathname === "/" : pathname.startsWith(item.to);
-            return (
-              <div key={item.to} className={cn("flex flex-col", index !== currentNav.length - 1 && "border-b border-sidebar-border/30 pb-2 mb-2")}>
-                <Link
-                  to={item.to}
-                  title={isCollapsed ? item.label : undefined}
-                  className={cn(
-                    "flex items-center gap-3 rounded-lg px-3 py-3 text-sm transition-colors",
-                    active
-                      ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground shadow-sm"
-                      : "text-sidebar-foreground/75 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground",
-                    isCollapsed && "justify-center px-0"
-                  )}
-                >
-                  <item.icon className="size-5 shrink-0" />
-                  {!isCollapsed && <span className="truncate">{item.label}</span>}
-                </Link>
+        <nav className="flex flex-1 flex-col px-3 overflow-y-auto overflow-x-hidden">
+          {Object.entries(
+            currentNav.reduce((acc, item) => {
+              const s = item.section || "Geral";
+              if (!acc[s]) acc[s] = [];
+              acc[s].push(item);
+              return acc;
+            }, {} as Record<string, NavItem[]>)
+          ).map(([section, items], sIdx) => (
+            <div key={section} className={cn("flex flex-col mb-4", sIdx > 0 && "mt-2")}>
+              {!isCollapsed && section !== "Geral" && (
+                <h4 className="px-3 mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">
+                  {section}
+                </h4>
+              )}
+              <div className="flex flex-col gap-1">
+                {items.map((item) => {
+                  const active = item.to === "/" ? pathname === "/" : pathname.startsWith(item.to);
+                  return (
+                    <Link
+                      key={item.to}
+                      to={item.to}
+                      title={isCollapsed ? item.label : undefined}
+                      className={cn(
+                        "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors",
+                        active
+                          ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground shadow-sm"
+                          : "text-sidebar-foreground/75 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground",
+                        isCollapsed && "justify-center px-0"
+                      )}
+                    >
+                      <item.icon className="size-5 shrink-0" />
+                      {!isCollapsed && <span className="truncate">{item.label}</span>}
+                    </Link>
+                  );
+                })}
               </div>
-            );
-          })}
+            </div>
+          ))}
         </nav>
 
         <div className="flex flex-col gap-2 p-3">
@@ -213,26 +230,43 @@ export function AppLayout({
                       </>
                     )}
                   </div>
-                  <nav className="flex flex-1 flex-col gap-1 px-3">
-                    {currentNav.map((item) => {
-                      const active =
-                        item.to === "/" ? pathname === "/" : pathname.startsWith(item.to);
-                      return (
-                        <Link
-                          key={item.to}
-                          to={item.to}
-                          className={cn(
-                            "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors",
-                            active
-                              ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground"
-                              : "text-sidebar-foreground/75 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground"
-                          )}
-                        >
-                          <item.icon className="size-5 shrink-0" />
-                          <span className="truncate">{item.label}</span>
-                        </Link>
-                      );
-                    })}
+                  <nav className="flex flex-1 flex-col px-3 overflow-y-auto">
+                    {Object.entries(
+                      currentNav.reduce((acc, item) => {
+                        const s = item.section || "Geral";
+                        if (!acc[s]) acc[s] = [];
+                        acc[s].push(item);
+                        return acc;
+                      }, {} as Record<string, NavItem[]>)
+                    ).map(([section, items], sIdx) => (
+                      <div key={section} className={cn("flex flex-col mb-4", sIdx > 0 && "mt-2")}>
+                        {section !== "Geral" && (
+                          <h4 className="px-3 mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">
+                            {section}
+                          </h4>
+                        )}
+                        <div className="flex flex-col gap-1">
+                          {items.map((item) => {
+                            const active = item.to === "/" ? pathname === "/" : pathname.startsWith(item.to);
+                            return (
+                              <Link
+                                key={item.to}
+                                to={item.to}
+                                className={cn(
+                                  "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors",
+                                  active
+                                    ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground"
+                                    : "text-sidebar-foreground/75 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground"
+                                )}
+                              >
+                                <item.icon className="size-5 shrink-0" />
+                                <span className="truncate">{item.label}</span>
+                              </Link>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
                   </nav>
                 </SheetContent>
               </Sheet>
