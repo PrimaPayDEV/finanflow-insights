@@ -113,6 +113,66 @@ function WebAccessDialog({ merchant }: { merchant: Merchant }) {
   );
 }
 
+function AdvancedPanel({ merchant }: { merchant: Merchant }) {
+  const qc = useQueryClient();
+  const clearData = useMutation({
+    mutationFn: async () => {
+      const { data: ledgers } = await supabase
+        .from('receivables_ledgers')
+        .select('id, transaction_id')
+        .eq('merchant_id', merchant.id);
+        
+      if (!ledgers || ledgers.length === 0) return { count: 0 };
+      
+      await supabase.from('receivables_requests').delete().eq('merchant_id', merchant.id);
+      await supabase.from('receivables_ledgers').delete().eq('merchant_id', merchant.id);
+      
+      const txIds = ledgers.map((l: any) => l.transaction_id).filter(Boolean);
+      if (txIds.length > 0) {
+        const chunks = [];
+        for (let i = 0; i < txIds.length; i += 100) chunks.push(txIds.slice(i, i + 100));
+        for (const c of chunks) {
+          await supabase.from('receivables_transactions').delete().in('id', c);
+        }
+      }
+      return { count: ledgers.length };
+    },
+    onSuccess: (data) => {
+      toast.success(`Foram apagadas ${data.count} movimentações deste EC.`);
+    },
+    onError: (e: Error) => toast.error(translateError(e.message))
+  });
+
+  return (
+    <Card className="border-destructive/20 shadow-none">
+      <CardHeader>
+        <CardTitle className="text-sm text-destructive flex items-center gap-2">
+           <Trash2 className="size-4" /> Zona de Perigo
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="flex items-center justify-between p-4 border rounded-lg bg-destructive/5 border-destructive/20">
+          <div>
+            <h4 className="font-semibold text-sm">Apagar Histórico de Recebíveis</h4>
+            <p className="text-xs text-muted-foreground mt-1">Isso apagará permanentemente todos os relatórios importados e lançamentos deste EC.</p>
+          </div>
+          <Button 
+            variant="destructive" 
+            disabled={clearData.isPending}
+            onClick={() => {
+              if (confirm("Tem certeza? Esta ação é irreversível e apagará TODO o saldo e histórico do estabelecimento.")) {
+                clearData.mutate();
+              }
+            }}
+          >
+            {clearData.isPending ? "Apagando..." : "Apagar Tudo"}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 function MerchantsPage() {
   const qc = useQueryClient();
   const merchants = useQuery(merchantsQuery);
@@ -307,6 +367,9 @@ function MerchantsPage() {
                 <TabsTrigger value="split">
                   <Users className="size-4 mr-2" /> Split Asaas
                 </TabsTrigger>
+                <TabsTrigger value="advanced" className="text-destructive data-[state=active]:text-destructive">
+                  <Settings2 className="size-4 mr-2" /> Avançado
+                </TabsTrigger>
               </TabsList>
               <TabsContent value="plan">
                 <FeePlanForm merchant={active} />
@@ -316,6 +379,9 @@ function MerchantsPage() {
               </TabsContent>
               <TabsContent value="split">
                 <SplitPanel merchant={active} />
+              </TabsContent>
+              <TabsContent value="advanced" className="mt-4">
+                <AdvancedPanel merchant={active} />
               </TabsContent>
             </Tabs>
           </motion.div>
