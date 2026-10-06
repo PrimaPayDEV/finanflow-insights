@@ -136,10 +136,17 @@ function AuthGuard({ children }: { children: ReactNode }) {
       if (!user && !isPublicRoute) {
         navigate({ to: "/login" });
       } else if (user && pathname === "/login") {
-        navigate({ to: "/" });
+        if (role === 'merchant') {
+          navigate({ to: "/recebiveis/dashboard" });
+        } else {
+          navigate({ to: "/" });
+        }
+      } else if (user && role === 'merchant' && !pathname.startsWith("/recebiveis") && !isPublicRoute) {
+        // Protect merchants from seeing admin routes
+        navigate({ to: "/recebiveis/dashboard" });
       }
     }
-  }, [user, isLoading, pathname, navigate]);
+  }, [user, isLoading, pathname, navigate, role]);
 
   if (isLoading) {
     return (

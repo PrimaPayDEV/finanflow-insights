@@ -10,6 +10,7 @@ interface AuthContextType {
   isActive: boolean;
   role: string | null;
   partnerId: string | null;
+  merchantId: string | null;
   appMode: string | null;
   segment: string | null;
   logoUrl: string | null;
@@ -28,6 +29,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isActive, setIsActive] = useState<boolean>(true);
   const [role, setRole] = useState<string | null>(null);
   const [partnerId, setPartnerId] = useState<string | null>(null);
+  const [merchantId, setMerchantId] = useState<string | null>(null);
   const [appMode, setAppMode] = useState<string | null>(null);
   const [segment, setSegment] = useState<string | null>(null);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
@@ -38,7 +40,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const { data } = await supabase
         .from('company_users')
-        .select('company_id, role, partner_id, companies(name, is_active, app_mode, segment, logo_url, primary_color)')
+        .select('company_id, role, partner_id, merchant_id, companies(name, is_active, app_mode, segment, logo_url, primary_color)')
         .eq('user_id', userId)
         .single();
       
@@ -46,6 +48,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setCompanyId(data.company_id);
         setRole(data.role);
         setPartnerId(data.partner_id);
+        setMerchantId((data as any).merchant_id || null);
         // @ts-ignore
         setCompanyName(data.companies?.name ?? null);
         // @ts-ignore
@@ -98,6 +101,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setCompanyName(null);
           setRole(null);
           setPartnerId(null);
+          setMerchantId(null);
           setAppMode(null);
           setSegment(null);
           setLogoUrl(null);
@@ -119,7 +123,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ session, user, companyId, companyName, isActive, role, partnerId, appMode, segment, logoUrl, primaryColor, isLoading, signOut }}>
+    <AuthContext.Provider value={{ session, user, companyId, companyName, isActive, role, partnerId, merchantId, appMode, segment, logoUrl, primaryColor, isLoading, signOut }}>
       {children}
     </AuthContext.Provider>
   );
