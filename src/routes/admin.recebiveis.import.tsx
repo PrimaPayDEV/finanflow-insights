@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { read, utils } from "xlsx";
 import { useState } from "react";
-import { FileUp, CheckCircle2, AlertTriangle, AlertCircle } from "lucide-react";
+import { FileUp, CheckCircle2, AlertTriangle, AlertCircle, UploadCloud, X } from "lucide-react";
 import { toast } from "sonner";
 import { AppLayout } from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
@@ -323,16 +323,56 @@ function AdminRecebiveisImportPage() {
             <CardTitle className="text-base">Upload de Relatório</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid gap-1.5 max-w-sm">
-              <Label>Arquivo Excel (.xlsx, .csv)</Label>
-              <Input
+            <div 
+              className="relative group cursor-pointer" 
+              onClick={() => document.getElementById("file-upload")?.click()}
+            >
+              <div className="flex flex-col items-center justify-center p-10 border-2 border-dashed border-primary/20 rounded-xl bg-primary/5 hover:bg-primary/10 transition-all duration-200">
+                <div className="p-4 bg-background border shadow-sm text-primary rounded-full mb-4 group-hover:scale-110 group-hover:-translate-y-1 transition-all">
+                  <UploadCloud className="w-8 h-8" />
+                </div>
+                <h3 className="text-lg font-semibold mb-1 text-foreground">Clique para fazer upload</h3>
+                <p className="text-sm text-muted-foreground text-center">
+                  Arraste e solte sua planilha aqui, ou clique para procurar.<br/>
+                  <span className="text-xs opacity-75">Suporta .xlsx, .xls, .csv</span>
+                </p>
+              </div>
+              <input
                 id="file-upload"
                 type="file"
                 accept=".xlsx,.xls,.csv"
                 onChange={handleFile}
                 disabled={loading || doImport.isPending}
+                className="hidden"
               />
             </div>
+
+            {file && (
+              <div className="flex items-center justify-between p-3 bg-muted/40 rounded-lg border border-border/50">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-primary/10 text-primary rounded-lg">
+                    <FileUp className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium line-clamp-1">{file.name}</p>
+                    <p className="text-xs text-muted-foreground">{(file.size / 1024).toFixed(2)} KB</p>
+                  </div>
+                </div>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={() => { 
+                    setFile(null); 
+                    setRows([]); 
+                    const input = document.getElementById("file-upload") as HTMLInputElement;
+                    if (input) input.value = "";
+                  }} 
+                  className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+            )}
           </CardContent>
         </Card>
 
