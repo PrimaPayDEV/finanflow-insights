@@ -106,9 +106,46 @@ export const contractsQuery = {
   queryFn: async () => {
     const { data, error } = await supabase
       .from('real_estate_contracts')
-      .select('*, properties:property_id (address, number), owners:owner_id (name), tenants:tenant_id (name)')
+      .select('*, properties:property_id (address, number), owners:owner_id (name, asaas_wallet_id), tenants:tenant_id (name, asaas_customer_id)')
       .order('created_at', { ascending: false });
     if (error) throw new Error(error.message);
     return data;
+  }
+};
+
+export type RealEstateCharge = {
+  id: string;
+  company_id: string;
+  contract_id: string;
+  property_id: string;
+  owner_id: string;
+  tenant_id: string;
+  competence: string;
+  due_date: string;
+  gross_amount: number;
+  admin_fee_amount: number;
+  platform_fee_amount: number;
+  owner_amount: number;
+  expenses_amount: number;
+  status: 'PENDING' | 'OVERDUE' | 'RECEIVED' | 'CANCELLED';
+  asaas_invoice_id?: string;
+  asaas_payment_url?: string;
+  split_id?: string;
+  created_at: string;
+  contracts?: { periodicity: string };
+  properties?: { address: string; number: string };
+  owners?: { name: string };
+  tenants?: { name: string };
+};
+
+export const chargesQuery = {
+  queryKey: ['real_estate_charges'],
+  queryFn: async () => {
+    const { data, error } = await supabase
+      .from('real_estate_charges')
+      .select('*, contracts:contract_id(periodicity), properties:property_id(address, number), owners:owner_id(name), tenants:tenant_id(name)')
+      .order('due_date', { ascending: false });
+    if (error) throw new Error(error.message);
+    return data as RealEstateCharge[];
   }
 };
