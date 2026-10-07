@@ -73,6 +73,8 @@ export function AppLayout({
   const [isCollapsed, setIsCollapsed] = useState(false);
   const { user, companyId, companyName, role, appMode, segment, logoUrl, signOut } = useAuth();
   
+  const isPlatformAdmin = user?.email === "contato@primapay.com.br" || user?.email === "financeiro@primapay.com.br";
+  
   const qc = useQueryClient();
   const navigate = useNavigate();
   const { data: notifications = [] } = useQuery(notificationsQuery(companyId));
@@ -117,13 +119,13 @@ export function AppLayout({
       { to: "/real-estate/requests", label: "Solicitações", icon: Clock, section: "Controle" },
       { to: "/reports", label: "Relatórios", icon: FileBarChart2, section: "Controle" },
     ];
-    if (companyName === "Prima Hub" || companyName === "PrimaPay") {
+    if (isPlatformAdmin) {
       currentNav.push({ to: "/admin/companies", label: "Administração", icon: ShieldCheck, section: "Administração" });
     }
   } else {
     currentNav.push({ to: "/admin/recebiveis/import", label: "Importar Vendas POS", icon: ArrowDownToLine, section: "Gestão de Recebíveis" });
     currentNav.push({ to: "/partners", label: "Parceiros", icon: Users, section: "Administração" });
-    if (companyName === "Prima Hub" || companyName === "PrimaPay") {
+    if (isPlatformAdmin) {
       currentNav.push({ to: "/admin/companies", label: "Administração", icon: ShieldCheck, section: "Administração" });
     }
   }

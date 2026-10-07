@@ -183,6 +183,11 @@ function CompanyDialog({ company }: { company?: any }) {
               <SelectContent>
                 <SelectItem value="OUTROS">Outros / Padrão</SelectItem>
                 <SelectItem value="IMOBILIARIA">Imobiliária</SelectItem>
+                <SelectItem value="PROTECAO_VEICULAR">Proteção Veicular</SelectItem>
+                <SelectItem value="VAREJO">Varejo</SelectItem>
+                <SelectItem value="SERVICOS">Prestação de Serviços</SelectItem>
+                <SelectItem value="SAUDE">Saúde e Bem-estar</SelectItem>
+                <SelectItem value="EDUCACAO">Educação e Cursos</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -231,7 +236,7 @@ function AdminUserDialog({ companyId, companyName }: { companyId: string; compan
       if (!res.ok) throw new Error("Erro ao criar usuário");
     },
     onSuccess: () => {
-      toast.success("Usuário administrador criado!");
+      toast.success("Usuário criado!");
       setOpen(false);
     },
     onError: (e: Error) => toast.error(translateError(e.message)),
@@ -241,7 +246,7 @@ function AdminUserDialog({ companyId, companyName }: { companyId: string; compan
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="secondary" size="sm">
-          <UserPlus className="size-4 mr-1" /> Usuário Admin
+          <UserPlus className="size-4 mr-1" /> Novo Usuário
         </Button>
       </DialogTrigger>
       <DialogContent>
