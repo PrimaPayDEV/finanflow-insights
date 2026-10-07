@@ -1,0 +1,2 @@
+ALTER TABLE public.company_users DROP CONSTRAINT IF EXISTS company_users_merchant_id_fkey;
+ALTER TABLE public.company_users ADD CONSTRAINT company_users_merchant_id_fkey FOREIGN KEY (merchant_id) REFERENCES public.merchants(id) ON DELETE SET NULL;
