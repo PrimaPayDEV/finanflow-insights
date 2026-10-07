@@ -94,7 +94,7 @@ function OwnerDialog({ owner, onClose }: { owner: RealEstateOwner | null, onClos
   const save = useMutation({
     mutationFn: async (fd: FormData) => {
       const data = {
-        company_id: companyId,
+        company_id: companyId!,
         name: fd.get('name') as string,
         document: fd.get('document') as string,
         email: fd.get('email') as string,

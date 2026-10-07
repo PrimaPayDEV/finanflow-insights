@@ -94,7 +94,7 @@ function TenantDialog({ tenant, onClose }: { tenant: RealEstateTenant | null, on
   const save = useMutation({
     mutationFn: async (fd: FormData) => {
       const data = {
-        company_id: companyId,
+        company_id: companyId!,
         name: fd.get('name') as string,
         document: fd.get('document') as string,
         email: fd.get('email') as string,
