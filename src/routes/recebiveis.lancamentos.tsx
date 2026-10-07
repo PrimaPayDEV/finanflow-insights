@@ -37,7 +37,7 @@ function RecebiveisLancamentos() {
       const { data, error } = await supabase
         .from("receivables_ledgers")
         .select("type, amount, status")
-        .eq("merchant_id", merchantId);
+        .eq("merchant_id", merchantId!);
       if (error) throw error;
       return data || [];
     },
@@ -50,7 +50,7 @@ function RecebiveisLancamentos() {
       const { data, error } = await supabase
         .from("receivables_requests")
         .select("*")
-        .eq("merchant_id", merchantId)
+        .eq("merchant_id", merchantId!)
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data || [];
@@ -90,8 +90,8 @@ function RecebiveisLancamentos() {
       if (type === "BOLETO" && !barcode) throw new Error("Código de barras obrigatório");
 
       const { error } = await supabase.from("receivables_requests").insert({
-        company_id: companyId,
-        merchant_id: merchantId,
+        company_id: companyId!,
+        merchant_id: merchantId!,
         type,
         amount: reqAmount,
         status: "REQUESTED",
