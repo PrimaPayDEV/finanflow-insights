@@ -35,7 +35,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
-import { getCompanies, upsertCompany, createCompanyAdmin, deleteCompany, toggleCompanyStatus } from "@/lib/admin.functions";
+import { getCompanies, upsertCompany, createCompanyAdmin, deleteCompany, toggleCompanyStatus, grantPlatformAdminAccess } from "@/lib/admin.functions";
 import { translateError } from "@/lib/translateError";
 
 export const Route = createFileRoute("/admin/companies")({
@@ -300,6 +300,20 @@ function CompanyActions({ company }: { company: any }) {
 
   return (
     <>
+      <Button variant="outline" size="sm" className="flex-1" onClick={async () => {
+        try {
+          const res = await grantPlatformAdminAccess({ data: { companyId: company.id } });
+          if (res.ok) {
+            toast.success("Acesso concedido! Você já pode selecionar esta empresa no menu no topo da tela.");
+            setTimeout(() => window.location.reload(), 1500);
+          }
+        } catch(e: any) {
+          toast.error(e.message);
+        }
+      }}>
+        Acessar Ambiente
+      </Button>
+
       <AlertDialog>
         <AlertDialogTrigger asChild>
           <Button variant={company.is_active ? "secondary" : "default"} size="sm" className="flex-1">

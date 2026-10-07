@@ -143,3 +143,32 @@ export const deleteCompany = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+export const grantPlatformAdminAccess = createServerFn({ method: "POST" })
+  .validator(z.object({ companyId: z.string().uuid() }))
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    // Get current user from context
+    const { data: authData, error: authError } = await supabaseAdmin.auth.getUser();
+    const user = authData?.user;
+    if (!user) throw new Error("Não autenticado");
+
+    // Check if platform admin
+    const email = user.email || "";
+    if (email !== "contato@primapay.com.br" && email !== "financeiro@primapay.com.br") {
+      throw new Error("Ação permitida apenas para administradores da plataforma PrimaPay");
+    }
+
+    // Insert into company_users if not exists
+    const { error: insertError } = await supabaseAdmin
+      .from("company_users")
+      .upsert({
+        user_id: user.id,
+        company_id: data.companyId,
+        role: "admin"
+      }, { onConflict: "company_id, user_id" });
+
+    if (insertError) throw new Error(insertError.message);
+    return { ok: true };
+  });
