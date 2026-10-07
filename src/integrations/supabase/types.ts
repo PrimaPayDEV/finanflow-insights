@@ -618,6 +618,378 @@ export type Database = {
           },
         ]
       }
+      real_estate_charges: {
+        Row: {
+          admin_fee_amount: number
+          asaas_invoice_id: string | null
+          asaas_payment_url: string | null
+          company_id: string
+          competence: string
+          contract_id: string
+          created_at: string
+          due_date: string
+          expenses_amount: number | null
+          gross_amount: number
+          id: string
+          metadata: Json | null
+          owner_amount: number
+          owner_id: string
+          platform_fee_amount: number
+          property_id: string
+          split_id: string | null
+          status: string | null
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          admin_fee_amount: number
+          asaas_invoice_id?: string | null
+          asaas_payment_url?: string | null
+          company_id: string
+          competence: string
+          contract_id: string
+          created_at?: string
+          due_date: string
+          expenses_amount?: number | null
+          gross_amount: number
+          id?: string
+          metadata?: Json | null
+          owner_amount: number
+          owner_id: string
+          platform_fee_amount: number
+          property_id: string
+          split_id?: string | null
+          status?: string | null
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          admin_fee_amount?: number
+          asaas_invoice_id?: string | null
+          asaas_payment_url?: string | null
+          company_id?: string
+          competence?: string
+          contract_id?: string
+          created_at?: string
+          due_date?: string
+          expenses_amount?: number | null
+          gross_amount?: number
+          id?: string
+          metadata?: Json | null
+          owner_amount?: number
+          owner_id?: string
+          platform_fee_amount?: number
+          property_id?: string
+          split_id?: string | null
+          status?: string | null
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "real_estate_charges_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "real_estate_charges_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "real_estate_contracts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "real_estate_charges_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "real_estate_owners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "real_estate_charges_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "real_estate_properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "real_estate_charges_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "real_estate_tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      real_estate_contracts: {
+        Row: {
+          admin_fee_type: string | null
+          admin_fee_value: number
+          company_id: string
+          created_at: string
+          due_day: number
+          end_date: string
+          financial_rules: Json | null
+          guarantees: Json | null
+          id: string
+          owner_id: string
+          periodicity: string | null
+          property_id: string
+          rent_amount: number
+          start_date: string
+          status: string | null
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          admin_fee_type?: string | null
+          admin_fee_value: number
+          company_id: string
+          created_at?: string
+          due_day: number
+          end_date: string
+          financial_rules?: Json | null
+          guarantees?: Json | null
+          id?: string
+          owner_id: string
+          periodicity?: string | null
+          property_id: string
+          rent_amount: number
+          start_date: string
+          status?: string | null
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          admin_fee_type?: string | null
+          admin_fee_value?: number
+          company_id?: string
+          created_at?: string
+          due_day?: number
+          end_date?: string
+          financial_rules?: Json | null
+          guarantees?: Json | null
+          id?: string
+          owner_id?: string
+          periodicity?: string | null
+          property_id?: string
+          rent_amount?: number
+          start_date?: string
+          status?: string | null
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "real_estate_contracts_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "real_estate_contracts_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "real_estate_owners"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "real_estate_contracts_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "real_estate_properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "real_estate_contracts_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "real_estate_tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      real_estate_owners: {
+        Row: {
+          asaas_customer_id: string | null
+          asaas_wallet_id: string | null
+          bank_details: Json | null
+          company_id: string
+          created_at: string
+          document: string
+          documents: Json | null
+          email: string | null
+          id: string
+          name: string
+          phone: string | null
+          status: string | null
+          updated_at: string
+        }
+        Insert: {
+          asaas_customer_id?: string | null
+          asaas_wallet_id?: string | null
+          bank_details?: Json | null
+          company_id: string
+          created_at?: string
+          document: string
+          documents?: Json | null
+          email?: string | null
+          id?: string
+          name: string
+          phone?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          asaas_customer_id?: string | null
+          asaas_wallet_id?: string | null
+          bank_details?: Json | null
+          company_id?: string
+          created_at?: string
+          document?: string
+          documents?: Json | null
+          email?: string | null
+          id?: string
+          name?: string
+          phone?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "real_estate_owners_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      real_estate_properties: {
+        Row: {
+          additional_info: string | null
+          address: string
+          city: string
+          company_id: string
+          complement: string | null
+          created_at: string
+          id: string
+          internal_id: string | null
+          neighborhood: string
+          number: string
+          owner_id: string | null
+          state: string
+          status: string | null
+          updated_at: string
+          zip_code: string
+        }
+        Insert: {
+          additional_info?: string | null
+          address: string
+          city: string
+          company_id: string
+          complement?: string | null
+          created_at?: string
+          id?: string
+          internal_id?: string | null
+          neighborhood: string
+          number: string
+          owner_id?: string | null
+          state: string
+          status?: string | null
+          updated_at?: string
+          zip_code: string
+        }
+        Update: {
+          additional_info?: string | null
+          address?: string
+          city?: string
+          company_id?: string
+          complement?: string | null
+          created_at?: string
+          id?: string
+          internal_id?: string | null
+          neighborhood?: string
+          number?: string
+          owner_id?: string | null
+          state?: string
+          status?: string | null
+          updated_at?: string
+          zip_code?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "real_estate_properties_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "real_estate_properties_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "real_estate_owners"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      real_estate_tenants: {
+        Row: {
+          address: string | null
+          asaas_customer_id: string | null
+          company_id: string
+          created_at: string
+          document: string
+          documents: Json | null
+          email: string | null
+          id: string
+          name: string
+          phone: string | null
+          status: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          asaas_customer_id?: string | null
+          company_id: string
+          created_at?: string
+          document: string
+          documents?: Json | null
+          email?: string | null
+          id?: string
+          name: string
+          phone?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          asaas_customer_id?: string | null
+          company_id?: string
+          created_at?: string
+          document?: string
+          documents?: Json | null
+          email?: string | null
+          id?: string
+          name?: string
+          phone?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "real_estate_tenants_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       receivables_expenses: {
         Row: {
           amount: number
