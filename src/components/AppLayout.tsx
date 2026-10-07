@@ -23,6 +23,12 @@ import {
   ShieldCheck,
   Users,
   ArrowDownToLine,
+  Home,
+  UserCheck,
+  FastForward,
+  PiggyBank,
+  CreditCard,
+  Clock,
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
@@ -65,7 +71,7 @@ export function AppLayout({
 }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const { user, companyId, companyName, role, appMode, logoUrl, signOut } = useAuth();
+  const { user, companyId, companyName, role, appMode, segment, logoUrl, signOut } = useAuth();
   
   const qc = useQueryClient();
   const navigate = useNavigate();
@@ -96,6 +102,24 @@ export function AppLayout({
     ];
   } else if (role === "partner") {
     currentNav = [{ to: "/reports", label: "Relatórios", icon: FileBarChart2 }];
+  } else if (segment === "IMOBILIARIA") {
+    currentNav = [
+      { to: "/real-estate/dashboard", label: "Dashboard", icon: LayoutDashboard },
+      { to: "/real-estate/properties", label: "Imóveis", icon: Home, section: "Cadastros" },
+      { to: "/real-estate/owners", label: "Proprietários", icon: UserCheck, section: "Cadastros" },
+      { to: "/real-estate/tenants", label: "Inquilinos", icon: Users, section: "Cadastros" },
+      { to: "/real-estate/contracts", label: "Contratos", icon: FileText, section: "Gestão" },
+      { to: "/real-estate/charges", label: "Cobranças", icon: Receipt, section: "Gestão" },
+      { to: "/real-estate/receipts", label: "Recebimentos", icon: CircleDollarSign, section: "Gestão" },
+      { to: "/real-estate/advance", label: "Antecipação de Aluguel", icon: FastForward, section: "Financeiro" },
+      { to: "/real-estate/resources", label: "Recursos para Imobiliária", icon: PiggyBank, section: "Financeiro" },
+      { to: "/real-estate/installments", label: "Parcelamento de Aluguel", icon: CreditCard, section: "Financeiro" },
+      { to: "/real-estate/requests", label: "Solicitações", icon: Clock, section: "Controle" },
+      { to: "/reports", label: "Relatórios", icon: FileBarChart2, section: "Controle" },
+    ];
+    if (companyName === "Prima Hub" || companyName === "PrimaPay") {
+      currentNav.push({ to: "/admin/companies", label: "Administração", icon: ShieldCheck, section: "Administração" });
+    }
   } else {
     currentNav.push({ to: "/admin/recebiveis/import", label: "Importar Vendas POS", icon: ArrowDownToLine, section: "Gestão de Recebíveis" });
     currentNav.push({ to: "/partners", label: "Parceiros", icon: Users, section: "Administração" });

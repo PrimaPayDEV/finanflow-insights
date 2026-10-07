@@ -172,7 +172,19 @@ function CompanyDialog({ company }: { company?: any }) {
           </div>
           <div className="space-y-2">
             <Label>Segmento (Ramo de Atividade)</Label>
-            <Input name="segment" defaultValue={company?.segment} placeholder="Ex: Proteção Veicular, Imobiliária, etc" />
+            <input type="hidden" name="segment" value={company?.segment || "OUTROS"} id={`segment-${company?.id || 'new'}`} />
+            <Select defaultValue={company?.segment || "OUTROS"} onValueChange={(v) => {
+              const el = document.getElementById(`segment-${company?.id || 'new'}`) as HTMLInputElement;
+              if (el) el.value = v;
+            }}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="OUTROS">Outros / Padrão</SelectItem>
+                <SelectItem value="IMOBILIARIA">Imobiliária</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <div className="space-y-2">
             <Label>Finalidade / Uso da Plataforma</Label>
