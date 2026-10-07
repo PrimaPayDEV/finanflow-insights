@@ -14,7 +14,7 @@ DECLARE
     t TEXT;
     tables TEXT[] := ARRAY[
         'merchants', 'transactions', 'closures', 'expenses_adjustments', 
-        'fee_plans', 'statements_imports', 'merchant_splits', 'notifications', 
+        'fee_plans', 'statements_imports', 'split_rules', 'notifications', 
         'asaas_settings', 'companies', 'company_users', 'pos_terminals',
         'real_estate_properties', 'real_estate_owners', 'real_estate_tenants',
         'real_estate_contracts', 'real_estate_charges'
