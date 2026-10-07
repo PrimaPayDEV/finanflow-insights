@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Receipt, Calendar, Plus, Link as LinkIcon, DollarSign, Clock, Download } from "lucide-react";
-import { formatCurrency, formatCpfCnpj } from "@/lib/format";
+import { BRL, formatCpfCnpj } from "@/lib/format";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -132,7 +132,7 @@ function ChargesPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {formatCurrency(list.filter(c => c.status === "PENDING").reduce((a, b) => a + Number(b.gross_amount), 0))}
+              {BRL(list.filter(c => c.status === "PENDING").reduce((a, b) => a + Number(b.gross_amount), 0))}
             </div>
           </CardContent>
         </Card>
@@ -143,7 +143,7 @@ function ChargesPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-destructive">
-              {formatCurrency(list.filter(c => c.status === "OVERDUE").reduce((a, b) => a + Number(b.gross_amount), 0))}
+              {BRL(list.filter(c => c.status === "OVERDUE").reduce((a, b) => a + Number(b.gross_amount), 0))}
             </div>
           </CardContent>
         </Card>
@@ -154,7 +154,7 @@ function ChargesPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-primary">
-              {formatCurrency(list.filter(c => c.status === "RECEIVED").reduce((a, b) => a + Number(b.admin_fee_amount), 0))}
+              {BRL(list.filter(c => c.status === "RECEIVED").reduce((a, b) => a + Number(b.admin_fee_amount), 0))}
             </div>
           </CardContent>
         </Card>
@@ -165,7 +165,7 @@ function ChargesPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {formatCurrency(list.filter(c => c.status === "RECEIVED" && !c.split_id).reduce((a, b) => a + Number(b.owner_amount), 0))}
+              {BRL(list.filter(c => c.status === "RECEIVED" && !c.split_id).reduce((a, b) => a + Number(b.owner_amount), 0))}
             </div>
           </CardContent>
         </Card>
@@ -204,9 +204,9 @@ function ChargesPage() {
                     <td className="px-4 py-3 font-medium">{c.tenants?.name}</td>
                     <td className="px-4 py-3">{c.properties?.address}, {c.properties?.number}</td>
                     <td className="px-4 py-3">{new Date(c.due_date).toLocaleDateString('pt-BR')}</td>
-                    <td className="px-4 py-3 font-bold">{formatCurrency(c.gross_amount)}</td>
-                    <td className="px-4 py-3 text-green-600">{formatCurrency(c.admin_fee_amount)}</td>
-                    <td className="px-4 py-3">{formatCurrency(c.owner_amount)}</td>
+                    <td className="px-4 py-3 font-bold">{BRL(c.gross_amount)}</td>
+                    <td className="px-4 py-3 text-green-600">{BRL(c.admin_fee_amount)}</td>
+                    <td className="px-4 py-3">{BRL(c.owner_amount)}</td>
                     <td className="px-4 py-3">
                       <Badge variant={c.status === "PENDING" ? "secondary" : c.status === "RECEIVED" ? "default" : "destructive"}>
                         {c.status}
