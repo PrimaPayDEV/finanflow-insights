@@ -309,6 +309,7 @@ function MerchantsPage() {
                       <p className="truncate text-sm font-bold">{m.name}</p>
                       <p className="truncate text-xs text-muted-foreground">
                         {m.document_cnpj || "sem CNPJ"}
+                        {m.companies?.name && ` • ${m.companies.name}`}
                       </p>
                     </div>
                   </div>

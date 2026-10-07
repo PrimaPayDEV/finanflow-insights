@@ -19,7 +19,7 @@ function unwrap<T>({ data, error }: { data: T | null; error: { message: string }
 export const merchantsQuery = {
   queryKey: ["merchants"],
   queryFn: async () =>
-    unwrap(await supabase.from("merchants").select("*").order("name")) as Merchant[],
+    unwrap(await supabase.from("merchants").select("*, companies(name)").order("name")) as any[],
 };
 
 export const terminalsQuery = {
