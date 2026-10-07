@@ -22,6 +22,10 @@ import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as AdminCompaniesRouteImport } from './routes/admin.companies'
+import { Route as RealEstateContractsRouteImport } from './routes/real-estate/contracts'
+import { Route as RealEstateOwnersRouteImport } from './routes/real-estate/owners'
+import { Route as RealEstatePropertiesRouteImport } from './routes/real-estate/properties'
+import { Route as RealEstateTenantsRouteImport } from './routes/real-estate/tenants'
 import { Route as RecebiveisDashboardRouteImport } from './routes/recebiveis.dashboard'
 import { Route as RecebiveisExtratoRouteImport } from './routes/recebiveis.extrato'
 import { Route as RecebiveisLancamentosRouteImport } from './routes/recebiveis.lancamentos'
@@ -99,6 +103,26 @@ const AdminCompaniesRoute = AdminCompaniesRouteImport.update({
   path: '/admin/companies',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RealEstateContractsRoute = RealEstateContractsRouteImport.update({
+  id: '/real-estate/contracts',
+  path: '/real-estate/contracts',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RealEstateOwnersRoute = RealEstateOwnersRouteImport.update({
+  id: '/real-estate/owners',
+  path: '/real-estate/owners',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RealEstatePropertiesRoute = RealEstatePropertiesRouteImport.update({
+  id: '/real-estate/properties',
+  path: '/real-estate/properties',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RealEstateTenantsRoute = RealEstateTenantsRouteImport.update({
+  id: '/real-estate/tenants',
+  path: '/real-estate/tenants',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RecebiveisDashboardRoute = RecebiveisDashboardRouteImport.update({
   id: '/recebiveis/dashboard',
   path: '/recebiveis/dashboard',
@@ -169,6 +193,10 @@ export interface FileRoutesByFullPath {
   '/reports': typeof ReportsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin/companies': typeof AdminCompaniesRoute
+  '/real-estate/contracts': typeof RealEstateContractsRoute
+  '/real-estate/owners': typeof RealEstateOwnersRoute
+  '/real-estate/properties': typeof RealEstatePropertiesRoute
+  '/real-estate/tenants': typeof RealEstateTenantsRoute
   '/recebiveis/dashboard': typeof RecebiveisDashboardRoute
   '/recebiveis/extrato': typeof RecebiveisExtratoRoute
   '/recebiveis/lancamentos': typeof RecebiveisLancamentosRoute
@@ -195,6 +223,10 @@ export interface FileRoutesByTo {
   '/reports': typeof ReportsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin/companies': typeof AdminCompaniesRoute
+  '/real-estate/contracts': typeof RealEstateContractsRoute
+  '/real-estate/owners': typeof RealEstateOwnersRoute
+  '/real-estate/properties': typeof RealEstatePropertiesRoute
+  '/real-estate/tenants': typeof RealEstateTenantsRoute
   '/recebiveis/dashboard': typeof RecebiveisDashboardRoute
   '/recebiveis/extrato': typeof RecebiveisExtratoRoute
   '/recebiveis/lancamentos': typeof RecebiveisLancamentosRoute
@@ -222,6 +254,10 @@ export interface FileRoutesById {
   '/reports': typeof ReportsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin/companies': typeof AdminCompaniesRoute
+  '/real-estate/contracts': typeof RealEstateContractsRoute
+  '/real-estate/owners': typeof RealEstateOwnersRoute
+  '/real-estate/properties': typeof RealEstatePropertiesRoute
+  '/real-estate/tenants': typeof RealEstateTenantsRoute
   '/recebiveis/dashboard': typeof RecebiveisDashboardRoute
   '/recebiveis/extrato': typeof RecebiveisExtratoRoute
   '/recebiveis/lancamentos': typeof RecebiveisLancamentosRoute
@@ -250,6 +286,10 @@ export interface FileRouteTypes {
     | '/reports'
     | '/sitemap.xml'
     | '/admin/companies'
+    | '/real-estate/contracts'
+    | '/real-estate/owners'
+    | '/real-estate/properties'
+    | '/real-estate/tenants'
     | '/recebiveis/dashboard'
     | '/recebiveis/extrato'
     | '/recebiveis/lancamentos'
@@ -276,6 +316,10 @@ export interface FileRouteTypes {
     | '/reports'
     | '/sitemap.xml'
     | '/admin/companies'
+    | '/real-estate/contracts'
+    | '/real-estate/owners'
+    | '/real-estate/properties'
+    | '/real-estate/tenants'
     | '/recebiveis/dashboard'
     | '/recebiveis/extrato'
     | '/recebiveis/lancamentos'
@@ -302,6 +346,10 @@ export interface FileRouteTypes {
     | '/reports'
     | '/sitemap.xml'
     | '/admin/companies'
+    | '/real-estate/contracts'
+    | '/real-estate/owners'
+    | '/real-estate/properties'
+    | '/real-estate/tenants'
     | '/recebiveis/dashboard'
     | '/recebiveis/extrato'
     | '/recebiveis/lancamentos'
@@ -329,6 +377,10 @@ export interface RootRouteChildren {
   ReportsRoute: typeof ReportsRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   AdminCompaniesRoute: typeof AdminCompaniesRoute
+  RealEstateContractsRoute: typeof RealEstateContractsRoute
+  RealEstateOwnersRoute: typeof RealEstateOwnersRoute
+  RealEstatePropertiesRoute: typeof RealEstatePropertiesRoute
+  RealEstateTenantsRoute: typeof RealEstateTenantsRoute
   RecebiveisDashboardRoute: typeof RecebiveisDashboardRoute
   RecebiveisExtratoRoute: typeof RecebiveisExtratoRoute
   RecebiveisLancamentosRoute: typeof RecebiveisLancamentosRoute
@@ -435,6 +487,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminCompaniesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/real-estate/contracts': {
+      id: '/real-estate/contracts'
+      path: '/real-estate/contracts'
+      fullPath: '/real-estate/contracts'
+      preLoaderRoute: typeof RealEstateContractsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/real-estate/owners': {
+      id: '/real-estate/owners'
+      path: '/real-estate/owners'
+      fullPath: '/real-estate/owners'
+      preLoaderRoute: typeof RealEstateOwnersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/real-estate/properties': {
+      id: '/real-estate/properties'
+      path: '/real-estate/properties'
+      fullPath: '/real-estate/properties'
+      preLoaderRoute: typeof RealEstatePropertiesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/real-estate/tenants': {
+      id: '/real-estate/tenants'
+      path: '/real-estate/tenants'
+      fullPath: '/real-estate/tenants'
+      preLoaderRoute: typeof RealEstateTenantsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/recebiveis/dashboard': {
       id: '/recebiveis/dashboard'
       path: '/recebiveis/dashboard'
@@ -529,6 +609,10 @@ const rootRouteChildren: RootRouteChildren = {
   ReportsRoute: ReportsRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   AdminCompaniesRoute: AdminCompaniesRoute,
+  RealEstateContractsRoute: RealEstateContractsRoute,
+  RealEstateOwnersRoute: RealEstateOwnersRoute,
+  RealEstatePropertiesRoute: RealEstatePropertiesRoute,
+  RealEstateTenantsRoute: RealEstateTenantsRoute,
   RecebiveisDashboardRoute: RecebiveisDashboardRoute,
   RecebiveisExtratoRoute: RecebiveisExtratoRoute,
   RecebiveisLancamentosRoute: RecebiveisLancamentosRoute,
