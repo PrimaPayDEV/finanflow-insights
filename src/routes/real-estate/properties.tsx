@@ -108,7 +108,7 @@ function PropertyDialog({ property, onClose }: { property: RealEstateProperty | 
   const save = useMutation({
     mutationFn: async (fd: FormData) => {
       const data = {
-        company_id: companyId,
+        company_id: companyId!,
         address: fd.get('address') as string,
         number: fd.get('number') as string,
         complement: fd.get('complement') as string,

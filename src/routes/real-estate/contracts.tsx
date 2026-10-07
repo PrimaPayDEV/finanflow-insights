@@ -115,7 +115,7 @@ function ContractDialog({ contract, onClose }: { contract: RealEstateContract | 
   const save = useMutation({
     mutationFn: async (fd: FormData) => {
       const data = {
-        company_id: companyId,
+        company_id: companyId!,
         property_id: fd.get('property_id') as string,
         owner_id: fd.get('owner_id') as string,
         tenant_id: fd.get('tenant_id') as string,
