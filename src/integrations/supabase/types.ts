@@ -1576,7 +1576,9 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_platform_admin: { Args: never; Returns: boolean }
       is_staff: { Args: { _user_id: string }; Returns: boolean }
+      user_company_ids: { Args: never; Returns: string[] }
     }
     Enums: {
       app_role: "admin" | "staff"
