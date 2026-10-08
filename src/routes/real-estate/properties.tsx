@@ -15,6 +15,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { handleCepBlurUncontrolled } from '@/lib/cep';
+import { formatCep } from '@/lib/format';
 
 export const Route = createFileRoute('/real-estate/properties')({
   component: PropertiesPage,
@@ -202,6 +203,7 @@ function PropertyDialog({ property, onClose }: { property: RealEstateProperty | 
                  name="zip_code" 
                  defaultValue={property?.zip_code} 
                  required 
+                 onChange={e => { e.target.value = formatCep(e.target.value); }}
                  onBlur={e => handleCepBlurUncontrolled(e, e.currentTarget.form!)}
                />
              </div>

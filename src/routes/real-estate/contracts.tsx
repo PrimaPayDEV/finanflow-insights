@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
+import { formatCurrencyInput } from '@/lib/format';
 import { BRL } from '@/lib/format';
 
 export const Route = createFileRoute('/real-estate/contracts')({
@@ -194,7 +195,7 @@ function ContractDialog({ contract, onClose }: { contract: RealEstateContract | 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 border-t pt-4">
              <div className="grid gap-2">
                 <Label>Valor do Aluguel</Label>
-                <Input name="rent_amount" defaultValue={contract?.rent_amount} placeholder="R$ 0,00" required />
+                <Input name="rent_amount" defaultValue={contract?.rent_amount} placeholder="R$ 0,00" required onChange={e => { e.target.value = formatCurrencyInput(e.target.value); }} />
              </div>
              <div className="grid gap-2">
                 <Label>Dia de Vencimento</Label>

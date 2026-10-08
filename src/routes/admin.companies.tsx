@@ -36,6 +36,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
 import { getCompanies, upsertCompany, createCompanyAdmin, deleteCompany, toggleCompanyStatus, grantPlatformAdminAccess } from "@/lib/admin.functions";
+import { formatCpfCnpj } from "@/lib/format";
 import { translateError } from "@/lib/translateError";
 
 export const Route = createFileRoute("/admin/companies")({
@@ -168,7 +169,7 @@ function CompanyDialog({ company }: { company?: any }) {
           </div>
           <div className="space-y-2">
             <Label>CNPJ</Label>
-            <Input name="document_cnpj" defaultValue={company?.document_cnpj} />
+            <Input name="document_cnpj" defaultValue={company?.document_cnpj} onChange={e => { e.target.value = formatCpfCnpj(e.target.value); }} />
           </div>
           <div className="space-y-2">
             <Label>Segmento (Ramo de Atividade)</Label>

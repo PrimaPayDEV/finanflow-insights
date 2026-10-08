@@ -110,3 +110,8 @@ export function formatPhone(value: string) {
     .replace(/(\d{5})(\d)/, "$1-$2")
     .slice(0, 15);
 }
+
+export function formatCep(value: string) {
+  const v = value.replace(/\D/g, "");
+  return v.replace(/^(\d{5})(\d)/, "$1-$2").slice(0, 9);
+}

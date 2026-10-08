@@ -13,6 +13,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { formatCpfCnpj, formatPhone } from '@/lib/format';
 import { useAuth } from '@/contexts/AuthContext';
 
 export const Route = createFileRoute('/real-estate/owners')({
@@ -134,7 +135,7 @@ function OwnerDialog({ owner, onClose }: { owner: RealEstateOwner | null, onClos
           </div>
           <div className="grid gap-2">
             <Label>CPF / CNPJ</Label>
-            <Input name="document" defaultValue={owner?.document} required />
+            <Input name="document" defaultValue={owner?.document} required onChange={e => { e.target.value = formatCpfCnpj(e.target.value); }} />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="grid gap-2">
@@ -143,7 +144,7 @@ function OwnerDialog({ owner, onClose }: { owner: RealEstateOwner | null, onClos
             </div>
             <div className="grid gap-2">
               <Label>Telefone</Label>
-              <Input name="phone" defaultValue={owner?.phone} />
+              <Input name="phone" defaultValue={owner?.phone} onChange={e => { e.target.value = formatPhone(e.target.value); }} />
             </div>
           </div>
           <div className="grid gap-2">
