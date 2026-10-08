@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { propertiesQuery, ownersQuery, type RealEstateProperty } from '@/lib/real-estate';
 import { Button } from '@/components/ui/button';
-import { Plus, Pencil } from 'lucide-react';
+import { Plus, Pencil, Trash2 } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -24,6 +24,19 @@ export const Route = createFileRoute('/real-estate/properties')({
 function PropertiesPage() {
   const { data: properties = [], isLoading } = useQuery(propertiesQuery);
   const [editing, setEditing] = useState<RealEstateProperty | null>(null);
+  const qc = useQueryClient();
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('real_estate_properties').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('Imóvel excluído com sucesso');
+      qc.invalidateQueries({ queryKey: ['real_estate_properties'] });
+    },
+    onError: () => toast.error('Erro ao excluir imóvel. Ele pode estar vinculado a um contrato.')
+  });
 
   return (
     <AppLayout title="Imóveis">
@@ -77,6 +90,13 @@ function PropertiesPage() {
                     </TableCell>
                     <TableCell className="text-right">
                       <Button variant="ghost" size="sm" onClick={() => setEditing(p)}><Pencil className="size-4" /></Button>
+                      <Button variant="ghost" size="sm" onClick={() => {
+                        if (confirm('Tem certeza que deseja excluir este imóvel?')) {
+                          deleteMutation.mutate(p.id);
+                        }
+                      }}>
+                        <Trash2 className="size-4 text-destructive" />
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}

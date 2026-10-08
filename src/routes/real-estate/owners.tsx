@@ -23,6 +23,19 @@ export const Route = createFileRoute('/real-estate/owners')({
 function OwnersPage() {
   const { data: owners = [], isLoading } = useQuery(ownersQuery);
   const [editing, setEditing] = useState<RealEstateOwner | null>(null);
+  const qc = useQueryClient();
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('real_estate_owners').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('Proprietário excluído com sucesso');
+      qc.invalidateQueries({ queryKey: ['real_estate_owners'] });
+    },
+    onError: () => toast.error('Erro ao excluir proprietário. Ele pode estar vinculado a um contrato ou imóvel.')
+  });
 
   return (
     <AppLayout title="Proprietários">
@@ -63,6 +76,13 @@ function OwnersPage() {
                     </TableCell>
                     <TableCell className="text-right">
                       <Button variant="ghost" size="sm" onClick={() => setEditing(o)}><Pencil className="size-4" /></Button>
+                      <Button variant="ghost" size="sm" onClick={() => {
+                        if (confirm('Tem certeza que deseja excluir este proprietário?')) {
+                          deleteMutation.mutate(o.id);
+                        }
+                      }}>
+                        <Trash2 className="size-4 text-destructive" />
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}

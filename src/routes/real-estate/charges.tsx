@@ -9,12 +9,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Receipt, Calendar, Plus, Link as LinkIcon, DollarSign, Clock, Download } from "lucide-react";
+import { Receipt, Calendar, Plus, Link as LinkIcon, DollarSign, Clock, Download, Trash2 } from "lucide-react";
 import { BRL, formatCpfCnpj } from "@/lib/format";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/real-estate/charges")({
   component: ChargesPage,
@@ -117,6 +118,20 @@ function NewChargeDialog() {
 function ChargesPage() {
   const charges = useQuery(chargesQuery);
   const list = charges.data || [];
+  const qc = useQueryClient();
+  const { companyId } = useAuth();
+  
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('real_estate_charges').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('Cobrança excluída com sucesso');
+      qc.invalidateQueries({ queryKey: ['real_estate_charges'] });
+    },
+    onError: () => toast.error('Erro ao excluir cobrança.')
+  });
 
   return (
     <AppLayout
@@ -213,13 +228,22 @@ function ChargesPage() {
                       </Badge>
                     </td>
                     <td className="px-4 py-3 text-right">
-                      {c.asaas_payment_url && (
-                        <Button variant="ghost" size="sm" asChild>
-                          <a href={c.asaas_payment_url} target="_blank" rel="noreferrer">
-                            <LinkIcon className="size-4 mr-1" /> Fatura
-                          </a>
+                      <div className="flex justify-end gap-2">
+                        {c.asaas_payment_url && (
+                          <Button variant="ghost" size="sm" asChild>
+                            <a href={c.asaas_payment_url} target="_blank" rel="noreferrer">
+                              <LinkIcon className="size-4 mr-1" /> Fatura
+                            </a>
+                          </Button>
+                        )}
+                        <Button variant="ghost" size="sm" onClick={() => {
+                          if (confirm('Tem certeza que deseja excluir esta cobrança? Lembre-se de cancelar no Asaas caso já tenha sido emitida.')) {
+                            deleteMutation.mutate(c.id);
+                          }
+                        }}>
+                          <Trash2 className="size-4 text-destructive" />
                         </Button>
-                      )}
+                      </div>
                     </td>
                   </tr>
                 ))}

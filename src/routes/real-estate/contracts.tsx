@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { contractsQuery, propertiesQuery, ownersQuery, tenantsQuery, type RealEstateContract } from '@/lib/real-estate';
 import { Button } from '@/components/ui/button';
-import { Plus, Pencil } from 'lucide-react';
+import { Plus, Pencil, Trash2 } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -24,6 +24,19 @@ export const Route = createFileRoute('/real-estate/contracts')({
 function ContractsPage() {
   const { data: contracts = [], isLoading } = useQuery(contractsQuery);
   const [editing, setEditing] = useState<RealEstateContract | null>(null);
+  const qc = useQueryClient();
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('real_estate_contracts').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success('Contrato excluído com sucesso');
+      qc.invalidateQueries({ queryKey: ['real_estate_contracts'] });
+    },
+    onError: () => toast.error('Erro ao excluir contrato. Ele pode ter cobranças vinculadas.')
+  });
 
   return (
     <AppLayout title="Contratos de Locação">
@@ -80,6 +93,13 @@ function ContractsPage() {
                     </TableCell>
                     <TableCell className="text-right">
                       <Button variant="ghost" size="sm" onClick={() => setEditing(c)}><Pencil className="size-4" /></Button>
+                      <Button variant="ghost" size="sm" onClick={() => {
+                        if (confirm('Tem certeza que deseja excluir este contrato?')) {
+                          deleteMutation.mutate(c.id);
+                        }
+                      }}>
+                        <Trash2 className="size-4 text-destructive" />
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}
