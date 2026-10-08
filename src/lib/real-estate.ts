@@ -132,6 +132,7 @@ export type RealEstateCharge = {
   asaas_payment_url?: string;
   split_id?: string;
   created_at: string;
+  updated_at?: string;
   contracts?: { periodicity: string };
   properties?: { address: string; number: string; internal_id?: string };
   owners?: { name: string };
