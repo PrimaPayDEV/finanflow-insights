@@ -152,8 +152,8 @@ function PropertyDialog({ property, onClose }: { property: RealEstateProperty | 
           
           <div className="grid grid-cols-2 gap-4">
              <div className="grid gap-2">
-                <Label>Identificação Interna (Opcional)</Label>
-                <Input name="internal_id" defaultValue={property?.internal_id} placeholder="Ex: AP-101" />
+                <Label>Nome do Imóvel</Label>
+                <Input name="internal_id" defaultValue={property?.internal_id} placeholder="Ex: Casa Praia, AP-101" required />
              </div>
              <div className="grid gap-2">
                 <Label>Status</Label>

@@ -106,7 +106,7 @@ export const contractsQuery = {
   queryFn: async () => {
     const { data, error } = await supabase
       .from('real_estate_contracts')
-      .select('*, properties:property_id (address, number), owners:owner_id (name, asaas_wallet_id), tenants:tenant_id (name, asaas_customer_id)')
+      .select('*, properties:property_id (address, number, internal_id), owners:owner_id (name, asaas_wallet_id), tenants:tenant_id (name, asaas_customer_id)')
       .order('created_at', { ascending: false });
     if (error) throw new Error(error.message);
     return data;
@@ -133,7 +133,7 @@ export type RealEstateCharge = {
   split_id?: string;
   created_at: string;
   contracts?: { periodicity: string };
-  properties?: { address: string; number: string };
+  properties?: { address: string; number: string; internal_id?: string };
   owners?: { name: string };
   tenants?: { name: string };
 };
@@ -143,7 +143,7 @@ export const chargesQuery = {
   queryFn: async () => {
     const { data, error } = await supabase
       .from('real_estate_charges')
-      .select('*, contracts:contract_id(periodicity), properties:property_id(address, number), owners:owner_id(name), tenants:tenant_id(name)')
+      .select('*, contracts:contract_id(periodicity), properties:property_id(address, number, internal_id), owners:owner_id(name), tenants:tenant_id(name)')
       .order('due_date', { ascending: false });
     if (error) throw new Error(error.message);
     return data as RealEstateCharge[];
