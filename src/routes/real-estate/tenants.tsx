@@ -100,7 +100,6 @@ function TenantDialog({ tenant, onClose }: { tenant: RealEstateTenant | null, on
         document: fd.get('document') as string,
         email: fd.get('email') as string,
         phone: fd.get('phone') as string,
-        address: fd.get('address') as string,
         status: fd.get('status') as any,
       };
 
@@ -148,10 +147,7 @@ function TenantDialog({ tenant, onClose }: { tenant: RealEstateTenant | null, on
               <Input name="phone" defaultValue={tenant?.phone} onChange={e => { e.target.value = formatPhone(e.target.value); }} />
             </div>
           </div>
-          <div className="grid gap-2">
-            <Label>Endereço Completo</Label>
-            <Input name="address" defaultValue={tenant?.address} />
-          </div>
+
           <div className="grid gap-2">
             <Label>Status</Label>
             <Select name="status" defaultValue={tenant?.status || 'ACTIVE'}>
