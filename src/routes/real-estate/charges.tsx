@@ -80,7 +80,7 @@ function NewChargeDialog() {
               <SelectContent>
                 {activeContracts.map(c => (
                   <SelectItem key={c.id} value={c.id}>
-                    {c.properties?.address}, {c.properties?.number} - {c.tenants?.name}
+                    {c.properties?.internal_id || `${c.properties?.address}, ${c.properties?.number}`} - {c.tenants?.name}
                   </SelectItem>
                 ))}
                 {activeContracts.length === 0 && <SelectItem value="none" disabled>Nenhum contrato ativo encontrado</SelectItem>}
@@ -202,7 +202,7 @@ function ChargesPage() {
                 {list.map((c) => (
                   <tr key={c.id} className="hover:bg-muted/30">
                     <td className="px-4 py-3 font-medium">{c.tenants?.name}</td>
-                    <td className="px-4 py-3">{c.properties?.address}, {c.properties?.number}</td>
+                    <td className="px-4 py-3">{c.properties?.internal_id || `${c.properties?.address}, ${c.properties?.number}`}</td>
                     <td className="px-4 py-3">{new Date(c.due_date).toLocaleDateString('pt-BR')}</td>
                     <td className="px-4 py-3 font-bold">{BRL(c.gross_amount)}</td>
                     <td className="px-4 py-3 text-green-600">{BRL(c.admin_fee_amount)}</td>

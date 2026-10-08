@@ -53,7 +53,7 @@ function ContractsPage() {
                 ) : contracts.map((c: any) => (
                   <TableRow key={c.id}>
                     <TableCell className="font-medium">
-                      {c.properties?.address}, {c.properties?.number}
+                      {c.properties?.internal_id || `${c.properties?.address}, ${c.properties?.number}`}
                     </TableCell>
                     <TableCell>
                       <div className="text-xs">Locador: {c.owners?.name}</div>
