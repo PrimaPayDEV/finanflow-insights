@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, Navigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState, useMemo } from "react";
 import { PiggyBank, TrendingUp, Wallet, FileCheck2, CalendarIcon } from "lucide-react";
@@ -150,7 +150,12 @@ function BillingDashboard({ companyId }: { companyId: string }) {
 }
 
 function Dashboard() {
-  const { appMode, companyId } = useAuth();
+  const { appMode, companyId, segment } = useAuth();
+  
+  if (segment === "IMOBILIARIA") {
+    // For Real Estate, the main view is the charges/financial panel
+    return <Navigate to="/real-estate/charges" />;
+  }
   
   if (appMode === "billing" && companyId) {
     return <BillingDashboard companyId={companyId} />;

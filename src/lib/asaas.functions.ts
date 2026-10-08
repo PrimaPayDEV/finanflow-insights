@@ -53,11 +53,11 @@ export const checkAsaasConfigured = createServerFn({ method: "GET" })
       .eq("id", companyId)
       .single();
     
-    // For legacy/sandbox we still check process.env as fallback
-    const key = company?.asaas_api_key || process.env.ASAAS_API_KEY || process.env.ASAAS_API_TESTE;
+    const isPrimaPay = company?.name === "Prima Hub" || company?.name === "PrimaPay";
+    const key = company?.asaas_api_key || (isPrimaPay ? (process.env.ASAAS_API_KEY || process.env.ASAAS_API_TESTE) : null);
     return {
       configured: Boolean(key),
-      webhookTokenConfigured: Boolean(company?.asaas_webhook_token || process.env.ASAAS_WEBHOOK_TOKEN),
+      webhookTokenConfigured: Boolean(company?.asaas_webhook_token || (isPrimaPay ? process.env.ASAAS_WEBHOOK_TOKEN : null)),
     };
   });
 
@@ -75,7 +75,7 @@ export const createAsaasCharge = createServerFn({ method: "POST" })
     // 1. Fetch Company for API Key
     const { data: company } = await supabaseAdmin
       .from("companies")
-      .select("asaas_api_key")
+      .select("asaas_api_key, name")
       .eq("id", data.companyId)
       .single();
 
@@ -87,8 +87,9 @@ export const createAsaasCharge = createServerFn({ method: "POST" })
       .maybeSingle();
 
     const sandbox = settings?.sandbox ?? false;
-    // Use company key, fallback to env for testing
-    const apiKey = company?.asaas_api_key || (sandbox ? process.env.ASAAS_API_TESTE : process.env.ASAAS_API_KEY);
+    const isPrimaPay = company?.name === "Prima Hub" || company?.name === "PrimaPay";
+    // Use company key, fallback to env ONLY for platform
+    const apiKey = company?.asaas_api_key || (isPrimaPay ? (sandbox ? process.env.ASAAS_API_TESTE : process.env.ASAAS_API_KEY) : null);
 
     if (!apiKey) {
       return { ok: false as const, error: `Chave da API do Asaas não configurada para a sua empresa.` };
@@ -214,7 +215,7 @@ export const createAsaasSubaccount = createServerFn({ method: "POST" })
     // 1. Fetch Company for API Key
     const { data: company } = await supabaseAdmin
       .from("companies")
-      .select("asaas_api_key")
+      .select("asaas_api_key, name")
       .eq("id", data.companyId)
       .single();
 
@@ -226,7 +227,8 @@ export const createAsaasSubaccount = createServerFn({ method: "POST" })
       .maybeSingle();
 
     const sandbox = settings?.sandbox ?? false;
-    const apiKey = company?.asaas_api_key || (sandbox ? process.env.ASAAS_API_TESTE : process.env.ASAAS_API_KEY);
+    const isPrimaPay = company?.name === "Prima Hub" || company?.name === "PrimaPay";
+    const apiKey = company?.asaas_api_key || (isPrimaPay ? (sandbox ? process.env.ASAAS_API_TESTE : process.env.ASAAS_API_KEY) : null);
 
     if (!apiKey) {
       return { ok: false as const, error: `Chave da API do Asaas não configurada para a sua empresa.` };
@@ -286,7 +288,7 @@ export const getAsaasDashboardMetrics = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: company } = await supabaseAdmin
       .from("companies")
-      .select("asaas_api_key")
+      .select("asaas_api_key, name")
       .eq("id", data.companyId)
       .single();
 
@@ -298,7 +300,8 @@ export const getAsaasDashboardMetrics = createServerFn({ method: "POST" })
       .maybeSingle();
 
     const sandbox = settings?.sandbox ?? false;
-    const apiKey = company?.asaas_api_key || (sandbox ? process.env.ASAAS_API_TESTE : process.env.ASAAS_API_KEY);
+    const isPrimaPay = company?.name === "Prima Hub" || company?.name === "PrimaPay";
+    const apiKey = company?.asaas_api_key || (isPrimaPay ? (sandbox ? process.env.ASAAS_API_TESTE : process.env.ASAAS_API_KEY) : null);
 
     if (!apiKey) {
       return { ok: false as const, error: `Chave da API não configurada.` };
