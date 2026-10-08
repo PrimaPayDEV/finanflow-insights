@@ -36,6 +36,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { translateError } from "@/lib/translateError";
 import { useAuth } from "@/contexts/AuthContext";
 import { createMerchantAccess } from "@/lib/merchant.functions";
+import { fetchCepData } from "@/lib/cep";
 
 export const Route = createFileRoute("/merchants")({
   head: () => ({
@@ -837,7 +838,21 @@ function CreateAsaasSubaccountDialog({ onCreated }: { onCreated: (walletId: stri
           <div className="grid sm:grid-cols-2 gap-3">
             <div className="grid gap-1.5">
               <Label>CEP</Label>
-              <Input value={form.postalCode} onChange={e => setForm({...form, postalCode: e.target.value})} maxLength={9} />
+              <Input 
+                value={form.postalCode} 
+                onChange={e => setForm({...form, postalCode: e.target.value})} 
+                onBlur={async () => {
+                  const data = await fetchCepData(form.postalCode);
+                  if (data) {
+                    setForm(prev => ({
+                      ...prev,
+                      address: data.logradouro || prev.address,
+                      province: data.bairro || prev.province
+                    }));
+                  }
+                }}
+                maxLength={9} 
+              />
             </div>
             <div className="grid gap-1.5">
               <Label>Endereço (Rua, Av)</Label>

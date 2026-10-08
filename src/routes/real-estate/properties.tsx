@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
+import { handleCepBlurUncontrolled } from '@/lib/cep';
 
 export const Route = createFileRoute('/real-estate/properties')({
   component: PropertiesPage,
@@ -197,7 +198,12 @@ function PropertyDialog({ property, onClose }: { property: RealEstateProperty | 
              </div>
              <div className="col-span-2 grid gap-2">
                <Label>CEP</Label>
-               <Input name="zip_code" defaultValue={property?.zip_code} required />
+               <Input 
+                 name="zip_code" 
+                 defaultValue={property?.zip_code} 
+                 required 
+                 onBlur={e => handleCepBlurUncontrolled(e, e.currentTarget.form!)}
+               />
              </div>
              <div className="col-span-3 grid gap-2">
                <Label>Cidade</Label>
