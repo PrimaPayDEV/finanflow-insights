@@ -115,11 +115,19 @@ function ContractDialog({ contract, onClose }: { contract: RealEstateContract | 
 
   const save = useMutation({
     mutationFn: async (fd: FormData) => {
+      const property_id = fd.get('property_id') as string;
+      const owner_id = fd.get('owner_id') as string;
+      const tenant_id = fd.get('tenant_id') as string;
+
+      if (!property_id) throw new Error("Selecione um imóvel.");
+      if (!owner_id) throw new Error("Selecione o proprietário.");
+      if (!tenant_id) throw new Error("Selecione o inquilino.");
+
       const data = {
         company_id: companyId!,
-        property_id: fd.get('property_id') as string,
-        owner_id: fd.get('owner_id') as string,
-        tenant_id: fd.get('tenant_id') as string,
+        property_id,
+        owner_id,
+        tenant_id,
         rent_amount: Number(String(fd.get('rent_amount')).replace(/[^0-9,-]/g, "").replace(",", ".")),
         due_day: Number(fd.get('due_day')),
         start_date: fd.get('start_date') as string,
