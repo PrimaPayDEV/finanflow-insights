@@ -26,6 +26,7 @@ import { Route as RealEstateAdvanceRouteImport } from './routes/real-estate/adva
 import { Route as RealEstateChargesRouteImport } from './routes/real-estate/charges'
 import { Route as RealEstateContractsRouteImport } from './routes/real-estate/contracts'
 import { Route as RealEstateDashboardRouteImport } from './routes/real-estate/dashboard'
+import { Route as RealEstateInstallmentsRouteImport } from './routes/real-estate/installments'
 import { Route as RealEstateOwnersRouteImport } from './routes/real-estate/owners'
 import { Route as RealEstatePropertiesRouteImport } from './routes/real-estate/properties'
 import { Route as RealEstateReceiptsRouteImport } from './routes/real-estate/receipts'
@@ -128,6 +129,11 @@ const RealEstateDashboardRoute = RealEstateDashboardRouteImport.update({
   path: '/real-estate/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RealEstateInstallmentsRoute = RealEstateInstallmentsRouteImport.update({
+  id: '/real-estate/installments',
+  path: '/real-estate/installments',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RealEstateOwnersRoute = RealEstateOwnersRouteImport.update({
   id: '/real-estate/owners',
   path: '/real-estate/owners',
@@ -227,6 +233,7 @@ export interface FileRoutesByFullPath {
   '/real-estate/charges': typeof RealEstateChargesRoute
   '/real-estate/contracts': typeof RealEstateContractsRoute
   '/real-estate/dashboard': typeof RealEstateDashboardRoute
+  '/real-estate/installments': typeof RealEstateInstallmentsRoute
   '/real-estate/owners': typeof RealEstateOwnersRoute
   '/real-estate/properties': typeof RealEstatePropertiesRoute
   '/real-estate/receipts': typeof RealEstateReceiptsRoute
@@ -262,6 +269,7 @@ export interface FileRoutesByTo {
   '/real-estate/charges': typeof RealEstateChargesRoute
   '/real-estate/contracts': typeof RealEstateContractsRoute
   '/real-estate/dashboard': typeof RealEstateDashboardRoute
+  '/real-estate/installments': typeof RealEstateInstallmentsRoute
   '/real-estate/owners': typeof RealEstateOwnersRoute
   '/real-estate/properties': typeof RealEstatePropertiesRoute
   '/real-estate/receipts': typeof RealEstateReceiptsRoute
@@ -298,6 +306,7 @@ export interface FileRoutesById {
   '/real-estate/charges': typeof RealEstateChargesRoute
   '/real-estate/contracts': typeof RealEstateContractsRoute
   '/real-estate/dashboard': typeof RealEstateDashboardRoute
+  '/real-estate/installments': typeof RealEstateInstallmentsRoute
   '/real-estate/owners': typeof RealEstateOwnersRoute
   '/real-estate/properties': typeof RealEstatePropertiesRoute
   '/real-estate/receipts': typeof RealEstateReceiptsRoute
@@ -335,6 +344,7 @@ export interface FileRouteTypes {
     | '/real-estate/charges'
     | '/real-estate/contracts'
     | '/real-estate/dashboard'
+    | '/real-estate/installments'
     | '/real-estate/owners'
     | '/real-estate/properties'
     | '/real-estate/receipts'
@@ -370,6 +380,7 @@ export interface FileRouteTypes {
     | '/real-estate/charges'
     | '/real-estate/contracts'
     | '/real-estate/dashboard'
+    | '/real-estate/installments'
     | '/real-estate/owners'
     | '/real-estate/properties'
     | '/real-estate/receipts'
@@ -405,6 +416,7 @@ export interface FileRouteTypes {
     | '/real-estate/charges'
     | '/real-estate/contracts'
     | '/real-estate/dashboard'
+    | '/real-estate/installments'
     | '/real-estate/owners'
     | '/real-estate/properties'
     | '/real-estate/receipts'
@@ -441,6 +453,7 @@ export interface RootRouteChildren {
   RealEstateChargesRoute: typeof RealEstateChargesRoute
   RealEstateContractsRoute: typeof RealEstateContractsRoute
   RealEstateDashboardRoute: typeof RealEstateDashboardRoute
+  RealEstateInstallmentsRoute: typeof RealEstateInstallmentsRoute
   RealEstateOwnersRoute: typeof RealEstateOwnersRoute
   RealEstatePropertiesRoute: typeof RealEstatePropertiesRoute
   RealEstateReceiptsRoute: typeof RealEstateReceiptsRoute
@@ -580,6 +593,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RealEstateDashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/real-estate/installments': {
+      id: '/real-estate/installments'
+      path: '/real-estate/installments'
+      fullPath: '/real-estate/installments'
+      preLoaderRoute: typeof RealEstateInstallmentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/real-estate/owners': {
       id: '/real-estate/owners'
       path: '/real-estate/owners'
@@ -713,6 +733,7 @@ const rootRouteChildren: RootRouteChildren = {
   RealEstateChargesRoute: RealEstateChargesRoute,
   RealEstateContractsRoute: RealEstateContractsRoute,
   RealEstateDashboardRoute: RealEstateDashboardRoute,
+  RealEstateInstallmentsRoute: RealEstateInstallmentsRoute,
   RealEstateOwnersRoute: RealEstateOwnersRoute,
   RealEstatePropertiesRoute: RealEstatePropertiesRoute,
   RealEstateReceiptsRoute: RealEstateReceiptsRoute,
