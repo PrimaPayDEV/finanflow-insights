@@ -98,7 +98,7 @@ function ContractsPage() {
                           deleteMutation.mutate(c.id);
                         }
                       }}>
-                        <Trash2 className="size-4 text-destructive" />
+                        <Trash2 className="size-4" />
                       </Button>
                     </TableCell>
                   </TableRow>

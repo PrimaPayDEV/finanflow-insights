@@ -81,7 +81,7 @@ function OwnersPage() {
                           deleteMutation.mutate(o.id);
                         }
                       }}>
-                        <Trash2 className="size-4 text-destructive" />
+                        <Trash2 className="size-4" />
                       </Button>
                     </TableCell>
                   </TableRow>

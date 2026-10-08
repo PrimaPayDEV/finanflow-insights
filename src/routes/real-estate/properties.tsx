@@ -95,7 +95,7 @@ function PropertiesPage() {
                           deleteMutation.mutate(p.id);
                         }
                       }}>
-                        <Trash2 className="size-4 text-destructive" />
+                        <Trash2 className="size-4" />
                       </Button>
                     </TableCell>
                   </TableRow>
