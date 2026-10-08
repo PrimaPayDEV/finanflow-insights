@@ -22,6 +22,7 @@ import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as AdminCompaniesRouteImport } from './routes/admin.companies'
+import { Route as RealEstateAdvanceRouteImport } from './routes/real-estate/advance'
 import { Route as RealEstateChargesRouteImport } from './routes/real-estate/charges'
 import { Route as RealEstateContractsRouteImport } from './routes/real-estate/contracts'
 import { Route as RealEstateDashboardRouteImport } from './routes/real-estate/dashboard'
@@ -104,6 +105,11 @@ const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
 const AdminCompaniesRoute = AdminCompaniesRouteImport.update({
   id: '/admin/companies',
   path: '/admin/companies',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RealEstateAdvanceRoute = RealEstateAdvanceRouteImport.update({
+  id: '/real-estate/advance',
+  path: '/real-estate/advance',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RealEstateChargesRoute = RealEstateChargesRouteImport.update({
@@ -211,6 +217,7 @@ export interface FileRoutesByFullPath {
   '/reports': typeof ReportsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin/companies': typeof AdminCompaniesRoute
+  '/real-estate/advance': typeof RealEstateAdvanceRoute
   '/real-estate/charges': typeof RealEstateChargesRoute
   '/real-estate/contracts': typeof RealEstateContractsRoute
   '/real-estate/dashboard': typeof RealEstateDashboardRoute
@@ -244,6 +251,7 @@ export interface FileRoutesByTo {
   '/reports': typeof ReportsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin/companies': typeof AdminCompaniesRoute
+  '/real-estate/advance': typeof RealEstateAdvanceRoute
   '/real-estate/charges': typeof RealEstateChargesRoute
   '/real-estate/contracts': typeof RealEstateContractsRoute
   '/real-estate/dashboard': typeof RealEstateDashboardRoute
@@ -278,6 +286,7 @@ export interface FileRoutesById {
   '/reports': typeof ReportsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/admin/companies': typeof AdminCompaniesRoute
+  '/real-estate/advance': typeof RealEstateAdvanceRoute
   '/real-estate/charges': typeof RealEstateChargesRoute
   '/real-estate/contracts': typeof RealEstateContractsRoute
   '/real-estate/dashboard': typeof RealEstateDashboardRoute
@@ -313,6 +322,7 @@ export interface FileRouteTypes {
     | '/reports'
     | '/sitemap.xml'
     | '/admin/companies'
+    | '/real-estate/advance'
     | '/real-estate/charges'
     | '/real-estate/contracts'
     | '/real-estate/dashboard'
@@ -346,6 +356,7 @@ export interface FileRouteTypes {
     | '/reports'
     | '/sitemap.xml'
     | '/admin/companies'
+    | '/real-estate/advance'
     | '/real-estate/charges'
     | '/real-estate/contracts'
     | '/real-estate/dashboard'
@@ -379,6 +390,7 @@ export interface FileRouteTypes {
     | '/reports'
     | '/sitemap.xml'
     | '/admin/companies'
+    | '/real-estate/advance'
     | '/real-estate/charges'
     | '/real-estate/contracts'
     | '/real-estate/dashboard'
@@ -413,6 +425,7 @@ export interface RootRouteChildren {
   ReportsRoute: typeof ReportsRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   AdminCompaniesRoute: typeof AdminCompaniesRoute
+  RealEstateAdvanceRoute: typeof RealEstateAdvanceRoute
   RealEstateChargesRoute: typeof RealEstateChargesRoute
   RealEstateContractsRoute: typeof RealEstateContractsRoute
   RealEstateDashboardRoute: typeof RealEstateDashboardRoute
@@ -524,6 +537,13 @@ declare module '@tanstack/react-router' {
       path: '/admin/companies'
       fullPath: '/admin/companies'
       preLoaderRoute: typeof AdminCompaniesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/real-estate/advance': {
+      id: '/real-estate/advance'
+      path: '/real-estate/advance'
+      fullPath: '/real-estate/advance'
+      preLoaderRoute: typeof RealEstateAdvanceRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/real-estate/charges': {
@@ -669,6 +689,7 @@ const rootRouteChildren: RootRouteChildren = {
   ReportsRoute: ReportsRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   AdminCompaniesRoute: AdminCompaniesRoute,
+  RealEstateAdvanceRoute: RealEstateAdvanceRoute,
   RealEstateChargesRoute: RealEstateChargesRoute,
   RealEstateContractsRoute: RealEstateContractsRoute,
   RealEstateDashboardRoute: RealEstateDashboardRoute,
