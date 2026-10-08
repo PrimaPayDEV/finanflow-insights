@@ -40,25 +40,43 @@ export const getBillingReports = createServerFn({ method: "POST" })
     const paymentsData = await payRes.json();
     const payments = paymentsData.data || [];
 
-    // 2. Fetch all members and partners for this company
+    // 2. Fetch all members and tenants for this company
     const { data: members } = await supabaseAdmin
       .from("members")
       .select("asaas_customer_id, name, partner_id, partners(id, name, split_percent)")
       .eq("company_id", data.companyId);
+
+    const { data: tenants } = await supabaseAdmin
+      .from("real_estate_tenants")
+      .select("asaas_customer_id, name")
+      .eq("company_id", data.companyId);
+
+    const hasOwnKey = !!company?.asaas_api_key;
 
     // Build reports
     const invoiceReports = [];
     const partnerReportsMap = new Map();
 
     for (const p of payments) {
-      // Find member
+      // Find member or tenant
       const member = members?.find(m => m.asaas_customer_id === p.customer);
+      const tenant = tenants?.find(t => t.asaas_customer_id === p.customer);
+      
+      const customerName = member?.name || tenant?.name;
+
+      // IMPORTANT: Data isolation
+      // If the company is using the platform's shared API key, we MUST NOT show
+      // payments that don't belong to their own members/tenants.
+      if (!hasOwnKey && !customerName) {
+        continue;
+      }
+
       const partner = member?.partners as any;
 
       // Invoice report
       invoiceReports.push({
         id: p.id,
-        customerName: member?.name || "Desconhecido",
+        customerName: customerName || "Desconhecido",
         description: p.description,
         dueDate: p.dueDate,
         value: p.value,
