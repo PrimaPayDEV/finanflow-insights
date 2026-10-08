@@ -30,6 +30,7 @@ import { Route as RealEstateInstallmentsRouteImport } from './routes/real-estate
 import { Route as RealEstateOwnersRouteImport } from './routes/real-estate/owners'
 import { Route as RealEstatePropertiesRouteImport } from './routes/real-estate/properties'
 import { Route as RealEstateReceiptsRouteImport } from './routes/real-estate/receipts'
+import { Route as RealEstateRequestsRouteImport } from './routes/real-estate/requests'
 import { Route as RealEstateResourcesRouteImport } from './routes/real-estate/resources'
 import { Route as RealEstateTenantsRouteImport } from './routes/real-estate/tenants'
 import { Route as RecebiveisDashboardRouteImport } from './routes/recebiveis.dashboard'
@@ -149,6 +150,11 @@ const RealEstateReceiptsRoute = RealEstateReceiptsRouteImport.update({
   path: '/real-estate/receipts',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RealEstateRequestsRoute = RealEstateRequestsRouteImport.update({
+  id: '/real-estate/requests',
+  path: '/real-estate/requests',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RealEstateResourcesRoute = RealEstateResourcesRouteImport.update({
   id: '/real-estate/resources',
   path: '/real-estate/resources',
@@ -237,6 +243,7 @@ export interface FileRoutesByFullPath {
   '/real-estate/owners': typeof RealEstateOwnersRoute
   '/real-estate/properties': typeof RealEstatePropertiesRoute
   '/real-estate/receipts': typeof RealEstateReceiptsRoute
+  '/real-estate/requests': typeof RealEstateRequestsRoute
   '/real-estate/resources': typeof RealEstateResourcesRoute
   '/real-estate/tenants': typeof RealEstateTenantsRoute
   '/recebiveis/dashboard': typeof RecebiveisDashboardRoute
@@ -273,6 +280,7 @@ export interface FileRoutesByTo {
   '/real-estate/owners': typeof RealEstateOwnersRoute
   '/real-estate/properties': typeof RealEstatePropertiesRoute
   '/real-estate/receipts': typeof RealEstateReceiptsRoute
+  '/real-estate/requests': typeof RealEstateRequestsRoute
   '/real-estate/resources': typeof RealEstateResourcesRoute
   '/real-estate/tenants': typeof RealEstateTenantsRoute
   '/recebiveis/dashboard': typeof RecebiveisDashboardRoute
@@ -310,6 +318,7 @@ export interface FileRoutesById {
   '/real-estate/owners': typeof RealEstateOwnersRoute
   '/real-estate/properties': typeof RealEstatePropertiesRoute
   '/real-estate/receipts': typeof RealEstateReceiptsRoute
+  '/real-estate/requests': typeof RealEstateRequestsRoute
   '/real-estate/resources': typeof RealEstateResourcesRoute
   '/real-estate/tenants': typeof RealEstateTenantsRoute
   '/recebiveis/dashboard': typeof RecebiveisDashboardRoute
@@ -348,6 +357,7 @@ export interface FileRouteTypes {
     | '/real-estate/owners'
     | '/real-estate/properties'
     | '/real-estate/receipts'
+    | '/real-estate/requests'
     | '/real-estate/resources'
     | '/real-estate/tenants'
     | '/recebiveis/dashboard'
@@ -384,6 +394,7 @@ export interface FileRouteTypes {
     | '/real-estate/owners'
     | '/real-estate/properties'
     | '/real-estate/receipts'
+    | '/real-estate/requests'
     | '/real-estate/resources'
     | '/real-estate/tenants'
     | '/recebiveis/dashboard'
@@ -420,6 +431,7 @@ export interface FileRouteTypes {
     | '/real-estate/owners'
     | '/real-estate/properties'
     | '/real-estate/receipts'
+    | '/real-estate/requests'
     | '/real-estate/resources'
     | '/real-estate/tenants'
     | '/recebiveis/dashboard'
@@ -457,6 +469,7 @@ export interface RootRouteChildren {
   RealEstateOwnersRoute: typeof RealEstateOwnersRoute
   RealEstatePropertiesRoute: typeof RealEstatePropertiesRoute
   RealEstateReceiptsRoute: typeof RealEstateReceiptsRoute
+  RealEstateRequestsRoute: typeof RealEstateRequestsRoute
   RealEstateResourcesRoute: typeof RealEstateResourcesRoute
   RealEstateTenantsRoute: typeof RealEstateTenantsRoute
   RecebiveisDashboardRoute: typeof RecebiveisDashboardRoute
@@ -621,6 +634,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RealEstateReceiptsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/real-estate/requests': {
+      id: '/real-estate/requests'
+      path: '/real-estate/requests'
+      fullPath: '/real-estate/requests'
+      preLoaderRoute: typeof RealEstateRequestsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/real-estate/resources': {
       id: '/real-estate/resources'
       path: '/real-estate/resources'
@@ -737,6 +757,7 @@ const rootRouteChildren: RootRouteChildren = {
   RealEstateOwnersRoute: RealEstateOwnersRoute,
   RealEstatePropertiesRoute: RealEstatePropertiesRoute,
   RealEstateReceiptsRoute: RealEstateReceiptsRoute,
+  RealEstateRequestsRoute: RealEstateRequestsRoute,
   RealEstateResourcesRoute: RealEstateResourcesRoute,
   RealEstateTenantsRoute: RealEstateTenantsRoute,
   RecebiveisDashboardRoute: RecebiveisDashboardRoute,
