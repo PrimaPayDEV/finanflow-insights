@@ -171,7 +171,9 @@ function ContractDialog({ contract, onClose }: { contract: RealEstateContract | 
                 <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                 <SelectContent>
                   {properties.map(p => (
-                    <SelectItem key={p.id} value={p.id}>{p.address}, {p.number}</SelectItem>
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.internal_id || `${p.address}, ${p.number}`}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
