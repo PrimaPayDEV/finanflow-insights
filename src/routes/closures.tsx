@@ -45,7 +45,7 @@ import {
   transactionsQuery,
   importsQuery,
 } from "@/lib/db";
-import { calculateClosure } from "@/lib/closure";
+import { calculateClosure, getModalityRate, getTraditionalRate } from "@/lib/closure";
 import { createAsaasCharge } from "@/lib/asaas.functions";
 import {
   BRL,
@@ -55,7 +55,9 @@ import {
   currentMonth,
   monthLabel,
   monthOptions,
+  modalityLabel,
 } from "@/lib/format";
+import { format } from "date-fns";
 
 import { translateError } from "@/lib/translateError";
 import type { Database } from "@/integrations/supabase/types";
@@ -519,8 +521,66 @@ function RouteComponent() {
             </div>
           </motion.section>
 
+          {/* Seção 4: Relatório Detalhado de Vendas */}
+          <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="print:break-before-page print:mt-12 mt-8">
+            <h2 className="text-xl font-bold tracking-tight mb-4 flex items-center gap-2 print:text-primary">
+              <Banknote className="h-5 w-5 text-muted-foreground print:text-primary" />
+              Relatório Detalhado de Vendas
+            </h2>
+            <Card className="print:shadow-none print:border print:border-border/50 border-none shadow-card overflow-hidden">
+              <CardContent className="p-0">
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader className="bg-muted/30 print:bg-transparent">
+                      <TableRow className="hover:bg-muted/30">
+                        <TableHead className="font-semibold text-muted-foreground">Data</TableHead>
+                        <TableHead className="font-semibold text-muted-foreground">Modalidade</TableHead>
+                        <TableHead className="text-right font-semibold text-muted-foreground">Vlr. Bruto</TableHead>
+                        <TableHead className="text-right font-semibold text-muted-foreground">Vlr. Descontado</TableHead>
+                        <TableHead className="text-right font-semibold text-muted-foreground">% Descontado</TableHead>
+                        <TableHead className="text-right font-semibold text-muted-foreground">% Taxa Op.</TableHead>
+                        <TableHead className="text-right font-semibold text-muted-foreground">Vlr. Taxa Op.</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {txs.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
+                            Nenhuma venda neste período.
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        txs.map((tx) => {
+                          const gross = Number(tx.gross_amount);
+                          const tradRate = getTraditionalRate(tx, plan);
+                          const discountedValue = gross * (tradRate / 100);
+                          
+                          const negociadaRate = getModalityRate(tx, plan);
+                          const opRate = negociadaRate - tradRate;
+                          const opValue = gross * (opRate / 100);
+
+                          return (
+                            <TableRow key={tx.id} className="hover:bg-muted/30 transition-colors">
+                              <TableCell className="font-medium whitespace-nowrap">{format(new Date(tx.transaction_date), "dd/MM/yyyy")}</TableCell>
+                              <TableCell className="capitalize">{modalityLabel(tx.modality as any)}</TableCell>
+                              <TableCell className="text-right font-medium">{BRL(gross)}</TableCell>
+                              <TableCell className="text-right text-destructive font-medium">{BRL(discountedValue)}</TableCell>
+                              <TableCell className="text-right text-muted-foreground">{tradRate.toFixed(2)}%</TableCell>
+                              <TableCell className="text-right font-medium">{opRate.toFixed(2)}%</TableCell>
+                              <TableCell className="text-right font-bold text-primary">{BRL(opValue)}</TableCell>
+                            </TableRow>
+                          );
+                        })
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.section>
+
           {/* Ações / Cobrança */}
-          <section className="print:hidden pb-10">
+          <section className="print:hidden pb-10 mt-8">
             <Card className="border-none shadow-card">
               <CardHeader className="pb-4">
                 <CardTitle className="text-lg flex items-center justify-between">
