@@ -306,7 +306,7 @@ function RouteComponent() {
             className="mt-6 space-y-8 print:mt-0 print:space-y-0"
           >
           
-          <div className="print:min-h-[95vh] print:flex print:flex-col">
+          <div className="print:flex print:flex-col">
           {/* Cabeçalho de Impressão */}
           <div className="hidden print:block mb-8 border-b-2 border-primary pb-6">
             <div className="flex justify-between items-center mb-6">
@@ -341,7 +341,7 @@ function RouteComponent() {
           </div>
           
           {/* Seção 1: Extrato Básico de Movimentações */}
-          <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="print:flex-1 print:flex print:flex-col print:justify-center print:pb-20 mt-8 print:mt-0">
+          <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="mt-8 print:mt-6 print:mb-8">
             <h2 className="text-xl font-bold tracking-tight mb-4 flex items-center gap-2">
               <TrendingUp className="h-5 w-5 text-primary" />
               Extrato Básico de Movimentações
@@ -401,7 +401,7 @@ function RouteComponent() {
           </div>
 
           {/* Seção 2: Lançamentos (Cobranças e Deduções) */}
-          <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="print:break-before-page print:pt-8">
+          <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="print:mt-8 mt-8">
             <h2 className="text-xl font-bold tracking-tight mb-4 flex items-center gap-2 print:text-primary">
               <Receipt className="h-5 w-5 text-muted-foreground print:text-primary" />
               Lançamentos (Cobranças e Deduções)
@@ -522,7 +522,7 @@ function RouteComponent() {
           </motion.section>
 
           {/* Seção 4: Relatório Detalhado de Vendas */}
-          <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="print:break-before-page print:mt-12 mt-8">
+          <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="print:mt-12 mt-8">
             <h2 className="text-xl font-bold tracking-tight mb-4 flex items-center gap-2 print:text-primary">
               <Banknote className="h-5 w-5 text-muted-foreground print:text-primary" />
               Relatório Detalhado de Vendas
