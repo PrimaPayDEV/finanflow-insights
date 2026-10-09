@@ -552,8 +552,16 @@ function RouteComponent() {
                       ) : (
                         txs.map((tx) => {
                           const gross = Number(tx.gross_amount);
-                          const tradRate = getTraditionalRate(tx, plan);
-                          const discountedValue = gross * (tradRate / 100);
+                          
+                          let discountedValue = 0;
+                          let tradRate = 0;
+                          if (tx.net_amount !== null && tx.net_amount !== undefined) {
+                            discountedValue = gross - Number(tx.net_amount);
+                            tradRate = gross > 0 ? (discountedValue / gross) * 100 : 0;
+                          } else {
+                            tradRate = getTraditionalRate(tx, plan);
+                            discountedValue = gross * (tradRate / 100);
+                          }
                           
                           const negociadaRate = getModalityRate(tx, plan);
                           const opRate = negociadaRate - tradRate;

@@ -134,8 +134,12 @@ export function calculateClosure(
     feeByModality[mod] += fee;
     modalityFeeTotal += fee;
 
-    const tradRate = getTraditionalRate(t, plan);
-    traditionalCost += (gross * tradRate) / 100;
+    if (t.net_amount !== null && t.net_amount !== undefined) {
+      traditionalCost += gross - Number(t.net_amount);
+    } else {
+      const tradRate = getTraditionalRate(t, plan);
+      traditionalCost += (gross * tradRate) / 100;
+    }
   }
 
   const { primaRate, traditionalRate } = getTierRates(totalGross);

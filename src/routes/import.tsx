@@ -53,6 +53,7 @@ type PreviewRow = {
   serial: string;
   modality: Modality;
   amount: number;
+  netAmount: number | null;
   date: string;
   installments: number;
   brand: string;
@@ -97,7 +98,9 @@ function parseSpreadsheet(data: ArrayBuffer): PreviewRow[] {
   const iSerial = idx(["sn equipamento", "número de série", "serial", "pos", "terminal"]);
   const iMod = idx(["tipo de pagamento", "modalidade", "modality", "tipo"]);
   const iBrand = idx(["bandeira", "brand", "marca"]);
-  const iVal = idx(["valor líquido", "valor", "bruto", "amount"]);
+  const iVal = idx(["valor bruto", "bruto"]);
+  const iNetVal = idx(["valor líquido", "líquido", "liquido", "net", "valor liquido"]);
+  const finalIVal = iVal !== -1 ? iVal : idx(["valor", "amount"]);
   const iDate = idx(["data de captura", "data", "date"]);
   const iParcel = idx(["parcelamento"]);
 
@@ -128,7 +131,7 @@ function parseSpreadsheet(data: ArrayBuffer): PreviewRow[] {
       modality = "credit_vista";
     }
 
-    let rawVal = cols[iVal];
+    let rawVal = cols[finalIVal];
     let amount = 0;
     if (typeof rawVal === "number") {
       amount = rawVal;
@@ -137,6 +140,17 @@ function parseSpreadsheet(data: ArrayBuffer): PreviewRow[] {
       amount = Number(cleaned) || 0;
     }
     if (!amount) continue;
+
+    let netAmount: number | null = null;
+    if (iNetVal !== -1) {
+      const rawNet = cols[iNetVal];
+      if (typeof rawNet === "number") {
+        netAmount = rawNet;
+      } else {
+        const cleaned = String(rawNet ?? "").replace(/[R$\s.]/g, "").replace(",", ".");
+        if (cleaned) netAmount = Number(cleaned);
+      }
+    }
 
     let date = new Date().toISOString().slice(0, 10);
     const rawDate = cols[iDate];
@@ -157,7 +171,7 @@ function parseSpreadsheet(data: ArrayBuffer): PreviewRow[] {
       brand = rawB; // We store it as is, or maybe normalize later
     }
 
-    rows.push({ serial: String(cols[iSerial] ?? "").trim(), modality, amount, date, installments, brand });
+    rows.push({ serial: String(cols[iSerial] ?? "").trim(), modality, amount, netAmount, date, installments, brand });
   }
   return rows;
 }
@@ -206,6 +220,7 @@ function ImportPage() {
         serial: t.pos_serial || "",
         modality: t.modality as Modality,
         amount: Number(t.gross_amount),
+        netAmount: t.net_amount !== null ? Number(t.net_amount) : null,
         date: String(t.transaction_date).slice(0, 10),
         installments: t.installments || 1,
         brand: t.brand || "",
@@ -244,6 +259,7 @@ function ImportPage() {
         pos_serial: r.serial,
         modality: r.modality,
         gross_amount: r.amount,
+        net_amount: r.netAmount,
         transaction_date: new Date(`${r.date}T12:00:00`).toISOString(),
         installments: r.installments,
         brand: r.brand,

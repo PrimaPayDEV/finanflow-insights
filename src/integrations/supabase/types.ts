@@ -1438,6 +1438,7 @@ export type Database = {
           installments: number
           merchant_id: string
           modality: Database["public"]["Enums"]["payment_modality"]
+          net_amount: number | null
           pos_serial: string
           transaction_date: string
         }
@@ -1451,6 +1452,7 @@ export type Database = {
           installments?: number
           merchant_id: string
           modality: Database["public"]["Enums"]["payment_modality"]
+          net_amount?: number | null
           pos_serial?: string
           transaction_date?: string
         }
@@ -1464,6 +1466,7 @@ export type Database = {
           installments?: number
           merchant_id?: string
           modality?: Database["public"]["Enums"]["payment_modality"]
+          net_amount?: number | null
           pos_serial?: string
           transaction_date?: string
         }
