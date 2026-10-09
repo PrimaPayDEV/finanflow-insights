@@ -49,7 +49,7 @@ export const checkAsaasConfigured = createServerFn({ method: "GET" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: company } = await supabaseAdmin
       .from("companies")
-      .select("asaas_api_key, asaas_webhook_token")
+      .select("name, asaas_api_key, asaas_webhook_token")
       .eq("id", companyId)
       .single();
     
