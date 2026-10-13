@@ -6,6 +6,7 @@ import { Users, Plus, Settings, UserPlus, Trash2, KeyRound } from "lucide-react"
 import { toast } from "sonner";
 import { AppLayout } from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import {
   Dialog,
