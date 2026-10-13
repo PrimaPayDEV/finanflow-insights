@@ -38,7 +38,9 @@ const TRADITIONAL_RATES = {
 };
 
 export function getTraditionalRate(t: Transaction, plan?: FeePlan): number {
-  if (plan) return plan.traditional_fee_avg;
+  if (plan && (plan as any).traditional_fee_avg && (plan as any).traditional_fee_avg > 0) {
+    return (plan as any).traditional_fee_avg;
+  }
 
   if (t.modality === 'pix') return TRADITIONAL_RATES.pix;
   
@@ -122,6 +124,7 @@ export function calculateClosure(
   let totalGross = 0;
   let modalityFeeTotal = 0;
   let traditionalCost = 0;
+  let sumTransactionOpFee = 0;
 
   for (const t of transactions) {
     const mod = t.modality as Modality;
@@ -134,20 +137,28 @@ export function calculateClosure(
     feeByModality[mod] += fee;
     modalityFeeTotal += fee;
 
+    let discountedValue = 0;
+    let tradRate = 0;
     if (t.net_amount !== null && t.net_amount !== undefined) {
-      traditionalCost += gross - Number(t.net_amount);
+      discountedValue = gross - Number(t.net_amount);
+      tradRate = gross > 0 ? (discountedValue / gross) * 100 : 0;
     } else {
-      const tradRate = getTraditionalRate(t, plan);
-      traditionalCost += (gross * tradRate) / 100;
+      tradRate = getTraditionalRate(t, plan);
+      discountedValue = gross * (tradRate / 100);
     }
+    traditionalCost += discountedValue;
+
+    const opRate = Math.abs(rate - tradRate);
+    const opValue = gross * (opRate / 100);
+    sumTransactionOpFee += opValue;
   }
 
   const { primaRate, traditionalRate } = getTierRates(totalGross);
   const customPrimaRate = plan ? plan.fixed_rate_percent : primaRate;
   const fixedFeeAmount = (totalGross * customPrimaRate) / 100;
   
-  // O valor a ser cobrado na plataforma é a taxa operacional vezes o faturamento
-  const totalOpFee = fixedFeeAmount;
+  // O valor a ser cobrado na plataforma é a soma da taxa operacional das transações (quando calculadas) ou a taxa fixa do faturamento
+  const totalOpFee = (transactions.length > 0 && sumTransactionOpFee > 0) ? sumTransactionOpFee : fixedFeeAmount;
   
   let totalExpenses = 0;
   let totalCharges = 0;
@@ -161,10 +172,10 @@ export function calculateClosure(
   
   const netInvoice = totalOpFee + totalExpenses - totalCharges;
   
-  // Traditional Cost = (Transaction Fees from Image) + (Total Gross * Traditional Operational Rate from Image)
+  // Traditional Cost = Custo das taxas descontadas nas transações + markup tradicional
   traditionalCost += (totalGross * traditionalRate) / 100;
   
-  // Savings is traditional cost minus the merchant's total cost (transaction fees + operational fee)
+  // Economia é o custo tradicional menos o custo com a solução Prima
   const totalMerchantCost = modalityFeeTotal + totalOpFee;
   const savings = traditionalCost - totalMerchantCost;
   

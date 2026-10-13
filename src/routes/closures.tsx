@@ -29,6 +29,7 @@ import {
   Table,
   TableBody,
   TableCell,
+  TableFooter,
   TableHead,
   TableHeader,
   TableRow,
@@ -113,6 +114,43 @@ function RouteComponent() {
     (c) => c.merchant_id === merchantId && c.reference_month === month,
   );
   const merchantSplits = (splits.data ?? []).filter((s) => s.merchant_id === merchantId);
+
+  const totalsDetailed = useMemo(() => {
+    let totalGross = 0;
+    let totalDiscounted = 0;
+    let totalOpValue = 0;
+
+    for (const tx of txs) {
+      const gross = Number(tx.gross_amount);
+      let discountedValue = 0;
+      let tradRate = 0;
+      if (tx.net_amount !== null && tx.net_amount !== undefined) {
+        discountedValue = gross - Number(tx.net_amount);
+        tradRate = gross > 0 ? (discountedValue / gross) * 100 : 0;
+      } else {
+        tradRate = getTraditionalRate(tx, plan);
+        discountedValue = gross * (tradRate / 100);
+      }
+      const negociadaRate = getModalityRate(tx, plan);
+      const opRate = Math.abs(negociadaRate - tradRate);
+      const opValue = gross * (opRate / 100);
+
+      totalGross += gross;
+      totalDiscounted += discountedValue;
+      totalOpValue += opValue;
+    }
+
+    const avgDiscountRate = totalGross > 0 ? (totalDiscounted / totalGross) * 100 : 0;
+    const avgOpRate = totalGross > 0 ? (totalOpValue / totalGross) * 100 : 0;
+
+    return {
+      totalGross,
+      totalDiscounted,
+      totalOpValue,
+      avgDiscountRate,
+      avgOpRate,
+    };
+  }, [txs, plan]);
 
   const approve = useMutation({
     mutationFn: async () => {
@@ -564,7 +602,7 @@ function RouteComponent() {
                           }
                           
                           const negociadaRate = getModalityRate(tx, plan);
-                          const opRate = negociadaRate - tradRate;
+                          const opRate = Math.abs(negociadaRate - tradRate);
                           const opValue = gross * (opRate / 100);
 
                           return (
@@ -581,6 +619,18 @@ function RouteComponent() {
                         })
                       )}
                     </TableBody>
+                    {txs.length > 0 && (
+                      <TableFooter className="bg-muted/40 font-bold border-t">
+                        <TableRow className="hover:bg-muted/50">
+                          <TableCell colSpan={2}>Totais ({txs.length} vendas)</TableCell>
+                          <TableCell className="text-right font-bold">{BRL(totalsDetailed.totalGross)}</TableCell>
+                          <TableCell className="text-right font-bold text-destructive">{BRL(totalsDetailed.totalDiscounted)}</TableCell>
+                          <TableCell className="text-right font-bold text-muted-foreground">{totalsDetailed.avgDiscountRate.toFixed(2)}%</TableCell>
+                          <TableCell className="text-right font-bold">{totalsDetailed.avgOpRate.toFixed(2)}%</TableCell>
+                          <TableCell className="text-right font-black text-primary text-base">{BRL(totalsDetailed.totalOpValue)}</TableCell>
+                        </TableRow>
+                      </TableFooter>
+                    )}
                   </Table>
                 </div>
               </CardContent>

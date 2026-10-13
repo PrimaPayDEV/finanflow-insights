@@ -21,6 +21,7 @@ import {
   Table,
   TableBody,
   TableCell,
+  TableFooter,
   TableHead,
   TableHeader,
   TableRow,
@@ -78,47 +79,226 @@ const MODALITY_ALIASES: Record<string, Modality> = {
   cash: "cash",
 };
 
+function normalizeText(text: any): string {
+  return String(text ?? "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "") // remove acentos (líquido -> liquido)
+    .replace(/[^a-z0-9]/g, " ")      // remove pontuações (vlr. -> vlr)
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function parseMoney(val: any): number | null {
+  if (val === null || val === undefined || val === "") return null;
+  if (typeof val === "number") return isNaN(val) ? null : val;
+  const str = String(val).trim();
+  if (!str || str === "-" || str === "N/A" || str === "null" || str === "undefined") return null;
+
+  // Formatos mistos com vírgula e ponto
+  if (str.includes(",") && str.includes(".")) {
+    if (str.lastIndexOf(",") > str.lastIndexOf(".")) {
+      // Padrão brasileiro: "1.234,56"
+      const num = Number(str.replace(/[R$\s.]/g, "").replace(",", "."));
+      return isNaN(num) ? null : num;
+    } else {
+      // Padrão internacional: "1,234.56"
+      const num = Number(str.replace(/[R$\s,]/g, ""));
+      return isNaN(num) ? null : num;
+    }
+  } else if (str.includes(",")) {
+    // Padrão brasileiro sem milhar: "28,58"
+    const num = Number(str.replace(/[R$\s]/g, "").replace(",", "."));
+    return isNaN(num) ? null : num;
+  } else {
+    // Padrão com ponto ou inteiro: "28.58"
+    const num = Number(str.replace(/[R$\s]/g, ""));
+    return isNaN(num) ? null : num;
+  }
+}
+
 function parseSpreadsheet(data: ArrayBuffer): PreviewRow[] {
   const wb = read(data, { type: "array", cellDates: true });
   if (!wb.SheetNames.length) return [];
   const ws = wb.Sheets[wb.SheetNames[0]];
-  const rawRows: any[][] = utils.sheet_to_json(ws, { header: 1, defval: "" });
+  let rawRows: any[][] = utils.sheet_to_json(ws, { header: 1, defval: "" });
   
   if (rawRows.length < 2) return [];
-  
-  const header = rawRows[0].map(h => String(h).toLowerCase().trim());
-  const idx = (names: string[]) => {
-    for (const name of names) {
-      const i = header.findIndex((h) => h.includes(name));
-      if (i !== -1) return i;
+
+  // Suporte a CSV separado por ponto e vírgula agrupado em uma só coluna
+  if (rawRows.length > 0 && rawRows[0]?.length === 1 && String(rawRows[0][0]).includes(";")) {
+    rawRows = rawRows.map((row) => {
+      if (row.length === 1 && typeof row[0] === "string") {
+        return row[0].split(";");
+      }
+      return row;
+    });
+  }
+
+  // Detecta a linha do cabeçalho pesquisando nas primeiras 25 linhas
+  let headerRowIndex = -1;
+  for (let r = 0; r < Math.min(rawRows.length, 25); r++) {
+    const rowNorm = (rawRows[r] || []).map(normalizeText);
+    const hasDate = rowNorm.some((s) => s.includes("data") || s.includes("date"));
+    const hasValue = rowNorm.some(
+      (s) =>
+        s.includes("valor") ||
+        s.includes("vlr") ||
+        s.includes("bruto") ||
+        s.includes("liquido") ||
+        s.includes("liq") ||
+        s.includes("amount"),
+    );
+    const hasSerialOrMod = rowNorm.some(
+      (s) =>
+        s.includes("serial") ||
+        s.includes("equipamento") ||
+        s.includes("pos") ||
+        s.includes("terminal") ||
+        s.includes("modalidade") ||
+        s.includes("bandeira") ||
+        s.includes("produto") ||
+        s.includes("tipo") ||
+        s.includes("sn"),
+    );
+
+    if ((hasDate && hasValue) || (hasValue && hasSerialOrMod)) {
+      headerRowIndex = r;
+      break;
+    }
+  }
+
+  if (headerRowIndex === -1) headerRowIndex = 0;
+
+  const header = (rawRows[headerRowIndex] || []).map(normalizeText);
+
+  const findCol = (keywords: string[], excludeIdx: number[] = []) => {
+    for (const kw of keywords) {
+      const idx = header.findIndex((h, i) => !excludeIdx.includes(i) && h.includes(kw));
+      if (idx !== -1) return idx;
     }
     return -1;
   };
-  
-  const iSerial = idx(["sn equipamento", "número de série", "serial", "pos", "terminal"]);
-  const iMod = idx(["tipo de pagamento", "modalidade", "modality", "tipo"]);
-  const iBrand = idx(["bandeira", "brand", "marca"]);
-  const iVal = idx(["valor bruto", "bruto"]);
-  const iNetVal = idx(["valor líquido", "líquido", "liquido", "net", "valor liquido"]);
-  const finalIVal = iVal !== -1 ? iVal : idx(["valor", "amount"]);
-  const iDate = idx(["data de captura", "data", "date"]);
-  const iParcel = idx(["parcelamento"]);
+
+  // 1. Coluna de Valor Líquido (procurada prioritariamente)
+  const iNetVal = findCol([
+    "valor liquido",
+    "vlr liquido",
+    "vl liquido",
+    "liquido",
+    "valor liq",
+    "vlr liq",
+    "vl liq",
+    "liq",
+    "valor pago",
+    "vlr pago",
+    "vl pago",
+    "valor creditado",
+    "vlr creditado",
+    "vl creditado",
+    "valor a receber",
+    "vlr a receber",
+    "net amount",
+    "net",
+  ]);
+
+  // 2. Coluna de Valor Bruto (exclui a coluna identificada como valor líquido)
+  const iGrossVal = findCol(
+    [
+      "valor bruto",
+      "vlr bruto",
+      "vl bruto",
+      "bruto",
+      "valor venda",
+      "vlr venda",
+      "vl venda",
+      "valor transacao",
+      "vlr transacao",
+      "vl transacao",
+      "valor total",
+      "vlr total",
+      "vl total",
+    ],
+    iNetVal !== -1 ? [iNetVal] : [],
+  );
+
+  // Fallback para valor bruto se não tiver "bruto" explícito
+  const finalIVal =
+    iGrossVal !== -1
+      ? iGrossVal
+      : findCol(["valor", "vlr", "amount", "total"], iNetVal !== -1 ? [iNetVal] : []);
+
+  // 3. Serial POS
+  const iSerial = findCol([
+    "sn equipamento",
+    "numero de serie",
+    "num serie",
+    "n serie",
+    "serial",
+    "pos",
+    "terminal",
+    "equipamento",
+    "sn",
+  ]);
+
+  // 4. Modalidade
+  const iMod = findCol([
+    "tipo de pagamento",
+    "forma de pagamento",
+    "forma pgto",
+    "modalidade",
+    "modality",
+    "tipo",
+    "produto",
+    "meio de captura",
+  ]);
+
+  // 5. Bandeira
+  const iBrand = findCol(["bandeira", "brand", "marca", "arranjo"]);
+
+  // 6. Data
+  const iDate = findCol([
+    "data de captura",
+    "data da transacao",
+    "data transacao",
+    "data venda",
+    "data",
+    "date",
+  ]);
+
+  // 7. Parcelamento
+  const iParcel = findCol([
+    "parcelamento",
+    "parcelas",
+    "parcela",
+    "plano",
+    "qtd parcelas",
+    "quantidade de parcelas",
+    "num parcelas",
+  ]);
 
   const rows: PreviewRow[] = [];
-  for (const cols of rawRows.slice(1)) {
-    if (!cols.some(c => String(c).trim())) continue;
-    
-    const rawMod = String(cols[iMod] ?? "").toLowerCase();
-    
-    let installments = 1;
+  for (const cols of rawRows.slice(headerRowIndex + 1)) {
+    if (!cols.some((c: any) => String(c).trim())) continue;
 
+    const rawMod = normalizeText(cols[iMod] ?? "");
+
+    let installments = 1;
     let modality: Modality = "credit_vista";
     if (rawMod.includes("pix")) modality = "pix";
-    else if (rawMod.includes("débito") || rawMod.includes("debito")) modality = "debit";
-    else if (rawMod.includes("dinheiro") || rawMod.includes("cash")) modality = "cash";
-    else if (rawMod.includes("crédito") || rawMod.includes("credito") || rawMod.includes("credit")) {
-      const parcelInfo = String(cols[iParcel] ?? "").toLowerCase().trim();
-      if (parcelInfo && parcelInfo !== "1" && parcelInfo !== "1x" && parcelInfo !== "0" && parcelInfo !== "não" && parcelInfo !== "nao" && parcelInfo !== "à vista" && parcelInfo !== "a vista") {
+    else if (rawMod.includes("debito") || rawMod.includes("debit")) modality = "debit";
+    else if (rawMod.includes("dinheiro") || rawMod.includes("cash") || rawMod.includes("especie"))
+      modality = "cash";
+    else if (rawMod.includes("credito") || rawMod.includes("credit")) {
+      const parcelInfo = normalizeText(cols[iParcel] ?? "");
+      if (
+        parcelInfo &&
+        parcelInfo !== "1" &&
+        parcelInfo !== "1x" &&
+        parcelInfo !== "0" &&
+        parcelInfo !== "nao" &&
+        parcelInfo !== "a vista"
+      ) {
         modality = "credit_installment";
         const match = parcelInfo.match(/\d+/);
         if (match) {
@@ -131,25 +311,12 @@ function parseSpreadsheet(data: ArrayBuffer): PreviewRow[] {
       modality = "credit_vista";
     }
 
-    let rawVal = cols[finalIVal];
-    let amount = 0;
-    if (typeof rawVal === "number") {
-      amount = rawVal;
-    } else {
-      const cleaned = String(rawVal ?? "0").replace(/[R$\s.]/g, "").replace(",", ".");
-      amount = Number(cleaned) || 0;
-    }
+    const amount = parseMoney(cols[finalIVal]);
     if (!amount) continue;
 
     let netAmount: number | null = null;
     if (iNetVal !== -1) {
-      const rawNet = cols[iNetVal];
-      if (typeof rawNet === "number") {
-        netAmount = rawNet;
-      } else {
-        const cleaned = String(rawNet ?? "").replace(/[R$\s.]/g, "").replace(",", ".");
-        if (cleaned) netAmount = Number(cleaned);
-      }
+      netAmount = parseMoney(cols[iNetVal]);
     }
 
     let date = new Date().toISOString().slice(0, 10);
@@ -165,13 +332,21 @@ function parseSpreadsheet(data: ArrayBuffer): PreviewRow[] {
         date = dateStr.slice(0, 10);
       }
     }
+
     let brand = "";
     if (iBrand !== -1) {
-      const rawB = String(cols[iBrand] ?? "").trim();
-      brand = rawB; // We store it as is, or maybe normalize later
+      brand = String(cols[iBrand] ?? "").trim();
     }
 
-    rows.push({ serial: String(cols[iSerial] ?? "").trim(), modality, amount, netAmount, date, installments, brand });
+    rows.push({
+      serial: String(cols[iSerial] ?? "").trim(),
+      modality,
+      amount,
+      netAmount,
+      date,
+      installments,
+      brand,
+    });
   }
   return rows;
 }
@@ -311,6 +486,12 @@ function ImportPage() {
     total: displayRows.filter((r) => r.modality === m.value).reduce((s, r) => s + r.amount, 0),
   })).filter((t) => t.total > 0);
 
+  const grossTotal = displayRows.reduce((s, r) => s + r.amount, 0);
+  const hasNetValues = displayRows.some((r) => r.netAmount !== null);
+  const netTotal = displayRows.reduce((s, r) => s + (r.netAmount !== null ? r.netAmount : r.amount), 0);
+  const discountedTotal = grossTotal - netTotal;
+  const avgDiscountPct = grossTotal > 0 ? (discountedTotal / grossTotal) * 100 : 0;
+
   return (
     <AppLayout title="Importar Extrato" subtitle="Upload de extratos e conferência do faturamento">
       <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
@@ -360,7 +541,7 @@ function ImportPage() {
                     {fileName || "Selecione o arquivo CSV, XLSX ou PDF"}
                   </span>
                   <span className="text-xs text-muted-foreground">
-                    Colunas esperadas no CSV: serial, modalidade, valor, data
+                    Colunas lidas: serial, modalidade, valor bruto, valor líquido, data
                   </span>
                   <input
                     type="file"
@@ -375,12 +556,23 @@ function ImportPage() {
               </>
             )}
 
-
-
             {baseRows.length > 0 && (
               <>
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-muted/30 p-4 rounded-lg border">
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge variant="outline" className="text-xs font-semibold bg-background">
+                      Bruto: {BRL(grossTotal)}
+                    </Badge>
+                    {hasNetValues && (
+                      <>
+                        <Badge variant="outline" className="text-xs font-semibold text-emerald-600 border-emerald-200 bg-emerald-50/50">
+                          Líquido: {BRL(netTotal)}
+                        </Badge>
+                        <Badge variant="destructive" className="text-xs font-semibold">
+                          Descontado: {BRL(discountedTotal)} ({avgDiscountPct.toFixed(2)}%)
+                        </Badge>
+                      </>
+                    )}
                     {totals.map((t) => (
                       <Badge key={t.label} variant="secondary">
                         {t.label}: {BRL(t.total)}
@@ -413,73 +605,107 @@ function ImportPage() {
                         <TableHead>Bandeira</TableHead>
                         <TableHead>Parcelas</TableHead>
                         <TableHead>Data</TableHead>
-                        <TableHead className="text-right">Valor bruto</TableHead>
-                        <TableHead />
+                        <TableHead className="text-right font-semibold">Valor bruto</TableHead>
+                        <TableHead className="text-right font-semibold">Valor líquido</TableHead>
+                        <TableHead className="text-right font-semibold">Vlr. Descontado</TableHead>
+                        <TableHead className="text-right font-semibold">% Descontado</TableHead>
+                        {!isViewing && <TableHead />}
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {displayRows.map((r, i) => (
-                        <TableRow key={i}>
-                          <TableCell>
-                            <Input
-                              value={r.serial}
-                              disabled={isViewing}
-                              placeholder="serial"
-                              className="h-8 w-36 font-mono text-xs"
-                              onChange={(e) => {
-                                const next = [...rows];
-                                next[i] = { ...r, serial: e.target.value };
-                                setRows(next);
-                              }}
-                            />
-                          </TableCell>
-                          <TableCell>
-                            <Select
-                              value={r.modality}
-                              disabled={isViewing}
-                              onValueChange={(v) => {
-                                const next = [...rows];
-                                next[i] = { ...r, modality: v as Modality };
-                                setRows(next);
-                              }}
-                            >
-                              <SelectTrigger className="h-8 w-44">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {MODALITIES.map((m) => (
-                                  <SelectItem key={m.value} value={m.value}>
-                                    {m.label}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </TableCell>
-                          <TableCell>
-                            <span className="text-sm">{r.brand}</span>
-                          </TableCell>
-                          <TableCell>
-                            <span className="text-sm font-medium">{r.installments}x</span>
-                          </TableCell>
-                          <TableCell className="text-sm">{r.date}</TableCell>
-                          <TableCell className="text-right text-sm font-medium">
-                            {BRL(r.amount)}
-                          </TableCell>
-                          {!isViewing && (
+                      {displayRows.map((r, i) => {
+                        const isDisc = r.netAmount !== null;
+                        const discVal = isDisc ? r.amount - r.netAmount! : 0;
+                        const discPct = isDisc && r.amount > 0 ? (discVal / r.amount) * 100 : 0;
+
+                        return (
+                          <TableRow key={i}>
                             <TableCell>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                aria-label="Remover linha"
-                                onClick={() => setRows(rows.filter((_, j) => j !== i))}
-                              >
-                                <Trash2 className="size-4" />
-                              </Button>
+                              <Input
+                                value={r.serial}
+                                disabled={isViewing}
+                                placeholder="serial"
+                                className="h-8 w-32 font-mono text-xs"
+                                onChange={(e) => {
+                                  const next = [...rows];
+                                  next[i] = { ...r, serial: e.target.value };
+                                  setRows(next);
+                                }}
+                              />
                             </TableCell>
-                          )}
-                        </TableRow>
-                      ))}
+                            <TableCell>
+                              <Select
+                                value={r.modality}
+                                disabled={isViewing}
+                                onValueChange={(v) => {
+                                  const next = [...rows];
+                                  next[i] = { ...r, modality: v as Modality };
+                                  setRows(next);
+                                }}
+                              >
+                                <SelectTrigger className="h-8 w-40">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {MODALITIES.map((m) => (
+                                    <SelectItem key={m.value} value={m.value}>
+                                      {m.label}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </TableCell>
+                            <TableCell>
+                              <span className="text-sm">{r.brand}</span>
+                            </TableCell>
+                            <TableCell>
+                              <span className="text-sm font-medium">{r.installments}x</span>
+                            </TableCell>
+                            <TableCell className="text-sm whitespace-nowrap">{r.date}</TableCell>
+                            <TableCell className="text-right text-sm font-medium whitespace-nowrap">
+                              {BRL(r.amount)}
+                            </TableCell>
+                            <TableCell className="text-right text-sm font-medium text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
+                              {r.netAmount !== null ? BRL(r.netAmount) : "-"}
+                            </TableCell>
+                            <TableCell className="text-right text-sm font-medium text-destructive whitespace-nowrap">
+                              {isDisc ? BRL(discVal) : "-"}
+                            </TableCell>
+                            <TableCell className="text-right text-sm font-medium text-muted-foreground whitespace-nowrap">
+                              {isDisc ? `${discPct.toFixed(2)}%` : "-"}
+                            </TableCell>
+                            {!isViewing && (
+                              <TableCell>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  aria-label="Remover linha"
+                                  onClick={() => setRows(rows.filter((_, j) => j !== i))}
+                                >
+                                  <Trash2 className="size-4" />
+                                </Button>
+                              </TableCell>
+                            )}
+                          </TableRow>
+                        );
+                      })}
                     </TableBody>
+                    <TableFooter className="bg-muted/50 font-bold border-t">
+                      <TableRow>
+                        <TableCell colSpan={5}>Total ({displayRows.length} lançamentos)</TableCell>
+                        <TableCell className="text-right font-bold whitespace-nowrap">{BRL(grossTotal)}</TableCell>
+                        <TableCell className="text-right font-bold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
+                          {hasNetValues ? BRL(netTotal) : "-"}
+                        </TableCell>
+                        <TableCell className="text-right font-bold text-destructive whitespace-nowrap">
+                          {hasNetValues ? BRL(discountedTotal) : "-"}
+                        </TableCell>
+                        <TableCell className="text-right font-bold text-muted-foreground whitespace-nowrap">
+                          {hasNetValues ? `${avgDiscountPct.toFixed(2)}%` : "-"}
+                        </TableCell>
+                        {!isViewing && <TableCell />}
+                      </TableRow>
+                    </TableFooter>
                   </Table>
                 </div>
                 {!isViewing ? (
