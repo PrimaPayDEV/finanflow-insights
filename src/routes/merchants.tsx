@@ -467,33 +467,56 @@ function MerchantsPage() {
 
   const list = merchants.data ?? [];
 
-  // Auto-selecionar o primeiro EC na primeira carga
-  useEffect(() => {
-    if (!selected && list.length > 0) {
-      setSelected(list[0].id);
-    }
-  }, [list, selected]);
-
-  // Filtragem da lista
+  // Filtragem da lista com normalização de acentos e correção da busca por dígitos
   const filteredList = useMemo(() => {
-    return list.filter((m) => {
-      const query = searchTerm.toLowerCase().trim();
-      const rawCnpj = m.document_cnpj?.replace(/\D/g, "") || "";
-      const matchesSearch =
-        !query ||
-        m.name?.toLowerCase().includes(query) ||
-        rawCnpj.includes(query.replace(/\D/g, "")) ||
-        m.email?.toLowerCase().includes(query) ||
-        m.phone_whatsapp?.includes(query);
+    const rawQuery = searchTerm.trim();
+    const queryLower = rawQuery.toLowerCase();
+    const queryNormalized = queryLower
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "");
+    const queryDigits = rawQuery.replace(/\D/g, "");
 
+    return list.filter((m) => {
       const matchesStatus =
         statusFilter === "all" ||
         (statusFilter === "active" && m.status === "active") ||
         (statusFilter === "inactive" && m.status !== "active");
 
-      return matchesSearch && matchesStatus;
+      if (!matchesStatus) return false;
+      if (!rawQuery) return true;
+
+      const merchantName = (m.name || "")
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
+      const merchantEmail = (m.email || "")
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
+      const rawCnpj = m.document_cnpj?.replace(/\D/g, "") || "";
+      const rawPhone = m.phone_whatsapp?.replace(/\D/g, "") || "";
+
+      // Busca por nome ou e-mail (sem acentos e case-insensitive)
+      const matchesName = merchantName.includes(queryNormalized);
+      const matchesEmail = merchantEmail.includes(queryNormalized);
+
+      // Busca por CNPJ e Telefone apenas se houver dígitos digitados
+      const matchesCnpj = queryDigits.length > 0 && rawCnpj.includes(queryDigits);
+      const matchesPhone = queryDigits.length > 0 && rawPhone.includes(queryDigits);
+
+      return matchesName || matchesEmail || matchesCnpj || matchesPhone;
     });
   }, [list, searchTerm, statusFilter]);
+
+  // Auto-selecionar o primeiro EC na primeira carga ou atualizar seleção caso o EC selecionado saia do filtro
+  useEffect(() => {
+    if (filteredList.length > 0) {
+      const isSelectedInFiltered = filteredList.some((m) => m.id === selected);
+      if (!isSelectedInFiltered) {
+        setSelected(filteredList[0].id);
+      }
+    }
+  }, [filteredList, selected]);
 
   const active = list.find((m) => m.id === selected) ?? null;
 
