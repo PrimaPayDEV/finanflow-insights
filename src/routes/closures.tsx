@@ -263,7 +263,6 @@ function RouteComponent() {
                         debit_rate: Number(formData.get("debit_rate")),
                         credit_vista_rate: Number(formData.get("credit_vista_rate")),
                         credit_installment_rate: Number(formData.get("credit_installment_rate")),
-                        cash_rate: Number(formData.get("cash_rate")),
                       });
                     }}
                   >
@@ -283,10 +282,6 @@ function RouteComponent() {
                       <div className="space-y-2">
                         <Label>Taxa Créd. Parcelado (%)</Label>
                         <Input name="credit_installment_rate" type="number" step="0.01" defaultValue={plan.credit_installment_rate} />
-                      </div>
-                      <div className="col-span-2 space-y-2">
-                        <Label>Taxa Dinheiro/Espécie (%)</Label>
-                        <Input name="cash_rate" type="number" step="0.01" defaultValue={plan.cash_rate} />
                       </div>
                     </div>
                     <Button type="submit" className="w-full mt-4" disabled={updatePlan.isPending}>

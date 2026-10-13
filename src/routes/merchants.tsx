@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus, Search, Smartphone, Users, Save, Percent, Trash2, Settings2, Edit2, Store, Key } from "lucide-react";
 import { MerchantIcon } from "@/components/MerchantIcon";
@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -500,14 +501,49 @@ const planFields = [
   { key: "debit_rate", label: "Débito (%)" },
   { key: "credit_vista_rate", label: "Crédito à vista (%)" },
   { key: "credit_installment_rate", label: "Crédito parcelado (%)" },
-  { key: "cash_rate", label: "Dinheiro (%)" },
 ] as const;
+
+const DEFAULT_CPAG_INSTALLMENTS: Record<number, number> = {
+  1: 3.47,
+  2: 5.08,
+  3: 5.84,
+  4: 6.60,
+  5: 7.26,
+  6: 8.11,
+  7: 9.16,
+  8: 9.91,
+  9: 10.67,
+  10: 11.43,
+  11: 12.18,
+  12: 12.94,
+  13: 13.70,
+  14: 14.45,
+  15: 15.21,
+  16: 15.97,
+  17: 16.73,
+  18: 17.48,
+};
 
 function FeePlanForm({ merchant }: { merchant: Merchant }) {
   const qc = useQueryClient();
   const plans = useQuery(feePlansQuery);
   const plan = (plans.data ?? []).find((p) => p.merchant_id === merchant.id);
   const [draft, setDraft] = useState<Record<string, string> | null>(null);
+
+  const [isInstallmentsModalOpen, setIsInstallmentsModalOpen] = useState(false);
+  const [installmentRates, setInstallmentRates] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    if (plan && (plan as any).installment_rates && typeof (plan as any).installment_rates === "object") {
+      const parsed: Record<string, string> = {};
+      Object.entries((plan as any).installment_rates).forEach(([k, v]) => {
+        parsed[k] = String(v ?? 0);
+      });
+      setInstallmentRates(parsed);
+    } else {
+      setInstallmentRates({});
+    }
+  }, [plan]);
 
   const values =
     draft ??
@@ -518,17 +554,73 @@ function FeePlanForm({ merchant }: { merchant: Merchant }) {
       ]),
     );
 
+  const sortedInstallments = useMemo(() => {
+    return Object.entries(installmentRates).sort(([a], [b]) => Number(a) - Number(b));
+  }, [installmentRates]);
+
+  const installedCount = sortedInstallments.length;
+
+  const addNextInstallment = () => {
+    const existingNums = Object.keys(installmentRates).map(Number);
+    let nextNum = 1;
+    while (existingNums.includes(nextNum)) {
+      nextNum++;
+    }
+    const def = DEFAULT_CPAG_INSTALLMENTS[nextNum] ? String(DEFAULT_CPAG_INSTALLMENTS[nextNum]) : "0";
+    setInstallmentRates((prev) => ({ ...prev, [nextNum]: def }));
+  };
+
+  const populatePreset = (count: number) => {
+    setInstallmentRates((prev) => {
+      const next = { ...prev };
+      for (let i = 1; i <= count; i++) {
+        if (next[i] === undefined) {
+          next[i] = String(DEFAULT_CPAG_INSTALLMENTS[i] || 0);
+        }
+      }
+      return next;
+    });
+  };
+
+  const useCPAGDefaults = () => {
+    const next: Record<string, string> = {};
+    for (let i = 1; i <= 12; i++) {
+      next[i] = String(DEFAULT_CPAG_INSTALLMENTS[i] || 0);
+    }
+    setInstallmentRates(next);
+  };
+
+  const removeInstallment = (num: string) => {
+    setInstallmentRates((prev) => {
+      const copy = { ...prev };
+      delete copy[num];
+      return copy;
+    });
+  };
+
+  const updateInstallment = (num: string, val: string) => {
+    setInstallmentRates((prev) => ({ ...prev, [num]: val }));
+  };
+
   const save = useMutation({
     mutationFn: async () => {
       const payload = {
         merchant_id: merchant.id,
-        ...Object.fromEntries(planFields.map((f) => [f.key, Number(values[f.key] || 0)])),
+        fixed_rate_percent: Number(values.fixed_rate_percent || 0),
+        pix_rate: Number(values.pix_rate || 0),
+        debit_rate: Number(values.debit_rate || 0),
+        credit_vista_rate: Number(values.credit_vista_rate || 0),
+        credit_installment_rate: Number(values.credit_installment_rate || 0),
+        cash_rate: 0,
+        installment_rates: Object.fromEntries(
+          Object.entries(installmentRates).map(([k, v]) => [k, Number(v || 0)]),
+        ),
       };
       const { error } = await supabase.from("fee_plans").upsert(payload, { onConflict: "merchant_id" });
       if (error) throw new Error(error.message);
     },
     onSuccess: () => {
-      toast.success("Plano salvo");
+      toast.success("Plano financeiro salvo com sucesso");
       setDraft(null);
       qc.invalidateQueries({ queryKey: ["fee_plans"] });
     },
@@ -536,32 +628,296 @@ function FeePlanForm({ merchant }: { merchant: Merchant }) {
   });
 
   return (
-    <Card className="border-none shadow-card">
-      <CardHeader>
-        <CardTitle className="text-base">Configuração do plano financeiro</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-          {planFields.map((f) => (
-            <div className="grid gap-1.5" key={f.key}>
-              <Label>{f.label}</Label>
+    <>
+      <Card className="border-none shadow-card">
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-base font-bold">Configuração do plano financeiro</CardTitle>
+            {installedCount > 0 && (
+              <Badge variant="secondary" className="font-normal text-xs bg-primary/10 text-primary border-primary/20">
+                {installedCount} {installedCount === 1 ? "parcela personalizada" : "parcelas personalizadas"}
+              </Badge>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-5">
+          {/* Disposição harmoniosa dos campos */}
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {/* 1. Taxa operacional variável */}
+            <div className="grid gap-1.5">
+              <Label htmlFor="fixed_rate_percent" className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                Taxa operacional variável (%)
+              </Label>
               <Input
+                id="fixed_rate_percent"
                 type="number"
                 step="0.01"
                 min="0"
-                value={values[f.key]}
-                onChange={(e) => setDraft({ ...values, [f.key]: e.target.value })}
+                placeholder="0,00"
+                value={values.fixed_rate_percent}
+                onChange={(e) => setDraft({ ...values, fixed_rate_percent: e.target.value })}
               />
             </div>
-          ))}
-        </div>
-        <div className="flex items-center justify-end gap-3">
-          <Button onClick={() => save.mutate()} disabled={save.isPending}>
-            <Save className="size-4" /> Salvar plano
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
+
+            {/* 2. Pix */}
+            <div className="grid gap-1.5">
+              <Label htmlFor="pix_rate" className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                Pix (%)
+              </Label>
+              <Input
+                id="pix_rate"
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="0,00"
+                value={values.pix_rate}
+                onChange={(e) => setDraft({ ...values, pix_rate: e.target.value })}
+              />
+            </div>
+
+            {/* 3. Débito */}
+            <div className="grid gap-1.5">
+              <Label htmlFor="debit_rate" className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                Débito (%)
+              </Label>
+              <Input
+                id="debit_rate"
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="0,00"
+                value={values.debit_rate}
+                onChange={(e) => setDraft({ ...values, debit_rate: e.target.value })}
+              />
+            </div>
+
+            {/* 4. Crédito à vista */}
+            <div className="grid gap-1.5">
+              <Label htmlFor="credit_vista_rate" className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                Crédito à vista (%)
+              </Label>
+              <Input
+                id="credit_vista_rate"
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="0,00"
+                value={values.credit_vista_rate}
+                onChange={(e) => setDraft({ ...values, credit_vista_rate: e.target.value })}
+              />
+            </div>
+
+            {/* 5. Crédito parcelado com botão de "+" ao lado */}
+            <div className="grid gap-1.5 sm:col-span-2 lg:col-span-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="credit_installment_rate" className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                  Crédito parcelado (%)
+                </Label>
+                <span className="text-xs text-muted-foreground">
+                  Taxa padrão ou configure parcelas (1x, 2x, 3x...)
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Input
+                  id="credit_installment_rate"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="Taxa padrão para parcelas"
+                  value={values.credit_installment_rate}
+                  onChange={(e) => setDraft({ ...values, credit_installment_rate: e.target.value })}
+                  className="flex-1"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="shrink-0 h-10 px-3.5 border-primary/40 text-primary hover:bg-primary/10 hover:border-primary transition-all flex items-center gap-1.5 shadow-xs"
+                  onClick={() => setIsInstallmentsModalOpen(true)}
+                  title="Adicionar parcelas (1x, 2x, 3x...)"
+                >
+                  <Plus className="size-4" />
+                  <span className="text-xs font-semibold">Parcelas</span>
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          {/* Exibição limpa das parcelas cadastradas sem quebrar a harmonia da página */}
+          {installedCount > 0 && (
+            <div className="p-3.5 bg-muted/20 rounded-lg border border-border/60">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-1.5">
+                  <Percent className="size-3.5 text-primary" />
+                  <span className="text-xs font-bold text-foreground">
+                    Parcelas personalizadas ({installedCount}):
+                  </span>
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 text-xs text-primary hover:text-primary/80 px-2"
+                  onClick={() => setIsInstallmentsModalOpen(true)}
+                >
+                  <Edit2 className="size-3 mr-1" /> Editar parcelas
+                </Button>
+              </div>
+              <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto pr-1">
+                {sortedInstallments.map(([num, rate]) => (
+                  <Badge
+                    key={num}
+                    variant="outline"
+                    className="px-2 py-0.5 text-xs font-mono bg-background border flex items-center gap-1.5 shadow-2xs"
+                  >
+                    <span className="font-bold text-primary">{num}x:</span>
+                    <span className="font-medium">{Number(rate).toFixed(2)}%</span>
+                    <button
+                      type="button"
+                      className="text-muted-foreground hover:text-destructive transition-colors ml-1 cursor-pointer"
+                      onClick={() => removeInstallment(num)}
+                      title={`Remover ${num}x`}
+                    >
+                      ×
+                    </button>
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Ação de salvar */}
+          <div className="flex items-center justify-end gap-3 pt-2">
+            <Button onClick={() => save.mutate()} disabled={save.isPending}>
+              <Save className="size-4 mr-2" /> Salvar plano
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Modal Dialog para gerenciar e adicionar parcelas (1x, 2x, 3x, etc.) */}
+      <Dialog open={isInstallmentsModalOpen} onOpenChange={setIsInstallmentsModalOpen}>
+        <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col p-6">
+          <DialogHeader className="pb-3 border-b">
+            <DialogTitle className="text-lg flex items-center gap-2">
+              <Percent className="size-5 text-primary" />
+              Configurar Taxas por Parcela (Crédito)
+            </DialogTitle>
+            <DialogDescription>
+              Insira as taxas para cada número de parcelas (1x, 2x, 3x, etc.) de {merchant.name}.
+            </DialogDescription>
+          </DialogHeader>
+
+          {/* Ações rápidas */}
+          <div className="flex flex-wrap items-center gap-2 py-2.5 border-b bg-muted/20 px-4 -mx-6 rounded-none">
+            <span className="text-xs font-semibold text-muted-foreground mr-1">Ações rápidas:</span>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-7 text-xs font-medium"
+              onClick={addNextInstallment}
+            >
+              <Plus className="size-3 mr-1 text-primary" /> Adicionar Parcela
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-7 text-xs font-medium"
+              onClick={() => populatePreset(12)}
+            >
+              Preencher 1x a 12x
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-7 text-xs font-medium"
+              onClick={() => populatePreset(18)}
+            >
+              Preencher 1x a 18x
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-7 text-xs font-medium text-primary hover:bg-primary/10"
+              onClick={useCPAGDefaults}
+              title="Preencher com taxas de referência do modelo padrão"
+            >
+              Sugerir padrão
+            </Button>
+            {installedCount > 0 && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-7 text-xs font-medium text-destructive hover:bg-destructive/10 ml-auto"
+                onClick={() => setInstallmentRates({})}
+              >
+                Limpar todas
+              </Button>
+            )}
+          </div>
+
+          {/* Grid de parcelas com scroll */}
+          <div className="flex-1 overflow-y-auto py-4 space-y-3 pr-1">
+            {installedCount === 0 ? (
+              <div className="p-10 text-center border border-dashed rounded-xl text-muted-foreground bg-muted/10">
+                <p className="text-sm font-semibold">Nenhuma parcela específica adicionada ainda.</p>
+                <p className="text-xs mt-1 text-muted-foreground">
+                  Clique em <strong>+ Adicionar Parcela</strong> ou <strong>Preencher 1x a 12x</strong> para começar.
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                {sortedInstallments.map(([num, rate]) => (
+                  <div
+                    key={num}
+                    className="p-3 rounded-lg border bg-card hover:border-primary/40 transition-colors flex flex-col gap-1.5 shadow-2xs"
+                  >
+                    <div className="flex items-center justify-between">
+                      <Badge variant="secondary" className="px-2 py-0.5 text-xs font-bold text-primary bg-primary/10 border-none">
+                        {num}x
+                      </Badge>
+                      <button
+                        type="button"
+                        onClick={() => removeInstallment(num)}
+                        className="text-muted-foreground hover:text-destructive p-1 rounded-sm transition-colors cursor-pointer"
+                        title={`Remover ${num}x`}
+                      >
+                        <Trash2 className="size-3.5" />
+                      </button>
+                    </div>
+                    <div className="relative mt-1">
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        placeholder="0,00"
+                        value={rate}
+                        onChange={(e) => updateInstallment(num, e.target.value)}
+                        className="h-8 text-sm pr-6 font-mono font-medium"
+                      />
+                      <span className="absolute right-2 top-2 text-xs text-muted-foreground font-semibold">%</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <DialogFooter className="pt-3 border-t flex flex-row items-center justify-between sm:justify-between">
+            <span className="text-xs font-medium text-muted-foreground">
+              {installedCount} {installedCount === 1 ? "parcela definida" : "parcelas definidas"}
+            </span>
+            <Button type="button" onClick={() => setIsInstallmentsModalOpen(false)}>
+              Confirmar e Fechar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 

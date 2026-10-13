@@ -89,8 +89,26 @@ export function getModalityRate(t: Transaction, plan?: FeePlan): number {
   const installments = t.installments || 1;
 
   if (t.modality === 'debit' && plan && plan.debit_rate > 0) return plan.debit_rate;
-  if (t.modality === 'credit_vista' && plan && plan.credit_vista_rate > 0) return plan.credit_vista_rate;
-  if (t.modality === 'credit_installment' && plan && plan.credit_installment_rate > 0) return plan.credit_installment_rate;
+  if (t.modality === 'credit_vista') {
+    if (plan && plan.credit_vista_rate > 0) return plan.credit_vista_rate;
+    if (plan && (plan as any).installment_rates) {
+      const instRates = (plan as any).installment_rates;
+      const v1 = instRates["1"] ?? instRates[1];
+      if (v1 !== undefined && v1 !== null && Number(v1) > 0) return Number(v1);
+    }
+  }
+  if (t.modality === 'credit_installment') {
+    if (plan && (plan as any).installment_rates) {
+      const instRates = (plan as any).installment_rates;
+      if (instRates && typeof instRates === "object") {
+        const val = instRates[String(installments)] ?? instRates[installments];
+        if (val !== undefined && val !== null && Number(val) > 0) {
+          return Number(val);
+        }
+      }
+    }
+    if (plan && plan.credit_installment_rate > 0) return plan.credit_installment_rate;
+  }
   const brand = (t.brand || "").toLowerCase();
   let bKey: keyof typeof CPAG59 = 'vm';
   if (brand.includes('elo')) bKey = 'elo';
