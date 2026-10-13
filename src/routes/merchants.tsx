@@ -1161,9 +1161,6 @@ function FeePlanForm({ merchant }: { merchant: Merchant }) {
                     Obrigatório
                   </Badge>
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  Percentual somado à taxa de cada modalidade (CPAG59 ou manual) para compor o <strong>teto máximo</strong> de desconto do EC.
-                </p>
               </div>
             </div>
 
@@ -1198,13 +1195,6 @@ function FeePlanForm({ merchant }: { merchant: Merchant }) {
                 </h4>
               </div>
               <span className="text-xs text-muted-foreground">Valores aplicados nas vendas do EC</span>
-            </div>
-
-            <div className="p-3.5 rounded-xl border border-primary/20 bg-primary/5 flex items-start gap-2.5 text-xs text-muted-foreground">
-              <Sparkles className="size-4 text-primary shrink-0 mt-0.5" />
-              <div>
-                <strong className="text-foreground">Regra de Teto Máximo Automático:</strong> Se as modalidades ficarem zeradas (0%), a plataforma utiliza a taxa base da <strong>tabela CPAG59</strong> somada à Taxa Operacional como o teto máximo. Exemplo: Taxa Op. {values.fixed_rate_percent || "2"}% + Crédito à Vista CPAG59 (3,47%) = <strong>{(Number(values.fixed_rate_percent || 2) + 3.47).toFixed(2)}%</strong> de teto.
-              </div>
             </div>
 
             <div className="grid gap-3.5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
