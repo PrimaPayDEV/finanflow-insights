@@ -192,16 +192,16 @@ export function AppLayout({
                 {items.map((item) => {
                   const active = item.to === "/" ? pathname === "/" : pathname.startsWith(item.to);
                   return (
-                    <Link
+                      <Link
                       key={item.to}
                       to={item.to}
                       title={isCollapsed ? item.label : undefined}
                       className={cn(
-                        "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors",
+                        "flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-semibold transition-all duration-150 relative",
                         active
-                          ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground shadow-sm"
-                          : "text-sidebar-foreground/75 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground",
-                        isCollapsed && "justify-center px-0"
+                          ? "bg-primary text-primary-foreground shadow-xs shadow-primary/25 font-bold"
+                          : "text-sidebar-foreground/75 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:translate-x-0.5",
+                        isCollapsed && "justify-center px-0 hover:translate-x-0"
                       )}
                     >
                       <item.icon className="size-5 shrink-0" />
@@ -232,16 +232,16 @@ export function AppLayout({
       </aside>
 
       <div className="relative z-10 flex min-w-0 flex-1 flex-col print:overflow-visible print:h-auto">
-        <header className="print:hidden sticky top-0 z-10 border-b border-border/50 bg-background/80 backdrop-blur-md">
-          <div className="flex items-center justify-between gap-2 px-3 py-3 md:px-8">
-            <div className="flex items-center gap-2 overflow-hidden">
+        <header className="print:hidden sticky top-0 z-10 border-b border-border/60 bg-background/85 backdrop-blur-md">
+          <div className="flex items-center justify-between gap-2 px-3 py-3.5 md:px-8">
+            <div className="flex items-center gap-3 overflow-hidden">
               <Sheet>
                 <SheetTrigger asChild>
                   <Button variant="ghost" size="icon" className="md:hidden shrink-0">
                     <PanelLeftOpen className="size-5" />
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="left" className="w-64 p-0 bg-sidebar text-sidebar-foreground border-r-0">
+                <SheetContent side="left" className="w-64 p-0 bg-sidebar text-sidebar-foreground border-r border-sidebar-border/40">
                   <div className="flex items-center gap-2 overflow-hidden px-5 py-6">
                     {logoUrl ? (
                       <img src={logoUrl} alt={companyName || "Logo"} className="h-8 w-auto max-w-[140px] object-contain" />
@@ -279,10 +279,10 @@ export function AppLayout({
                                 key={item.to}
                                 to={item.to}
                                 className={cn(
-                                  "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors",
+                                  "flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-semibold transition-all duration-150",
                                   active
-                                    ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground"
-                                    : "text-sidebar-foreground/75 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground"
+                                    ? "bg-primary text-primary-foreground shadow-xs shadow-primary/25 font-bold"
+                                    : "text-sidebar-foreground/75 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                                 )}
                               >
                                 <item.icon className="size-5 shrink-0" />
@@ -298,8 +298,8 @@ export function AppLayout({
               </Sheet>
               
               <div className="truncate">
-                <h1 className="text-lg md:text-xl font-semibold tracking-tight text-foreground truncate">{title}</h1>
-                {subtitle && <p className="text-sm text-muted-foreground hidden sm:block truncate">{subtitle}</p>}
+                <h1 className="text-xl md:text-2xl font-bold tracking-tight text-foreground truncate">{title}</h1>
+                {subtitle && <p className="text-xs md:text-sm text-muted-foreground hidden sm:block truncate mt-0.5">{subtitle}</p>}
               </div>
             </div>
             
@@ -324,9 +324,9 @@ export function AppLayout({
                       <span className="sr-only">Notificações</span>
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-72 max-h-96 overflow-y-auto">
+                  <DropdownMenuContent align="end" className="w-80 max-h-96 overflow-y-auto rounded-2xl border border-border/80 shadow-card bg-card p-1.5">
                     <div className="flex items-center justify-between px-2 pb-1 pt-2">
-                      <DropdownMenuLabel className="p-0">Notificações</DropdownMenuLabel>
+                      <DropdownMenuLabel className="p-0 font-bold text-sm">Notificações</DropdownMenuLabel>
                       {unreadCount > 0 && (
                         <Button 
                           variant="ghost" 
@@ -350,7 +350,7 @@ export function AppLayout({
                         <DropdownMenuItem 
                           key={notification.id}
                           className={cn(
-                            "flex flex-col items-start gap-1 p-3 cursor-pointer transition-colors focus:bg-muted focus:text-foreground",
+                            "flex flex-col items-start gap-1 p-3 cursor-pointer rounded-xl transition-colors focus:bg-muted focus:text-foreground",
                             !notification.is_read 
                               ? "bg-primary/5 dark:bg-primary/10 border-l-2 border-primary" 
                               : "border-l-2 border-transparent"
@@ -384,7 +384,7 @@ export function AppLayout({
 
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="relative rounded-full h-8 w-8 overflow-hidden">
+                    <Button variant="ghost" size="icon" className="relative rounded-full h-8 w-8 overflow-hidden ring-1 ring-border/80">
                       <Avatar className="h-8 w-8">
                         <AvatarImage src={user?.user_metadata?.avatar_url} style={{ objectFit: 'cover' }} />
                         <AvatarFallback className="bg-primary/10 text-sm font-medium text-primary">
@@ -393,22 +393,22 @@ export function AppLayout({
                       </Avatar>
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-56">
-                    <DropdownMenuLabel>Administrador</DropdownMenuLabel>
+                  <DropdownMenuContent align="end" className="w-56 rounded-2xl border border-border/80 shadow-card bg-card p-1.5">
+                    <DropdownMenuLabel className="font-bold text-xs uppercase tracking-wider text-muted-foreground">Administrador</DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem asChild>
-                      <Link to="/profile" className="w-full cursor-pointer font-medium">
+                      <Link to="/profile" className="w-full cursor-pointer font-medium rounded-lg">
                         Meu Perfil
                       </Link>
                     </DropdownMenuItem>
                     {role === 'admin' && (
                       <DropdownMenuItem asChild>
-                        <Link to="/settings/appearance" className="w-full cursor-pointer font-medium">
+                        <Link to="/settings/appearance" className="w-full cursor-pointer font-medium rounded-lg">
                           Personalizar Ambiente
                         </Link>
                       </DropdownMenuItem>
                     )}
-                    <DropdownMenuItem onClick={signOut} className="text-destructive focus:text-destructive cursor-pointer font-medium">
+                    <DropdownMenuItem onClick={signOut} className="text-destructive focus:text-destructive cursor-pointer font-medium rounded-lg">
                       <LogOut className="mr-2 h-4 w-4" />
                       Sair
                     </DropdownMenuItem>
@@ -423,10 +423,10 @@ export function AppLayout({
           <AnimatePresence mode="wait">
             <motion.div
               key={pathname}
-              initial={{ opacity: 0, y: 15 }}
+              initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -15 }}
-              transition={{ duration: 0.3, ease: "easeOut" }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.25, ease: "easeOut" }}
               className="h-full print:h-auto print:overflow-visible"
             >
               {children}

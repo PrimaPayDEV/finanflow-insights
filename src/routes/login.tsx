@@ -111,24 +111,24 @@ function Login() {
         className="w-full max-w-md space-y-8 relative z-10"
       >
         <div className="text-center">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-sidebar-primary text-sidebar-primary-foreground shadow-lg mb-4">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/25 mb-4">
             <Wallet className="size-8" />
           </div>
-          <h1 className="text-3xl font-extrabold tracking-tight mb-4" style={{ fontFamily: '"Montserrat Arabic", Montserrat, sans-serif' }}>
+          <h1 className="text-3xl font-extrabold tracking-tight mb-2 text-foreground">
             PrimaHub
           </h1>
-          <h2 className="text-2xl font-bold tracking-tight text-foreground">
+          <h2 className="text-xl font-bold tracking-tight text-foreground">
             Acesse sua conta
           </h2>
-          <p className="mt-2 text-sm text-muted-foreground">
+          <p className="mt-1.5 text-xs text-muted-foreground">
             Insira suas credenciais para gerenciar a plataforma
           </p>
         </div>
 
-        <form onSubmit={handleLogin} className="mt-8 space-y-6 rounded-xl border bg-card p-8 shadow-sm">
+        <form onSubmit={handleLogin} className="mt-8 space-y-6 rounded-2xl border border-border/80 bg-card p-8 shadow-card">
           <div className="space-y-4">
             <div className="space-y-2">
-              <label htmlFor="email" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+              <label htmlFor="email" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Endereço de Email
               </label>
               <Input
@@ -145,13 +145,13 @@ function Login() {
 
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <label htmlFor="password" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                <label htmlFor="password" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   Senha
                 </label>
                 <button
                   type="button"
                   onClick={handleResetPassword}
-                  className="text-sm font-medium text-primary hover:underline focus:outline-none"
+                  className="text-xs font-semibold text-primary hover:underline focus:outline-none"
                   tabIndex={-1}
                 >
                   Esqueci a senha?
@@ -182,7 +182,7 @@ function Login() {
               </div>
             </div>
             
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2 pt-1">
               <Checkbox 
                 id="remember" 
                 checked={rememberMe}
@@ -190,14 +190,14 @@ function Login() {
               />
               <label
                 htmlFor="remember"
-                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer text-muted-foreground"
+                className="text-xs font-medium cursor-pointer text-muted-foreground"
               >
-                Manter logado
+                Manter conectado nesta sessão
               </label>
             </div>
           </div>
 
-          <Button type="submit" className="w-full" disabled={loading}>
+          <Button type="submit" className="w-full h-11 rounded-xl font-bold shadow-sm shadow-primary/25" disabled={loading}>
             {loading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />

@@ -351,14 +351,17 @@ function AdminRecebiveisImportPage() {
       title="Importar Recebíveis"
       subtitle="Importe relatórios de vendas para creditar os estabelecimentos"
     >
-      <div className="grid gap-4">
-        <Card className="border-none shadow-card">
-          <CardHeader>
-            <CardTitle className="text-base">Upload de Relatório</CardTitle>
+      <div className="grid gap-6">
+        <Card className="rounded-2xl border border-border/80 shadow-card bg-card overflow-hidden">
+          <CardHeader className="p-5 pb-3 border-b border-border/60">
+            <CardTitle className="text-base font-bold flex items-center gap-2">
+              <UploadCloud className="size-4 text-primary" />
+              Upload de Relatório
+            </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-6">
+          <CardContent className="p-5 space-y-6">
             <div className="grid gap-2 max-w-md">
-              <Label>Vincular a um Estabelecimento (Opcional)</Label>
+              <Label className="text-xs font-semibold">Vincular a um Estabelecimento (Opcional)</Label>
               <Select 
                 value={selectedMerchantId} 
                 onValueChange={(val) => {
@@ -367,7 +370,7 @@ function AdminRecebiveisImportPage() {
                   setRows([]);
                 }}
               >
-                <SelectTrigger>
+                <SelectTrigger className="h-10 rounded-xl">
                   <SelectValue placeholder="Automático (Lido da planilha)" />
                 </SelectTrigger>
                 <SelectContent>
@@ -386,14 +389,14 @@ function AdminRecebiveisImportPage() {
               className="relative group cursor-pointer" 
               onClick={() => document.getElementById("file-upload")?.click()}
             >
-              <div className="flex flex-col items-center justify-center p-10 border-2 border-dashed border-primary/20 rounded-xl bg-primary/5 hover:bg-primary/10 transition-all duration-200">
-                <div className="p-4 bg-background border shadow-sm text-primary rounded-full mb-4 group-hover:scale-110 group-hover:-translate-y-1 transition-all">
+              <div className="flex flex-col items-center justify-center p-10 border-2 border-dashed border-primary/25 rounded-2xl bg-primary/2 hover:bg-primary/5 hover:border-primary/40 transition-all duration-200">
+                <div className="p-4 bg-background border border-border/80 shadow-xs text-primary rounded-2xl mb-4 group-hover:scale-105 transition-all">
                   <UploadCloud className="w-8 h-8" />
                 </div>
-                <h3 className="text-lg font-semibold mb-1 text-foreground">Clique para fazer upload</h3>
-                <p className="text-sm text-muted-foreground text-center">
+                <h3 className="text-base font-bold mb-1 text-foreground">Clique para fazer upload</h3>
+                <p className="text-xs text-muted-foreground text-center">
                   Arraste e solte sua planilha aqui, ou clique para procurar.<br/>
-                  <span className="text-xs opacity-75">Suporta .xlsx, .xls, .csv</span>
+                  <span className="text-[11px] opacity-75">Suporta .xlsx, .xls, .csv</span>
                 </p>
               </div>
               <input
@@ -407,14 +410,14 @@ function AdminRecebiveisImportPage() {
             </div>
 
             {file && (
-              <div className="flex items-center justify-between p-3 bg-muted/40 rounded-lg border border-border/50">
+              <div className="flex items-center justify-between p-3.5 bg-muted/40 rounded-xl border border-border/60">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-primary/10 text-primary rounded-lg">
+                  <div className="p-2 bg-primary/10 text-primary rounded-xl">
                     <FileUp className="w-4 h-4" />
                   </div>
                   <div>
-                    <p className="text-sm font-medium line-clamp-1">{file.name}</p>
-                    <p className="text-xs text-muted-foreground">{(file.size / 1024).toFixed(2)} KB</p>
+                    <p className="text-sm font-semibold text-foreground line-clamp-1">{file.name}</p>
+                    <p className="text-xs text-muted-foreground font-mono">{(file.size / 1024).toFixed(2)} KB</p>
                   </div>
                 </div>
                 <Button 
@@ -426,7 +429,7 @@ function AdminRecebiveisImportPage() {
                     const input = document.getElementById("file-upload") as HTMLInputElement;
                     if (input) input.value = "";
                   }} 
-                  className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                  className="size-8 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                 >
                   <X className="w-4 h-4" />
                 </Button>
@@ -436,21 +439,21 @@ function AdminRecebiveisImportPage() {
         </Card>
 
         {rows.length > 0 && (
-          <Card className="border-none shadow-card">
-            <CardHeader className="flex flex-row items-center justify-between">
+          <Card className="rounded-2xl border border-border/80 shadow-card bg-card overflow-hidden">
+            <CardHeader className="p-5 pb-3 border-b border-border/60 flex flex-row items-center justify-between">
               <div>
-                <CardTitle className="text-base">Prévia da Importação</CardTitle>
-                <p className="text-sm text-muted-foreground mt-1">
+                <CardTitle className="text-base font-bold">Prévia da Importação</CardTitle>
+                <p className="text-xs text-muted-foreground mt-0.5">
                   Verifique os dados calculados antes de confirmar.
                 </p>
               </div>
-              <Button onClick={() => doImport.mutate()} disabled={doImport.isPending}>
+              <Button onClick={() => doImport.mutate()} disabled={doImport.isPending} className="shadow-xs font-bold">
                 <CheckCircle2 className="size-4 mr-2" />
                 Confirmar Importação
               </Button>
             </CardHeader>
-            <CardContent>
-              <div className="flex gap-4 mb-4">
+            <CardContent className="p-5">
+              <div className="flex gap-2.5 mb-4">
                 <Badge variant="outline" className="bg-muted">Total: {rows.length}</Badge>
                 <Badge variant="default" className="bg-emerald-500">
                   Válidas: {rows.filter(r => r.isValid).length}

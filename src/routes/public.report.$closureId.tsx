@@ -35,48 +35,53 @@ function PublicReportPage() {
   const calc = calculateClosure(txs as any, exps as any, plan as any);
 
   return (
-    <div className="min-h-screen bg-slate-50/50 p-4 md:p-8 font-sans">
-      <div className="max-w-4xl mx-auto space-y-8 bg-background p-6 md:p-10 rounded-xl shadow-sm border border-border/50">
+    <div className="min-h-screen bg-slate-50/50 dark:bg-slate-950 p-4 md:p-8 font-sans">
+      <div className="max-w-4xl mx-auto space-y-8 bg-card p-6 md:p-10 rounded-2xl shadow-card border border-border/80">
         <header className="text-center mb-8">
-          <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">Relatório de Economia</h1>
-          <p className="text-muted-foreground text-sm md:text-base">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-md shadow-primary/20 mb-3">
+            <PiggyBank className="size-7" />
+          </div>
+          <h1 className="text-2xl md:text-3xl font-extrabold text-foreground mb-1">Relatório de Economia</h1>
+          <p className="text-muted-foreground text-sm md:text-base font-medium">
             {merchant.name} — {monthLabel(closure.reference_month)}
           </p>
           {closure.status === 'paid' && (
-             <Badge variant="default" className="mt-4 text-xs bg-success text-success-foreground hover:bg-success/90 border-none">
-                <CheckCircle2 className="w-3 h-3 mr-1" /> Fatura Paga
+             <Badge variant="outline" className="mt-3 text-xs bg-emerald-500/10 text-emerald-600 border-emerald-500/30 px-3 py-1 font-semibold rounded-full">
+                <CheckCircle2 className="w-3.5 h-3.5 mr-1" /> Fatura Paga
              </Badge>
           )}
         </header>
 
         <section>
-          <h2 className="text-xl font-bold tracking-tight mb-6 flex items-center gap-2">
-            <TrendingUp className="h-5 w-5 text-muted-foreground" />
+          <h2 className="text-lg md:text-xl font-bold tracking-tight mb-5 flex items-center gap-2">
+            <div className="size-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+              <TrendingUp className="size-4" />
+            </div>
             Comparativo e Economia
           </h2>
           
           <div className="flex flex-col gap-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Card className="border-none shadow-card bg-slate-50/50">
+              <Card className="rounded-2xl border border-border/80 shadow-card bg-muted/20 overflow-hidden">
                 <CardContent className="p-6 md:p-8 flex flex-col justify-center text-center">
-                  <h3 className="text-muted-foreground font-bold text-xs md:text-sm uppercase tracking-wider mb-2">Custo no modelo tradicional</h3>
-                  <p className="text-3xl md:text-4xl font-bold text-destructive line-through decoration-destructive/40">{BRL(calc.traditionalCost)}</p>
+                  <h3 className="text-muted-foreground font-bold text-xs uppercase tracking-wider mb-2">Custo no modelo tradicional</h3>
+                  <p className="text-3xl md:text-4xl font-extrabold text-destructive line-through decoration-destructive/40 font-mono">{BRL(calc.traditionalCost)}</p>
                 </CardContent>
               </Card>
 
-              <Card className="border border-primary/20 shadow-card bg-primary/5">
+              <Card className="rounded-2xl border border-primary/30 shadow-card bg-primary/5 overflow-hidden">
                 <CardContent className="p-6 md:p-8 flex flex-col justify-center text-center">
-                  <h3 className="text-primary font-bold text-xs md:text-sm uppercase tracking-wider mb-2">Custos com a Solução Prima</h3>
-                  <p className="text-3xl md:text-4xl font-bold text-primary">{BRL(calc.totalMerchantCost)}</p>
+                  <h3 className="text-primary font-bold text-xs uppercase tracking-wider mb-2">Custos com a Solução Prima</h3>
+                  <p className="text-3xl md:text-4xl font-extrabold text-primary font-mono">{BRL(calc.totalMerchantCost)}</p>
                 </CardContent>
               </Card>
             </div>
 
-            <Card className="border-none shadow-card bg-success text-success-foreground">
-              <div className="p-10 md:p-14 flex flex-col justify-center items-center text-center">
-                <PiggyBank className="w-16 h-16 md:w-20 md:h-20 mb-6 opacity-90" />
-                <h3 className="text-xl md:text-2xl font-bold mb-3">Sua economia neste mês foi de:</h3>
-                <p className="text-5xl md:text-7xl font-black tracking-tight drop-shadow-md">
+            <Card className="rounded-2xl border-none shadow-card bg-emerald-600 text-white overflow-hidden shadow-lg shadow-emerald-600/20">
+              <div className="p-8 md:p-12 flex flex-col justify-center items-center text-center">
+                <PiggyBank className="w-14 h-14 md:w-16 md:h-16 mb-4 opacity-95" />
+                <h3 className="text-lg md:text-xl font-bold mb-2">Sua economia neste mês foi de:</h3>
+                <p className="text-5xl md:text-6xl font-black tracking-tight font-mono drop-shadow-md">
                   {BRL(calc.savings)}
                 </p>
               </div>
@@ -84,26 +89,28 @@ function PublicReportPage() {
           </div>
         </section>
 
-        <section className="pt-8">
-          <h2 className="text-xl font-bold tracking-tight mb-4 flex items-center gap-2">
-            <Receipt className="h-5 w-5 text-muted-foreground" />
+        <section className="pt-4">
+          <h2 className="text-lg md:text-xl font-bold tracking-tight mb-4 flex items-center gap-2">
+            <div className="size-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+              <Receipt className="size-4" />
+            </div>
             Resumo do Faturamento
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Card className="border-none shadow-card">
-              <CardHeader className="p-4 pb-2">
-                <CardTitle className="text-sm font-bold text-muted-foreground">Faturamento Bruto</CardTitle>
+            <Card className="rounded-2xl border border-border/80 shadow-card bg-card overflow-hidden">
+              <CardHeader className="p-5 pb-2 border-b border-border/60">
+                <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Faturamento Bruto</CardTitle>
               </CardHeader>
-              <CardContent className="p-4 pt-0">
-                <p className="text-2xl font-bold">{BRL(calc.totalGross)}</p>
+              <CardContent className="p-5 pt-3">
+                <p className="text-2xl font-black font-mono tracking-tight text-foreground">{BRL(calc.totalGross)}</p>
               </CardContent>
             </Card>
-            <Card className="border-none shadow-card">
-              <CardHeader className="p-4 pb-2">
-                <CardTitle className="text-sm font-bold text-muted-foreground">Lançamentos / Deduções</CardTitle>
+            <Card className="rounded-2xl border border-border/80 shadow-card bg-card overflow-hidden">
+              <CardHeader className="p-5 pb-2 border-b border-border/60">
+                <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Lançamentos / Deduções</CardTitle>
               </CardHeader>
-              <CardContent className="p-4 pt-0">
-                <p className="text-2xl font-bold text-destructive">-{BRL(calc.totalExpenses)}</p>
+              <CardContent className="p-5 pt-3">
+                <p className="text-2xl font-black font-mono tracking-tight text-destructive">-{BRL(calc.totalExpenses)}</p>
               </CardContent>
             </Card>
           </div>
