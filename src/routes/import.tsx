@@ -173,6 +173,12 @@ function parseSpreadsheet(data: ArrayBuffer): PreviewRow[] {
   const header = (rawRows[headerRowIndex] || []).map(normalizeText);
 
   const findCol = (keywords: string[], excludeIdx: number[] = []) => {
+    // 1º passo: correspondência exata
+    for (const kw of keywords) {
+      const idx = header.findIndex((h, i) => !excludeIdx.includes(i) && h === kw);
+      if (idx !== -1) return idx;
+    }
+    // 2º passo: correspondência por substring
     for (const kw of keywords) {
       const idx = header.findIndex((h, i) => !excludeIdx.includes(i) && h.includes(kw));
       if (idx !== -1) return idx;
@@ -202,9 +208,11 @@ function parseSpreadsheet(data: ArrayBuffer): PreviewRow[] {
     "net",
   ]);
 
-  // 2. Coluna de Valor Bruto (exclui a coluna identificada como valor líquido)
+  // 2. Coluna de Valor Bruto (prioriza a coluna "Valor", "Vlr" ou variações de "Bruto", excluindo a coluna de valor líquido)
   const iGrossVal = findCol(
     [
+      "valor",
+      "vlr",
       "valor bruto",
       "vlr bruto",
       "vl bruto",
@@ -218,11 +226,13 @@ function parseSpreadsheet(data: ArrayBuffer): PreviewRow[] {
       "valor total",
       "vlr total",
       "vl total",
+      "amount",
+      "total",
     ],
     iNetVal !== -1 ? [iNetVal] : [],
   );
 
-  // Fallback para valor bruto se não tiver "bruto" explícito
+  // Fallback para valor bruto se não tiver sido encontrado
   const finalIVal =
     iGrossVal !== -1
       ? iGrossVal
@@ -614,7 +624,7 @@ function ImportPage() {
                         <TableHead>Bandeira</TableHead>
                         <TableHead>Parcelas</TableHead>
                         <TableHead>Data</TableHead>
-                        <TableHead className="text-right font-semibold">Valor bruto</TableHead>
+                        <TableHead className="text-right font-semibold">Valor (Bruto)</TableHead>
                         <TableHead className="text-right font-semibold">Valor líquido</TableHead>
                         <TableHead className="text-right font-semibold">Vlr. Descontado</TableHead>
                         <TableHead className="text-right font-semibold">% Descontado</TableHead>
