@@ -1,7 +1,18 @@
 import { createFileRoute, Link, Navigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState, useMemo } from "react";
-import { PiggyBank, TrendingUp, Wallet, FileCheck2, CalendarIcon } from "lucide-react";
+import {
+  PiggyBank,
+  TrendingUp,
+  Wallet,
+  FileCheck2,
+  Calendar as CalendarIcon,
+  PieChart as PieChartIcon,
+  CreditCard,
+  BarChart3,
+  ChevronRight,
+  ArrowRight,
+} from "lucide-react";
 import { MerchantIcon } from "@/components/MerchantIcon";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -21,7 +32,7 @@ import {
 } from "recharts";
 import { AppLayout } from "@/components/AppLayout";
 import { KpiCard } from "@/components/KpiCard";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -68,7 +79,13 @@ export const Route = createFileRoute("/")({
   component: Dashboard,
 });
 
-const COLORS = ["var(--chart-1)", "var(--chart-2)", "var(--chart-3)", "var(--chart-4)", "var(--chart-5)"];
+const COLORS = [
+  "oklch(0.48 0.22 283)", // Primary Purple
+  "oklch(0.61 0.26 330)", // Accent Magenta
+  "oklch(0.68 0.15 160)", // Success Emerald
+  "oklch(0.55 0.18 240)", // Indigo
+  "oklch(0.70 0.18 50)",  // Amber
+];
 
 function BillingDashboard({ companyId }: { companyId: string }) {
   const fetchMetrics = useServerFn(getAsaasDashboardMetrics);
@@ -81,22 +98,24 @@ function BillingDashboard({ companyId }: { companyId: string }) {
     <AppLayout title="Dashboard" subtitle="Visão consolidada de Boletos e Cobranças">
       {isLoading ? (
         <div className="flex h-64 items-center justify-center">
-          <p className="text-muted-foreground">Carregando métricas...</p>
+          <p className="text-muted-foreground text-sm">Carregando métricas...</p>
         </div>
       ) : data?.ok ? (
         <div className="space-y-6">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <KpiCard
               label="Saldo Asaas"
               value={BRL(data.data.balance)}
               icon={Wallet}
               hint="Atualizado agora"
+              tone="primary"
             />
             <KpiCard
               label="Total Recebido (Mês)"
               value={BRL(data.data.totalReceived)}
               icon={TrendingUp}
               hint="Em cobranças pagas"
+              tone="success"
             />
             <KpiCard
               label="Inadimplência / Vencido"
@@ -111,24 +130,36 @@ function BillingDashboard({ companyId }: { companyId: string }) {
               hint="Aguardando pagamento"
             />
           </div>
-          <Card>
-            <CardHeader>
-              <CardTitle>Últimas Cobranças</CardTitle>
+          <Card className="border border-border/80 shadow-card rounded-2xl bg-card overflow-hidden">
+            <CardHeader className="p-5 border-b border-border/60">
+              <CardTitle className="text-base font-bold">Últimas Cobranças</CardTitle>
+              <CardDescription className="text-xs text-muted-foreground">
+                Extrato recente de boletos e transações Pix
+              </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-5">
               {data.data.recentPayments.length === 0 ? (
                 <p className="text-muted-foreground text-sm">Nenhuma cobrança encontrada.</p>
               ) : (
-                <div className="space-y-4">
+                <div className="divide-y divide-border/60">
                   {data.data.recentPayments.map((p: any) => (
-                    <div key={p.id} className="flex items-center justify-between border-b pb-2 last:border-0 last:pb-0">
+                    <div key={p.id} className="flex items-center justify-between py-3 first:pt-0 last:pb-0">
                       <div>
-                        <p className="font-medium text-sm">{p.customer}</p>
+                        <p className="font-semibold text-sm text-foreground">{p.customer}</p>
                         <p className="text-xs text-muted-foreground">{p.description || "Cobrança"}</p>
                       </div>
                       <div className="text-right">
                         <p className="font-bold text-sm">{BRL(p.value)}</p>
-                        <Badge variant={p.status === "RECEIVED" || p.status === "CONFIRMED" ? "default" : p.status === "OVERDUE" ? "destructive" : "secondary"}>
+                        <Badge
+                          variant={
+                            p.status === "RECEIVED" || p.status === "CONFIRMED"
+                              ? "default"
+                              : p.status === "OVERDUE"
+                                ? "destructive"
+                                : "secondary"
+                          }
+                          className="text-[10px] uppercase font-mono mt-0.5"
+                        >
                           {p.status}
                         </Badge>
                       </div>
@@ -151,12 +182,11 @@ function BillingDashboard({ companyId }: { companyId: string }) {
 
 function Dashboard() {
   const { appMode, companyId, segment } = useAuth();
-  
+
   if (segment === "IMOBILIARIA") {
-    // For Real Estate, the main view is the charges/financial panel
     return <Navigate to="/real-estate/charges" />;
   }
-  
+
   if (appMode === "billing" && companyId) {
     return <BillingDashboard companyId={companyId} />;
   }
@@ -197,8 +227,14 @@ function Dashboard() {
     return { totalGross, totalOpFee, totalSavings, byModality };
   };
 
-  const currentData = useMemo(() => calcPeriod(ranges.current), [transactions.data, expenses.data, merchants.data, plans.data, ranges.current]);
-  const previousData = useMemo(() => calcPeriod(ranges.previous), [transactions.data, expenses.data, merchants.data, plans.data, ranges.previous]);
+  const currentData = useMemo(
+    () => calcPeriod(ranges.current),
+    [transactions.data, expenses.data, merchants.data, plans.data, ranges.current],
+  );
+  const previousData = useMemo(
+    () => calcPeriod(ranges.previous),
+    [transactions.data, expenses.data, merchants.data, plans.data, ranges.previous],
+  );
 
   const grossTrend = calculateTrend(currentData.totalGross, previousData.totalGross);
   const opFeeTrend = calculateTrend(currentData.totalOpFee, previousData.totalOpFee);
@@ -213,7 +249,8 @@ function Dashboard() {
   const pendingCount = monthClosures.filter((c) => c.status !== "paid").length;
 
   const getSubtitle = () => {
-    if (period === "month") return `Visão consolidada de ${format(ranges.current.from, "MMMM/yyyy", { locale: ptBR })}`;
+    if (period === "month")
+      return `Visão consolidada de ${format(ranges.current.from, "MMMM/yyyy", { locale: ptBR })}`;
     if (period === "7d") return "Últimos 7 dias";
     if (period === "30d") return "Últimos 30 dias";
     if (period === "90d") return "Últimos 90 dias";
@@ -230,10 +267,10 @@ function Dashboard() {
       actions={
         <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2">
           <Select value={period} onValueChange={(v) => setPeriod(v as PeriodType)}>
-            <SelectTrigger className="w-[140px] h-8 text-xs">
+            <SelectTrigger className="w-[140px] h-9 text-xs bg-background shadow-2xs rounded-xl border-border/80">
               <SelectValue placeholder="Período" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="rounded-xl">
               <SelectItem value="month">Este Mês</SelectItem>
               <SelectItem value="7d">Últimos 7 dias</SelectItem>
               <SelectItem value="30d">Últimos 30 dias</SelectItem>
@@ -244,8 +281,8 @@ function Dashboard() {
           {period === "custom" && (
             <Popover>
               <PopoverTrigger asChild>
-                <Button variant="outline" size="sm" className="h-8 px-2 text-xs min-w-[180px] justify-start">
-                  <CalendarIcon className="mr-2 h-3 w-3" />
+                <Button variant="outline" size="sm" className="h-9 px-3 text-xs min-w-[180px] justify-start rounded-xl shadow-2xs">
+                  <CalendarIcon className="mr-2 size-3.5 text-muted-foreground" />
                   {customRange?.from ? (
                     customRange.to ? (
                       <>
@@ -260,7 +297,7 @@ function Dashboard() {
                   )}
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="end">
+              <PopoverContent className="w-auto p-0 rounded-2xl" align="end">
                 <Calendar
                   initialFocus
                   mode="range"
@@ -275,27 +312,28 @@ function Dashboard() {
         </div>
       }
     >
+      {/* Cards de Métricas Principais */}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1, duration: 0.4 }}>
-          <KpiCard 
-            label="Total faturado (global)" 
-            value={BRL(currentData.totalGross)} 
-            icon={TrendingUp} 
-            tone="primary" 
+        <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05, duration: 0.3 }}>
+          <KpiCard
+            label="Total faturado (global)"
+            value={BRL(currentData.totalGross)}
+            icon={TrendingUp}
+            tone="primary"
             trend={grossTrend.trend}
             trendValue={grossTrend.value}
           />
         </motion.div>
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2, duration: 0.4 }}>
-          <KpiCard 
-            label="Taxa operacional a receber" 
-            value={BRL(currentData.totalOpFee)} 
-            icon={Wallet} 
+        <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1, duration: 0.3 }}>
+          <KpiCard
+            label="Taxa operacional a receber"
+            value={BRL(currentData.totalOpFee)}
+            icon={Wallet}
             trend={opFeeTrend.trend}
             trendValue={opFeeTrend.value}
           />
         </motion.div>
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3, duration: 0.4 }}>
+        <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15, duration: 0.3 }}>
           <KpiCard
             label="Economia gerada aos clientes"
             value={BRL(currentData.totalSavings)}
@@ -305,7 +343,7 @@ function Dashboard() {
             trendValue={savingsTrend.value}
           />
         </motion.div>
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4, duration: 0.4 }}>
+        <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2, duration: 0.3 }}>
           <KpiCard
             label="Cobranças pendentes"
             value={String(pendingCount)}
@@ -315,95 +353,145 @@ function Dashboard() {
         </motion.div>
       </div>
 
-      <motion.div 
-        className="mt-6 grid gap-4 lg:grid-cols-5"
-        initial={{ opacity: 0, y: 20 }} 
-        animate={{ opacity: 1, y: 0 }} 
-        transition={{ delay: 0.5, duration: 0.4 }}
+      {/* Gráficos de Faturamento e Distribuição */}
+      <motion.div
+        className="mt-6 grid gap-5 lg:grid-cols-5"
+        initial={{ opacity: 0, y: 15 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.25, duration: 0.3 }}
       >
-        <Card className="lg:col-span-3 border-none shadow-card">
-          <CardHeader>
-            <CardTitle className="text-base">Faturamento por modalidade</CardTitle>
+        <Card className="lg:col-span-3 border border-border/80 shadow-card rounded-2xl bg-card overflow-hidden">
+          <CardHeader className="p-5 pb-3 border-b border-border/60">
+            <div className="flex items-center gap-2">
+              <BarChart3 className="size-4 text-primary" />
+              <CardTitle className="text-base font-bold text-foreground">Faturamento por Modalidade</CardTitle>
+            </div>
+            <CardDescription className="text-xs text-muted-foreground">
+              Volume total transacionado por canal de pagamento no período selecionado
+            </CardDescription>
           </CardHeader>
-          <CardContent className="h-72">
+          <CardContent className="h-72 p-5 pt-4">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
-                <XAxis dataKey="name" tick={{ fontSize: 12 }} stroke="var(--muted-foreground)" />
-                <YAxis tick={{ fontSize: 12 }} stroke="var(--muted-foreground)" />
-                <Tooltip formatter={(v: number) => BRL(v)} />
-                <Bar dataKey="valor" radius={[6, 6, 0, 0]} fill="var(--chart-2)" />
+              <BarChart data={chartData} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} opacity={0.6} />
+                <XAxis dataKey="name" tick={{ fontSize: 11 }} stroke="var(--muted-foreground)" />
+                <YAxis tick={{ fontSize: 11 }} stroke="var(--muted-foreground)" />
+                <Tooltip
+                  formatter={(v: number) => [BRL(v), "Volume"]}
+                  contentStyle={{
+                    borderRadius: "1rem",
+                    border: "1px solid var(--border)",
+                    boxShadow: "0 8px 30px -4px rgba(0,0,0,0.08)",
+                  }}
+                />
+                <Bar dataKey="valor" radius={[8, 8, 0, 0]} fill="oklch(0.48 0.22 283)" />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
 
-        <Card className="lg:col-span-2 border-none shadow-card">
-          <CardHeader>
-            <CardTitle className="text-base">Distribuição do volume</CardTitle>
+        <Card className="lg:col-span-2 border border-border/80 shadow-card rounded-2xl bg-card overflow-hidden">
+          <CardHeader className="p-5 pb-3 border-b border-border/60">
+            <div className="flex items-center gap-2">
+              <PieChartIcon className="size-4 text-primary" />
+              <CardTitle className="text-base font-bold text-foreground">Distribuição do Volume</CardTitle>
+            </div>
+            <CardDescription className="text-xs text-muted-foreground">
+              Participação percentual por tipo de venda
+            </CardDescription>
           </CardHeader>
-          <CardContent className="h-72">
+          <CardContent className="h-72 p-5 pt-4">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
-                <Pie data={chartData} dataKey="valor" nameKey="name" innerRadius={55} outerRadius={90}>
+                <Pie data={chartData} dataKey="valor" nameKey="name" innerRadius={55} outerRadius={88} paddingAngle={2}>
                   {chartData.map((_, i) => (
                     <Cell key={i} fill={COLORS[i % COLORS.length]} />
                   ))}
                 </Pie>
-                <Legend wrapperStyle={{ fontSize: 12 }} />
-                <Tooltip formatter={(v: number) => BRL(v)} />
+                <Legend wrapperStyle={{ fontSize: 11 }} />
+                <Tooltip
+                  formatter={(v: number) => [BRL(v), "Volume"]}
+                  contentStyle={{
+                    borderRadius: "1rem",
+                    border: "1px solid var(--border)",
+                    boxShadow: "0 8px 30px -4px rgba(0,0,0,0.08)",
+                  }}
+                />
               </PieChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
       </motion.div>
 
+      {/* Lista de Cobranças Recentes */}
       <motion.div
-        initial={{ opacity: 0, y: 20 }} 
-        animate={{ opacity: 1, y: 0 }} 
-        transition={{ delay: 0.6, duration: 0.4 }}
+        initial={{ opacity: 0, y: 15 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3, duration: 0.3 }}
       >
-        <Card className="mt-6 border-none shadow-card">
-        <CardHeader>
-          <CardTitle className="text-base">Status das cobranças</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {monthClosures.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              Nenhum fechamento gerado para o período selecionado.
-            </p>
-          ) : (
-            <ul className="divide-y divide-border">
-              {monthClosures.map((c) => {
-                const merchant = (merchants.data ?? []).find((m) => m.id === c.merchant_id);
-                return (
-                  <li key={c.id}>
-                    <Link to="/closures" className="flex items-center justify-between gap-3 py-3 px-2 rounded-md hover:bg-muted/60 transition-colors group">
+        <Card className="mt-6 border border-border/80 shadow-card rounded-2xl bg-card overflow-hidden">
+          <CardHeader className="p-5 pb-3 border-b border-border/60 flex flex-row items-center justify-between">
+            <div className="space-y-0.5">
+              <div className="flex items-center gap-2">
+                <FileCheck2 className="size-4 text-primary" />
+                <CardTitle className="text-base font-bold text-foreground">Status das Cobranças do Período</CardTitle>
+              </div>
+              <CardDescription className="text-xs text-muted-foreground">
+                Fechamentos mensais apurados para os estabelecimentos credenciados
+              </CardDescription>
+            </div>
+            <Button variant="ghost" size="sm" asChild className="text-xs text-primary gap-1">
+              <Link to="/closures">
+                <span>Ver todos</span>
+                <ChevronRight className="size-3.5" />
+              </Link>
+            </Button>
+          </CardHeader>
+          <CardContent className="p-3">
+            {monthClosures.length === 0 ? (
+              <div className="p-8 text-center text-sm text-muted-foreground">
+                Nenhum fechamento gerado para o período selecionado.
+              </div>
+            ) : (
+              <div className="divide-y divide-border/60">
+                {monthClosures.map((c) => {
+                  const merchant = (merchants.data ?? []).find((m) => m.id === c.merchant_id);
+                  return (
+                    <Link
+                      key={c.id}
+                      to="/closures"
+                      className="flex items-center justify-between gap-3 p-3 rounded-xl hover:bg-muted/40 transition-colors group cursor-pointer"
+                    >
                       <div className="min-w-0 flex items-center gap-3">
-                        <div className="p-2 bg-primary/10 text-primary rounded-lg">
-                          <MerchantIcon name={merchant?.name} className="w-4 h-4" />
+                        <div className="size-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0 border border-primary/20">
+                          <MerchantIcon name={merchant?.name} className="size-5" />
                         </div>
-                        <div>
-                          <p className="truncate text-sm font-medium group-hover:text-primary transition-colors">{merchant?.name ?? "EC"}</p>
-                          <p className="text-xs text-muted-foreground group-hover:text-muted-foreground/80 transition-colors">
-                            Economia {BRL(Number(c.savings_amount))}
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-bold text-foreground group-hover:text-primary transition-colors">
+                            {merchant?.name ?? "EC"}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            Economia apurada: <strong className="text-emerald-600 font-mono">{BRL(Number(c.savings_amount))}</strong>
                           </p>
                         </div>
                       </div>
                       <div className="flex items-center gap-3 shrink-0">
-                        <span className="text-sm font-semibold">{BRL(Number(c.net_invoice_amount))}</span>
-                        <Badge variant={getClosureBadgeVariant(c.status)} className="transition-transform group-hover:scale-105">
+                        <span className="text-sm font-bold font-mono">{BRL(Number(c.net_invoice_amount))}</span>
+                        <Badge
+                          variant={getClosureBadgeVariant(c.status)}
+                          className="text-xs font-semibold px-2.5 py-0.5 rounded-full"
+                        >
                           {closureStatusLabel[c.status]}
                         </Badge>
+                        <ChevronRight className="size-4 text-muted-foreground/40 group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
                       </div>
                     </Link>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </CardContent>
-      </Card>
+                  );
+                })}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </motion.div>
 
       <p className="mt-6 text-xs text-muted-foreground">
@@ -412,4 +500,3 @@ function Dashboard() {
     </AppLayout>
   );
 }
-

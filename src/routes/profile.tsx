@@ -120,46 +120,50 @@ function ProfilePage() {
     <AppLayout title="Meu Perfil" subtitle="Gerencie as informações da sua conta">
       <div className="mx-auto grid max-w-4xl gap-6 md:grid-cols-[1fr_300px]">
         <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <UserCircle className="h-5 w-5 text-primary" />
+          <Card className="rounded-2xl border border-border/80 shadow-card bg-card overflow-hidden">
+            <CardHeader className="p-5 pb-3 border-b border-border/60">
+              <CardTitle className="text-base font-semibold flex items-center gap-2.5">
+                <div className="size-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+                  <UserCircle className="h-4 w-4" />
+                </div>
                 Informações da Conta
               </CardTitle>
               <CardDescription>
                 Detalhes do administrador conectado no sistema.
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-1">
-                <Label className="text-muted-foreground">Endereço de E-mail</Label>
-                <div className="font-medium text-foreground text-base">
+            <CardContent className="p-5 space-y-4">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Endereço de E-mail</Label>
+                <div className="font-medium text-foreground text-sm bg-muted/30 p-2.5 rounded-xl border border-border/50">
                   {user?.email || "Email não encontrado"}
                 </div>
               </div>
               
-              <div className="space-y-1">
-                <Label className="text-muted-foreground">Status da Conta</Label>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Status da Conta</Label>
                 <div>
-                  <span className="inline-flex items-center rounded-full bg-success/15 px-2.5 py-0.5 text-xs font-semibold text-success">
-                    Ativa
-                  </span>
+                  <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 font-semibold px-2.5 py-1 rounded-full text-xs">
+                    ● Ativa
+                  </Badge>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <KeyRound className="h-5 w-5 text-primary" />
+          <Card className="rounded-2xl border border-border/80 shadow-card bg-card overflow-hidden">
+            <CardHeader className="p-5 pb-3 border-b border-border/60">
+              <CardTitle className="text-base font-semibold flex items-center gap-2.5">
+                <div className="size-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+                  <KeyRound className="h-4 w-4" />
+                </div>
                 Alterar Senha
               </CardTitle>
               <CardDescription>
                 Crie uma nova senha para acessar a plataforma.
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-5">
               <form onSubmit={handleUpdatePassword} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="new-password">Nova Senha</Label>
@@ -170,6 +174,7 @@ function ProfilePage() {
                     onChange={(e) => setPassword(e.target.value)}
                     required
                     placeholder="Mínimo de 6 caracteres"
+                    className="h-10 rounded-xl"
                   />
                 </div>
                 <div className="space-y-2">
@@ -181,10 +186,11 @@ function ProfilePage() {
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     required
                     placeholder="Digite a senha novamente"
+                    className="h-10 rounded-xl"
                   />
                 </div>
                 
-                <Button type="submit" disabled={loading || !password || !confirmPassword}>
+                <Button type="submit" disabled={loading || !password || !confirmPassword} className="rounded-xl h-10 px-5 shadow-sm">
                   {loading ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -200,10 +206,10 @@ function ProfilePage() {
         </div>
         
         <div>
-          <Card className="bg-sidebar">
+          <Card className="rounded-2xl border border-border/80 shadow-card bg-card overflow-hidden">
             <CardContent className="p-6 text-center">
               <div className="relative mx-auto mb-4 h-24 w-24 group">
-                <Avatar className="h-24 w-24 ring-4 ring-background">
+                <Avatar className="h-24 w-24 ring-4 ring-primary/10 shadow-md">
                   <AvatarImage src={user?.user_metadata?.avatar_url} style={{ objectFit: 'cover' }} />
                   <AvatarFallback className="bg-primary/10 text-2xl font-bold text-primary">
                     {user?.email?.substring(0, 2).toUpperCase() || "AD"}
@@ -214,7 +220,7 @@ function ProfilePage() {
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={uploadingAvatar}
-                  className="absolute bottom-0 right-0 rounded-full bg-primary p-2 text-primary-foreground shadow-sm hover:bg-primary/90 transition-colors disabled:opacity-50"
+                  className="absolute bottom-0 right-0 rounded-full bg-primary p-2 text-primary-foreground shadow-md hover:bg-primary/90 transition-all disabled:opacity-50"
                   title="Alterar foto"
                 >
                   {uploadingAvatar ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
@@ -227,8 +233,8 @@ function ProfilePage() {
                   onChange={handleAvatarChange}
                 />
               </div>
-              <h3 className="font-semibold text-lg text-sidebar-foreground">Administrador</h3>
-              <p className="text-sm text-sidebar-foreground/70 mt-1">Nível de Acesso Total</p>
+              <h3 className="font-semibold text-lg text-foreground">Administrador</h3>
+              <p className="text-xs text-muted-foreground mt-1">Nível de Acesso Total</p>
             </CardContent>
           </Card>
         </div>

@@ -3,11 +3,34 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { PiggyBank, FileCheck2, ExternalLink, Download, Settings2, Receipt, TrendingUp, DollarSign, PieChart, Banknote, ArrowDownRight, ArrowUpRight, SearchX, MessageCircle } from "lucide-react";
+import {
+  PiggyBank,
+  FileCheck2,
+  ExternalLink,
+  Download,
+  Settings2,
+  Receipt,
+  TrendingUp,
+  DollarSign,
+  PieChart,
+  Banknote,
+  ArrowDownRight,
+  ArrowUpRight,
+  SearchX,
+  MessageCircle,
+  Store,
+  Calendar,
+  Sparkles,
+  CreditCard,
+  Layers,
+  Save,
+  CheckCircle2,
+  AlertCircle,
+} from "lucide-react";
 import { toast } from "sonner";
 import { AppLayout } from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -70,6 +93,10 @@ export const Route = createFileRoute("/closures")({
   head: () => ({
     meta: [
       { title: "Relatório de Fechamento | Gestão de ECs" },
+      {
+        name: "description",
+        content: "Extrato mensal consolidado, cálculo de taxas negociadas e apuração de economia por estabelecimento.",
+      },
     ],
   }),
   component: RouteComponent,
@@ -96,7 +123,7 @@ function RouteComponent() {
 
   const importsMap = useMemo(() => {
     const map = new Map<string, string>();
-    (importsData.data ?? []).forEach(i => map.set(i.id, i.reference_month));
+    (importsData.data ?? []).forEach((i) => map.set(i.id, i.reference_month));
     return map;
   }, [importsData.data]);
 
@@ -108,7 +135,7 @@ function RouteComponent() {
   const exps = (expenses.data ?? []).filter(
     (e) => e.merchant_id === merchantId && e.reference_month === month,
   );
-  
+
   const calc = calculateClosure(txs, exps, plan);
   const existing = (closures.data ?? []).find(
     (c) => c.merchant_id === merchantId && c.reference_month === month,
@@ -170,8 +197,8 @@ function RouteComponent() {
             traditional_cost_estimate: calc.traditionalCost,
             savings_amount: calc.savings,
             status: "closed",
-            ...(existing 
-              ? { reissued_at: new Date().toISOString(), created_at: existing.created_at } 
+            ...(existing
+              ? { reissued_at: new Date().toISOString(), created_at: existing.created_at }
               : { created_at: new Date().toISOString() }),
           },
           { onConflict: "merchant_id,reference_month" },
@@ -203,7 +230,7 @@ function RouteComponent() {
       return res;
     },
     onSuccess: (res) => {
-      toast.success("Cobrança gerada no Asaas");
+      toast.success("Cobrança gerada no Asaas com sucesso!");
       if (res?.invoiceUrl) window.open(res.invoiceUrl, "_blank", "noopener");
       qc.invalidateQueries({ queryKey: ["closures"] });
     },
@@ -231,34 +258,38 @@ function RouteComponent() {
   };
 
   return (
-    <AppLayout 
-      title="Relatório de Fechamento" 
-      subtitle="Extrato mensal, custos e economia gerada"
+    <AppLayout
+      title="Relatório de Fechamento"
+      subtitle="Extrato mensal, custos comparativos e apuração de economia"
       actions={
         merchant ? (
-          <div className="flex gap-2 print:hidden">
+          <div className="flex items-center gap-2 print:hidden">
             <Sheet open={isConfigOpen} onOpenChange={setIsConfigOpen}>
               <SheetTrigger asChild>
-                <Button variant="outline">
-                  <Settings2 className="mr-2 h-4 w-4" /> Configurar Taxas
+                <Button variant="outline" size="sm" className="gap-1.5 shadow-2xs font-medium">
+                  <Settings2 className="size-3.5" />
+                  <span>Configurar Taxas</span>
                 </Button>
               </SheetTrigger>
-              <SheetContent className="w-[400px] sm:w-[540px] overflow-y-auto">
-                <SheetHeader>
-                  <SheetTitle>Configurar Taxas</SheetTitle>
+              <SheetContent className="w-[400px] sm:w-[500px] overflow-y-auto rounded-l-2xl">
+                <SheetHeader className="pb-3 border-b">
+                  <div className="flex items-center gap-2 text-primary mb-1">
+                    <Settings2 className="size-5" />
+                    <SheetTitle>Configurar Taxas de {merchant.name}</SheetTitle>
+                  </div>
                   <SheetDescription>
-                    Altere as taxas deste EC para testar o cálculo do painel de economia em tempo real.
-                    Os valores são em percentual (ex: 1.5 para 1,5%).
+                    Altere as taxas deste EC para simular o fechamento e a economia em tempo real.
                   </SheetDescription>
                 </SheetHeader>
                 {plan && (
-                  <form 
+                  <form
                     className="space-y-4 mt-6"
                     onSubmit={(e) => {
                       e.preventDefault();
                       const formData = new FormData(e.currentTarget);
                       updatePlan.mutate({
                         id: plan.id,
+                        fixed_rate_percent: Number(formData.get("fixed_rate_percent")),
                         pix_rate: Number(formData.get("pix_rate")),
                         debit_rate: Number(formData.get("debit_rate")),
                         credit_vista_rate: Number(formData.get("credit_vista_rate")),
@@ -266,80 +297,134 @@ function RouteComponent() {
                       });
                     }}
                   >
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label>Taxa Pix (%)</Label>
-                        <Input name="pix_rate" type="number" step="0.01" defaultValue={plan.pix_rate} />
+                    <div className="space-y-1.5 p-3 rounded-xl bg-primary/5 border border-primary/20">
+                      <Label className="text-xs font-bold text-primary">Taxa Operacional Variável (%)</Label>
+                      <Input
+                        name="fixed_rate_percent"
+                        type="number"
+                        step="0.01"
+                        defaultValue={plan.fixed_rate_percent}
+                        className="bg-background font-mono"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1.5">
+                        <Label className="text-xs font-semibold">Taxa Pix (%)</Label>
+                        <Input
+                          name="pix_rate"
+                          type="number"
+                          step="0.01"
+                          defaultValue={plan.pix_rate}
+                          className="bg-background font-mono"
+                        />
                       </div>
-                      <div className="space-y-2">
-                        <Label>Taxa Débito (%)</Label>
-                        <Input name="debit_rate" type="number" step="0.01" defaultValue={plan.debit_rate} />
+                      <div className="space-y-1.5">
+                        <Label className="text-xs font-semibold">Taxa Débito (%)</Label>
+                        <Input
+                          name="debit_rate"
+                          type="number"
+                          step="0.01"
+                          defaultValue={plan.debit_rate}
+                          className="bg-background font-mono"
+                        />
                       </div>
-                      <div className="space-y-2">
-                        <Label>Taxa Créd. Vista (%)</Label>
-                        <Input name="credit_vista_rate" type="number" step="0.01" defaultValue={plan.credit_vista_rate} />
+                      <div className="space-y-1.5">
+                        <Label className="text-xs font-semibold">Taxa Créd. Vista (%)</Label>
+                        <Input
+                          name="credit_vista_rate"
+                          type="number"
+                          step="0.01"
+                          defaultValue={plan.credit_vista_rate}
+                          className="bg-background font-mono"
+                        />
                       </div>
-                      <div className="space-y-2">
-                        <Label>Taxa Créd. Parcelado (%)</Label>
-                        <Input name="credit_installment_rate" type="number" step="0.01" defaultValue={plan.credit_installment_rate} />
+                      <div className="space-y-1.5">
+                        <Label className="text-xs font-semibold">Taxa Créd. Parc. (%)</Label>
+                        <Input
+                          name="credit_installment_rate"
+                          type="number"
+                          step="0.01"
+                          defaultValue={plan.credit_installment_rate}
+                          className="bg-background font-mono"
+                        />
                       </div>
                     </div>
-                    <Button type="submit" className="w-full mt-4" disabled={updatePlan.isPending}>
-                      Salvar Alterações
+                    <Button type="submit" className="w-full mt-6 gap-2" disabled={updatePlan.isPending}>
+                      <Save className="size-4" />
+                      {updatePlan.isPending ? "Salvando..." : "Salvar Alterações"}
                     </Button>
                   </form>
                 )}
               </SheetContent>
             </Sheet>
-            <Button variant="outline" onClick={handlePrint}>
-              <Download className="mr-2 h-4 w-4" /> Exportar PDF
+            <Button variant="outline" size="sm" onClick={handlePrint} className="gap-1.5 shadow-2xs font-medium">
+              <Download className="size-3.5" />
+              <span>Exportar PDF</span>
             </Button>
           </div>
         ) : undefined
       }
     >
-      <div className="grid gap-3 sm:grid-cols-2 lg:max-w-2xl print:hidden">
-        <Select value={merchantId} onValueChange={setMerchantId}>
-          <SelectTrigger>
-            <SelectValue placeholder="Selecione o estabelecimento" />
-          </SelectTrigger>
-          <SelectContent>
-            {(merchants.data ?? []).map((m) => (
-              <SelectItem key={m.id} value={m.id}>
-                {m.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select value={month} onValueChange={setMonth}>
-          <SelectTrigger>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {monthOptions().map((m) => (
-              <SelectItem key={m} value={m}>
-                {monthLabel(m)}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+      {/* Barra de Filtros Principais (EC e Mês) */}
+      <div className="p-4 rounded-2xl border border-border/80 shadow-card bg-card grid gap-3 sm:grid-cols-2 lg:max-w-2xl print:hidden">
+        <div className="space-y-1.5">
+          <Label className="text-xs font-semibold flex items-center gap-1.5 text-muted-foreground">
+            <Store className="size-3.5 text-primary" /> Estabelecimento (EC)
+          </Label>
+          <Select value={merchantId} onValueChange={setMerchantId}>
+            <SelectTrigger className="h-10 bg-background rounded-xl">
+              <SelectValue placeholder="Selecione o estabelecimento" />
+            </SelectTrigger>
+            <SelectContent className="rounded-xl">
+              {(merchants.data ?? []).map((m) => (
+                <SelectItem key={m.id} value={m.id}>
+                  {m.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-1.5">
+          <Label className="text-xs font-semibold flex items-center gap-1.5 text-muted-foreground">
+            <Calendar className="size-3.5 text-primary" /> Mês de Referência
+          </Label>
+          <Select value={month} onValueChange={setMonth}>
+            <SelectTrigger className="h-10 bg-background rounded-xl">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="rounded-xl">
+              {monthOptions().map((m) => (
+                <SelectItem key={m} value={m}>
+                  {monthLabel(m)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {!merchant ? (
-        <Card className="mt-6">
-          <CardContent className="p-10 text-center text-sm text-muted-foreground">
-            Selecione um EC e o mês para gerar o relatório de fechamento.
+        <Card className="mt-6 border border-dashed border-border/90 shadow-none rounded-2xl bg-muted/10">
+          <CardContent className="p-12 text-center text-sm text-muted-foreground flex flex-col items-center justify-center space-y-3">
+            <div className="size-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center">
+              <FileCheck2 className="size-7 opacity-60" />
+            </div>
+            <div>
+              <p className="font-bold text-foreground">Nenhum estabelecimento selecionado</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Selecione um estabelecimento e o mês acima para carregar o extrato e calcular o fechamento.
+              </p>
+            </div>
           </CardContent>
         </Card>
       ) : (
-        <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5, staggerChildren: 0.2 }}
-            className="mt-6 space-y-8 print:mt-0 print:space-y-0"
-          >
-          
-          <div className="print:flex print:flex-col">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.4 }}
+          className="mt-6 space-y-8 print:mt-0 print:space-y-0"
+        >
           {/* Cabeçalho de Impressão */}
           <div className="hidden print:block mb-8 border-b-2 border-primary pb-6">
             <div className="flex justify-between items-center mb-6">
@@ -372,220 +457,276 @@ function RouteComponent() {
               )}
             </div>
           </div>
-          
-          {/* Seção 1: Extrato Básico de Movimentações */}
-          <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="mt-8 print:mt-6 print:mb-8">
-            <h2 className="text-xl font-bold tracking-tight mb-4 flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-primary" />
-              Extrato Básico de Movimentações
-            </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-              <motion.div whileHover={{ scale: 1.02 }} transition={{ type: "spring", stiffness: 300 }}>
-                <Card className="print:shadow-none print:border print:border-border/50 border-none shadow-card hover:shadow-md transition-all duration-300">
-                  <CardHeader className="p-4 pb-2">
-                    <CardTitle className="text-sm font-semibold text-muted-foreground">Pix</CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-4 pt-0">
-                    <p className="text-xl font-bold">{BRL(calc.grossByModality.pix)}</p>
-                  </CardContent>
-                </Card>
-              </motion.div>
-              <motion.div whileHover={{ scale: 1.02 }} transition={{ type: "spring", stiffness: 300 }}>
-                <Card className="print:shadow-none print:border print:border-border/50 border-none shadow-card hover:shadow-md transition-all duration-300">
-                  <CardHeader className="p-4 pb-2">
-                    <CardTitle className="text-sm font-semibold text-muted-foreground">Débito</CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-4 pt-0">
-                    <p className="text-xl font-bold">{BRL(calc.grossByModality.debit)}</p>
-                  </CardContent>
-                </Card>
-              </motion.div>
-              <motion.div whileHover={{ scale: 1.02 }} transition={{ type: "spring", stiffness: 300 }}>
-                <Card className="print:shadow-none print:border print:border-border/50 border-none shadow-card hover:shadow-md transition-all duration-300">
-                  <CardHeader className="p-4 pb-2">
-                    <CardTitle className="text-sm font-semibold text-muted-foreground">Crédito à Vista</CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-4 pt-0">
-                    <p className="text-xl font-bold">{BRL(calc.grossByModality.credit_vista)}</p>
-                  </CardContent>
-                </Card>
-              </motion.div>
-              <motion.div whileHover={{ scale: 1.02 }} transition={{ type: "spring", stiffness: 300 }}>
-                <Card className="print:shadow-none print:border print:border-border/50 border-none shadow-card hover:shadow-md transition-all duration-300">
-                  <CardHeader className="p-4 pb-2">
-                    <CardTitle className="text-sm font-semibold text-muted-foreground">Créd. Parcelado</CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-4 pt-0">
-                    <p className="text-xl font-bold">{BRL(calc.grossByModality.credit_installment)}</p>
-                  </CardContent>
-                </Card>
-              </motion.div>
+
+          {/* =========================================================================
+              SEÇÃO 1: EXTRATO BÁSICO DE MOVIMENTAÇÕES
+              ========================================================================= */}
+          <section className="space-y-4">
+            <div className="flex items-center gap-2">
+              <TrendingUp className="size-5 text-primary" />
+              <h2 className="text-lg font-bold tracking-tight text-foreground">
+                Extrato Básico de Movimentações
+              </h2>
             </div>
 
-            <Card className="border-none shadow-card text-center py-4 md:py-6 print:shadow-none print:border print:border-border/50">
-              <CardHeader className="p-4 pb-2">
-                <CardTitle className="text-sm md:text-base font-bold text-muted-foreground uppercase tracking-widest">Faturamento Total</CardTitle>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* PIX */}
+              <Card className="rounded-2xl border border-border/80 shadow-card bg-card overflow-hidden hover:border-emerald-500/40 transition-colors">
+                <CardHeader className="p-4 pb-1">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-xs font-bold text-muted-foreground uppercase tracking-wide">
+                      Pix
+                    </CardTitle>
+                    <Sparkles className="size-4 text-emerald-500" />
+                  </div>
+                </CardHeader>
+                <CardContent className="p-4 pt-1">
+                  <p className="text-2xl font-black text-foreground font-mono">{BRL(calc.grossByModality.pix)}</p>
+                </CardContent>
+              </Card>
+
+              {/* DÉBITO */}
+              <Card className="rounded-2xl border border-border/80 shadow-card bg-card overflow-hidden hover:border-blue-500/40 transition-colors">
+                <CardHeader className="p-4 pb-1">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-xs font-bold text-muted-foreground uppercase tracking-wide">
+                      Débito
+                    </CardTitle>
+                    <CreditCard className="size-4 text-blue-500" />
+                  </div>
+                </CardHeader>
+                <CardContent className="p-4 pt-1">
+                  <p className="text-2xl font-black text-foreground font-mono">{BRL(calc.grossByModality.debit)}</p>
+                </CardContent>
+              </Card>
+
+              {/* CRÉDITO À VISTA */}
+              <Card className="rounded-2xl border border-border/80 shadow-card bg-card overflow-hidden hover:border-violet-500/40 transition-colors">
+                <CardHeader className="p-4 pb-1">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-xs font-bold text-muted-foreground uppercase tracking-wide">
+                      Crédito à Vista
+                    </CardTitle>
+                    <CreditCard className="size-4 text-violet-500" />
+                  </div>
+                </CardHeader>
+                <CardContent className="p-4 pt-1">
+                  <p className="text-2xl font-black text-foreground font-mono">
+                    {BRL(calc.grossByModality.credit_vista)}
+                  </p>
+                </CardContent>
+              </Card>
+
+              {/* CRÉDITO PARCELADO */}
+              <Card className="rounded-2xl border border-border/80 shadow-card bg-card overflow-hidden hover:border-primary/40 transition-colors">
+                <CardHeader className="p-4 pb-1">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-xs font-bold text-muted-foreground uppercase tracking-wide">
+                      Créd. Parcelado
+                    </CardTitle>
+                    <Layers className="size-4 text-primary" />
+                  </div>
+                </CardHeader>
+                <CardContent className="p-4 pt-1">
+                  <p className="text-2xl font-black text-foreground font-mono">
+                    {BRL(calc.grossByModality.credit_installment)}
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Faturamento Total em Destaque */}
+            <Card className="rounded-2xl border border-primary/20 bg-gradient-to-r from-primary/5 via-primary/2 to-transparent shadow-card text-center py-5 sm:py-7">
+              <CardHeader className="p-2 pb-1">
+                <CardTitle className="text-xs sm:text-sm font-bold text-muted-foreground uppercase tracking-widest">
+                  Faturamento Total Bruto
+                </CardTitle>
               </CardHeader>
-              <CardContent className="p-4 pt-0">
-                <p className="text-4xl md:text-5xl font-black text-primary tracking-tight">{BRL(calc.totalGross)}</p>
+              <CardContent className="p-2 pt-1">
+                <p className="text-4xl sm:text-5xl font-black text-primary tracking-tight font-mono">
+                  {BRL(calc.totalGross)}
+                </p>
               </CardContent>
             </Card>
-          </motion.section>
-          </div>
+          </section>
 
-          {/* Seção 2: Lançamentos (Cobranças e Deduções) */}
-          <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="print:mt-8 mt-8">
-            <h2 className="text-xl font-bold tracking-tight mb-4 flex items-center gap-2 print:text-primary">
-              <Receipt className="h-5 w-5 text-muted-foreground print:text-primary" />
-              Lançamentos (Cobranças e Deduções)
-            </h2>
-            <Card className="print:shadow-none print:border print:border-border/50 border-none shadow-card overflow-hidden">
+          {/* =========================================================================
+              SEÇÃO 2: LANÇAMENTOS E DEDUÇÕES
+              ========================================================================= */}
+          <section className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Receipt className="size-5 text-primary" />
+                <h2 className="text-lg font-bold tracking-tight text-foreground">
+                  Lançamentos (Cobranças e Deduções)
+                </h2>
+              </div>
+              <Badge variant="secondary" className="font-mono text-xs">
+                {exps.length} {exps.length === 1 ? "lançamento" : "lançamentos"}
+              </Badge>
+            </div>
+
+            <Card className="rounded-2xl border border-border/80 shadow-card bg-card overflow-hidden">
               <CardContent className="p-0">
                 <div className="overflow-x-auto">
                   <Table>
-                    <TableHeader className="bg-muted/30 print:bg-transparent">
-                      <TableRow className="hover:bg-muted/30">
-                        <TableHead className="font-semibold text-muted-foreground">Categoria</TableHead>
-                        <TableHead className="font-semibold text-muted-foreground">Tipo / Lançamento</TableHead>
-                        <TableHead className="font-semibold text-muted-foreground">Descrição</TableHead>
-                        <TableHead className="text-right font-semibold text-muted-foreground">Valor (R$)</TableHead>
+                    <TableHeader className="bg-muted/40">
+                      <TableRow>
+                        <TableHead className="font-semibold text-xs">Categoria</TableHead>
+                        <TableHead className="font-semibold text-xs">Descrição</TableHead>
+                        <TableHead className="text-right font-semibold text-xs">Impacto no Boleto (R$)</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      <AnimatePresence mode="popLayout">
-                        {exps.length === 0 ? (
-                          <motion.tr
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                          >
-                            <TableCell colSpan={4} className="h-48 text-center">
-                              <div className="flex flex-col items-center justify-center text-muted-foreground space-y-3">
-                                <div className="p-4 bg-muted/30 rounded-full">
-                                  <SearchX className="h-8 w-8 opacity-40" />
-                                </div>
-                                <p className="text-sm font-medium">Nenhum lançamento extra neste mês.</p>
-                              </div>
-                            </TableCell>
-                          </motion.tr>
-                        ) : (
-                          exps.map((exp) => (
-                            <motion.tr 
-                              key={exp.id}
-                              initial={{ opacity: 0, y: 10 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              exit={{ opacity: 0, scale: 0.95 }}
-                              transition={{ duration: 0.2 }}
-                              className="group hover:bg-muted/30 transition-colors"
-                            >
-                              <TableCell>
-                                <Badge variant={exp.category === "cobranca" ? "default" : "destructive"} className="px-2 py-0.5">
-                                  {exp.category === "cobranca" ? (
-                                    <span className="flex items-center gap-1"><ArrowDownRight className="w-3 h-3" /> Dedução (-)</span>
-                                  ) : (
-                                    <span className="flex items-center gap-1"><ArrowUpRight className="w-3 h-3" /> Cobrança (+)</span>
-                                  )}
-                                </Badge>
-                              </TableCell>
-                              <TableCell className="font-medium">
-                                <div className="flex items-center gap-2">
-                                  <div className="p-1.5 bg-muted/50 rounded-md shrink-0">
-                                    <Banknote className="w-4 h-4 text-muted-foreground" />
-                                  </div>
-                                  <span>
-                                    {exp.description.toLowerCase().includes('pix') ? 'Pix' : 
-                                     exp.description.toLowerCase().includes('boleto') ? 'Boleto' : 
-                                     exp.description.toLowerCase().includes('espécie') || exp.description.toLowerCase().includes('dinheiro') ? 'Dinheiro' : 'Cobrança'}
+                      {exps.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={3} className="h-28 text-center text-muted-foreground text-sm">
+                            Nenhum lançamento extra registrado para este mês.
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        exps.map((exp) => (
+                          <TableRow key={exp.id} className="hover:bg-muted/30 transition-colors">
+                            <TableCell>
+                              <Badge
+                                variant={exp.category === "cobranca" ? "outline" : "destructive"}
+                                className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full ${
+                                  exp.category === "cobranca"
+                                    ? "text-emerald-600 border-emerald-500/30 bg-emerald-500/10"
+                                    : ""
+                                }`}
+                              >
+                                {exp.category === "cobranca" ? (
+                                  <span className="flex items-center gap-1">
+                                    <ArrowDownRight className="size-3" /> Dedução (-)
                                   </span>
-                                </div>
-                              </TableCell>
-                              <TableCell className="text-muted-foreground">{exp.description}</TableCell>
-                              <TableCell className="text-right font-bold tracking-tight text-[15px]">
-                                <span className={exp.category === "cobranca" ? "text-success group-hover:text-success/80 transition-colors" : "text-destructive group-hover:text-destructive/80 transition-colors"}>
-                                  {exp.category === "cobranca" ? "-" : "+"}{BRL(exp.amount)}
-                                </span>
-                              </TableCell>
-                            </motion.tr>
-                          ))
-                        )}
-                      </AnimatePresence>
+                                ) : (
+                                  <span className="flex items-center gap-1">
+                                    <ArrowUpRight className="size-3" /> Cobrança (+)
+                                  </span>
+                                )}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="font-medium text-sm text-foreground">
+                              {exp.description}
+                            </TableCell>
+                            <TableCell className="text-right font-bold font-mono text-sm">
+                              <span
+                                className={
+                                  exp.category === "cobranca"
+                                    ? "text-emerald-600 dark:text-emerald-400"
+                                    : "text-destructive"
+                                }
+                              >
+                                {exp.category === "cobranca" ? "-" : "+"}
+                                {BRL(exp.amount)}
+                              </span>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
                     </TableBody>
                   </Table>
                 </div>
               </CardContent>
             </Card>
-          </motion.section>
+          </section>
 
-          {/* Seção 3: Economia gerada */}
-          <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="print:mt-12 mt-8 print:break-inside-avoid">
-            <h2 className="text-xl font-bold tracking-tight mb-6 flex items-center gap-2 print:text-primary">
-              <TrendingUp className="h-5 w-5 text-muted-foreground print:text-primary" />
-              Comparativo e Economia
-            </h2>
-            
-            <div className="flex flex-col gap-6">
-              {/* Lado a Lado (Tradicional vs Prima) */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 print:grid-cols-2 print:gap-6">
-                <Card className="print:shadow-none print:border print:border-border/50 border-none shadow-card bg-slate-50/50">
-                  <CardContent className="p-6 md:p-8 flex flex-col justify-center text-center">
-                    <h3 className="text-muted-foreground font-bold text-xs md:text-sm uppercase tracking-wider mb-2">Custo no modelo tradicional</h3>
-                    <p className="text-3xl md:text-4xl font-bold text-destructive line-through decoration-destructive/40">{BRL(calc.traditionalCost)}</p>
-                  </CardContent>
-                </Card>
+          {/* =========================================================================
+              SEÇÃO 3: COMPARATIVO E ECONOMIA GERADA
+              ========================================================================= */}
+          <section className="space-y-4">
+            <div className="flex items-center gap-2">
+              <TrendingUp className="size-5 text-primary" />
+              <h2 className="text-lg font-bold tracking-tight text-foreground">
+                Comparativo e Economia Gerada
+              </h2>
+            </div>
 
-                <Card className="print:shadow-none print:border print:border-border/50 border border-primary/20 shadow-card bg-primary/5">
-                  <CardContent className="p-6 md:p-8 flex flex-col justify-center text-center">
-                    <h3 className="text-primary font-bold text-xs md:text-sm uppercase tracking-wider mb-2">Custos com a Solução Prima</h3>
-                    <p className="text-3xl md:text-4xl font-bold text-primary">{BRL(calc.totalMerchantCost)}</p>
-                  </CardContent>
-                </Card>
-              </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Card className="rounded-2xl border border-border/80 shadow-card bg-muted/20 text-center p-6 sm:p-8">
+                <CardContent className="p-0 space-y-2">
+                  <h3 className="text-muted-foreground font-bold text-xs uppercase tracking-wider">
+                    Custo no Modelo Tradicional
+                  </h3>
+                  <p className="text-3xl sm:text-4xl font-bold text-destructive/80 line-through decoration-destructive/60 font-mono">
+                    {BRL(calc.traditionalCost)}
+                  </p>
+                </CardContent>
+              </Card>
 
-              {/* Destaque Economia */}
-              <Card className="print:break-inside-avoid border-none shadow-card bg-success text-success-foreground print:color-adjust-exact print:bg-success/10 print:text-success-foreground print:shadow-none print:border print:border-border/50">
-                <div className="p-10 md:p-14 flex flex-col justify-center items-center text-center">
-                  <PiggyBank className="w-16 h-16 md:w-20 md:h-20 mb-6 opacity-90 print:text-success" />
-                  <h3 className="text-xl md:text-2xl font-bold mb-3 print:text-foreground">Sua economia neste mês foi de:</h3>
-                  <p className="text-5xl md:text-7xl font-black tracking-tight drop-shadow-md print:text-success print:drop-shadow-none">
+              <Card className="rounded-2xl border border-primary/30 shadow-card bg-primary/5 text-center p-6 sm:p-8">
+                <CardContent className="p-0 space-y-2">
+                  <h3 className="text-primary font-bold text-xs uppercase tracking-wider">
+                    Custos com a Solução Prima
+                  </h3>
+                  <p className="text-3xl sm:text-4xl font-extrabold text-primary font-mono">
+                    {BRL(calc.totalMerchantCost)}
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Destaque Principal de Economia */}
+            <Card className="rounded-3xl border border-emerald-500/20 bg-gradient-to-br from-emerald-600 to-teal-700 text-white shadow-xl overflow-hidden p-8 sm:p-12 text-center">
+              <div className="flex flex-col items-center justify-center space-y-4">
+                <div className="size-16 sm:size-20 rounded-2xl bg-white/15 backdrop-blur-xs flex items-center justify-center text-white shadow-inner">
+                  <PiggyBank className="size-9 sm:size-12" />
+                </div>
+                <div className="space-y-1">
+                  <h3 className="text-lg sm:text-2xl font-bold text-white/90">
+                    Sua economia real apurada neste mês:
+                  </h3>
+                  <p className="text-5xl sm:text-7xl font-black tracking-tight text-white font-mono drop-shadow-sm">
                     {BRL(calc.savings)}
                   </p>
                 </div>
-              </Card>
-            </div>
-          </motion.section>
+              </div>
+            </Card>
+          </section>
 
-          {/* Seção 4: Relatório Detalhado de Vendas */}
-          <motion.section initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="print:mt-12 mt-8">
-            <h2 className="text-xl font-bold tracking-tight mb-4 flex items-center gap-2 print:text-primary">
-              <Banknote className="h-5 w-5 text-muted-foreground print:text-primary" />
-              Relatório Detalhado de Vendas
-            </h2>
-            <Card className="print:shadow-none print:border print:border-border/50 border-none shadow-card overflow-hidden">
+          {/* =========================================================================
+              SEÇÃO 4: RELATÓRIO DETALHADO DE VENDAS
+              ========================================================================= */}
+          <section className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Banknote className="size-5 text-primary" />
+                <h2 className="text-lg font-bold tracking-tight text-foreground">
+                  Relatório Detalhado de Vendas
+                </h2>
+              </div>
+              <Badge variant="secondary" className="font-mono text-xs">
+                {txs.length} {txs.length === 1 ? "venda" : "vendas"}
+              </Badge>
+            </div>
+
+            <Card className="rounded-2xl border border-border/80 shadow-card bg-card overflow-hidden">
               <CardContent className="p-0">
-                <div className="overflow-x-auto">
+                <div className="overflow-x-auto max-h-[500px] overflow-y-auto scrollbar-thin">
                   <Table>
-                    <TableHeader className="bg-muted/30 print:bg-transparent">
-                      <TableRow className="hover:bg-muted/30">
-                        <TableHead className="font-semibold text-muted-foreground">Data</TableHead>
-                        <TableHead className="font-semibold text-muted-foreground">Modalidade</TableHead>
-                        <TableHead className="text-right font-semibold text-muted-foreground">Vlr. Bruto</TableHead>
-                        <TableHead className="text-right font-semibold text-muted-foreground">Vlr. Descontado</TableHead>
-                        <TableHead className="text-right font-semibold text-muted-foreground">% Descontado</TableHead>
-                        <TableHead className="text-right font-semibold text-muted-foreground">% Taxa Op.</TableHead>
-                        <TableHead className="text-right font-semibold text-muted-foreground">Vlr. Taxa Op.</TableHead>
+                    <TableHeader className="bg-muted/40 sticky top-0 z-10 backdrop-blur-xs">
+                      <TableRow>
+                        <TableHead className="font-semibold text-xs">Data</TableHead>
+                        <TableHead className="font-semibold text-xs">Modalidade</TableHead>
+                        <TableHead className="text-right font-semibold text-xs">Vlr. Bruto</TableHead>
+                        <TableHead className="text-right font-semibold text-xs">Vlr. Descontado</TableHead>
+                        <TableHead className="text-right font-semibold text-xs">% Descontado</TableHead>
+                        <TableHead className="text-right font-semibold text-xs">% Taxa Op.</TableHead>
+                        <TableHead className="text-right font-semibold text-xs">Vlr. Taxa Op.</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {txs.length === 0 ? (
                         <TableRow>
-                          <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
-                            Nenhuma venda neste período.
+                          <TableCell colSpan={7} className="h-28 text-center text-muted-foreground text-sm">
+                            Nenhuma venda registrada neste período.
                           </TableCell>
                         </TableRow>
                       ) : (
                         txs.map((tx) => {
                           const gross = Number(tx.gross_amount);
-                          
+
                           let discountedValue = 0;
                           let tradRate = 0;
                           if (tx.net_amount !== null && tx.net_amount !== undefined) {
@@ -595,34 +736,60 @@ function RouteComponent() {
                             tradRate = getTraditionalRate(tx, plan);
                             discountedValue = gross * (tradRate / 100);
                           }
-                          
+
                           const negociadaRate = getModalityRate(tx, plan);
                           const opRate = Math.abs(negociadaRate - tradRate);
                           const opValue = gross * (opRate / 100);
 
                           return (
                             <TableRow key={tx.id} className="hover:bg-muted/30 transition-colors">
-                              <TableCell className="font-medium whitespace-nowrap">{format(new Date(tx.transaction_date), "dd/MM/yyyy")}</TableCell>
-                              <TableCell className="capitalize">{modalityLabel(tx.modality as any)}</TableCell>
-                              <TableCell className="text-right font-medium">{BRL(gross)}</TableCell>
-                              <TableCell className="text-right text-destructive font-medium">{BRL(discountedValue)}</TableCell>
-                              <TableCell className="text-right text-muted-foreground">{tradRate.toFixed(2)}%</TableCell>
-                              <TableCell className="text-right font-medium">{opRate.toFixed(2)}%</TableCell>
-                              <TableCell className="text-right font-bold text-primary">{BRL(opValue)}</TableCell>
+                              <TableCell className="font-medium whitespace-nowrap text-xs font-mono">
+                                {format(new Date(tx.transaction_date), "dd/MM/yyyy")}
+                              </TableCell>
+                              <TableCell className="capitalize text-xs font-medium">
+                                {modalityLabel(tx.modality as any)}
+                              </TableCell>
+                              <TableCell className="text-right font-medium text-xs font-mono">
+                                {BRL(gross)}
+                              </TableCell>
+                              <TableCell className="text-right text-destructive font-medium text-xs font-mono">
+                                {BRL(discountedValue)}
+                              </TableCell>
+                              <TableCell className="text-right text-muted-foreground text-xs font-mono">
+                                {tradRate.toFixed(2)}%
+                              </TableCell>
+                              <TableCell className="text-right font-medium text-xs font-mono">
+                                {opRate.toFixed(2)}%
+                              </TableCell>
+                              <TableCell className="text-right font-bold text-primary text-xs font-mono">
+                                {BRL(opValue)}
+                              </TableCell>
                             </TableRow>
                           );
                         })
                       )}
                     </TableBody>
                     {txs.length > 0 && (
-                      <TableFooter className="bg-muted/40 font-bold border-t">
-                        <TableRow className="hover:bg-muted/50">
-                          <TableCell colSpan={2}>Totais ({txs.length} vendas)</TableCell>
-                          <TableCell className="text-right font-bold">{BRL(totalsDetailed.totalGross)}</TableCell>
-                          <TableCell className="text-right font-bold text-destructive">{BRL(totalsDetailed.totalDiscounted)}</TableCell>
-                          <TableCell className="text-right font-bold text-muted-foreground">{totalsDetailed.avgDiscountRate.toFixed(2)}%</TableCell>
-                          <TableCell className="text-right font-bold">{totalsDetailed.avgOpRate.toFixed(2)}%</TableCell>
-                          <TableCell className="text-right font-black text-primary text-base">{BRL(totalsDetailed.totalOpValue)}</TableCell>
+                      <TableFooter className="bg-muted/50 font-bold border-t sticky bottom-0 z-10 backdrop-blur-xs">
+                        <TableRow>
+                          <TableCell colSpan={2} className="text-xs font-bold">
+                            Totais ({txs.length} vendas)
+                          </TableCell>
+                          <TableCell className="text-right font-bold font-mono text-xs">
+                            {BRL(totalsDetailed.totalGross)}
+                          </TableCell>
+                          <TableCell className="text-right font-bold text-destructive font-mono text-xs">
+                            {BRL(totalsDetailed.totalDiscounted)}
+                          </TableCell>
+                          <TableCell className="text-right font-bold text-muted-foreground font-mono text-xs">
+                            {totalsDetailed.avgDiscountRate.toFixed(2)}%
+                          </TableCell>
+                          <TableCell className="text-right font-bold font-mono text-xs">
+                            {totalsDetailed.avgOpRate.toFixed(2)}%
+                          </TableCell>
+                          <TableCell className="text-right font-black text-primary text-sm font-mono">
+                            {BRL(totalsDetailed.totalOpValue)}
+                          </TableCell>
                         </TableRow>
                       </TableFooter>
                     )}
@@ -630,67 +797,86 @@ function RouteComponent() {
                 </div>
               </CardContent>
             </Card>
-          </motion.section>
+          </section>
 
-          {/* Ações / Cobrança */}
-          <section className="print:hidden pb-10 mt-8">
-            <Card className="border-none shadow-card">
-              <CardHeader className="pb-4">
-                <CardTitle className="text-lg flex items-center justify-between">
-                  <span>Emissão de Cobrança (Asaas)</span>
-                  {existing && (
-                    <Badge variant={getClosureBadgeVariant(existing.status)}>
-                      {closureStatusLabel[existing.status]}
-                    </Badge>
-                  )}
-                </CardTitle>
+          {/* =========================================================================
+              SEÇÃO 5: EMISSÃO DE COBRANÇA (ASAAS)
+              ========================================================================= */}
+          <section className="print:hidden pb-10">
+            <Card className="rounded-2xl border border-border/80 shadow-card bg-card overflow-hidden">
+              <CardHeader className="p-5 pb-3 border-b border-border/60 flex flex-row items-center justify-between">
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-2">
+                    <FileCheck2 className="size-5 text-primary" />
+                    <CardTitle className="text-base sm:text-lg font-bold">Emissão de Cobrança (Asaas)</CardTitle>
+                  </div>
+                  <CardDescription className="text-xs text-muted-foreground">
+                    Gere o boleto bancário com Pix integrado e split automático de parceiros.
+                  </CardDescription>
+                </div>
+                {existing && (
+                  <Badge variant={getClosureBadgeVariant(existing.status)} className="text-xs font-semibold px-2.5 py-0.5">
+                    {closureStatusLabel[existing.status]}
+                  </Badge>
+                )}
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex flex-col sm:flex-row gap-4 items-center justify-between bg-muted/50 p-4 rounded-lg border">
-                  <div>
-                    <p className="font-semibold text-lg">{BRL(calc.netInvoice)}</p>
-                    <p className="text-sm text-muted-foreground">
-                      Boleto com Pix híbrido, vencimento em 5 dias.
+
+              <CardContent className="p-5 sm:p-6">
+                <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between bg-muted/20 p-5 rounded-2xl border border-border/80">
+                  <div className="space-y-1">
+                    <p className="font-extrabold text-2xl text-foreground font-mono">{BRL(calc.netInvoice)}</p>
+                    <p className="text-xs text-muted-foreground">
+                      Boleto com Pix híbrido, vencimento em 5 dias úteis.
                       {merchantSplits.length > 0
                         ? ` Split ativo para ${merchantSplits.length} parceiro(s).`
                         : " Nenhum split configurado."}
                     </p>
                   </div>
-                  <div className="flex gap-3 w-full sm:w-auto">
+
+                  <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
                     {existing?.asaas_invoice_url && (
                       <>
                         <Button
                           variant="outline"
-                          className="w-full sm:w-auto text-emerald-600 border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-300"
+                          className="text-emerald-600 border-emerald-500/30 hover:bg-emerald-500/10 hover:text-emerald-700 shadow-2xs font-semibold gap-1.5"
                           onClick={() => {
                             const text = encodeURIComponent(
-                              `Olá! Aqui está o relatório de economia e a fatura referente ao uso da plataforma PrimaPay.\n\nValor: ${BRL(calc.netInvoice)}\n\nVocê pode acessar o detalhamento e pagar a fatura através do link seguro abaixo:\n${existing.asaas_invoice_url}`
+                              `Olá! Aqui está o relatório de economia e a fatura referente ao uso da plataforma PrimaPay.\n\nValor: ${BRL(
+                                calc.netInvoice,
+                              )}\n\nVocê pode acessar o detalhamento e pagar a fatura através do link seguro abaixo:\n${
+                                existing.asaas_invoice_url
+                              }`,
                             );
-                            window.open(`https://wa.me/${merchant.phone_whatsapp?.replace(/\D/g, "") || ""}?text=${text}`, "_blank");
+                            window.open(
+                              `https://wa.me/${merchant.phone_whatsapp?.replace(/\D/g, "") || ""}?text=${text}`,
+                              "_blank",
+                            );
                           }}
                         >
-                          <MessageCircle className="mr-2 h-4 w-4" /> Enviar
+                          <MessageCircle className="size-4" />
+                          <span>Enviar WhatsApp</span>
                         </Button>
-                        <Button variant="outline" asChild className="w-full sm:w-auto">
+                        <Button variant="outline" asChild className="shadow-2xs font-semibold gap-1.5">
                           <a href={existing.asaas_invoice_url} target="_blank" rel="noopener noreferrer">
-                            Ver Fatura <ExternalLink className="ml-2 h-4 w-4" />
+                            <span>Ver Fatura</span>
+                            <ExternalLink className="size-3.5" />
                           </a>
                         </Button>
                       </>
                     )}
                     <Button
-                      className="w-full sm:w-auto"
                       onClick={() => approve.mutate()}
                       disabled={approve.isPending || calc.netInvoice <= 0}
+                      className="gap-2 shadow-xs font-semibold"
                     >
-                      <FileCheck2 className="mr-2 h-4 w-4" /> {existing ? 'Regerar Cobrança' : 'Aprovar e Gerar Boleto'}
+                      <FileCheck2 className="size-4" />
+                      <span>{existing ? "Regerar Cobrança" : "Aprovar e Gerar Boleto"}</span>
                     </Button>
                   </div>
                 </div>
               </CardContent>
             </Card>
           </section>
-
         </motion.div>
       )}
     </AppLayout>

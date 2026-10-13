@@ -12,6 +12,17 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { getMembers, upsertMember, addVehicle, deleteMember } from "@/lib/members.functions";
 import { getPartners } from "@/lib/partner.functions";
@@ -313,25 +324,41 @@ function DeleteMemberButton({ memberId }: { memberId: string }) {
   const remove = useMutation({
     mutationFn: async () => {
       if (!companyId) return;
-      if (!window.confirm("Tem certeza que deseja excluir este associado? Esta ação não pode ser desfeita.")) return;
-      
       const res = await deleteMember({ data: { id: memberId, companyId } });
       if (!res.ok) throw new Error("Erro ao excluir");
     },
-    onSuccess: (_, variables, context) => {
-      // The mutation doesn't return anything if confirmed is false, so we check if it actually ran
-      if (qc) {
-        toast.success("Associado excluído.");
-        qc.invalidateQueries({ queryKey: ["members"] });
-      }
+    onSuccess: () => {
+      toast.success("Associado excluído.");
+      qc.invalidateQueries({ queryKey: ["members"] });
     },
     onError: (e) => toast.error(translateError(e.message)),
   });
 
   return (
-    <Button variant="ghost" size="icon" onClick={() => remove.mutate()} disabled={remove.isPending}>
-      <Trash2 className="size-4 text-destructive" />
-    </Button>
+    <AlertDialog>
+      <AlertDialogTrigger asChild>
+        <Button variant="ghost" size="icon" className="size-8 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive">
+          <Trash2 className="size-4" />
+        </Button>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Excluir Associado</AlertDialogTitle>
+          <AlertDialogDescription>
+            Tem certeza que deseja excluir este associado? Esta ação não pode ser desfeita.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+          <AlertDialogAction 
+            onClick={() => remove.mutate()} 
+            className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+          >
+            Excluir
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }
 
@@ -353,56 +380,68 @@ function MembersPage() {
       {isLoading ? (
         <div className="flex justify-center p-8">Carregando associados...</div>
       ) : members?.length === 0 ? (
-        <div className="flex flex-col items-center justify-center p-8 text-center space-y-4">
-          <User className="size-12 text-muted-foreground" />
-          <p className="text-lg font-medium">Nenhum associado cadastrado.</p>
-          <p className="text-muted-foreground max-w-sm">
-            Comece cadastrando seu primeiro cliente para gerar faturas.
-          </p>
+        <div className="flex flex-col items-center justify-center p-12 text-center space-y-4 rounded-2xl border border-dashed border-border/80 bg-card">
+          <div className="size-12 rounded-2xl bg-muted/60 flex items-center justify-center text-muted-foreground">
+            <User className="size-6" />
+          </div>
+          <div>
+            <p className="text-base font-semibold text-foreground">Nenhum associado cadastrado</p>
+            <p className="text-sm text-muted-foreground max-w-sm mt-1">
+              Comece cadastrando seu primeiro cliente para gerar faturas e proteger veículos.
+            </p>
+          </div>
           <MemberDialog />
         </div>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
           {members?.map((m: any) => (
-            <Card key={m.id} className="relative overflow-hidden">
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between text-base">
-                  <div className="flex items-center gap-2 truncate">
-                    <User className="size-4 text-primary" />
-                    <span className="truncate">{m.name}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant={m.status === 'active' ? 'default' : 'secondary'}>
-                      {m.status === 'active' ? 'Ativo' : m.status}
-                    </Badge>
-                    <MemberDialog member={m} />
-                    <DeleteMemberButton memberId={m.id} />
-                  </div>
-                </CardTitle>
-                <CardDescription>Doc: {m.document}</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="text-sm space-y-1">
-                  {m.phone && <p>📞 {m.phone}</p>}
-                  {m.email && <p className="truncate">✉️ {m.email}</p>}
-                </div>
-
-                <div className="space-y-2 border-t pt-4">
-                  <p className="font-semibold text-sm">Veículos ({m.vehicles?.length || 0})</p>
-                  {m.vehicles?.map((v: any) => (
-                    <div key={v.id} className="flex justify-between items-center bg-muted/50 p-2 rounded-md text-sm">
-                      <div>
-                        <p className="font-bold">{v.plate}</p>
-                        <p className="text-xs text-muted-foreground">{v.brand} {v.model}</p>
+            <Card key={m.id} className="rounded-2xl border border-border/80 shadow-card bg-card overflow-hidden hover:border-primary/40 transition-all flex flex-col justify-between">
+              <div>
+                <CardHeader className="p-5 pb-3 border-b border-border/60">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2.5 truncate">
+                      <div className="size-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                        <User className="size-4" />
                       </div>
-                      <ShieldCheck className="size-4 text-green-600" />
+                      <div className="truncate">
+                        <CardTitle className="text-base font-semibold truncate">{m.name}</CardTitle>
+                        <CardDescription className="text-xs">Doc: {m.document}</CardDescription>
+                      </div>
                     </div>
-                  ))}
-                  <div className="pt-2">
-                    <VehicleDialog memberId={m.id} memberName={m.name} />
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <Badge variant={m.status === 'active' ? 'default' : 'secondary'} className="rounded-full text-xs font-semibold px-2.5">
+                        {m.status === 'active' ? 'Ativo' : m.status}
+                      </Badge>
+                      <MemberDialog member={m} />
+                      <DeleteMemberButton memberId={m.id} />
+                    </div>
                   </div>
-                </div>
-              </CardContent>
+                </CardHeader>
+                <CardContent className="p-5 space-y-4">
+                  <div className="text-sm space-y-1.5 text-muted-foreground bg-muted/20 p-3 rounded-xl border border-border/40">
+                    {m.phone && <p className="flex items-center gap-2">📞 <span className="font-mono text-xs text-foreground">{m.phone}</span></p>}
+                    {m.email && <p className="flex items-center gap-2 truncate">✉️ <span className="text-foreground truncate">{m.email}</span></p>}
+                  </div>
+
+                  <div className="space-y-2.5 pt-2">
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Veículos ({m.vehicles?.length || 0})</p>
+                    </div>
+                    {m.vehicles?.map((v: any) => (
+                      <div key={v.id} className="flex justify-between items-center bg-muted/40 p-2.5 rounded-xl border border-border/40 text-sm">
+                        <div>
+                          <p className="font-mono font-bold text-xs text-foreground tracking-wide">{v.plate}</p>
+                          <p className="text-xs text-muted-foreground">{v.brand} {v.model}</p>
+                        </div>
+                        <ShieldCheck className="size-4 text-emerald-600" />
+                      </div>
+                    ))}
+                    <div className="pt-1">
+                      <VehicleDialog memberId={m.id} memberName={m.name} />
+                    </div>
+                  </div>
+                </CardContent>
+              </div>
             </Card>
           ))}
         </div>

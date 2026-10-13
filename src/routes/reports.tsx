@@ -306,32 +306,32 @@ function ReportsPage() {
       <div className="space-y-6">
         {/* Total a Receber Highlight */}
         <motion.div 
-          initial={{ opacity: 0, y: 20 }} 
+          initial={{ opacity: 0, y: 15 }} 
           animate={{ opacity: 1, y: 0 }} 
-          transition={{ duration: 0.4 }}
+          transition={{ duration: 0.3 }}
         >
-          <Card className="border border-primary/20 bg-primary/5 shadow-card text-foreground">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg font-semibold flex items-center gap-2 text-primary">
-                <div className="p-1.5 bg-primary/10 rounded-lg">
-                  <DollarSign className="h-5 w-5 text-primary" />
+          <Card className="rounded-2xl border border-primary/20 bg-gradient-to-r from-primary/5 via-primary/2 to-transparent shadow-card text-foreground overflow-hidden">
+            <CardHeader className="p-5 pb-2">
+              <CardTitle className="text-base font-bold flex items-center gap-2 text-primary">
+                <div className="size-8 rounded-xl bg-primary/10 flex items-center justify-center">
+                  <DollarSign className="size-4 text-primary" />
                 </div>
                 Valor Total a Receber
               </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-5 pt-0">
               <div className="flex flex-col md:flex-row md:items-end gap-4 justify-between">
                 <div>
-                  <p className="text-4xl md:text-5xl font-black tracking-tight drop-shadow-sm">
+                  <p className="text-4xl sm:text-5xl font-black tracking-tight font-mono text-primary">
                     {BRL(totalToReceive)}
                   </p>
-                  <p className="text-sm font-medium opacity-80 mt-2">
+                  <p className="text-xs text-muted-foreground mt-1">
                     Soma de todos os boletos pendentes ou vencidos no período selecionado
                   </p>
                 </div>
-                <div className="hidden md:flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full border border-primary/20">
-                  <TrendingUp className="w-4 h-4" />
-                  <span className="text-sm font-medium">Previsão Atualizada</span>
+                <div className="hidden md:flex items-center gap-2 bg-primary/10 text-primary px-3.5 py-1.5 rounded-full border border-primary/20 text-xs font-semibold">
+                  <TrendingUp className="size-3.5" />
+                  <span>Previsão Atualizada</span>
                 </div>
               </div>
             </CardContent>
@@ -340,72 +340,66 @@ function ReportsPage() {
 
         {/* Secondary Metrics */}
         <motion.div 
-          initial={{ opacity: 0, y: 20 }} 
+          initial={{ opacity: 0, y: 15 }} 
           animate={{ opacity: 1, y: 0 }} 
-          transition={{ duration: 0.5, delay: 0.1, staggerChildren: 0.1 }}
+          transition={{ duration: 0.3, delay: 0.05 }}
           className="grid grid-cols-1 md:grid-cols-3 gap-4"
         >
-          <motion.div whileHover={{ scale: 1.02 }} transition={{ type: "spring", stiffness: 300 }}>
-            <Card className="border-none shadow-card hover:-translate-y-0.5 transition-all duration-300">
-              <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
-                <CardTitle className="text-sm font-semibold text-muted-foreground">Pendente (A Vencer)</CardTitle>
-                <div className="p-2 bg-amber-100 dark:bg-amber-900/30 rounded-full">
-                  <Clock className="h-4 w-4 text-amber-600 dark:text-amber-500" />
-                </div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-2xl font-bold text-foreground">{BRL(totalPending)}</p>
-              </CardContent>
-            </Card>
-          </motion.div>
+          <Card className="rounded-2xl border border-border/80 shadow-card bg-card hover:border-amber-500/40 transition-all p-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Pendente (A Vencer)</p>
+                <p className="text-2xl font-black text-foreground font-mono mt-1">{BRL(totalPending)}</p>
+              </div>
+              <div className="size-10 bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 rounded-xl flex items-center justify-center shrink-0">
+                <Clock className="size-5" />
+              </div>
+            </div>
+          </Card>
 
-          <motion.div whileHover={{ scale: 1.02 }} transition={{ type: "spring", stiffness: 300 }}>
-            <Card className="border-none shadow-card hover:-translate-y-0.5 transition-all duration-300">
-              <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
-                <CardTitle className="text-sm font-semibold text-muted-foreground">Em Atraso (Vencido)</CardTitle>
-                <div className="p-2 bg-destructive/10 rounded-full">
-                  <AlertCircle className="h-4 w-4 text-destructive" />
-                </div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-2xl font-bold text-destructive">{BRL(totalOverdue)}</p>
-              </CardContent>
-            </Card>
-          </motion.div>
+          <Card className="rounded-2xl border border-border/80 shadow-card bg-card hover:border-destructive/40 transition-all p-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Em Atraso (Vencido)</p>
+                <p className="text-2xl font-black text-destructive font-mono mt-1">{BRL(totalOverdue)}</p>
+              </div>
+              <div className="size-10 bg-destructive/10 border border-destructive/20 text-destructive rounded-xl flex items-center justify-center shrink-0">
+                <AlertCircle className="size-5" />
+              </div>
+            </div>
+          </Card>
 
-          <motion.div whileHover={{ scale: 1.02 }} transition={{ type: "spring", stiffness: 300 }}>
-            <Card className="border-none shadow-card hover:-translate-y-0.5 transition-all duration-300">
-              <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
-                <CardTitle className="text-sm font-semibold text-muted-foreground">Recebido (Pago)</CardTitle>
-                <div className="p-2 bg-success/10 rounded-full">
-                  <CheckCircle2 className="h-4 w-4 text-success" />
-                </div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-2xl font-bold text-success">{BRL(totalReceived)}</p>
-              </CardContent>
-            </Card>
-          </motion.div>
+          <Card className="rounded-2xl border border-border/80 shadow-card bg-card hover:border-emerald-500/40 transition-all p-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Recebido (Pago)</p>
+                <p className="text-2xl font-black text-emerald-600 dark:text-emerald-400 font-mono mt-1">{BRL(totalReceived)}</p>
+              </div>
+              <div className="size-10 bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 rounded-xl flex items-center justify-center shrink-0">
+                <CheckCircle2 className="size-5" />
+              </div>
+            </div>
+          </Card>
         </motion.div>
 
         {/* Filters */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.2 }}>
-          <Card className="border-none shadow-card">
-            <CardHeader className="pb-4 border-b border-border/40">
-              <CardTitle className="text-base font-semibold flex items-center gap-2">
-                <Filter className="h-4 w-4 text-primary" />
-                Filtros
+        <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.1 }}>
+          <Card className="rounded-2xl border border-border/80 shadow-card bg-card overflow-hidden">
+            <CardHeader className="p-4 pb-3 border-b border-border/60">
+              <CardTitle className="text-sm font-bold flex items-center gap-2">
+                <Filter className="size-4 text-primary" />
+                Filtros de Pesquisa
               </CardTitle>
             </CardHeader>
-            <CardContent className="pt-5 grid grid-cols-1 md:grid-cols-3 gap-6">
+            <CardContent className="p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
               {role !== "partner" && (
-                <div className="space-y-2.5">
-                  <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Parceiro / Licenciado</label>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-muted-foreground">Parceiro / Licenciado</label>
                   <Select value={partnerFilter} onValueChange={setPartnerFilter}>
-                    <SelectTrigger className="bg-background/50 border-border/50 h-10 transition-colors hover:bg-background">
+                    <SelectTrigger className="bg-background rounded-xl h-9 text-xs">
                       <SelectValue placeholder="Todos os parceiros" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="rounded-xl">
                       <SelectItem value="all">Todos os parceiros</SelectItem>
                       {uniquePartners.map((p) => (
                         <SelectItem key={p.id} value={p.id}>
@@ -416,13 +410,13 @@ function ReportsPage() {
                   </Select>
                 </div>
               )}
-              <div className="space-y-2.5">
-                <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Status do Pagamento</label>
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-muted-foreground">Status do Pagamento</label>
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="bg-background/50 border-border/50 h-10 transition-colors hover:bg-background">
+                  <SelectTrigger className="bg-background rounded-xl h-9 text-xs">
                     <SelectValue placeholder="Selecione o status" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="rounded-xl">
                     <SelectItem value="all">Todos os status</SelectItem>
                     <SelectItem value="pending">Pendente</SelectItem>
                     <SelectItem value="overdue">Vencido</SelectItem>
@@ -431,13 +425,13 @@ function ReportsPage() {
                 </Select>
               </div>
 
-              <div className="space-y-2.5">
-                <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Estabelecimento</label>
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-muted-foreground">Estabelecimento (EC)</label>
                 <Select value={merchantFilter} onValueChange={setMerchantFilter}>
-                  <SelectTrigger className="bg-background/50 border-border/50 h-10 transition-colors hover:bg-background">
+                  <SelectTrigger className="bg-background rounded-xl h-9 text-xs">
                     <SelectValue placeholder="Todos os estabelecimentos" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="rounded-xl">
                     <SelectItem value="all">Todos os estabelecimentos</SelectItem>
                     {(merchants.data ?? []).map((m) => (
                       <SelectItem key={m.id} value={m.id}>
@@ -452,18 +446,19 @@ function ReportsPage() {
         </motion.div>
 
         {/* Data Table */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.3 }}>
-          <Card className="border-border/40 shadow-sm overflow-hidden">
-            <CardHeader className="bg-muted/20 pb-4 border-b border-border/40 flex flex-row items-center justify-between">
-              <CardTitle className="text-base font-semibold flex items-center gap-2">
-                <FileBarChart2 className="h-4 w-4 text-primary" />
-                Listagem de Recebíveis
-                <Badge variant="secondary" className="ml-2 bg-primary/10 text-primary font-bold">
+        <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.15 }}>
+          <Card className="rounded-2xl border border-border/80 shadow-card bg-card overflow-hidden">
+            <CardHeader className="p-4 pb-3 border-b border-border/60 flex flex-row items-center justify-between space-y-0">
+              <div className="flex items-center gap-2">
+                <FileBarChart2 className="size-4 text-primary" />
+                <CardTitle className="text-sm font-bold">Listagem de Recebíveis</CardTitle>
+                <Badge variant="secondary" className="font-mono text-xs px-2 py-0.5 ml-1">
                   {filteredClosures.length} {filteredClosures.length === 1 ? 'registro' : 'registros'}
                 </Badge>
-              </CardTitle>
-              <Button variant="outline" size="sm" onClick={handleExportPDF} className="h-8 gap-2 hidden sm:flex">
-                <Download className="h-4 w-4" /> Exportar PDF
+              </div>
+              <Button variant="outline" size="sm" onClick={handleExportPDF} className="h-8 gap-1.5 text-xs hidden sm:flex shadow-2xs font-medium">
+                <Download className="size-3.5" />
+                <span>Exportar PDF</span>
               </Button>
             </CardHeader>
             <CardContent className="p-0">

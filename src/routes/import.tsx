@@ -494,22 +494,27 @@ function ImportPage() {
 
   return (
     <AppLayout title="Importar Extrato" subtitle="Upload de extratos e conferência do faturamento">
-      <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">{isViewing ? `Visualizando: ${viewingImport.name}` : "Upload do extrato"}</CardTitle>
+      <div className="grid gap-5 lg:grid-cols-[1fr_340px] items-start">
+        <Card className="rounded-2xl border border-border/80 shadow-card bg-card overflow-hidden">
+          <CardHeader className="p-5 pb-3 border-b border-border/60">
+            <div className="flex items-center gap-2">
+              <FileUp className="size-4 text-primary" />
+              <CardTitle className="text-base font-bold">
+                {isViewing ? `Visualizando: ${viewingImport.name}` : "Upload do Extrato"}
+              </CardTitle>
+            </div>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="p-5 space-y-4">
             {!isViewing && (
               <>
                 <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="grid gap-1.5">
-                    <Label>EC padrão (quando o serial não identificar)</Label>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold">EC padrão (quando o serial não identificar)</Label>
                     <Select value={merchantId} onValueChange={setMerchantId}>
-                      <SelectTrigger>
+                      <SelectTrigger className="bg-background rounded-xl">
                         <SelectValue placeholder="Selecione o estabelecimento" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="rounded-xl">
                         {(merchants.data ?? []).map((m) => (
                           <SelectItem key={m.id} value={m.id}>
                             {m.name}
@@ -518,13 +523,13 @@ function ImportPage() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="grid gap-1.5">
-                    <Label>Mês de referência</Label>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold">Mês de referência</Label>
                     <Select value={month} onValueChange={setMonth}>
-                      <SelectTrigger>
+                      <SelectTrigger className="bg-background rounded-xl">
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="rounded-xl">
                         {monthOptions().map((m) => (
                           <SelectItem key={m} value={m}>
                             {monthLabel(m)}
@@ -535,14 +540,18 @@ function ImportPage() {
                   </div>
                 </div>
 
-                <label className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border bg-muted/40 px-6 py-10 text-center transition-colors hover:bg-muted">
-                  <FileUp className="size-6 text-muted-foreground" />
-                  <span className="text-sm font-medium">
-                    {fileName || "Selecione o arquivo CSV, XLSX ou PDF"}
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    Colunas lidas: serial, modalidade, valor bruto, valor líquido, data
-                  </span>
+                <label className="flex cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-primary/25 bg-primary/2 px-6 py-12 text-center transition-all hover:border-primary/50 hover:bg-primary/5 group shadow-2xs">
+                  <div className="size-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center group-hover:scale-105 transition-transform shadow-2xs">
+                    <FileUp className="size-6" />
+                  </div>
+                  <div className="space-y-0.5">
+                    <span className="text-sm font-bold text-foreground">
+                      {fileName || "Clique para selecionar o arquivo (CSV, XLSX, XLS ou PDF)"}
+                    </span>
+                    <p className="text-xs text-muted-foreground">
+                      Colunas detectadas automaticamente: serial, modalidade, valor bruto, valor líquido, data
+                    </p>
+                  </div>
                   <input
                     type="file"
                     accept=".csv,.xlsx,.xls,.pdf"
@@ -558,36 +567,36 @@ function ImportPage() {
 
             {baseRows.length > 0 && (
               <>
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-muted/30 p-4 rounded-lg border">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-muted/20 p-4 rounded-2xl border border-border/80">
                   <div className="flex flex-wrap items-center gap-2">
-                    <Badge variant="outline" className="text-xs font-semibold bg-background">
+                    <Badge variant="outline" className="text-xs font-bold font-mono bg-background px-2.5 py-1">
                       Bruto: {BRL(grossTotal)}
                     </Badge>
                     {hasNetValues && (
                       <>
-                        <Badge variant="outline" className="text-xs font-semibold text-emerald-600 border-emerald-200 bg-emerald-50/50">
+                        <Badge variant="outline" className="text-xs font-bold font-mono text-emerald-600 border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1">
                           Líquido: {BRL(netTotal)}
                         </Badge>
-                        <Badge variant="destructive" className="text-xs font-semibold">
+                        <Badge variant="destructive" className="text-xs font-bold font-mono px-2.5 py-1">
                           Descontado: {BRL(discountedTotal)} ({avgDiscountPct.toFixed(2)}%)
                         </Badge>
                       </>
                     )}
                     {totals.map((t) => (
-                      <Badge key={t.label} variant="secondary">
+                      <Badge key={t.label} variant="secondary" className="text-xs font-medium px-2 py-0.5">
                         {t.label}: {BRL(t.total)}
                       </Badge>
                     ))}
                   </div>
                   <div className="flex items-center gap-2 w-full sm:w-auto">
-                    <Label className="whitespace-nowrap">Filtrar Equipamento:</Label>
+                    <Label className="whitespace-nowrap text-xs font-semibold">Equipamento:</Label>
                     <Select value={serialFilter} onValueChange={setSerialFilter}>
-                      <SelectTrigger className="w-full sm:w-64 bg-background">
+                      <SelectTrigger className="w-full sm:w-56 bg-background rounded-xl h-9 text-xs">
                         <SelectValue placeholder="Todos os equipamentos" />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="rounded-xl">
                         <SelectItem value="all">Todos os equipamentos</SelectItem>
-                        {uniqueSerials.map(serial => (
+                        {uniqueSerials.map((serial) => (
                           <SelectItem key={serial} value={serial}>
                             {serial}
                           </SelectItem>
@@ -596,7 +605,7 @@ function ImportPage() {
                     </Select>
                   </div>
                 </div>
-                <div className="overflow-x-auto rounded-lg border border-border">
+                <div className="overflow-x-auto rounded-2xl border border-border/80 max-h-[460px] overflow-y-auto scrollbar-thin">
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -738,91 +747,96 @@ function ImportPage() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-base">Histórico de importações</CardTitle>
-            <div className="w-[180px]">
+        <Card className="rounded-2xl border border-border/80 shadow-card bg-card overflow-hidden">
+          <CardHeader className="p-4 pb-3 border-b border-border/60 flex flex-row items-center justify-between space-y-0">
+            <CardTitle className="text-sm font-bold">Histórico</CardTitle>
+            <div className="w-[150px]">
               <Select value={historyMonthFilter} onValueChange={setHistoryMonthFilter}>
-                <SelectTrigger className="h-8">
+                <SelectTrigger className="h-8 text-xs bg-background rounded-lg">
                   <SelectValue placeholder="Mês" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="rounded-xl">
                   <SelectItem value="all">Todos os meses</SelectItem>
-                  {Array.from(new Set((imports.data ?? []).map(i => i.reference_month)))
+                  {Array.from(new Set((imports.data ?? []).map((i) => i.reference_month)))
                     .sort((a, b) => b.localeCompare(a))
-                    .map(m => (
-                      <SelectItem key={m} value={m}>{monthLabel(m)}</SelectItem>
-                  ))}
+                    .map((m) => (
+                      <SelectItem key={m} value={m}>
+                        {monthLabel(m)}
+                      </SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
             </div>
           </CardHeader>
-          <CardContent className="space-y-6">
+          <CardContent className="p-3 space-y-4 max-h-[calc(100vh-280px)] overflow-y-auto scrollbar-thin">
             {(imports.data ?? []).length === 0 && (
-              <p className="text-sm text-muted-foreground">Nenhuma importação registrada.</p>
+              <p className="text-xs text-muted-foreground p-6 text-center">Nenhuma importação registrada.</p>
             )}
-            
+
             {Object.entries(
               (imports.data ?? [])
-              .filter(i => historyMonthFilter === "all" || i.reference_month === historyMonthFilter)
-              .reduce((acc, current) => {
-                const month = current.reference_month;
-                if (!acc[month]) acc[month] = [];
-                acc[month].push(current);
-                return acc;
-              }, {} as Record<string, typeof imports.data>)
+                .filter((i) => historyMonthFilter === "all" || i.reference_month === historyMonthFilter)
+                .reduce((acc, current) => {
+                  const month = current.reference_month;
+                  if (!acc[month]) acc[month] = [];
+                  acc[month].push(current);
+                  return acc;
+                }, {} as Record<string, typeof imports.data>),
             )
-            .sort(([monthA], [monthB]) => monthB.localeCompare(monthA))
-            .map(([month, items]) => (
-              <div key={month} className="space-y-3">
-                <h3 className="text-sm font-semibold text-muted-foreground border-b pb-1">
-                  {monthLabel(month)}
-                </h3>
-                {items!.map((i) => (
-              <div 
-                key={i.id} 
-                className={`rounded-lg border p-3 group relative cursor-pointer transition-colors hover:bg-muted/50 ${viewingImport?.id === i.id ? 'border-primary bg-primary/5' : 'border-border'}`}
-                onClick={() => {
-                  if (viewingImport?.id === i.id) {
-                    setViewingImport(null);
-                    setViewingRows([]);
-                  } else {
-                    loadImportView(i);
-                  }
-                }}
-              >
-                <div className="pr-8">
-                  <p className="truncate text-sm font-medium">{i.file_name}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {monthLabel(i.reference_month)} ·{" "}
-                    {(merchants.data ?? []).find((m) => m.id === i.merchant_id)?.name ?? "Multi-EC"}
-                  </p>
-                  <Badge className="mt-2" variant={i.status === "completed" ? "default" : "secondary"}>
-                    {i.status === "completed"
-                      ? "Concluída"
-                      : i.status === "error"
-                        ? "Erro"
-                        : "Processando"}
-                  </Badge>
+              .sort(([monthA], [monthB]) => monthB.localeCompare(monthA))
+              .map(([month, items]) => (
+                <div key={month} className="space-y-2">
+                  <h3 className="text-xs font-bold text-muted-foreground px-1 uppercase tracking-wider">
+                    {monthLabel(month)}
+                  </h3>
+                  {items!.map((i) => (
+                    <div
+                      key={i.id}
+                      className={`rounded-xl border p-3 group relative cursor-pointer transition-all shadow-2xs ${
+                        viewingImport?.id === i.id
+                          ? "border-primary bg-primary/5 ring-1 ring-primary/20"
+                          : "border-border/70 hover:border-border hover:bg-muted/40"
+                      }`}
+                      onClick={() => {
+                        if (viewingImport?.id === i.id) {
+                          setViewingImport(null);
+                          setViewingRows([]);
+                        } else {
+                          loadImportView(i);
+                        }
+                      }}
+                    >
+                      <div className="pr-7 space-y-1">
+                        <p className="truncate text-xs font-bold text-foreground">{i.file_name}</p>
+                        <p className="text-[11px] text-muted-foreground truncate">
+                          {monthLabel(i.reference_month)} ·{" "}
+                          {(merchants.data ?? []).find((m) => m.id === i.merchant_id)?.name ?? "Multi-EC"}
+                        </p>
+                        <Badge
+                          className="text-[10px] font-semibold px-2 py-0 rounded-full"
+                          variant={i.status === "completed" ? "default" : i.status === "error" ? "destructive" : "secondary"}
+                        >
+                          {i.status === "completed" ? "Concluída" : i.status === "error" ? "Erro" : "Processando"}
+                        </Badge>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="absolute right-2 top-2 size-7 text-muted-foreground opacity-0 group-hover:opacity-100 hover:text-destructive hover:bg-destructive/10 transition-opacity rounded-md"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (window.confirm("Tem certeza que deseja excluir esta importação e todas as suas transações?")) {
+                            deleteImport.mutate(i.id);
+                          }
+                        }}
+                        disabled={deleteImport.isPending}
+                      >
+                        <Trash2 className="size-3.5" />
+                      </Button>
+                    </div>
+                  ))}
                 </div>
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="absolute right-2 top-2 h-8 w-8 text-muted-foreground opacity-0 group-hover:opacity-100 hover:text-destructive transition-opacity"
-                  onClick={(e) => {
-                    e.stopPropagation(); // prevent clicking the card
-                    if (window.confirm("Tem certeza que deseja excluir esta importação e todas as suas transações?")) {
-                      deleteImport.mutate(i.id);
-                    }
-                  }}
-                  disabled={deleteImport.isPending}
-                >
-                  <Trash2 className="size-4" />
-                </Button>
-              </div>
-            ))}
-            </div>
-            ))}
+              ))}
           </CardContent>
         </Card>
       </div>

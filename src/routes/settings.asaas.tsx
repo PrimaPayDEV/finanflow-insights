@@ -135,27 +135,30 @@ function AsaasSettingsPage() {
 
   return (
     <AppLayout title="Configuração Asaas" subtitle="Preferências de cobrança, split e sincronização">
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Card>
-          <CardHeader className="flex-row items-center justify-between space-y-0">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <KeyRound className="size-4" /> Chave de API
+      <div className="grid gap-5 lg:grid-cols-2 items-start">
+        <Card className="rounded-2xl border border-border/80 shadow-card bg-card overflow-hidden">
+          <CardHeader className="p-5 pb-3 border-b border-border/60 flex flex-row items-center justify-between space-y-0">
+            <CardTitle className="flex items-center gap-2 text-base font-bold">
+              <div className="size-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+                <KeyRound className="size-4" />
+              </div>
+              Chave de API Asaas
             </CardTitle>
             {status.isLoading ? (
-              <Badge variant="secondary">verificando…</Badge>
+              <Badge variant="secondary" className="font-mono text-xs">verificando…</Badge>
             ) : configured ? (
-              <Badge>
+              <Badge className="bg-emerald-500/10 text-emerald-600 border border-emerald-500/30 text-xs font-semibold gap-1">
                 <ShieldCheck className="size-3.5" /> Configurada
               </Badge>
             ) : (
-              <Badge variant="destructive">
+              <Badge variant="destructive" className="text-xs font-semibold gap-1">
                 <TriangleAlert className="size-3.5" /> Não configurada
               </Badge>
             )}
           </CardHeader>
-          <CardContent className="space-y-4 text-sm">
-            <p className="text-muted-foreground">
-              Insira a chave da sua API do Asaas para integrar a plataforma. Certifique-se de usar a chave correta (Produção ou Sandbox).
+          <CardContent className="p-5 space-y-4 text-sm">
+            <p className="text-xs text-muted-foreground">
+              Insira a chave da sua API do Asaas para integrar a plataforma. Certifique-se de usar a chave correspondente ao ambiente correto (Produção ou Sandbox).
             </p>
             <div className="flex gap-2">
               <Input
@@ -163,22 +166,26 @@ function AsaasSettingsPage() {
                 placeholder="Ex: $aact_..."
                 value={apiKey}
                 onChange={(e) => setApiKey(e.target.value)}
+                className="font-mono text-xs bg-background"
               />
-              <Button onClick={saveApiKey} disabled={savingKey || !apiKey.trim()}>
-                Salvar
+              <Button onClick={saveApiKey} disabled={savingKey || !apiKey.trim()} className="shrink-0 shadow-2xs">
+                Salvar Chave
               </Button>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Save className="size-4" /> Preferências de cobrança
+        <Card className="rounded-2xl border border-border/80 shadow-card bg-card overflow-hidden">
+          <CardHeader className="p-5 pb-3 border-b border-border/60">
+            <CardTitle className="flex items-center gap-2 text-base font-bold">
+              <div className="size-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+                <Save className="size-4" />
+              </div>
+              Preferências de Cobrança
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid gap-3 sm:grid-cols-2">
+          <CardContent className="p-5 space-y-4">
+            <div className="grid gap-3.5 sm:grid-cols-2">
               <Field
                 label="Dia de vencimento"
                 value={form.due_day}
@@ -218,11 +225,11 @@ function AsaasSettingsPage() {
 
             <Separator />
 
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between p-3 rounded-xl bg-muted/20 border border-border/60">
               <div>
-                <p className="text-sm font-medium">Ambiente sandbox</p>
-                <p className="text-xs text-muted-foreground">
-                  Ativado: cobranças de teste. Desativado: produção (conta real).
+                <p className="text-xs font-bold text-foreground">Ambiente Sandbox (Testes)</p>
+                <p className="text-[11px] text-muted-foreground">
+                  Ativado: cobranças fictícias. Desativado: produção com dinheiro real.
                 </p>
               </div>
               <Switch
@@ -231,92 +238,102 @@ function AsaasSettingsPage() {
               />
             </div>
 
-            <Button onClick={() => save.mutate()} disabled={save.isPending} className="w-full">
-              <Save className="size-4" /> Salvar preferências
+            <Button onClick={() => save.mutate()} disabled={save.isPending} className="w-full gap-2 shadow-xs">
+              <Save className="size-4" />
+              <span>Salvar Preferências</span>
             </Button>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Webhook className="size-4" /> Sincronização de status
+        <Card className="rounded-2xl border border-border/80 shadow-card bg-card overflow-hidden">
+          <CardHeader className="p-5 pb-3 border-b border-border/60">
+            <CardTitle className="flex items-center gap-2 text-base font-bold">
+              <div className="size-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+                <Webhook className="size-4" />
+              </div>
+              Sincronização de Status (Webhook)
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3 text-sm text-muted-foreground">
-            <p>
-              Cadastre esta URL no Asaas em <strong>Integrações → Webhooks</strong> para que os
-              fechamentos sejam marcados como pagos automaticamente.
+          <CardContent className="p-5 space-y-4 text-sm text-muted-foreground">
+            <p className="text-xs">
+              Cadastre esta URL no Asaas em <strong>Integrações → Webhooks</strong> para que as
+              faturas sejam sincronizadas e marcadas como pagas automaticamente.
             </p>
             <div className="flex gap-2">
-              <Input readOnly value={webhookUrl} className="font-mono text-xs" />
+              <Input readOnly value={webhookUrl} className="font-mono text-xs bg-muted/30" />
               <Button
                 variant="outline"
                 size="icon"
+                className="shrink-0"
                 onClick={() => {
                   navigator.clipboard.writeText(webhookUrl);
-                  toast.success("URL copiada");
+                  toast.success("URL copiada!");
                 }}
               >
                 <Copy className="size-4" />
               </Button>
             </div>
-            <div className="space-y-2 mt-4">
-              <p className="text-xs">
-                No Asaas, defina um <strong>token de autenticação</strong> do webhook e salve aqui:
-                {status.data?.webhookTokenConfigured ? " (token configurado)" : " (não configurado)"}
-              </p>
+            <div className="space-y-2 mt-4 pt-3 border-t">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-semibold text-foreground">Token de Autenticação do Webhook</p>
+                <Badge variant={status.data?.webhookTokenConfigured ? "outline" : "secondary"} className="text-[10px]">
+                  {status.data?.webhookTokenConfigured ? "Token ativo" : "Não configurado"}
+                </Badge>
+              </div>
               <div className="flex gap-2">
                 <Input
                   type="password"
                   placeholder="Token do Webhook"
                   value={webhookToken}
                   onChange={(e) => setWebhookToken(e.target.value)}
+                  className="font-mono text-xs bg-background"
                 />
-                <Button onClick={saveWebhookToken} disabled={savingWebhookToken || !webhookToken.trim()}>
+                <Button onClick={saveWebhookToken} disabled={savingWebhookToken || !webhookToken.trim()} className="shrink-0 shadow-2xs">
                   Salvar
                 </Button>
               </div>
             </div>
-            <div className="space-y-1">
-              <p className="text-xs font-medium text-foreground">Últimos eventos recebidos</p>
+            <div className="space-y-1.5 pt-3 border-t">
+              <p className="text-xs font-bold text-foreground">Últimos Eventos Recebidos</p>
               {events.data?.length ? (
-                events.data.slice(0, 6).map((e) => (
-                  <p key={e.id} className="text-xs">
-                    {new Date(e.created_at).toLocaleString("pt-BR")} — {e.event}
-                  </p>
-                ))
+                <div className="space-y-1 max-h-32 overflow-y-auto font-mono text-[11px] bg-muted/20 p-2.5 rounded-xl border">
+                  {events.data.slice(0, 6).map((e) => (
+                    <p key={e.id} className="text-muted-foreground truncate">
+                      <span className="text-foreground font-semibold">{new Date(e.created_at).toLocaleTimeString("pt-BR")}</span> — {e.event}
+                    </p>
+                  ))}
+                </div>
               ) : (
-                <p className="text-xs">Nenhum evento recebido ainda.</p>
+                <p className="text-xs text-muted-foreground">Nenhum evento recebido ainda.</p>
               )}
             </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Como a cobrança é criada</CardTitle>
+        <Card className="rounded-2xl border border-border/80 shadow-card bg-card overflow-hidden">
+          <CardHeader className="p-5 pb-3 border-b border-border/60">
+            <CardTitle className="text-base font-bold">Como a Cobrança Funciona</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4 text-sm">
+          <CardContent className="p-5 space-y-4 text-sm">
             <Feature
               icon={QrCode}
-              title="Boleto com Pix híbrido"
-              text="Cada fechamento aprovado gera uma cobrança com boleto e QR Code Pix no mesmo documento, usando as preferências acima."
+              title="Boleto com Pix Híbrido"
+              text="Cada fechamento aprovado gera uma cobrança com boleto bancário e QR Code Pix no mesmo documento."
             />
             <Feature
               icon={Split}
-              title="Split de pagamento"
-              text="As regras de split do EC (Wallet ID + % do parceiro) são enviadas junto da cobrança e o repasse é automático."
+              title="Split Automático de Pagamento"
+              text="As regras de split do EC (Wallet ID + % do parceiro) são enviadas junto da cobrança para repasse automático no Asaas."
             />
             <Feature
               icon={ShieldCheck}
-              title="Cliente automático"
+              title="Cadastro Automático do Cliente"
               text="O EC é localizado pelo CNPJ no Asaas e criado automaticamente caso ainda não exista."
             />
-            <p className="rounded-lg border border-primary/20 bg-primary/10 p-3 text-xs text-primary">
-              Ambiente atual:{" "}
-              <strong>{form.sandbox ? "Sandbox (teste)" : "Produção (conta real)"}</strong>.
-            </p>
+            <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 text-xs text-primary font-medium flex items-center gap-2">
+              <Badge variant="outline" className="border-primary/40 text-primary bg-primary/10 text-[10px]">Ambiente</Badge>
+              <span>Atualmente em <strong>{form.sandbox ? "Sandbox (Ambiente de Testes)" : "Produção (Conta Oficial)"}</strong></span>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -337,8 +354,8 @@ function Field({
 }) {
   return (
     <div className="space-y-1.5">
-      <Label className="text-xs">{label}</Label>
-      <Input type={type} value={value} onChange={(e) => onChange(e.target.value)} />
+      <Label className="text-xs font-semibold text-muted-foreground">{label}</Label>
+      <Input type={type} value={value} onChange={(e) => onChange(e.target.value)} className="bg-background rounded-xl" />
     </div>
   );
 }
@@ -354,12 +371,12 @@ function Feature({
 }) {
   return (
     <div className="flex gap-3">
-      <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+      <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20">
         <Icon className="size-4" />
       </span>
       <div>
-        <p className="font-medium">{title}</p>
-        <p className="text-sm text-muted-foreground">{text}</p>
+        <p className="font-bold text-xs text-foreground">{title}</p>
+        <p className="text-xs text-muted-foreground">{text}</p>
       </div>
     </div>
   );

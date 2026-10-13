@@ -52,31 +52,33 @@ function PartnersPage() {
       subtitle="Gerencie parceiros, wallets e acessos ao sistema"
       actions={<PartnerDialog />}
     >
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
         {partners?.map((partner) => (
-          <Card key={partner.id} className="relative overflow-hidden">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="size-5 text-primary" />
-                {partner.name}
+          <Card key={partner.id} className="rounded-2xl border border-border/80 shadow-card bg-card overflow-hidden hover:border-primary/40 hover:shadow-md transition-all">
+            <CardHeader className="p-5 pb-3 border-b border-border/60">
+              <CardTitle className="text-base font-bold flex items-center gap-2.5">
+                <div className="size-9 rounded-xl bg-violet-500/10 text-violet-500 flex items-center justify-center shrink-0">
+                  <Users className="size-4" />
+                </div>
+                <span className="truncate">{partner.name}</span>
               </CardTitle>
-              <CardDescription>{partner.email || "Sem e-mail"}</CardDescription>
+              <CardDescription className="text-xs text-muted-foreground truncate">{partner.email || "Sem e-mail"}</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-sm">
-                  <KeyRound className="size-4 text-muted-foreground" />
-                  <span className="text-muted-foreground">Wallet ID:</span>
-                  <span className="font-mono text-xs truncate max-w-[150px]">
+            <CardContent className="p-5 space-y-4">
+              <div className="space-y-2 bg-muted/20 p-3 rounded-xl border border-border/60">
+                <div className="flex items-center gap-2 text-xs">
+                  <KeyRound className="size-3.5 text-muted-foreground shrink-0" />
+                  <span className="text-muted-foreground">Wallet Asaas:</span>
+                  <span className="font-mono font-bold truncate max-w-[150px] text-foreground">
                     {partner.asaas_wallet_id}
                   </span>
                 </div>
                 {(partner.split_percent ?? 0) > 0 && (
-                  <div className="flex items-center gap-2 text-sm">
+                  <div className="flex items-center gap-2 text-xs">
                     <span className="text-muted-foreground">Repasse Fixo:</span>
-                    <span className="font-semibold text-xs text-green-600">
+                    <Badge variant="outline" className="font-mono text-xs text-emerald-600 border-emerald-500/30 bg-emerald-500/10">
                       {partner.split_percent}%
-                    </span>
+                    </Badge>
                   </div>
                 )}
               </div>
@@ -84,14 +86,14 @@ function PartnersPage() {
                 <PartnerDialog partner={partner} />
                 <PartnerUserDialog partner={partner} />
               </div>
-              <div className="flex gap-2 mt-2 pt-2 border-t">
+              <div className="flex gap-2 pt-2 border-t border-border/60">
                 <PartnerActions partner={partner} />
               </div>
             </CardContent>
           </Card>
         ))}
         {partners?.length === 0 && (
-          <div className="col-span-full py-12 text-center text-muted-foreground">
+          <div className="col-span-full p-12 text-center text-muted-foreground border border-dashed rounded-2xl bg-muted/10">
             Nenhum parceiro cadastrado.
           </div>
         )}

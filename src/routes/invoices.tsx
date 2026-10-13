@@ -167,40 +167,43 @@ function InvoicesPage() {
         </div>
       ) : (
         <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Receipt className="size-5" /> Todas as Cobranças
+          <Card className="rounded-2xl border border-border/80 shadow-card bg-card overflow-hidden">
+            <CardHeader className="p-5 pb-4 border-b border-border/60">
+              <CardTitle className="text-base font-semibold flex items-center gap-2.5">
+                <div className="size-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+                  <Receipt className="size-4" />
+                </div>
+                Todas as Cobranças
               </CardTitle>
               <CardDescription>As últimas 100 cobranças geradas na sua conta Asaas</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-0">
               <div className="relative w-full overflow-auto">
                 <table className="w-full caption-bottom text-sm">
-                  <thead className="[&_tr]:border-b">
-                    <tr className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
-                      <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Cliente</th>
-                      <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Descrição</th>
-                      <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Vencimento</th>
-                      <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Valor</th>
-                      <th className="h-12 px-4 text-left align-middle font-medium text-muted-foreground">Status</th>
-                      <th className="h-12 px-4 text-center align-middle font-medium text-muted-foreground">Ações</th>
+                  <thead>
+                    <tr className="border-b border-border/60 bg-muted/40 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      <th className="h-11 px-4 text-left">Cliente</th>
+                      <th className="h-11 px-4 text-left">Descrição</th>
+                      <th className="h-11 px-4 text-left">Vencimento</th>
+                      <th className="h-11 px-4 text-left">Valor</th>
+                      <th className="h-11 px-4 text-left">Status</th>
+                      <th className="h-11 px-4 text-center">Ações</th>
                     </tr>
                   </thead>
-                  <tbody className="[&_tr:last-child]:border-0">
+                  <tbody className="divide-y divide-border/40">
                     {data.data.recentPayments.length === 0 ? (
                       <tr>
-                        <td colSpan={6} className="text-muted-foreground text-sm text-center py-8">
+                        <td colSpan={6} className="text-muted-foreground text-sm text-center py-12">
                           Nenhuma fatura encontrada. (Ambiente Atualizado)
                         </td>
                       </tr>
                     ) : (
                       data.data.recentPayments.map((p: any) => (
-                        <tr key={p.id} className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted">
-                          <td className="p-4 align-middle font-medium">{p.customerName || p.customer}</td>
-                          <td className="p-4 align-middle">{p.description || "-"}</td>
-                          <td className="p-4 align-middle">{p.dueDate ? p.dueDate.split('-').reverse().join('/') : "-"}</td>
-                          <td className="p-4 align-middle">{BRL(p.value)}</td>
+                        <tr key={p.id} className="transition-colors hover:bg-muted/40">
+                          <td className="p-4 align-middle font-medium text-foreground">{p.customerName || p.customer}</td>
+                          <td className="p-4 align-middle text-muted-foreground">{p.description || "-"}</td>
+                          <td className="p-4 align-middle font-mono text-xs">{p.dueDate ? p.dueDate.split('-').reverse().join('/') : "-"}</td>
+                          <td className="p-4 align-middle font-semibold text-foreground">{BRL(p.value)}</td>
                           <td className="p-4 align-middle">
                             {getStatusBadge(p.status)}
                           </td>
@@ -208,7 +211,7 @@ function InvoicesPage() {
                             <Button
                               variant="outline"
                               size="sm"
-                              className="text-emerald-600 border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-300"
+                              className="rounded-xl h-8 px-3 text-xs text-emerald-600 border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-300"
                               onClick={() => {
                                 const text = encodeURIComponent(
                                   `Olá! Aqui está sua fatura no valor de ${BRL(p.value)}.\n\nVocê pode acessar e pagar através do link seguro abaixo:\n${p.invoiceUrl || p.bankSlipUrl || ""}`
@@ -216,7 +219,7 @@ function InvoicesPage() {
                                 window.open(`https://wa.me/?text=${text}`, "_blank");
                               }}
                             >
-                              <MessageCircle className="size-4 mr-2" /> Enviar
+                              <MessageCircle className="size-3.5 mr-1.5" /> Enviar
                             </Button>
                           </td>
                         </tr>

@@ -73,48 +73,50 @@ function AdminCompaniesPage() {
       subtitle="Painel exclusivo de administração para criar e gerenciar as empresas clientes (Multi-Tenant)"
       actions={<CompanyDialog />}
     >
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
         {companies?.map((company) => (
-          <Card key={company.id} className="relative overflow-hidden">
+          <Card key={company.id} className="relative rounded-2xl border border-border/80 shadow-card bg-card overflow-hidden hover:border-primary/40 transition-all flex flex-col justify-between">
             {(company.name === "Prima Hub" || company.name === "PrimaPay") && (
-              <div className="absolute top-0 right-0 bg-primary text-primary-foreground text-xs font-bold px-3 py-1 rounded-bl-lg">
+              <div className="absolute top-0 right-0 bg-primary text-primary-foreground text-xs font-semibold px-3 py-1 rounded-bl-xl shadow-xs">
                 Sua Empresa
               </div>
             )}
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Building2 className="size-5 text-primary" />
-                {company.name}
-              </CardTitle>
-              <CardDescription>CNPJ: {company.document_cnpj || "Não informado"}</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-sm">
-                  <KeyRound className="size-4 text-muted-foreground" />
-                  <span className="text-muted-foreground">Chave Asaas:</span>
-                  <span className="font-mono text-xs truncate max-w-[150px]">
-                    {company.asaas_api_key ? "Configurada" : "Pendente"}
-                  </span>
+            <div>
+              <CardHeader className="p-5 pb-3 border-b border-border/60">
+                <CardTitle className="text-base font-semibold flex items-center gap-2.5">
+                  <div className="size-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                    <Building2 className="size-4" />
+                  </div>
+                  <span className="truncate">{company.name}</span>
+                </CardTitle>
+                <CardDescription className="text-xs">CNPJ: {company.document_cnpj || "Não informado"}</CardDescription>
+              </CardHeader>
+              <CardContent className="p-5 space-y-4">
+                <div className="space-y-2 bg-muted/20 p-3 rounded-xl border border-border/40">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-muted-foreground flex items-center gap-1.5"><KeyRound className="size-3.5 text-muted-foreground" /> Chave Asaas:</span>
+                    <span className="font-mono font-medium truncate max-w-[140px] text-foreground">
+                      {company.asaas_api_key ? "Configurada" : "Pendente"}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-muted-foreground flex items-center gap-1.5"><ShieldAlert className="size-3.5 text-muted-foreground" /> Status:</span>
+                    <Badge variant="outline" className={`font-semibold text-xs rounded-full px-2 py-0.5 ${company.is_active ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-red-50 text-red-700 border-red-200'}`}>
+                      {company.is_active ? "● Ativa" : "● Bloqueada"}
+                    </Badge>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <ShieldAlert className="size-4 text-muted-foreground" />
-                  <span className="text-muted-foreground">Status:</span>
-                  <span className={`font-medium text-xs ${company.is_active ? 'text-green-600' : 'text-red-600'}`}>
-                    {company.is_active ? "Ativa" : "Bloqueada"}
-                  </span>
+                <div className="flex gap-2">
+                  <CompanyDialog company={company} />
+                  <AdminUserDialog companyId={company.id} companyName={company.name} />
                 </div>
-              </div>
-              <div className="flex gap-2">
-                <CompanyDialog company={company} />
-                <AdminUserDialog companyId={company.id} companyName={company.name} />
-              </div>
-              {(company.name !== "Prima Hub" && company.name !== "PrimaPay") && (
-                <div className="flex gap-2 mt-2 pt-2 border-t">
-                  <CompanyActions company={company} />
-                </div>
-              )}
-            </CardContent>
+                {(company.name !== "Prima Hub" && company.name !== "PrimaPay") && (
+                  <div className="flex gap-2 mt-2 pt-3 border-t border-border/50">
+                    <CompanyActions company={company} />
+                  </div>
+                )}
+              </CardContent>
+            </div>
           </Card>
         ))}
       </div>
