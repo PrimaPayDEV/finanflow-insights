@@ -2,12 +2,40 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Search, Smartphone, Users, Save, Percent, Trash2, Settings2, Edit2, Store, Key } from "lucide-react";
+import {
+  Plus,
+  Search,
+  Smartphone,
+  Users,
+  Save,
+  Percent,
+  Trash2,
+  Settings2,
+  Edit2,
+  Store,
+  Key,
+  Copy,
+  Check,
+  Phone,
+  Mail,
+  Layers,
+  Sparkles,
+  CreditCard,
+  Building2,
+  ShieldAlert,
+  ArrowRight,
+  ExternalLink,
+  ChevronRight,
+  X,
+  CheckCircle2,
+  HelpCircle,
+  RotateCcw,
+} from "lucide-react";
 import { MerchantIcon } from "@/components/MerchantIcon";
 import { toast } from "sonner";
 import { AppLayout } from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
@@ -21,7 +49,19 @@ import {
   DialogTrigger,
   DialogClose,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { supabase } from "@/integrations/supabase/client";
 import { createAsaasSubaccount } from "@/lib/asaas.functions";
 import {
@@ -60,6 +100,9 @@ export const Route = createFileRoute("/merchants")({
 
 const emptyMerchant = { name: "", document_cnpj: "", phone_whatsapp: "", email: "" };
 
+/* =========================================================================
+   DIÁLOGO: GERAR ACESSO WEB
+   ========================================================================= */
 function WebAccessDialog({ merchant }: { merchant: Merchant }) {
   const { companyId } = useAuth();
   const [open, setOpen] = useState(false);
@@ -76,37 +119,87 @@ function WebAccessDialog({ merchant }: { merchant: Merchant }) {
       setOpen(false);
       setPassword("");
     },
-    onError: (e: Error) => toast.error(translateError(e.message))
+    onError: (e: Error) => toast.error(translateError(e.message)),
   });
+
+  const generateRandomPassword = () => {
+    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$";
+    let pwd = "";
+    for (let i = 0; i < 10; i++) {
+      pwd += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    setPassword(pwd);
+  };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="hidden sm:flex gap-2 border-primary/20 text-primary hover:bg-primary/5">
-          <Key className="size-4" />
-          Gerar Acesso
+        <Button
+          variant="outline"
+          size="sm"
+          className="gap-2 border-primary/20 text-primary hover:bg-primary/5 hover:border-primary/40 shadow-2xs font-medium"
+        >
+          <Key className="size-3.5" />
+          <span>Acesso Web</span>
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Acesso Web: {merchant.name}</DialogTitle>
-        </DialogHeader>
-        <div className="space-y-4 py-4">
-          <p className="text-sm text-muted-foreground">
-            Crie um login para o estabelecimento acessar o painel blindado (Gestão de Recebíveis).
-          </p>
-          <div className="grid gap-2">
-            <Label>E-mail de Acesso</Label>
-            <Input type="email" placeholder="email@exemplo.com" value={email} onChange={e => setEmail(e.target.value)} />
+          <div className="flex items-center gap-2.5 mb-1">
+            <div className="p-2 rounded-lg bg-primary/10 text-primary">
+              <Key className="size-4" />
+            </div>
+            <DialogTitle>Gerar Acesso Web</DialogTitle>
           </div>
-          <div className="grid gap-2">
-            <Label>Senha Temporária</Label>
-            <Input type="text" placeholder="Mínimo 6 caracteres" value={password} onChange={e => setPassword(e.target.value)} />
+          <DialogDescription>
+            Crie um login blindado para <strong>{merchant.name}</strong> acessar o painel de recebíveis.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4 py-2">
+          <div className="space-y-1.5">
+            <Label className="text-xs font-semibold">E-mail de Acesso</Label>
+            <div className="relative">
+              <Input
+                type="email"
+                placeholder="estabelecimento@exemplo.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="pl-9"
+              />
+              <Mail className="size-4 absolute left-3 top-2.5 text-muted-foreground pointer-events-none" />
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <Label className="text-xs font-semibold">Senha Temporária</Label>
+              <button
+                type="button"
+                onClick={generateRandomPassword}
+                className="text-xs text-primary hover:underline font-medium cursor-pointer"
+              >
+                Gerar senha forte
+              </button>
+            </div>
+            <div className="relative">
+              <Input
+                type="text"
+                placeholder="Mínimo 6 caracteres"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="pl-9 font-mono"
+              />
+              <Key className="size-4 absolute left-3 top-2.5 text-muted-foreground pointer-events-none" />
+            </div>
           </div>
         </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
-          <Button onClick={() => accessMutation.mutate()} disabled={accessMutation.isPending || !email || password.length < 6}>
+        <DialogFooter className="gap-2 sm:gap-0">
+          <Button variant="ghost" onClick={() => setOpen(false)}>
+            Cancelar
+          </Button>
+          <Button
+            onClick={() => accessMutation.mutate()}
+            disabled={accessMutation.isPending || !email || password.length < 6}
+          >
             {accessMutation.isPending ? "Gerando..." : "Criar Acesso"}
           </Button>
         </DialogFooter>
@@ -115,298 +208,9 @@ function WebAccessDialog({ merchant }: { merchant: Merchant }) {
   );
 }
 
-function AdvancedPanel({ merchant }: { merchant: Merchant }) {
-  const qc = useQueryClient();
-  const clearData = useMutation({
-    mutationFn: async () => {
-      const { data: ledgers } = await supabase
-        .from('receivables_ledgers')
-        .select('id, transaction_id')
-        .eq('merchant_id', merchant.id);
-        
-      if (!ledgers || ledgers.length === 0) return { count: 0 };
-      
-      await supabase.from('receivables_requests').delete().eq('merchant_id', merchant.id);
-      await supabase.from('receivables_ledgers').delete().eq('merchant_id', merchant.id);
-      
-      const txIds = ledgers.map((l: any) => l.transaction_id).filter(Boolean);
-      if (txIds.length > 0) {
-        const chunks = [];
-        for (let i = 0; i < txIds.length; i += 100) chunks.push(txIds.slice(i, i + 100));
-        for (const c of chunks) {
-          await supabase.from('receivables_transactions').delete().in('id', c);
-        }
-      }
-      return { count: ledgers.length };
-    },
-    onSuccess: (data) => {
-      toast.success(`Foram apagadas ${data.count} movimentações deste EC.`);
-    },
-    onError: (e: Error) => toast.error(translateError(e.message))
-  });
-
-  return (
-    <Card className="border-destructive/20 shadow-none">
-      <CardHeader>
-        <CardTitle className="text-sm text-destructive flex items-center gap-2">
-           <Trash2 className="size-4" /> Zona de Perigo
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="flex items-center justify-between p-4 border rounded-lg bg-destructive/5 border-destructive/20">
-          <div>
-            <h4 className="font-semibold text-sm">Apagar Histórico de Recebíveis</h4>
-            <p className="text-xs text-muted-foreground mt-1">Isso apagará permanentemente todos os relatórios importados e lançamentos deste EC.</p>
-          </div>
-          <Button 
-            variant="destructive" 
-            disabled={clearData.isPending}
-            onClick={() => {
-              if (confirm("Tem certeza? Esta ação é irreversível e apagará TODO o saldo e histórico do estabelecimento.")) {
-                clearData.mutate();
-              }
-            }}
-          >
-            {clearData.isPending ? "Apagando..." : "Apagar Tudo"}
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-function MerchantsPage() {
-  const qc = useQueryClient();
-  const merchants = useQuery(merchantsQuery);
-  const [open, setOpen] = useState(false);
-  const [form, setForm] = useState(emptyMerchant);
-  const [selected, setSelected] = useState<string | null>(null);
-
-  const invalidate = () => {
-    qc.invalidateQueries({ queryKey: ["merchants"] });
-  };
-
-  const save = useMutation({
-    mutationFn: async () => {
-      const { error } = await supabase.from("merchants").insert(form);
-      if (error) throw new Error(error.message);
-    },
-    onSuccess: () => {
-      toast.success("Estabelecimento cadastrado");
-      setForm(emptyMerchant);
-      setOpen(false);
-      invalidate();
-    },
-    onError: (e: Error) => toast.error(translateError(e.message)),
-  });
-
-  const remove = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("merchants").delete().eq("id", id);
-      if (error) throw new Error(error.message);
-    },
-    onSuccess: () => {
-      toast.success("Estabelecimento removido");
-      setSelected(null);
-      invalidate();
-    },
-    onError: (e: Error) => toast.error(translateError(e.message)),
-  });
-
-  const list = merchants.data ?? [];
-  const active = list.find((m) => m.id === selected) ?? null;
-
-  return (
-    <AppLayout
-      title="Estabelecimentos (ECs)"
-      subtitle="Cadastro, terminais, planos de taxas e split"
-      actions={
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="size-4" /> Novo EC
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Novo estabelecimento</DialogTitle>
-            </DialogHeader>
-            <div className="grid gap-3">
-              <div className="grid gap-1.5">
-                <Label>Razão social</Label>
-                <Input
-                  value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  maxLength={200}
-                />
-              </div>
-              <div className="grid gap-1.5">
-                <Label>CNPJ</Label>
-                <Input
-                  value={form.document_cnpj}
-                  onChange={(e) => setForm({ ...form, document_cnpj: formatCpfCnpj(e.target.value) })}
-                  maxLength={18}
-                />
-              </div>
-              <div className="grid gap-1.5">
-                <Label>WhatsApp</Label>
-                <Input
-                  value={form.phone_whatsapp}
-                  onChange={(e) => setForm({ ...form, phone_whatsapp: formatPhone(e.target.value) })}
-                  maxLength={15}
-                />
-              </div>
-              <div className="grid gap-1.5">
-                <Label>E-mail</Label>
-                <Input
-                  type="email"
-                  value={form.email}
-                  onChange={(e) => setForm({ ...form, email: e.target.value })}
-                  maxLength={200}
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button
-                onClick={() => save.mutate()}
-                disabled={!form.name.trim() || save.isPending}
-              >
-                Salvar
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      }
-    >
-      <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
-        <Card className="border-none shadow-card">
-          <CardHeader>
-            <CardTitle className="text-base">Carteira de ECs</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col gap-2 p-1">
-              {list.length === 0 && (
-                <p className="text-sm text-muted-foreground">Nenhum EC cadastrado ainda.</p>
-              )}
-              {list.map((m, i) => (
-                <motion.button
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: i * 0.05 }}
-                  key={m.id}
-                  onClick={() => setSelected(m.id)}
-                  className={`w-full rounded-lg border px-3 py-2.5 text-left transition-all duration-200 ${
-                    selected === m.id
-                      ? "border-primary bg-primary/5 shadow-sm scale-[1.02]"
-                      : "border-border hover:bg-muted/60 hover:border-primary/30"
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className={`p-2 rounded-lg shrink-0 ${
-                      selected === m.id ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground"
-                    }`}>
-                      <MerchantIcon name={m.name} className="w-4 h-4" />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-bold">{m.name}</p>
-                      <p className="truncate text-xs text-muted-foreground">
-                        {m.document_cnpj || "sem CNPJ"}
-                        {m.companies?.name && ` • ${m.companies.name}`}
-                      </p>
-                    </div>
-                  </div>
-                </motion.button>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        {active ? (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            key={active.id}
-            className="space-y-4"
-          >
-            <Card className="border-none shadow-card">
-              <CardHeader className="flex-row items-start justify-between gap-3 space-y-0">
-                <div className="flex items-center gap-3">
-                  <div className="p-2.5 bg-primary/10 text-primary rounded-xl shrink-0">
-                    <MerchantIcon name={active.name} className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <CardTitle className="text-base font-bold">{active.name}</CardTitle>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      {active.email || "sem e-mail"} · {active.phone_whatsapp || "sem WhatsApp"}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant={active.status === "active" ? "default" : "secondary"}>
-                    {active.status === "active" ? "Ativo" : "Inativo"}
-                  </Badge>
-                  <WebAccessDialog merchant={active} />
-                  <EditMerchantDialog merchant={active} />
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => remove.mutate(active.id)}
-                    aria-label="Remover EC"
-                  >
-                    <Trash2 className="size-4" />
-                  </Button>
-                </div>
-              </CardHeader>
-            </Card>
-
-            <Tabs defaultValue="plan">
-              <TabsList>
-                <TabsTrigger value="plan">
-                  <Percent className="size-4 mr-2" /> Plano financeiro
-                </TabsTrigger>
-                <TabsTrigger value="pos">
-                  <Smartphone className="size-4 mr-2" /> Terminais
-                </TabsTrigger>
-                <TabsTrigger value="split">
-                  <Users className="size-4 mr-2" /> Split Asaas
-                </TabsTrigger>
-                <TabsTrigger value="advanced" className="text-destructive data-[state=active]:text-destructive">
-                  <Settings2 className="size-4 mr-2" /> Avançado
-                </TabsTrigger>
-              </TabsList>
-              <TabsContent value="plan">
-                <FeePlanForm merchant={active} />
-              </TabsContent>
-              <TabsContent value="pos">
-                <TerminalsPanel merchant={active} />
-              </TabsContent>
-              <TabsContent value="split">
-                <SplitPanel merchant={active} />
-              </TabsContent>
-              <TabsContent value="advanced" className="mt-4">
-                <AdvancedPanel merchant={active} />
-              </TabsContent>
-            </Tabs>
-          </motion.div>
-        ) : (
-          <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="h-full">
-            <Card className="border-none shadow-card h-full flex items-center justify-center min-h-[400px]">
-              <CardContent className="p-10 text-center flex flex-col items-center justify-center space-y-4">
-                <div className="p-4 bg-muted/30 rounded-full">
-                  <Store className="h-10 w-10 text-muted-foreground opacity-40" />
-                </div>
-                <p className="text-sm font-medium text-muted-foreground">
-                  Selecione um estabelecimento para configurar terminais, taxas e split.
-                </p>
-              </CardContent>
-            </Card>
-          </motion.div>
-        )}
-      </div>
-    </AppLayout>
-  );
-}
-
+/* =========================================================================
+   DIÁLOGO: EDITAR ESTABELECIMENTO
+   ========================================================================= */
 function EditMerchantDialog({ merchant }: { merchant: Merchant }) {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
@@ -416,6 +220,15 @@ function EditMerchantDialog({ merchant }: { merchant: Merchant }) {
     phone_whatsapp: merchant.phone_whatsapp || "",
     email: merchant.email || "",
   });
+
+  useEffect(() => {
+    setForm({
+      name: merchant.name,
+      document_cnpj: merchant.document_cnpj || "",
+      phone_whatsapp: merchant.phone_whatsapp || "",
+      email: merchant.email || "",
+    });
+  }, [merchant]);
 
   const save = useMutation({
     mutationFn: async () => {
@@ -436,58 +249,70 @@ function EditMerchantDialog({ merchant }: { merchant: Merchant }) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
-          Editar
+        <Button variant="outline" size="sm" className="gap-1.5 shadow-2xs font-medium">
+          <Edit2 className="size-3.5" />
+          <span>Editar</span>
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Editar estabelecimento</DialogTitle>
+          <div className="flex items-center gap-2.5 mb-1">
+            <div className="p-2 rounded-lg bg-primary/10 text-primary">
+              <Store className="size-4" />
+            </div>
+            <DialogTitle>Editar Estabelecimento</DialogTitle>
+          </div>
+          <DialogDescription>
+            Atualize os dados cadastrais e canais de contato de {merchant.name}.
+          </DialogDescription>
         </DialogHeader>
-        <div className="grid gap-3">
-          <div className="grid gap-1.5">
-            <Label>Razão social</Label>
+        <div className="space-y-4 py-2">
+          <div className="space-y-1.5">
+            <Label className="text-xs font-semibold">Razão Social / Nome Fantasia *</Label>
             <Input
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
               maxLength={200}
+              placeholder="Nome da empresa"
             />
           </div>
-          <div className="grid gap-1.5">
-            <Label>CNPJ</Label>
-            <Input
-              value={form.document_cnpj}
-              onChange={(e) => setForm({ ...form, document_cnpj: formatCpfCnpj(e.target.value) })}
-              maxLength={18}
-            />
+          <div className="grid sm:grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold">CNPJ / CPF</Label>
+              <Input
+                value={form.document_cnpj}
+                onChange={(e) => setForm({ ...form, document_cnpj: formatCpfCnpj(e.target.value) })}
+                maxLength={18}
+                placeholder="00.000.000/0000-00"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold">WhatsApp</Label>
+              <Input
+                value={form.phone_whatsapp}
+                onChange={(e) => setForm({ ...form, phone_whatsapp: formatPhone(e.target.value) })}
+                maxLength={15}
+                placeholder="(00) 00000-0000"
+              />
+            </div>
           </div>
-          <div className="grid gap-1.5">
-            <Label>WhatsApp</Label>
-            <Input
-              value={form.phone_whatsapp}
-              onChange={(e) => setForm({ ...form, phone_whatsapp: formatPhone(e.target.value) })}
-              maxLength={15}
-            />
-          </div>
-          <div className="grid gap-1.5">
-            <Label>E-mail</Label>
+          <div className="space-y-1.5">
+            <Label className="text-xs font-semibold">E-mail</Label>
             <Input
               type="email"
               value={form.email}
               onChange={(e) => setForm({ ...form, email: e.target.value })}
               maxLength={200}
+              placeholder="contato@empresa.com"
             />
           </div>
         </div>
-        <DialogFooter>
+        <DialogFooter className="gap-2 sm:gap-0">
           <DialogClose asChild>
             <Button variant="ghost">Cancelar</Button>
           </DialogClose>
-          <Button
-            onClick={() => save.mutate()}
-            disabled={!form.name.trim() || save.isPending}
-          >
-            Salvar
+          <Button onClick={() => save.mutate()} disabled={!form.name.trim() || save.isPending}>
+            {save.isPending ? "Salvando..." : "Salvar Alterações"}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -495,6 +320,643 @@ function EditMerchantDialog({ merchant }: { merchant: Merchant }) {
   );
 }
 
+/* =========================================================================
+   PAINEL AVANÇADO (ZONA DE PERIGO)
+   ========================================================================= */
+function AdvancedPanel({ merchant }: { merchant: Merchant }) {
+  const qc = useQueryClient();
+  const clearData = useMutation({
+    mutationFn: async () => {
+      const { data: ledgers } = await supabase
+        .from("receivables_ledgers")
+        .select("id, transaction_id")
+        .eq("merchant_id", merchant.id);
+
+      if (!ledgers || ledgers.length === 0) return { count: 0 };
+
+      await supabase.from("receivables_requests").delete().eq("merchant_id", merchant.id);
+      await supabase.from("receivables_ledgers").delete().eq("merchant_id", merchant.id);
+
+      const txIds = ledgers.map((l: any) => l.transaction_id).filter(Boolean);
+      if (txIds.length > 0) {
+        const chunks = [];
+        for (let i = 0; i < txIds.length; i += 100) chunks.push(txIds.slice(i, i + 100));
+        for (const c of chunks) {
+          await supabase.from("receivables_transactions").delete().in("id", c);
+        }
+      }
+      return { count: ledgers.length };
+    },
+    onSuccess: (data) => {
+      toast.success(`Foram apagadas ${data.count} movimentações deste EC.`);
+    },
+    onError: (e: Error) => toast.error(translateError(e.message)),
+  });
+
+  return (
+    <Card className="border border-destructive/20 shadow-none bg-destructive/5 rounded-2xl overflow-hidden">
+      <CardHeader className="pb-3 border-b border-destructive/10">
+        <div className="flex items-center gap-2 text-destructive">
+          <ShieldAlert className="size-5" />
+          <CardTitle className="text-base font-bold">Zona de Perigo</CardTitle>
+        </div>
+        <CardDescription className="text-xs text-muted-foreground">
+          Ações irreversíveis para limpeza e redefinição de histórico deste estabelecimento.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="pt-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl border border-destructive/20 bg-background/60">
+          <div className="space-y-1">
+            <h4 className="font-semibold text-sm text-foreground">Apagar Histórico de Recebíveis</h4>
+            <p className="text-xs text-muted-foreground max-w-xl">
+              Isso apagará permanentemente todos os relatórios importados, transações e lançamentos deste EC.
+            </p>
+          </div>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="destructive" size="sm" disabled={clearData.isPending} className="shrink-0">
+                {clearData.isPending ? "Apagando..." : "Apagar Histórico"}
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle className="text-destructive flex items-center gap-2">
+                  <ShieldAlert className="size-5" /> Confirmar exclusão irreversível?
+                </AlertDialogTitle>
+                <AlertDialogDescription>
+                  Esta ação é <strong>permanente e irreversível</strong>. Todo o histórico de relatórios,
+                  lançamentos e saldos vinculados a <strong>{merchant.name}</strong> será apagado.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() => clearData.mutate()}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  Sim, apagar tudo
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+/* =========================================================================
+   PÁGINA PRINCIPAL DE ESTABELECIMENTOS
+   ========================================================================= */
+function MerchantsPage() {
+  const qc = useQueryClient();
+  const merchants = useQuery(merchantsQuery);
+  const terminals = useQuery(terminalsQuery);
+  const splits = useQuery(splitRulesQuery);
+
+  const [open, setOpen] = useState(false);
+  const [form, setForm] = useState(emptyMerchant);
+  const [selected, setSelected] = useState<string | null>(null);
+
+  // Filtros da carteira de ECs
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
+
+  const invalidate = () => {
+    qc.invalidateQueries({ queryKey: ["merchants"] });
+  };
+
+  const save = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.from("merchants").insert(form);
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      toast.success("Estabelecimento cadastrado com sucesso");
+      setForm(emptyMerchant);
+      setOpen(false);
+      invalidate();
+    },
+    onError: (e: Error) => toast.error(translateError(e.message)),
+  });
+
+  const remove = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("merchants").delete().eq("id", id);
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      toast.success("Estabelecimento removido com sucesso");
+      setSelected(null);
+      invalidate();
+    },
+    onError: (e: Error) => toast.error(translateError(e.message)),
+  });
+
+  const toggleStatus = useMutation({
+    mutationFn: async ({ id, newStatus }: { id: string; newStatus: "active" | "inactive" }) => {
+      const { error } = await supabase.from("merchants").update({ status: newStatus }).eq("id", id);
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: (_, vars) => {
+      toast.success(`Estabelecimento marcado como ${vars.newStatus === "active" ? "Ativo" : "Inativo"}`);
+      invalidate();
+    },
+    onError: (e: Error) => toast.error(translateError(e.message)),
+  });
+
+  const list = merchants.data ?? [];
+
+  // Auto-selecionar o primeiro EC na primeira carga
+  useEffect(() => {
+    if (!selected && list.length > 0) {
+      setSelected(list[0].id);
+    }
+  }, [list, selected]);
+
+  // Filtragem da lista
+  const filteredList = useMemo(() => {
+    return list.filter((m) => {
+      const query = searchTerm.toLowerCase().trim();
+      const rawCnpj = m.document_cnpj?.replace(/\D/g, "") || "";
+      const matchesSearch =
+        !query ||
+        m.name?.toLowerCase().includes(query) ||
+        rawCnpj.includes(query.replace(/\D/g, "")) ||
+        m.email?.toLowerCase().includes(query) ||
+        m.phone_whatsapp?.includes(query);
+
+      const matchesStatus =
+        statusFilter === "all" ||
+        (statusFilter === "active" && m.status === "active") ||
+        (statusFilter === "inactive" && m.status !== "active");
+
+      return matchesSearch && matchesStatus;
+    });
+  }, [list, searchTerm, statusFilter]);
+
+  const active = list.find((m) => m.id === selected) ?? null;
+
+  // Contagens para badges das abas
+  const activeTerminalsCount = (terminals.data ?? []).filter((t) => t.merchant_id === active?.id).length;
+  const activeSplitsCount = (splits.data ?? []).filter((s) => s.merchant_id === active?.id).length;
+
+  const copyToClipboard = (text: string, msg: string) => {
+    navigator.clipboard.writeText(text);
+    toast.success(msg);
+  };
+
+  return (
+    <AppLayout
+      title="Estabelecimentos (ECs)"
+      subtitle="Cadastro, terminais POS, planos de taxas e regras de split"
+      actions={
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogTrigger asChild>
+            <Button className="gap-2 shadow-xs">
+              <Plus className="size-4" />
+              <span>Novo EC</span>
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-lg">
+            <DialogHeader>
+              <div className="flex items-center gap-2.5 mb-1">
+                <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                  <Store className="size-5" />
+                </div>
+                <DialogTitle>Novo Estabelecimento</DialogTitle>
+              </div>
+              <DialogDescription>
+                Cadastre um novo estabelecimento credenciado para emitir faturas e gerenciar maquininhas.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-2">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold">Razão Social / Nome Fantasia *</Label>
+                <Input
+                  value={form.name}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  maxLength={200}
+                  placeholder="Ex: Padaria Bela Vista Ltda."
+                  autoFocus
+                />
+              </div>
+              <div className="grid sm:grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold">CNPJ / CPF</Label>
+                  <Input
+                    value={form.document_cnpj}
+                    onChange={(e) => setForm({ ...form, document_cnpj: formatCpfCnpj(e.target.value) })}
+                    maxLength={18}
+                    placeholder="00.000.000/0000-00"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold">WhatsApp</Label>
+                  <Input
+                    value={form.phone_whatsapp}
+                    onChange={(e) => setForm({ ...form, phone_whatsapp: formatPhone(e.target.value) })}
+                    maxLength={15}
+                    placeholder="(00) 00000-0000"
+                  />
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-semibold">E-mail</Label>
+                <Input
+                  type="email"
+                  value={form.email}
+                  onChange={(e) => setForm({ ...form, email: e.target.value })}
+                  maxLength={200}
+                  placeholder="financeiro@empresa.com"
+                />
+              </div>
+            </div>
+            <DialogFooter className="gap-2 sm:gap-0">
+              <DialogClose asChild>
+                <Button variant="ghost">Cancelar</Button>
+              </DialogClose>
+              <Button
+                onClick={() => save.mutate()}
+                disabled={!form.name.trim() || save.isPending}
+              >
+                {save.isPending ? "Cadastrando..." : "Cadastrar EC"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      }
+    >
+      <div className="grid gap-5 lg:grid-cols-[340px_1fr] xl:grid-cols-[380px_1fr] items-start">
+        {/* =========================================================================
+            COLUNA DA ESQUERDA: CARTEIRA DE ECs COM BUSCA E FILTROS
+            ========================================================================= */}
+        <Card className="border border-border/80 shadow-card rounded-2xl overflow-hidden bg-card">
+          <CardHeader className="p-4 pb-3 space-y-3 border-b border-border/60">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Store className="size-4 text-primary" />
+                <CardTitle className="text-base font-bold">Carteira de ECs</CardTitle>
+              </div>
+              <Badge variant="secondary" className="text-xs font-mono px-2 py-0.5">
+                {filteredList.length} {filteredList.length === 1 ? "EC" : "ECs"}
+              </Badge>
+            </div>
+
+            {/* Campo de Busca Rápida */}
+            <div className="relative">
+              <Input
+                placeholder="Buscar por nome ou CNPJ..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-8 pr-8 h-9 text-xs bg-muted/30 focus-visible:bg-background transition-colors"
+              />
+              <Search className="size-3.5 absolute left-2.5 top-2.5 text-muted-foreground pointer-events-none" />
+              {searchTerm && (
+                <button
+                  type="button"
+                  onClick={() => setSearchTerm("")}
+                  className="absolute right-2.5 top-2.5 text-muted-foreground hover:text-foreground p-0.5 cursor-pointer"
+                >
+                  <X className="size-3.5" />
+                </button>
+              )}
+            </div>
+
+            {/* Pílulas de Filtro de Status */}
+            <div className="flex items-center gap-1.5 pt-0.5">
+              <button
+                type="button"
+                onClick={() => setStatusFilter("all")}
+                className={`text-xs px-2.5 py-1 rounded-full font-medium transition-all cursor-pointer ${
+                  statusFilter === "all"
+                    ? "bg-primary text-primary-foreground shadow-2xs"
+                    : "text-muted-foreground hover:bg-muted"
+                }`}
+              >
+                Todos ({list.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setStatusFilter("active")}
+                className={`text-xs px-2.5 py-1 rounded-full font-medium transition-all cursor-pointer ${
+                  statusFilter === "active"
+                    ? "bg-emerald-600 text-white shadow-2xs"
+                    : "text-muted-foreground hover:bg-muted"
+                }`}
+              >
+                Ativos ({list.filter((m) => m.status === "active").length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setStatusFilter("inactive")}
+                className={`text-xs px-2.5 py-1 rounded-full font-medium transition-all cursor-pointer ${
+                  statusFilter === "inactive"
+                    ? "bg-muted-foreground/30 text-foreground shadow-2xs"
+                    : "text-muted-foreground hover:bg-muted"
+                }`}
+              >
+                Inativos ({list.filter((m) => m.status !== "active").length})
+              </button>
+            </div>
+          </CardHeader>
+
+          {/* Lista de Estabelecimentos */}
+          <CardContent className="p-2">
+            <div className="max-h-[calc(100vh-320px)] min-h-[300px] overflow-y-auto pr-1 space-y-1.5 scrollbar-thin">
+              {filteredList.length === 0 ? (
+                <div className="p-8 text-center text-muted-foreground flex flex-col items-center justify-center space-y-2">
+                  <Store className="size-8 opacity-30" />
+                  <p className="text-xs font-medium">Nenhum estabelecimento encontrado.</p>
+                  {searchTerm && (
+                    <Button variant="ghost" size="sm" onClick={() => setSearchTerm("")} className="h-7 text-xs">
+                      Limpar busca
+                    </Button>
+                  )}
+                </div>
+              ) : (
+                filteredList.map((m) => {
+                  const isSelected = selected === m.id;
+                  const isActive = m.status === "active";
+                  return (
+                    <button
+                      type="button"
+                      key={m.id}
+                      onClick={() => setSelected(m.id)}
+                      className={`w-full rounded-xl p-3 text-left transition-all duration-150 flex items-center gap-3 relative cursor-pointer border ${
+                        isSelected
+                          ? "bg-primary/5 border-primary shadow-xs ring-1 ring-primary/20"
+                          : "border-transparent hover:border-border/80 hover:bg-muted/40"
+                      }`}
+                    >
+                      {/* Marcador vertical quando selecionado */}
+                      {isSelected && (
+                        <div className="absolute left-0 top-2.5 bottom-2.5 w-1 bg-primary rounded-r-full" />
+                      )}
+
+                      <div
+                        className={`size-10 rounded-xl shrink-0 flex items-center justify-center transition-colors ${
+                          isSelected
+                            ? "bg-primary text-primary-foreground shadow-xs"
+                            : "bg-muted text-muted-foreground"
+                        }`}
+                      >
+                        <MerchantIcon name={m.name} className="size-5" />
+                      </div>
+
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between gap-1 mb-0.5">
+                          <p className={`truncate text-sm font-bold ${isSelected ? "text-primary" : "text-foreground"}`}>
+                            {m.name}
+                          </p>
+                          <span
+                            className={`size-2 rounded-full shrink-0 ${
+                              isActive ? "bg-emerald-500" : "bg-muted-foreground/40"
+                            }`}
+                            title={isActive ? "Ativo" : "Inativo"}
+                          />
+                        </div>
+                        <p className="truncate text-xs text-muted-foreground font-mono">
+                          {m.document_cnpj || "Sem CNPJ"}
+                        </p>
+                      </div>
+
+                      <ChevronRight
+                        className={`size-4 shrink-0 transition-transform ${
+                          isSelected ? "text-primary translate-x-0.5" : "text-muted-foreground/40"
+                        }`}
+                      />
+                    </button>
+                  );
+                })
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* =========================================================================
+            COLUNA DA DIREITA: DETALHES DO EC SELECIONADO & ABAS
+            ========================================================================= */}
+        {active ? (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            key={active.id}
+            className="space-y-5"
+          >
+            {/* Banner de Perfil do Estabelecimento */}
+            <Card className="border border-border/80 shadow-card rounded-2xl bg-card overflow-hidden">
+              <div className="p-5 sm:p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                {/* Informações Principais */}
+                <div className="flex items-start sm:items-center gap-4">
+                  <div className="size-14 rounded-2xl bg-primary/10 text-primary border border-primary/20 flex items-center justify-center shrink-0 shadow-xs">
+                    <MerchantIcon name={active.name} className="size-7" />
+                  </div>
+                  <div className="space-y-1.5 min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h2 className="text-lg sm:text-xl font-bold tracking-tight text-foreground truncate max-w-xl">
+                        {active.name}
+                      </h2>
+                      {/* Badge Interativa de Status */}
+                      <button
+                        type="button"
+                        onClick={() =>
+                          toggleStatus.mutate({
+                            id: active.id,
+                            newStatus: active.status === "active" ? "inactive" : "active",
+                          })
+                        }
+                        title="Clique para alternar status"
+                        className={`px-2.5 py-0.5 rounded-full text-xs font-semibold inline-flex items-center gap-1.5 transition-all cursor-pointer border ${
+                          active.status === "active"
+                            ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/30 hover:bg-emerald-500/20 dark:text-emerald-400"
+                            : "bg-muted text-muted-foreground border-border hover:bg-muted/80"
+                        }`}
+                      >
+                        <span
+                          className={`size-1.5 rounded-full ${
+                            active.status === "active" ? "bg-emerald-500" : "bg-muted-foreground"
+                          }`}
+                        />
+                        {active.status === "active" ? "Ativo" : "Inativo"}
+                      </button>
+                    </div>
+
+                    {/* Chips de Contato e Documento */}
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-muted-foreground">
+                      {active.document_cnpj ? (
+                        <button
+                          type="button"
+                          onClick={() => copyToClipboard(active.document_cnpj, "CNPJ copiado!")}
+                          className="flex items-center gap-1 font-mono hover:text-foreground transition-colors cursor-pointer group"
+                          title="Clique para copiar CNPJ"
+                        >
+                          <Building2 className="size-3.5 text-muted-foreground/70" />
+                          <span>{active.document_cnpj}</span>
+                          <Copy className="size-3 opacity-0 group-hover:opacity-100 transition-opacity ml-0.5" />
+                        </button>
+                      ) : (
+                        <span className="text-muted-foreground/60 italic">Sem CNPJ cadastrado</span>
+                      )}
+
+                      {active.phone_whatsapp && (
+                        <a
+                          href={`https://wa.me/55${active.phone_whatsapp.replace(/\D/g, "")}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="flex items-center gap-1 hover:text-emerald-600 transition-colors"
+                          title="Abrir WhatsApp"
+                        >
+                          <Phone className="size-3.5 text-emerald-600" />
+                          <span>{active.phone_whatsapp}</span>
+                        </a>
+                      )}
+
+                      {active.email && (
+                        <a
+                          href={`mailto:${active.email}`}
+                          className="flex items-center gap-1 hover:text-primary transition-colors truncate max-w-xs"
+                          title="Enviar e-mail"
+                        >
+                          <Mail className="size-3.5 text-muted-foreground/70" />
+                          <span className="truncate">{active.email}</span>
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Toolbar de Ações Rápidas */}
+                <div className="flex flex-wrap items-center gap-2 pt-2 md:pt-0 border-t md:border-t-0 border-border/60">
+                  <WebAccessDialog merchant={active} />
+                  <EditMerchantDialog merchant={active} />
+
+                  {/* Confirmação Segura para Excluir */}
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                        aria-label="Remover EC"
+                      >
+                        <Trash2 className="size-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+                          <Trash2 className="size-5" /> Excluir estabelecimento?
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Tem certeza de que deseja remover <strong>{active.name}</strong>?
+                          Esta ação excluirá o cadastro do estabelecimento e seus vínculos associados.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => remove.mutate(active.id)}
+                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                          Sim, excluir
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+              </div>
+            </Card>
+
+            {/* Abas de Configuração */}
+            <Tabs defaultValue="plan" className="space-y-4">
+              <TabsList className="h-11 p-1 bg-muted/40 rounded-xl border border-border/60">
+                <TabsTrigger
+                  value="plan"
+                  className="rounded-lg text-xs sm:text-sm font-semibold gap-2 data-[state=active]:bg-background data-[state=active]:shadow-2xs"
+                >
+                  <Percent className="size-4 text-primary" />
+                  <span>Plano financeiro</span>
+                </TabsTrigger>
+                <TabsTrigger
+                  value="pos"
+                  className="rounded-lg text-xs sm:text-sm font-semibold gap-2 data-[state=active]:bg-background data-[state=active]:shadow-2xs"
+                >
+                  <Smartphone className="size-4 text-blue-500" />
+                  <span>Terminais</span>
+                  {activeTerminalsCount > 0 && (
+                    <Badge variant="secondary" className="h-5 px-1.5 text-[10px] font-mono">
+                      {activeTerminalsCount}
+                    </Badge>
+                  )}
+                </TabsTrigger>
+                <TabsTrigger
+                  value="split"
+                  className="rounded-lg text-xs sm:text-sm font-semibold gap-2 data-[state=active]:bg-background data-[state=active]:shadow-2xs"
+                >
+                  <Users className="size-4 text-violet-500" />
+                  <span>Split Asaas</span>
+                  {activeSplitsCount > 0 && (
+                    <Badge variant="secondary" className="h-5 px-1.5 text-[10px] font-mono">
+                      {activeSplitsCount}
+                    </Badge>
+                  )}
+                </TabsTrigger>
+                <TabsTrigger
+                  value="advanced"
+                  className="rounded-lg text-xs sm:text-sm font-semibold gap-2 text-destructive data-[state=active]:text-destructive data-[state=active]:bg-background data-[state=active]:shadow-2xs ml-auto"
+                >
+                  <Settings2 className="size-4" />
+                  <span>Avançado</span>
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="plan" className="m-0 focus-visible:outline-none">
+                <FeePlanForm merchant={active} />
+              </TabsContent>
+
+              <TabsContent value="pos" className="m-0 focus-visible:outline-none">
+                <TerminalsPanel merchant={active} />
+              </TabsContent>
+
+              <TabsContent value="split" className="m-0 focus-visible:outline-none">
+                <SplitPanel merchant={active} />
+              </TabsContent>
+
+              <TabsContent value="advanced" className="m-0 focus-visible:outline-none">
+                <AdvancedPanel merchant={active} />
+              </TabsContent>
+            </Tabs>
+          </motion.div>
+        ) : (
+          /* Estado Vazio Quando Nenhum Estabelecimento Está Selecionado */
+          <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="h-full">
+            <Card className="border border-dashed border-border/80 shadow-none rounded-2xl h-full flex items-center justify-center min-h-[460px] bg-muted/10">
+              <CardContent className="p-10 text-center flex flex-col items-center justify-center space-y-4 max-w-md">
+                <div className="size-16 rounded-2xl bg-primary/10 text-primary flex items-center justify-center">
+                  <Store className="size-8 opacity-70" />
+                </div>
+                <div className="space-y-1">
+                  <h3 className="text-base font-bold text-foreground">Nenhum estabelecimento selecionado</h3>
+                  <p className="text-xs text-muted-foreground">
+                    Selecione um estabelecimento na carteira ao lado para configurar taxas, vincular terminais e regras de split, ou cadastre um novo estabelecimento.
+                  </p>
+                </div>
+                <Button onClick={() => setOpen(true)} className="gap-2">
+                  <Plus className="size-4" /> Cadastrar Novo EC
+                </Button>
+              </CardContent>
+            </Card>
+          </motion.div>
+        )}
+      </div>
+    </AppLayout>
+  );
+}
+
+/* =========================================================================
+   FORMULÁRIO DE PLANO FINANCEIRO REFINADO
+   ========================================================================= */
 const planFields = [
   { key: "fixed_rate_percent", label: "Taxa operacional variável (%)" },
   { key: "pix_rate", label: "Pix (%)" },
@@ -507,7 +969,7 @@ const DEFAULT_CPAG_INSTALLMENTS: Record<number, number> = {
   1: 3.47,
   2: 5.08,
   3: 5.84,
-  4: 6.60,
+  4: 6.6,
   5: 7.26,
   6: 8.11,
   7: 9.16,
@@ -516,7 +978,7 @@ const DEFAULT_CPAG_INSTALLMENTS: Record<number, number> = {
   10: 11.43,
   11: 12.18,
   12: 12.94,
-  13: 13.70,
+  13: 13.7,
   14: 14.45,
   15: 15.21,
   16: 15.97,
@@ -629,186 +1091,341 @@ function FeePlanForm({ merchant }: { merchant: Merchant }) {
 
   return (
     <>
-      <Card className="border-none shadow-card">
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-base font-bold">Configuração do plano financeiro</CardTitle>
+      <Card className="border border-border/80 shadow-card rounded-2xl bg-card overflow-hidden">
+        <CardHeader className="p-5 sm:p-6 pb-4 border-b border-border/60">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <Percent className="size-5 text-primary" />
+                <CardTitle className="text-base sm:text-lg font-bold text-foreground">
+                  Configuração do Plano Financeiro
+                </CardTitle>
+              </div>
+              <CardDescription className="text-xs text-muted-foreground">
+                Defina a taxa operacional da plataforma e as taxas por modalidade e parcelamento para {merchant.name}.
+              </CardDescription>
+            </div>
             {installedCount > 0 && (
-              <Badge variant="secondary" className="font-normal text-xs bg-primary/10 text-primary border-primary/20">
-                {installedCount} {installedCount === 1 ? "parcela personalizada" : "parcelas personalizadas"}
+              <Badge
+                variant="secondary"
+                className="font-medium text-xs bg-primary/10 text-primary border-primary/20 shrink-0 self-start sm:self-auto gap-1"
+              >
+                <Layers className="size-3" />
+                <span>{installedCount} {installedCount === 1 ? "parcela customizada" : "parcelas customizadas"}</span>
               </Badge>
             )}
           </div>
         </CardHeader>
-        <CardContent className="space-y-5">
-          {/* Disposição harmoniosa dos campos */}
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {/* 1. Taxa operacional variável */}
-            <div className="grid gap-1.5">
-              <Label htmlFor="fixed_rate_percent" className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                Taxa operacional variável (%)
-              </Label>
-              <Input
-                id="fixed_rate_percent"
-                type="number"
-                step="0.01"
-                min="0"
-                placeholder="0,00"
-                value={values.fixed_rate_percent}
-                onChange={(e) => setDraft({ ...values, fixed_rate_percent: e.target.value })}
-              />
-            </div>
 
-            {/* 2. Pix */}
-            <div className="grid gap-1.5">
-              <Label htmlFor="pix_rate" className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                Pix (%)
-              </Label>
-              <Input
-                id="pix_rate"
-                type="number"
-                step="0.01"
-                min="0"
-                placeholder="0,00"
-                value={values.pix_rate}
-                onChange={(e) => setDraft({ ...values, pix_rate: e.target.value })}
-              />
-            </div>
-
-            {/* 3. Débito */}
-            <div className="grid gap-1.5">
-              <Label htmlFor="debit_rate" className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                Débito (%)
-              </Label>
-              <Input
-                id="debit_rate"
-                type="number"
-                step="0.01"
-                min="0"
-                placeholder="0,00"
-                value={values.debit_rate}
-                onChange={(e) => setDraft({ ...values, debit_rate: e.target.value })}
-              />
-            </div>
-
-            {/* 4. Crédito à vista */}
-            <div className="grid gap-1.5">
-              <Label htmlFor="credit_vista_rate" className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                Crédito à vista (%)
-              </Label>
-              <Input
-                id="credit_vista_rate"
-                type="number"
-                step="0.01"
-                min="0"
-                placeholder="0,00"
-                value={values.credit_vista_rate}
-                onChange={(e) => setDraft({ ...values, credit_vista_rate: e.target.value })}
-              />
-            </div>
-
-            {/* 5. Crédito parcelado com botão de "+" ao lado */}
-            <div className="grid gap-1.5 sm:col-span-2 lg:col-span-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="credit_installment_rate" className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                  Crédito parcelado (%)
-                </Label>
-                <span className="text-xs text-muted-foreground">
-                  Taxa padrão ou configure parcelas (1x, 2x, 3x...)
-                </span>
+        <CardContent className="p-5 sm:p-6 space-y-6">
+          {/* =========================================================================
+              SEÇÃO 1: TAXA OPERACIONAL VARIÁVEL DA PLATAFORMA (DESTAQUE)
+              ========================================================================= */}
+          <div className="p-4 sm:p-5 rounded-2xl border border-primary/20 bg-gradient-to-r from-primary/5 via-primary/2 to-transparent flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex items-start gap-3.5 max-w-xl">
+              <div className="size-10 rounded-xl bg-primary/15 text-primary flex items-center justify-center shrink-0">
+                <Percent className="size-5" />
               </div>
-              <div className="flex items-center gap-2">
+              <div className="space-y-0.5">
+                <div className="flex items-center gap-2">
+                  <h4 className="text-sm font-bold text-foreground">Taxa Operacional Variável</h4>
+                  <Badge variant="outline" className="text-[10px] font-semibold text-primary border-primary/30">
+                    Plataforma
+                  </Badge>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Percentual retido pela plataforma nas operações de vendas para apuração do fechamento financeiro do EC.
+                </p>
+              </div>
+            </div>
+
+            <div className="w-full md:w-48 shrink-0">
+              <div className="relative flex items-center">
                 <Input
-                  id="credit_installment_rate"
+                  id="fixed_rate_percent"
                   type="number"
                   step="0.01"
                   min="0"
-                  placeholder="Taxa padrão para parcelas"
-                  value={values.credit_installment_rate}
-                  onChange={(e) => setDraft({ ...values, credit_installment_rate: e.target.value })}
-                  className="flex-1"
+                  placeholder="0,00"
+                  value={values.fixed_rate_percent}
+                  onChange={(e) => setDraft({ ...values, fixed_rate_percent: e.target.value })}
+                  className="h-11 pr-8 font-mono font-bold text-base bg-background shadow-2xs text-right"
                 />
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="shrink-0 h-10 px-3.5 border-primary/40 text-primary hover:bg-primary/10 hover:border-primary transition-all flex items-center gap-1.5 shadow-xs"
-                  onClick={() => setIsInstallmentsModalOpen(true)}
-                  title="Adicionar parcelas (1x, 2x, 3x...)"
-                >
-                  <Plus className="size-4" />
-                  <span className="text-xs font-semibold">Parcelas</span>
-                </Button>
+                <span className="absolute right-3 text-sm font-bold text-muted-foreground pointer-events-none">
+                  %
+                </span>
               </div>
             </div>
           </div>
 
-          {/* Exibição limpa das parcelas cadastradas sem quebrar a harmonia da página */}
-          {installedCount > 0 && (
-            <div className="p-3.5 bg-muted/20 rounded-lg border border-border/60">
-              <div className="flex items-center justify-between mb-2">
+          {/* =========================================================================
+              SEÇÃO 2: TAXAS POR MODALIDADE DE PAGAMENTO
+              ========================================================================= */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <CreditCard className="size-4 text-primary" />
+                <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                  Taxas por Modalidade de Venda
+                </h4>
+              </div>
+              <span className="text-xs text-muted-foreground">Valores aplicados nas vendas do EC</span>
+            </div>
+
+            <div className="grid gap-3.5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+              {/* PIX */}
+              <div className="p-3.5 rounded-xl border border-border/80 bg-muted/15 space-y-2 hover:border-emerald-500/40 transition-colors">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5">
+                    <Sparkles className="size-3.5 text-emerald-500" />
+                    <Label htmlFor="pix_rate" className="text-xs font-bold text-foreground cursor-pointer">
+                      Pix
+                    </Label>
+                  </div>
+                  <span className="text-[10px] font-medium text-muted-foreground">Instantâneo</span>
+                </div>
+                <div className="relative">
+                  <Input
+                    id="pix_rate"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="0,00"
+                    value={values.pix_rate}
+                    onChange={(e) => setDraft({ ...values, pix_rate: e.target.value })}
+                    className="h-10 pr-7 font-mono font-semibold text-sm bg-background"
+                  />
+                  <span className="absolute right-2.5 top-2.5 text-xs font-bold text-muted-foreground">%</span>
+                </div>
+              </div>
+
+              {/* DÉBITO */}
+              <div className="p-3.5 rounded-xl border border-border/80 bg-muted/15 space-y-2 hover:border-blue-500/40 transition-colors">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5">
+                    <CreditCard className="size-3.5 text-blue-500" />
+                    <Label htmlFor="debit_rate" className="text-xs font-bold text-foreground cursor-pointer">
+                      Débito
+                    </Label>
+                  </div>
+                  <span className="text-[10px] font-medium text-muted-foreground">Cartão à vista</span>
+                </div>
+                <div className="relative">
+                  <Input
+                    id="debit_rate"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="0,00"
+                    value={values.debit_rate}
+                    onChange={(e) => setDraft({ ...values, debit_rate: e.target.value })}
+                    className="h-10 pr-7 font-mono font-semibold text-sm bg-background"
+                  />
+                  <span className="absolute right-2.5 top-2.5 text-xs font-bold text-muted-foreground">%</span>
+                </div>
+              </div>
+
+              {/* CRÉDITO À VISTA */}
+              <div className="p-3.5 rounded-xl border border-border/80 bg-muted/15 space-y-2 hover:border-violet-500/40 transition-colors">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5">
+                    <CreditCard className="size-3.5 text-violet-500" />
+                    <Label htmlFor="credit_vista_rate" className="text-xs font-bold text-foreground cursor-pointer">
+                      Crédito à vista
+                    </Label>
+                  </div>
+                  <span className="text-[10px] font-medium text-muted-foreground">1x</span>
+                </div>
+                <div className="relative">
+                  <Input
+                    id="credit_vista_rate"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="0,00"
+                    value={values.credit_vista_rate}
+                    onChange={(e) => setDraft({ ...values, credit_vista_rate: e.target.value })}
+                    className="h-10 pr-7 font-mono font-semibold text-sm bg-background"
+                  />
+                  <span className="absolute right-2.5 top-2.5 text-xs font-bold text-muted-foreground">%</span>
+                </div>
+              </div>
+
+              {/* CRÉDITO PARCELADO COM BOTÃO + PARCELAS ACOPLADO */}
+              <div className="p-3.5 rounded-xl border border-border/80 bg-muted/15 space-y-2 hover:border-primary/40 transition-colors">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5">
+                    <Layers className="size-3.5 text-primary" />
+                    <Label htmlFor="credit_installment_rate" className="text-xs font-bold text-foreground cursor-pointer">
+                      Crédito parcelado
+                    </Label>
+                  </div>
+                  <span className="text-[10px] font-medium text-muted-foreground">Taxa base</span>
+                </div>
                 <div className="flex items-center gap-1.5">
-                  <Percent className="size-3.5 text-primary" />
+                  <div className="relative flex-1">
+                    <Input
+                      id="credit_installment_rate"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      placeholder="0,00"
+                      value={values.credit_installment_rate}
+                      onChange={(e) => setDraft({ ...values, credit_installment_rate: e.target.value })}
+                      className="h-10 pr-7 font-mono font-semibold text-sm bg-background"
+                    />
+                    <span className="absolute right-2.5 top-2.5 text-xs font-bold text-muted-foreground">%</span>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="h-10 px-2.5 border-primary/40 text-primary hover:bg-primary/10 hover:border-primary transition-all shrink-0 flex items-center gap-1 font-semibold text-xs shadow-2xs"
+                    onClick={() => setIsInstallmentsModalOpen(true)}
+                    title="Adicionar e gerenciar parcelas (1x, 2x, 3x...)"
+                  >
+                    <Plus className="size-4" />
+                    <span>Parcelas</span>
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* =========================================================================
+              SEÇÃO 3: PARCELAMENTO PERSONALIZADO (GRID DE CHIPS OU CONVITE)
+              ========================================================================= */}
+          {installedCount > 0 ? (
+            <div className="p-4 rounded-2xl border border-border/80 bg-muted/20 space-y-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <Layers className="size-4 text-primary" />
                   <span className="text-xs font-bold text-foreground">
-                    Parcelas personalizadas ({installedCount}):
+                    Taxas personalizadas por parcela ({installedCount} definidas):
                   </span>
                 </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="h-6 text-xs text-primary hover:text-primary/80 px-2"
-                  onClick={() => setIsInstallmentsModalOpen(true)}
-                >
-                  <Edit2 className="size-3 mr-1" /> Editar parcelas
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 text-xs text-primary hover:text-primary hover:bg-primary/10 font-medium px-2.5"
+                    onClick={() => setIsInstallmentsModalOpen(true)}
+                  >
+                    <Edit2 className="size-3 mr-1" /> Gerenciar Parcelas
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10 font-medium px-2"
+                    onClick={() => setInstallmentRates({})}
+                  >
+                    Limpar
+                  </Button>
+                </div>
               </div>
-              <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto pr-1">
+
+              {/* Grid de Chips de Parcelas */}
+              <div className="flex flex-wrap gap-2 max-h-36 overflow-y-auto pr-1">
                 {sortedInstallments.map(([num, rate]) => (
                   <Badge
                     key={num}
                     variant="outline"
-                    className="px-2 py-0.5 text-xs font-mono bg-background border flex items-center gap-1.5 shadow-2xs"
+                    className="px-2.5 py-1 text-xs font-mono bg-background border flex items-center gap-2 shadow-2xs rounded-lg hover:border-primary/40 transition-colors"
                   >
                     <span className="font-bold text-primary">{num}x:</span>
-                    <span className="font-medium">{Number(rate).toFixed(2)}%</span>
+                    <span className="font-semibold text-foreground">{Number(rate).toFixed(2)}%</span>
                     <button
                       type="button"
-                      className="text-muted-foreground hover:text-destructive transition-colors ml-1 cursor-pointer"
+                      className="text-muted-foreground hover:text-destructive transition-colors ml-0.5 cursor-pointer p-0.5"
                       onClick={() => removeInstallment(num)}
                       title={`Remover ${num}x`}
                     >
-                      ×
+                      <X className="size-3" />
                     </button>
                   </Badge>
                 ))}
               </div>
             </div>
+          ) : (
+            <div className="p-4 rounded-2xl border border-dashed border-border/90 bg-muted/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="space-y-0.5">
+                <p className="text-xs font-bold text-foreground">Deseja taxas diferentes por número de parcelas?</p>
+                <p className="text-xs text-muted-foreground">
+                  Atualmente todas as parcelas utilizam a taxa base de Crédito Parcelado ({values.credit_installment_rate || "0"}%).
+                </p>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="gap-1.5 border-primary/30 text-primary hover:bg-primary/5 shrink-0 self-start sm:self-auto font-medium text-xs"
+                onClick={() => setIsInstallmentsModalOpen(true)}
+              >
+                <Plus className="size-3.5" />
+                Configurar parcelas (1x a 18x)
+              </Button>
+            </div>
           )}
 
-          {/* Ação de salvar */}
-          <div className="flex items-center justify-end gap-3 pt-2">
-            <Button onClick={() => save.mutate()} disabled={save.isPending}>
-              <Save className="size-4 mr-2" /> Salvar plano
-            </Button>
+          {/* =========================================================================
+              RODAPÉ DE AÇÕES DO PLANO
+              ========================================================================= */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-border/60">
+            <div className="text-xs text-muted-foreground">
+              {draft !== null && (
+                <span className="text-amber-600 dark:text-amber-400 font-medium inline-flex items-center gap-1">
+                  <span className="size-1.5 rounded-full bg-amber-500 animate-pulse" />
+                  Alterações não salvas
+                </span>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2 self-end sm:self-auto">
+              {draft !== null && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setDraft(null)}
+                  disabled={save.isPending}
+                  className="text-xs text-muted-foreground"
+                >
+                  <RotateCcw className="size-3.5 mr-1" /> Descartar
+                </Button>
+              )}
+              <Button
+                onClick={() => save.mutate()}
+                disabled={save.isPending}
+                className="gap-2 shadow-xs px-5"
+              >
+                <Save className="size-4" />
+                <span>{save.isPending ? "Salvando plano..." : "Salvar Plano Financeiro"}</span>
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Modal Dialog para gerenciar e adicionar parcelas (1x, 2x, 3x, etc.) */}
+      {/* =========================================================================
+          MODAL DE GERENCIAMENTO DE PARCELAS (1x, 2x, 3x...)
+          ========================================================================= */}
       <Dialog open={isInstallmentsModalOpen} onOpenChange={setIsInstallmentsModalOpen}>
-        <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col p-6">
-          <DialogHeader className="pb-3 border-b">
-            <DialogTitle className="text-lg flex items-center gap-2">
-              <Percent className="size-5 text-primary" />
-              Configurar Taxas por Parcela (Crédito)
-            </DialogTitle>
+        <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col p-6 rounded-2xl">
+          <DialogHeader className="pb-3 border-b border-border/60">
+            <div className="flex items-center gap-2.5 mb-1">
+              <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                <Percent className="size-5" />
+              </div>
+              <DialogTitle className="text-lg">Configurar Taxas por Parcela (Crédito)</DialogTitle>
+            </div>
             <DialogDescription>
-              Insira as taxas para cada número de parcelas (1x, 2x, 3x, etc.) de {merchant.name}.
+              Insira a taxa negociada para cada número de parcelas (1x, 2x, 3x...) de <strong>{merchant.name}</strong>.
             </DialogDescription>
           </DialogHeader>
 
-          {/* Ações rápidas */}
-          <div className="flex flex-wrap items-center gap-2 py-2.5 border-b bg-muted/20 px-4 -mx-6 rounded-none">
+          {/* Barra de Ações Rápidas */}
+          <div className="flex flex-wrap items-center gap-2 py-2.5 border-b border-border/60 bg-muted/20 px-4 -mx-6 rounded-none">
             <span className="text-xs font-semibold text-muted-foreground mr-1">Ações rápidas:</span>
             <Button
               type="button"
@@ -843,7 +1460,7 @@ function FeePlanForm({ merchant }: { merchant: Merchant }) {
               size="sm"
               className="h-7 text-xs font-medium text-primary hover:bg-primary/10"
               onClick={useCPAGDefaults}
-              title="Preencher com taxas de referência do modelo padrão"
+              title="Preencher com taxas de referência do modelo padrão CPAG"
             >
               Sugerir padrão
             </Button>
@@ -860,24 +1477,32 @@ function FeePlanForm({ merchant }: { merchant: Merchant }) {
             )}
           </div>
 
-          {/* Grid de parcelas com scroll */}
-          <div className="flex-1 overflow-y-auto py-4 space-y-3 pr-1">
+          {/* Grid de parcelas rolável */}
+          <div className="flex-1 overflow-y-auto py-4 space-y-3 pr-1 scrollbar-thin">
             {installedCount === 0 ? (
-              <div className="p-10 text-center border border-dashed rounded-xl text-muted-foreground bg-muted/10">
-                <p className="text-sm font-semibold">Nenhuma parcela específica adicionada ainda.</p>
-                <p className="text-xs mt-1 text-muted-foreground">
+              <div className="p-10 text-center border border-dashed rounded-xl text-muted-foreground bg-muted/10 space-y-2">
+                <p className="text-sm font-semibold text-foreground">Nenhuma parcela personalizada adicionada ainda.</p>
+                <p className="text-xs text-muted-foreground">
                   Clique em <strong>+ Adicionar Parcela</strong> ou <strong>Preencher 1x a 12x</strong> para começar.
                 </p>
+                <div className="pt-2">
+                  <Button size="sm" onClick={() => populatePreset(12)} className="text-xs gap-1.5">
+                    <Plus className="size-3.5" /> Começar com 1x a 12x
+                  </Button>
+                </div>
               </div>
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                 {sortedInstallments.map(([num, rate]) => (
                   <div
                     key={num}
-                    className="p-3 rounded-lg border bg-card hover:border-primary/40 transition-colors flex flex-col gap-1.5 shadow-2xs"
+                    className="p-3 rounded-xl border bg-card hover:border-primary/40 transition-colors flex flex-col gap-1.5 shadow-2xs"
                   >
                     <div className="flex items-center justify-between">
-                      <Badge variant="secondary" className="px-2 py-0.5 text-xs font-bold text-primary bg-primary/10 border-none">
+                      <Badge
+                        variant="secondary"
+                        className="px-2 py-0.5 text-xs font-bold text-primary bg-primary/10 border-none"
+                      >
                         {num}x
                       </Badge>
                       <button
@@ -897,9 +1522,9 @@ function FeePlanForm({ merchant }: { merchant: Merchant }) {
                         placeholder="0,00"
                         value={rate}
                         onChange={(e) => updateInstallment(num, e.target.value)}
-                        className="h-8 text-sm pr-6 font-mono font-medium"
+                        className="h-8 text-sm pr-6 font-mono font-medium text-right"
                       />
-                      <span className="absolute right-2 top-2 text-xs text-muted-foreground font-semibold">%</span>
+                      <span className="absolute right-2 top-1.5 text-xs text-muted-foreground font-semibold">%</span>
                     </div>
                   </div>
                 ))}
@@ -907,7 +1532,7 @@ function FeePlanForm({ merchant }: { merchant: Merchant }) {
             )}
           </div>
 
-          <DialogFooter className="pt-3 border-t flex flex-row items-center justify-between sm:justify-between">
+          <DialogFooter className="pt-3 border-t border-border/60 flex flex-row items-center justify-between sm:justify-between">
             <span className="text-xs font-medium text-muted-foreground">
               {installedCount} {installedCount === 1 ? "parcela definida" : "parcelas definidas"}
             </span>
@@ -921,6 +1546,9 @@ function FeePlanForm({ merchant }: { merchant: Merchant }) {
   );
 }
 
+/* =========================================================================
+   PAINEL DE TERMINAIS (POS) REFINADO
+   ========================================================================= */
 function TerminalsPanel({ merchant }: { merchant: Merchant }) {
   const qc = useQueryClient();
   const terminals = useQuery(terminalsQuery);
@@ -937,7 +1565,7 @@ function TerminalsPanel({ merchant }: { merchant: Merchant }) {
       if (error) throw new Error(error.message);
     },
     onSuccess: () => {
-      toast.success("Terminal vinculado");
+      toast.success("Terminal vinculado com sucesso");
       setSerial("");
       setModel("");
       qc.invalidateQueries({ queryKey: ["pos_terminals"] });
@@ -950,49 +1578,136 @@ function TerminalsPanel({ merchant }: { merchant: Merchant }) {
       const { error } = await supabase.from("pos_terminals").delete().eq("id", id);
       if (error) throw new Error(error.message);
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["pos_terminals"] }),
+    onSuccess: () => {
+      toast.success("Terminal desvinculado");
+      qc.invalidateQueries({ queryKey: ["pos_terminals"] });
+    },
   });
 
   return (
-    <Card className="border-none shadow-card">
-      <CardHeader>
-        <CardTitle className="text-base">Maquininhas vinculadas</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="flex flex-wrap items-end gap-3">
-          <div className="grid gap-1.5">
-            <Label>Número serial</Label>
-            <Input value={serial} onChange={(e) => setSerial(e.target.value)} maxLength={60} />
+    <Card className="border border-border/80 shadow-card rounded-2xl bg-card overflow-hidden">
+      <CardHeader className="p-5 sm:p-6 pb-4 border-b border-border/60">
+        <div className="flex items-center justify-between">
+          <div className="space-y-0.5">
+            <div className="flex items-center gap-2">
+              <Smartphone className="size-5 text-blue-500" />
+              <CardTitle className="text-base sm:text-lg font-bold">Maquininhas Vinculadas</CardTitle>
+            </div>
+            <CardDescription className="text-xs text-muted-foreground">
+              Vincule equipamentos POS por número serial para conciliação automática das vendas.
+            </CardDescription>
           </div>
-          <div className="grid gap-1.5">
-            <Label>Modelo</Label>
-            <Input value={model} onChange={(e) => setModel(e.target.value)} maxLength={60} />
-          </div>
-          <Button onClick={() => add.mutate()} disabled={!serial.trim() || add.isPending}>
-            <Plus className="size-4" /> Vincular
-          </Button>
+          <Badge variant="secondary" className="font-mono text-xs">
+            {list.length} {list.length === 1 ? "maquininha" : "maquininhas"}
+          </Badge>
         </div>
-        <ul className="divide-y divide-border">
-          {list.length === 0 && (
-            <li className="py-3 text-sm text-muted-foreground">Nenhum terminal vinculado.</li>
+      </CardHeader>
+
+      <CardContent className="p-5 sm:p-6 space-y-6">
+        {/* Formulário de Adição de Terminal */}
+        <div className="p-4 rounded-xl border border-border/80 bg-muted/15 space-y-3">
+          <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+            Vincular Novo Terminal POS
+          </h4>
+          <div className="grid sm:grid-cols-[1fr_1fr_auto] gap-3 items-end">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold">Número Serial *</Label>
+              <Input
+                placeholder="Ex: 9876543210"
+                value={serial}
+                onChange={(e) => setSerial(e.target.value)}
+                maxLength={60}
+                className="font-mono bg-background"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold">Modelo (Opcional)</Label>
+              <Input
+                placeholder="Ex: PAX D195 / Sunmi V2"
+                value={model}
+                onChange={(e) => setModel(e.target.value)}
+                maxLength={60}
+                className="bg-background"
+              />
+            </div>
+            <Button
+              onClick={() => add.mutate()}
+              disabled={!serial.trim() || add.isPending}
+              className="gap-1.5 shadow-2xs"
+            >
+              <Plus className="size-4" />
+              <span>{add.isPending ? "Vinculando..." : "Vincular"}</span>
+            </Button>
+          </div>
+        </div>
+
+        {/* Lista de Terminais */}
+        <div className="space-y-2">
+          {list.length === 0 ? (
+            <div className="p-8 text-center border border-dashed rounded-xl text-muted-foreground bg-muted/10 space-y-2">
+              <Smartphone className="size-8 mx-auto opacity-30 text-blue-500" />
+              <p className="text-sm font-semibold text-foreground">Nenhuma maquininha vinculada a este EC.</p>
+              <p className="text-xs text-muted-foreground">
+                Informe o número de série da máquina POS acima para vincular.
+              </p>
+            </div>
+          ) : (
+            <div className="divide-y divide-border/60 border border-border/80 rounded-xl overflow-hidden bg-background">
+              {list.map((t) => (
+                <div key={t.id} className="flex items-center justify-between p-3.5 hover:bg-muted/30 transition-colors">
+                  <div className="flex items-center gap-3">
+                    <div className="size-9 rounded-lg bg-blue-500/10 text-blue-500 flex items-center justify-center shrink-0">
+                      <Smartphone className="size-4" />
+                    </div>
+                    <div>
+                      <p className="font-mono font-bold text-sm text-foreground">{t.serial_number}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {t.model ? `Modelo: ${t.model}` : "Modelo não especificado"}
+                      </p>
+                    </div>
+                  </div>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                        title="Desvincular terminal"
+                      >
+                        <Trash2 className="size-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Desvincular Terminal?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Deseja desvincular a maquininha serial <strong>{t.serial_number}</strong> deste estabelecimento?
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => remove.mutate(t.id)}
+                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                          Sim, desvincular
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
+              ))}
+            </div>
           )}
-          {list.map((t) => (
-            <li key={t.id} className="flex items-center justify-between py-3">
-              <div>
-                <p className="font-mono text-sm">{t.serial_number}</p>
-                <p className="text-xs text-muted-foreground">{t.model || "modelo não informado"}</p>
-              </div>
-              <Button variant="ghost" size="icon" onClick={() => remove.mutate(t.id)} aria-label="Remover">
-                <Trash2 className="size-4" />
-              </Button>
-            </li>
-          ))}
-        </ul>
+        </div>
       </CardContent>
     </Card>
   );
 }
 
+/* =========================================================================
+   PAINEL DE SPLIT ASAAS (PARCEIROS) REFINADO
+   ========================================================================= */
 function SplitPanel({ merchant }: { merchant: Merchant }) {
   const qc = useQueryClient();
   const { companyId } = useAuth();
@@ -1003,15 +1718,17 @@ function SplitPanel({ merchant }: { merchant: Merchant }) {
     queryFn: () => fetchPartners({ data: { companyId: companyId! } }),
     enabled: !!companyId,
   });
-  
+
   const [partnerId, setPartnerId] = useState("");
   const [percentage, setPercentage] = useState("");
 
   const list = (splits.data ?? []).filter((s) => s.merchant_id === merchant.id);
 
+  const totalPercentage = list.reduce((acc, s) => acc + Number(s.percentage || 0), 0);
+
   const add = useMutation({
     mutationFn: async () => {
-      const selectedPartner = partners.find(p => p.id === partnerId);
+      const selectedPartner = partners.find((p) => p.id === partnerId);
       if (!selectedPartner) throw new Error("Selecione um parceiro");
 
       const { error } = await supabase.from("split_rules").insert({
@@ -1024,7 +1741,7 @@ function SplitPanel({ merchant }: { merchant: Merchant }) {
       if (error) throw new Error(error.message);
     },
     onSuccess: () => {
-      toast.success("Regra de split criada");
+      toast.success("Regra de split criada com sucesso");
       setPartnerId("");
       setPercentage("");
       qc.invalidateQueries({ queryKey: ["split_rules"] });
@@ -1037,68 +1754,162 @@ function SplitPanel({ merchant }: { merchant: Merchant }) {
       const { error } = await supabase.from("split_rules").delete().eq("id", id);
       if (error) throw new Error(error.message);
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["split_rules"] }),
+    onSuccess: () => {
+      toast.success("Regra de split removida");
+      qc.invalidateQueries({ queryKey: ["split_rules"] });
+    },
   });
 
   return (
-    <Card className="border-none shadow-card">
-      <CardHeader>
-        <CardTitle className="text-base">Split de pagamento (parceiros)</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="flex flex-wrap items-end gap-3">
-          <div className="grid gap-1.5 flex-1 min-w-[200px]">
-            <Label>Parceiro Cadastrado</Label>
-            <select 
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-              value={partnerId}
-              onChange={(e) => setPartnerId(e.target.value)}
+    <Card className="border border-border/80 shadow-card rounded-2xl bg-card overflow-hidden">
+      <CardHeader className="p-5 sm:p-6 pb-4 border-b border-border/60">
+        <div className="flex items-center justify-between">
+          <div className="space-y-0.5">
+            <div className="flex items-center gap-2">
+              <Users className="size-5 text-violet-500" />
+              <CardTitle className="text-base sm:text-lg font-bold">Split de Pagamento (Parceiros)</CardTitle>
+            </div>
+            <CardDescription className="text-xs text-muted-foreground">
+              Configure comissões automáticas para parceiros cadastrados via conta Asaas.
+            </CardDescription>
+          </div>
+          {list.length > 0 && (
+            <Badge
+              variant="outline"
+              className={`font-mono text-xs ${
+                totalPercentage > 100
+                  ? "border-destructive text-destructive"
+                  : "border-violet-500/30 text-violet-600 bg-violet-500/10"
+              }`}
             >
-              <option value="">Selecione um parceiro...</option>
-              {partners.map(p => (
-                <option key={p.id} value={p.id}>{p.name} ({p.asaas_wallet_id})</option>
-              ))}
-            </select>
-          </div>
-          <div className="grid w-28 gap-1.5">
-            <Label>Comissão (%)</Label>
-            <Input
-              type="number"
-              step="0.01"
-              min="0"
-              max="100"
-              value={percentage}
-              onChange={(e) => setPercentage(e.target.value)}
-            />
-          </div>
-          <Button onClick={() => add.mutate()} disabled={!partnerId || add.isPending}>
-            <Plus className="size-4" /> Adicionar
-          </Button>
-        </div>
-        <ul className="divide-y divide-border">
-          {list.length === 0 && (
-            <li className="py-3 text-sm text-muted-foreground">Nenhum parceiro configurado.</li>
+              Total: {totalPercentage.toFixed(2)}%
+            </Badge>
           )}
-          {list.map((s) => (
-            <li key={s.id} className="flex items-center justify-between py-3">
-              <div>
-                <p className="text-sm font-medium">{s.partner_name}</p>
-                <p className="font-mono text-xs text-muted-foreground">{s.partner_asaas_wallet_id}</p>
+        </div>
+      </CardHeader>
+
+      <CardContent className="p-5 sm:p-6 space-y-6">
+        {/* Formulário de Adição de Regra */}
+        <div className="p-4 rounded-xl border border-border/80 bg-muted/15 space-y-3">
+          <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+            Adicionar Regra de Split
+          </h4>
+          <div className="grid sm:grid-cols-[1fr_120px_auto] gap-3 items-end">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold">Parceiro Cadastrado *</Label>
+              <select
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                value={partnerId}
+                onChange={(e) => setPartnerId(e.target.value)}
+              >
+                <option value="">Selecione um parceiro...</option>
+                {partners.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name} ({p.asaas_wallet_id})
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold">Comissão (%) *</Label>
+              <div className="relative">
+                <Input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  max="100"
+                  placeholder="0,00"
+                  value={percentage}
+                  onChange={(e) => setPercentage(e.target.value)}
+                  className="pr-6 font-mono bg-background"
+                />
+                <span className="absolute right-2 top-2 text-xs font-bold text-muted-foreground">%</span>
               </div>
-              <div className="flex items-center gap-3">
-                <Badge variant="secondary">{PCT(Number(s.percentage))}</Badge>
-                <Button variant="ghost" size="icon" onClick={() => remove.mutate(s.id)} aria-label="Remover">
-                  <Trash2 className="size-4" />
-                </Button>
-              </div>
-            </li>
-          ))}
-        </ul>
+            </div>
+            <Button
+              onClick={() => add.mutate()}
+              disabled={!partnerId || !percentage || add.isPending}
+              className="gap-1.5 shadow-2xs"
+            >
+              <Plus className="size-4" />
+              <span>{add.isPending ? "Adicionando..." : "Adicionar"}</span>
+            </Button>
+          </div>
+        </div>
+
+        {/* Lista de Parceiros Configurados */}
+        <div className="space-y-2">
+          {list.length === 0 ? (
+            <div className="p-8 text-center border border-dashed rounded-xl text-muted-foreground bg-muted/10 space-y-2">
+              <Users className="size-8 mx-auto opacity-30 text-violet-500" />
+              <p className="text-sm font-semibold text-foreground">Nenhuma regra de split configurada para este EC.</p>
+              <p className="text-xs text-muted-foreground">
+                Selecione um parceiro cadastrado acima para definir o percentual de comissionamento.
+              </p>
+            </div>
+          ) : (
+            <div className="divide-y divide-border/60 border border-border/80 rounded-xl overflow-hidden bg-background">
+              {list.map((s) => (
+                <div key={s.id} className="flex items-center justify-between p-3.5 hover:bg-muted/30 transition-colors">
+                  <div className="flex items-center gap-3">
+                    <div className="size-9 rounded-lg bg-violet-500/10 text-violet-500 flex items-center justify-center shrink-0">
+                      <Users className="size-4" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-foreground">{s.partner_name}</p>
+                      <p className="font-mono text-xs text-muted-foreground">
+                        Wallet Asaas: {s.partner_asaas_wallet_id}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Badge variant="secondary" className="font-mono font-semibold text-xs px-2.5 py-1">
+                      {PCT(Number(s.percentage))}
+                    </Badge>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                          title="Remover regra de split"
+                        >
+                          <Trash2 className="size-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Remover Regra de Split?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Deseja remover a comissão de <strong>{s.percentage}%</strong> para{" "}
+                            <strong>{s.partner_name}</strong>?
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => remove.mutate(s.id)}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          >
+                            Sim, remover
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </CardContent>
     </Card>
   );
 }
 
+/* =========================================================================
+   DIÁLOGO DE CRIAÇÃO DE SUBCONTA ASAAS
+   ========================================================================= */
 function CreateAsaasSubaccountDialog({ onCreated }: { onCreated: (walletId: string) => void }) {
   const { companyId } = useAuth();
   const [open, setOpen] = useState(false);
@@ -1118,12 +1929,14 @@ function CreateAsaasSubaccountDialog({ onCreated }: { onCreated: (walletId: stri
   const create = useMutation({
     mutationFn: async () => {
       const parsedIncome = Number(form.incomeValue.replace(/\D/g, "")) / 100;
-      const res = await createAsaasSubaccount({ data: { ...form, companyId: companyId!, incomeValue: parsedIncome } });
+      const res = await createAsaasSubaccount({
+        data: { ...form, companyId: companyId!, incomeValue: parsedIncome },
+      });
       if (!res.ok) throw new Error(res.error);
       return res.walletId;
     },
     onSuccess: (walletId) => {
-      toast.success("Subconta criada no Asaas!");
+      toast.success("Subconta criada no Asaas com sucesso!");
       onCreated(walletId);
       setOpen(false);
       setForm({
@@ -1149,26 +1962,29 @@ function CreateAsaasSubaccountDialog({ onCreated }: { onCreated: (walletId: stri
           Criar nova
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
         <DialogHeader>
           <DialogTitle>Criar Subconta Asaas (Não-BaaS)</DialogTitle>
         </DialogHeader>
-        <div className="grid gap-3">
+        <div className="grid gap-3 py-2">
           <div className="grid gap-1.5">
-            <Label>Nome / Razão Social</Label>
-            <Input value={form.name} onChange={e => setForm({...form, name: e.target.value})} />
+            <Label className="text-xs font-semibold">Nome / Razão Social</Label>
+            <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
           </div>
           <div className="grid sm:grid-cols-2 gap-3">
             <div className="grid gap-1.5">
-              <Label>CPF / CNPJ</Label>
-              <Input value={form.cpfCnpj} onChange={e => setForm({...form, cpfCnpj: formatCpfCnpj(e.target.value)})} />
+              <Label className="text-xs font-semibold">CPF / CNPJ</Label>
+              <Input
+                value={form.cpfCnpj}
+                onChange={(e) => setForm({ ...form, cpfCnpj: formatCpfCnpj(e.target.value) })}
+              />
             </div>
             <div className="grid gap-1.5">
-              <Label>Tipo de Empresa</Label>
-              <select 
-                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                value={form.companyType} 
-                onChange={e => setForm({...form, companyType: e.target.value})}
+              <Label className="text-xs font-semibold">Tipo de Empresa</Label>
+              <select
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                value={form.companyType}
+                onChange={(e) => setForm({ ...form, companyType: e.target.value })}
               >
                 <option value="MEI">MEI</option>
                 <option value="LIMITED">Limitada (LTDA)</option>
@@ -1178,51 +1994,61 @@ function CreateAsaasSubaccountDialog({ onCreated }: { onCreated: (walletId: stri
             </div>
           </div>
           <div className="grid gap-1.5">
-            <Label>E-mail (Login e Comunicação)</Label>
-            <Input type="email" value={form.email} onChange={e => setForm({...form, email: e.target.value})} />
+            <Label className="text-xs font-semibold">E-mail (Login e Comunicação)</Label>
+            <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
           </div>
           <div className="grid sm:grid-cols-2 gap-3">
             <div className="grid gap-1.5">
-              <Label>Celular</Label>
-              <Input value={form.mobilePhone} onChange={e => setForm({...form, mobilePhone: formatPhone(e.target.value)})} />
-            </div>
-            <div className="grid gap-1.5">
-              <Label>Faturamento Mensal</Label>
-              <Input type="text" value={form.incomeValue} onChange={e => setForm({...form, incomeValue: formatCurrencyInput(e.target.value)})} />
-            </div>
-          </div>
-          <div className="grid sm:grid-cols-2 gap-3">
-            <div className="grid gap-1.5">
-              <Label>CEP</Label>
-              <Input 
-                value={form.postalCode} 
-                onChange={e => setForm({...form, postalCode: e.target.value})} 
-                onBlur={async () => {
-                  const data = await fetchCepData(form.postalCode);
-                  if (data) {
-                    setForm(prev => ({
-                      ...prev,
-                      address: data.logradouro || prev.address,
-                      province: data.bairro || prev.province
-                    }));
-                  }
-                }}
-                maxLength={9} 
+              <Label className="text-xs font-semibold">Celular</Label>
+              <Input
+                value={form.mobilePhone}
+                onChange={(e) => setForm({ ...form, mobilePhone: formatPhone(e.target.value) })}
               />
             </div>
             <div className="grid gap-1.5">
-              <Label>Endereço (Rua, Av)</Label>
-              <Input value={form.address} onChange={e => setForm({...form, address: e.target.value})} />
+              <Label className="text-xs font-semibold">Faturamento Mensal</Label>
+              <Input
+                type="text"
+                value={form.incomeValue}
+                onChange={(e) => setForm({ ...form, incomeValue: formatCurrencyInput(e.target.value) })}
+              />
             </div>
           </div>
           <div className="grid sm:grid-cols-2 gap-3">
             <div className="grid gap-1.5">
-              <Label>Número</Label>
-              <Input value={form.addressNumber} onChange={e => setForm({...form, addressNumber: e.target.value})} />
+              <Label className="text-xs font-semibold">CEP</Label>
+              <Input
+                value={form.postalCode}
+                onChange={(e) => setForm({ ...form, postalCode: e.target.value })}
+                onBlur={async () => {
+                  const data = await fetchCepData(form.postalCode);
+                  if (data) {
+                    setForm((prev) => ({
+                      ...prev,
+                      address: data.logradouro || prev.address,
+                      province: data.bairro || prev.province,
+                    }));
+                  }
+                }}
+                maxLength={9}
+              />
             </div>
             <div className="grid gap-1.5">
-              <Label>Bairro</Label>
-              <Input value={form.province} onChange={e => setForm({...form, province: e.target.value})} />
+              <Label className="text-xs font-semibold">Endereço (Rua, Av)</Label>
+              <Input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} />
+            </div>
+          </div>
+          <div className="grid sm:grid-cols-2 gap-3">
+            <div className="grid gap-1.5">
+              <Label className="text-xs font-semibold">Número</Label>
+              <Input
+                value={form.addressNumber}
+                onChange={(e) => setForm({ ...form, addressNumber: e.target.value })}
+              />
+            </div>
+            <div className="grid gap-1.5">
+              <Label className="text-xs font-semibold">Bairro</Label>
+              <Input value={form.province} onChange={(e) => setForm({ ...form, province: e.target.value })} />
             </div>
           </div>
         </div>
