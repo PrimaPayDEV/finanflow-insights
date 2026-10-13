@@ -29,6 +29,13 @@
       "when": 1791402832980,
       "tag": "0003_company_users_merchant_fk_set_null",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1791908307801,
+      "tag": "0004_add_net_amount_and_installment_rates",
+      "breakpoints": true
     }
   ]
 }

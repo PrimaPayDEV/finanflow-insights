@@ -326,6 +326,7 @@ export type Database = {
           debit_rate: number
           fixed_rate_percent: number
           id: string
+          installment_rates: Json | null
           merchant_id: string
           pix_rate: number
           traditional_fee_avg: number
@@ -339,6 +340,7 @@ export type Database = {
           debit_rate?: number
           fixed_rate_percent?: number
           id?: string
+          installment_rates?: Json | null
           merchant_id: string
           pix_rate?: number
           traditional_fee_avg?: number
@@ -352,6 +354,7 @@ export type Database = {
           debit_rate?: number
           fixed_rate_percent?: number
           id?: string
+          installment_rates?: Json | null
           merchant_id?: string
           pix_rate?: number
           traditional_fee_avg?: number
@@ -1438,6 +1441,7 @@ export type Database = {
           installments: number
           merchant_id: string
           modality: Database["public"]["Enums"]["payment_modality"]
+          net_amount: number | null
           pos_serial: string
           transaction_date: string
         }
@@ -1451,6 +1455,7 @@ export type Database = {
           installments?: number
           merchant_id: string
           modality: Database["public"]["Enums"]["payment_modality"]
+          net_amount?: number | null
           pos_serial?: string
           transaction_date?: string
         }
@@ -1464,6 +1469,7 @@ export type Database = {
           installments?: number
           merchant_id?: string
           modality?: Database["public"]["Enums"]["payment_modality"]
+          net_amount?: number | null
           pos_serial?: string
           transaction_date?: string
         }
