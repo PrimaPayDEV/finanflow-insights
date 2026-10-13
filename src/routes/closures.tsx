@@ -365,44 +365,55 @@ function RouteComponent() {
         ) : undefined
       }
     >
-      {/* Barra de Filtros Principais (EC e Mês) */}
-      <div className="p-4 rounded-2xl border border-border/80 shadow-card bg-card grid gap-3 sm:grid-cols-2 lg:max-w-2xl print:hidden">
-        <div className="space-y-1.5">
-          <Label className="text-xs font-semibold flex items-center gap-1.5 text-muted-foreground">
-            <Store className="size-3.5 text-primary" /> Estabelecimento (EC)
-          </Label>
-          <Select value={merchantId} onValueChange={setMerchantId}>
-            <SelectTrigger className="h-10 bg-background rounded-xl">
-              <SelectValue placeholder="Selecione o estabelecimento" />
-            </SelectTrigger>
-            <SelectContent className="rounded-xl">
-              {(merchants.data ?? []).map((m) => (
-                <SelectItem key={m.id} value={m.id}>
-                  {m.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+      {/* Barra de Filtros Principais (EC e Mês) - Ajustada à largura da página */}
+      <Card className="w-full rounded-2xl border border-border/80 shadow-card bg-card print:hidden overflow-hidden">
+        <CardContent className="p-4 sm:p-5">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-12 items-end">
+            <div className="space-y-1.5 sm:col-span-1 lg:col-span-8">
+              <Label className="text-xs font-bold flex items-center gap-1.5 text-muted-foreground uppercase tracking-wider">
+                <Store className="size-3.5 text-primary" /> Estabelecimento (EC)
+              </Label>
+              <Select value={merchantId} onValueChange={setMerchantId}>
+                <SelectTrigger className="h-11 bg-background rounded-xl border-border/80 font-medium text-sm">
+                  <SelectValue placeholder="Selecione o estabelecimento" />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl max-h-72">
+                  {(merchants.data ?? []).map((m) => (
+                    <SelectItem key={m.id} value={m.id} className="py-2.5">
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-foreground">{m.name}</span>
+                        {m.document_cnpj && (
+                          <span className="text-[11px] text-muted-foreground font-mono">
+                            • {m.document_cnpj}
+                          </span>
+                        )}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-        <div className="space-y-1.5">
-          <Label className="text-xs font-semibold flex items-center gap-1.5 text-muted-foreground">
-            <Calendar className="size-3.5 text-primary" /> Mês de Referência
-          </Label>
-          <Select value={month} onValueChange={setMonth}>
-            <SelectTrigger className="h-10 bg-background rounded-xl">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent className="rounded-xl">
-              {monthOptions().map((m) => (
-                <SelectItem key={m} value={m}>
-                  {monthLabel(m)}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
+            <div className="space-y-1.5 sm:col-span-1 lg:col-span-4">
+              <Label className="text-xs font-bold flex items-center gap-1.5 text-muted-foreground uppercase tracking-wider">
+                <Calendar className="size-3.5 text-primary" /> Mês de Referência
+              </Label>
+              <Select value={month} onValueChange={setMonth}>
+                <SelectTrigger className="h-11 bg-background rounded-xl border-border/80 font-medium text-sm capitalize">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl max-h-72">
+                  {monthOptions().map((m) => (
+                    <SelectItem key={m} value={m} className="capitalize py-2">
+                      {monthLabel(m)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {!merchant ? (
         <Card className="mt-6 border border-dashed border-border/90 shadow-none rounded-2xl bg-muted/10">
