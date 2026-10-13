@@ -69,7 +69,7 @@ import {
   transactionsQuery,
   importsQuery,
 } from "@/lib/db";
-import { calculateClosure, getModalityRate, getTraditionalRate } from "@/lib/closure";
+import { calculateClosure, getModalityRate, getTraditionalRate, getMaxDiscountRate } from "@/lib/closure";
 import { createAsaasCharge } from "@/lib/asaas.functions";
 import {
   BRL,
@@ -158,8 +158,8 @@ function RouteComponent() {
         tradRate = getTraditionalRate(tx, plan);
         discountedValue = gross * (tradRate / 100);
       }
-      const negociadaRate = getModalityRate(tx, plan);
-      const opRate = Math.abs(negociadaRate - tradRate);
+      const maxDiscountRate = getMaxDiscountRate(tx, plan);
+      const opRate = Math.max(0, maxDiscountRate - tradRate);
       const opValue = gross * (opRate / 100);
 
       totalGross += gross;
@@ -737,8 +737,8 @@ function RouteComponent() {
                             discountedValue = gross * (tradRate / 100);
                           }
 
-                          const negociadaRate = getModalityRate(tx, plan);
-                          const opRate = Math.abs(negociadaRate - tradRate);
+                          const maxDiscountRate = getMaxDiscountRate(tx, plan);
+                          const opRate = Math.max(0, maxDiscountRate - tradRate);
                           const opValue = gross * (opRate / 100);
 
                           return (

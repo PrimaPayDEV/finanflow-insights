@@ -127,6 +127,12 @@ export function getModalityRate(t: Transaction, plan?: FeePlan): number {
   return 0;
 }
 
+export function getMaxDiscountRate(t: Transaction, plan?: FeePlan): number {
+  const opRatePlan = Number(plan?.fixed_rate_percent || 0);
+  const modalityBaseRate = getModalityRate(t, plan);
+  return opRatePlan + modalityBaseRate;
+}
+
 export function calculateClosure(
   transactions: Transaction[],
   expenses: Expense[],
@@ -166,7 +172,10 @@ export function calculateClosure(
     }
     traditionalCost += discountedValue;
 
-    const opRate = Math.abs(rate - tradRate);
+    // Valor máximo que pode ser descontado do EC (Taxa Operacional do Plano + Taxa por Modalidade Manual ou CPAG59)
+    const maxDiscountRate = getMaxDiscountRate(t, plan);
+    // % TAXA OP = Valor máximo que pode ser descontado - % DESCONTADO na máquina
+    const opRate = Math.max(0, maxDiscountRate - tradRate);
     const opValue = gross * (opRate / 100);
     sumTransactionOpFee += opValue;
   }
@@ -175,7 +184,7 @@ export function calculateClosure(
   const customPrimaRate = plan ? plan.fixed_rate_percent : primaRate;
   const fixedFeeAmount = (totalGross * customPrimaRate) / 100;
   
-  // O valor a ser cobrado na plataforma é a soma da taxa operacional das transações (quando calculadas) ou a taxa fixa do faturamento
+  // O valor a ser cobrado na plataforma é a soma da taxa operacional das transações
   const totalOpFee = (transactions.length > 0 && sumTransactionOpFee > 0) ? sumTransactionOpFee : fixedFeeAmount;
   
   let totalExpenses = 0;

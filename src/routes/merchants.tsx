@@ -1089,9 +1089,14 @@ function FeePlanForm({ merchant }: { merchant: Merchant }) {
 
   const save = useMutation({
     mutationFn: async () => {
+      const fixedRate = Number(values.fixed_rate_percent || 0);
+      if (fixedRate <= 0) {
+        throw new Error("A Taxa Operacional Variável é obrigatória e não pode ficar zerada. Preencha um valor válido (ex: 2%).");
+      }
+
       const payload = {
         merchant_id: merchant.id,
-        fixed_rate_percent: Number(values.fixed_rate_percent || 0),
+        fixed_rate_percent: fixedRate,
         pix_rate: Number(values.pix_rate || 0),
         debit_rate: Number(values.debit_rate || 0),
         credit_vista_rate: Number(values.credit_vista_rate || 0),
@@ -1153,11 +1158,11 @@ function FeePlanForm({ merchant }: { merchant: Merchant }) {
                 <div className="flex items-center gap-2">
                   <h4 className="text-sm font-bold text-foreground">Taxa Operacional Variável</h4>
                   <Badge variant="outline" className="text-[10px] font-semibold text-primary border-primary/30">
-                    Plataforma
+                    Obrigatório
                   </Badge>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Percentual retido pela plataforma nas operações de vendas para apuração do fechamento financeiro do EC.
+                  Percentual somado à taxa de cada modalidade (CPAG59 ou manual) para compor o <strong>teto máximo</strong> de desconto do EC.
                 </p>
               </div>
             </div>
@@ -1193,6 +1198,13 @@ function FeePlanForm({ merchant }: { merchant: Merchant }) {
                 </h4>
               </div>
               <span className="text-xs text-muted-foreground">Valores aplicados nas vendas do EC</span>
+            </div>
+
+            <div className="p-3.5 rounded-xl border border-primary/20 bg-primary/5 flex items-start gap-2.5 text-xs text-muted-foreground">
+              <Sparkles className="size-4 text-primary shrink-0 mt-0.5" />
+              <div>
+                <strong className="text-foreground">Regra de Teto Máximo Automático:</strong> Se as modalidades ficarem zeradas (0%), a plataforma utiliza a taxa base da <strong>tabela CPAG59</strong> somada à Taxa Operacional como o teto máximo. Exemplo: Taxa Op. {values.fixed_rate_percent || "2"}% + Crédito à Vista CPAG59 (3,47%) = <strong>{(Number(values.fixed_rate_percent || 2) + 3.47).toFixed(2)}%</strong> de teto.
+              </div>
             </div>
 
             <div className="grid gap-3.5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
