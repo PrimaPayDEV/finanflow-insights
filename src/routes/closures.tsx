@@ -69,6 +69,7 @@ import {
   splitRulesQuery,
   transactionsQuery,
   importsQuery,
+  terminalsQuery,
 } from "@/lib/db";
 import { calculateClosure, getModalityRate, getTraditionalRate, getMaxDiscountRate } from "@/lib/closure";
 import { createAsaasCharge } from "@/lib/asaas.functions";
@@ -112,6 +113,7 @@ function RouteComponent() {
   const expenses = useQuery(expensesQuery);
   const closures = useQuery(closuresQuery);
   const splits = useQuery(splitRulesQuery);
+  const terminals = useQuery(terminalsQuery);
   const charge = useServerFn(createAsaasCharge);
 
   const [merchantId, setMerchantId] = useState("");
@@ -137,11 +139,49 @@ function RouteComponent() {
     (e) => e.merchant_id === merchantId && e.reference_month === month,
   );
 
-  const calc = calculateClosure(txs, exps, plan);
+  const merchantTerminals = useMemo(() => {
+    return (terminals.data ?? []).filter((t) => t.merchant_id === merchantId);
+  }, [terminals.data, merchantId]);
+
+  const calc = calculateClosure(txs, exps, plan, merchantTerminals);
   const existing = (closures.data ?? []).find(
     (c) => c.merchant_id === merchantId && c.reference_month === month,
   );
   const merchantSplits = (splits.data ?? []).filter((s) => s.merchant_id === merchantId);
+
+  // Lista unificada de lançamentos (Cobranças/Isenções de Maquininhas + Lançamentos Manuais)
+  const displayExpenses = useMemo(() => {
+    const terminalItems = (calc.terminalSummary?.items ?? []).map((tItem) => ({
+      id: tItem.id,
+      category: tItem.isExempt ? ("isencao" as const) : ("despesa" as const),
+      description: tItem.description,
+      amount: tItem.amount,
+      isTerminal: true,
+      isExempt: tItem.isExempt,
+      serialNumber: tItem.serialNumber,
+      requiredGross: tItem.requiredGross,
+    }));
+
+    const filteredManual = merchantTerminals.length > 0
+      ? exps.filter((e) => {
+          const desc = (e.description || "").toLowerCase().trim();
+          return !desc.match(/^maquina\s*(\(\d+\/\d+\))?$/i) && !desc.match(/^maquininha/i);
+        })
+      : exps;
+
+    const manualItems = filteredManual.map((e) => ({
+      id: e.id,
+      category: e.category,
+      description: e.description,
+      amount: Number(e.amount),
+      isTerminal: false,
+      isExempt: false,
+      serialNumber: undefined,
+      requiredGross: undefined,
+    }));
+
+    return [...terminalItems, ...manualItems];
+  }, [calc.terminalSummary, merchantTerminals.length, exps]);
 
   const totalGross = calc.totalGross;
   const pixPct = totalGross > 0 ? (calc.grossByModality.pix / totalGross) * 100 : 0;
@@ -150,10 +190,11 @@ function RouteComponent() {
   const creditInstallmentPct = totalGross > 0 ? (calc.grossByModality.credit_installment / totalGross) * 100 : 0;
 
   const totalExpensesSum = useMemo(() => {
-    return exps.reduce((acc, exp) => {
-      return exp.category === "cobranca" ? acc + Number(exp.amount) : acc - Number(exp.amount);
+    return displayExpenses.reduce((acc, exp) => {
+      if (exp.isExempt) return acc;
+      return exp.category === "cobranca" ? acc - Number(exp.amount) : acc + Number(exp.amount);
     }, 0);
-  }, [exps]);
+  }, [displayExpenses]);
 
   const totalsDetailed = useMemo(() => {
     let totalGross = 0;
@@ -574,9 +615,16 @@ function RouteComponent() {
                     Lançamentos (Cobranças e Deduções)
                   </h2>
                 </div>
-                <Badge variant="secondary" className="font-mono text-xs print:text-[10px] print:h-5">
-                  {exps.length} {exps.length === 1 ? "lançamento" : "lançamentos"}
-                </Badge>
+                <div className="flex items-center gap-2">
+                  {calc.terminalSummary.totalTerminals > 0 && (
+                    <Badge variant="outline" className="text-[10px] font-semibold border-primary/30 bg-primary/5 text-primary">
+                      {calc.terminalSummary.exemptTerminals} de {calc.terminalSummary.totalTerminals} {calc.terminalSummary.totalTerminals === 1 ? "máquina isenta" : "máquinas isentas"}
+                    </Badge>
+                  )}
+                  <Badge variant="secondary" className="font-mono text-xs print:text-[10px] print:h-5">
+                    {displayExpenses.length} {displayExpenses.length === 1 ? "lançamento" : "lançamentos"}
+                  </Badge>
+                </div>
               </div>
 
               <Card className="rounded-xl border border-border/80 shadow-card bg-card overflow-hidden print:overflow-visible print:shadow-none print:border-border/60">
@@ -591,63 +639,79 @@ function RouteComponent() {
                         </TableRow>
                       </TableHeader>
                       <TableBody className="print:table-row-group">
-                        {exps.length === 0 ? (
+                        {displayExpenses.length === 0 ? (
                           <TableRow className="print:table-row">
                             <TableCell colSpan={3} className="py-3 text-center text-muted-foreground text-xs italic print:py-2">
                               Nenhum lançamento extra registrado para este mês.
                             </TableCell>
                           </TableRow>
                         ) : (
-                          exps.map((exp) => (
+                          displayExpenses.map((exp) => (
                             <TableRow key={exp.id} className="hover:bg-muted/30 transition-colors print:table-row print:break-inside-avoid">
                               <TableCell className="py-1.5 print:py-1 print:px-3">
-                                <Badge
-                                  variant={exp.category === "cobranca" ? "outline" : "destructive"}
-                                  className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full ${
-                                    exp.category === "cobranca"
-                                      ? "text-emerald-600 border-emerald-500/30 bg-emerald-500/10"
-                                      : ""
-                                  }`}
-                                >
-                                  {exp.category === "cobranca" ? (
+                                {exp.isExempt ? (
+                                  <Badge
+                                    variant="outline"
+                                    className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full text-emerald-600 border-emerald-500/30 bg-emerald-500/10"
+                                  >
+                                    <span className="flex items-center gap-1">
+                                      <Sparkles className="size-3" /> Isenção (Meta)
+                                    </span>
+                                  </Badge>
+                                ) : exp.category === "cobranca" ? (
+                                  <Badge
+                                    variant="outline"
+                                    className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full text-emerald-600 border-emerald-500/30 bg-emerald-500/10"
+                                  >
                                     <span className="flex items-center gap-1">
                                       <ArrowDownRight className="size-3" /> Dedução (-)
                                     </span>
-                                  ) : (
+                                  </Badge>
+                                ) : (
+                                  <Badge
+                                    variant="destructive"
+                                    className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full"
+                                  >
                                     <span className="flex items-center gap-1">
                                       <ArrowUpRight className="size-3" /> Cobrança (+)
                                     </span>
-                                  )}
-                                </Badge>
+                                  </Badge>
+                                )}
                               </TableCell>
                               <TableCell className="font-medium text-xs text-foreground py-1.5 print:py-1 print:px-3">
                                 {exp.description}
                               </TableCell>
                               <TableCell className="text-right font-bold font-mono text-xs py-1.5 print:py-1 print:px-3">
-                                <span
-                                  className={
-                                    exp.category === "cobranca"
-                                      ? "text-emerald-600 dark:text-emerald-400"
-                                      : "text-destructive"
-                                  }
-                                >
-                                  {exp.category === "cobranca" ? "-" : "+"}
-                                  {BRL(exp.amount)}
-                                </span>
+                                {exp.isExempt ? (
+                                  <span className="text-emerald-600 dark:text-emerald-400 font-bold">
+                                    R$ 0,00 (Isento)
+                                  </span>
+                                ) : (
+                                  <span
+                                    className={
+                                      exp.category === "cobranca"
+                                        ? "text-emerald-600 dark:text-emerald-400"
+                                        : "text-destructive"
+                                    }
+                                  >
+                                    {exp.category === "cobranca" ? "-" : "+"}
+                                    {BRL(exp.amount)}
+                                  </span>
+                                )}
                               </TableCell>
                             </TableRow>
                           ))
                         )}
                       </TableBody>
-                      {exps.length > 0 && (
+                      {displayExpenses.length > 0 && (
                         <TableFooter className="bg-muted/40 font-bold border-t print:table-footer-group">
                           <TableRow className="print:table-row">
                             <TableCell colSpan={2} className="text-xs font-bold py-1.5 print:py-1 print:px-3 text-muted-foreground">
-                              Subtotal de Lançamentos ({exps.length} {exps.length === 1 ? "item" : "itens"}):
+                              Subtotal de Lançamentos ({displayExpenses.length} {displayExpenses.length === 1 ? "item" : "itens"}):
                             </TableCell>
                             <TableCell className="text-right font-black font-mono text-xs py-1.5 print:py-1 print:px-3">
-                              <span className={totalExpensesSum >= 0 ? "text-foreground" : "text-emerald-600"}>
-                                {totalExpensesSum >= 0 ? "+" : "-"} {BRL(Math.abs(totalExpensesSum))}
+                              <span className={totalExpensesSum <= 0 ? "text-emerald-600" : "text-foreground"}>
+                                {totalExpensesSum > 0 ? "+" : ""} {BRL(totalExpensesSum)}
                               </span>
                             </TableCell>
                           </TableRow>

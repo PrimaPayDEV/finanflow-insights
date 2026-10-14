@@ -84,6 +84,7 @@ import { translateError } from "@/lib/translateError";
 import { useAuth } from "@/contexts/AuthContext";
 import { createMerchantAccess } from "@/lib/merchant.functions";
 import { fetchCepData } from "@/lib/cep";
+import { calculateTerminalBilling, TERMINAL_PRICE, TERMINAL_FIRST_TIER, TERMINAL_STEP_TIER } from "@/lib/closure";
 
 export const Route = createFileRoute("/merchants")({
   head: () => ({
@@ -1653,6 +1654,38 @@ function TerminalsPanel({ merchant }: { merchant: Merchant }) {
       </CardHeader>
 
       <CardContent className="p-5 sm:p-6 space-y-6">
+        {/* Banner Informativo sobre a Regra de Isenção por Faturamento */}
+        <div className="p-4 rounded-xl border border-blue-500/20 bg-blue-500/5 space-y-2.5">
+          <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400">
+            <Sparkles className="size-4 shrink-0" />
+            <h4 className="text-xs font-bold uppercase tracking-wider">
+              Regra de Isenção de Maquininhas por Faturamento
+            </h4>
+          </div>
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            Cada maquininha cadastrada tem o valor fixo de <strong className="text-foreground font-semibold">R$ 100,00/mês</strong>.
+            Ao atingir as metas de faturamento mensal do estabelecimento, o cliente conquista isenção automática:
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 text-xs">
+            <div className="flex items-center gap-2 p-2 rounded-lg bg-background/80 border border-border/60">
+              <Badge variant="outline" className="font-mono text-[10px] font-bold border-emerald-500/30 text-emerald-600 bg-emerald-500/10 shrink-0">
+                1ª Máquina
+              </Badge>
+              <span className="text-muted-foreground">
+                Isenção total a partir de <strong className="text-foreground">R$ 50.000,00</strong>
+              </span>
+            </div>
+            <div className="flex items-center gap-2 p-2 rounded-lg bg-background/80 border border-border/60">
+              <Badge variant="outline" className="font-mono text-[10px] font-bold border-blue-500/30 text-blue-600 bg-blue-500/10 shrink-0">
+                +1 Máquina
+              </Badge>
+              <span className="text-muted-foreground">
+                A cada <strong className="text-foreground">+R$ 30.000,00</strong> adicionais faturados
+              </span>
+            </div>
+          </div>
+        </div>
+
         {/* Formulário de Adição de Terminal */}
         <div className="p-4 rounded-xl border border-border/80 bg-muted/15 space-y-3">
           <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
@@ -1702,50 +1735,61 @@ function TerminalsPanel({ merchant }: { merchant: Merchant }) {
             </div>
           ) : (
             <div className="divide-y divide-border/60 border border-border/80 rounded-xl overflow-hidden bg-background">
-              {list.map((t) => (
-                <div key={t.id} className="flex items-center justify-between p-3.5 hover:bg-muted/30 transition-colors">
-                  <div className="flex items-center gap-3">
-                    <div className="size-9 rounded-lg bg-blue-500/10 text-blue-500 flex items-center justify-center shrink-0">
-                      <Smartphone className="size-4" />
+              {list.map((t, idx) => {
+                const requiredGross = TERMINAL_FIRST_TIER + idx * TERMINAL_STEP_TIER;
+                return (
+                  <div key={t.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-3.5 hover:bg-muted/30 transition-colors gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="size-9 rounded-lg bg-blue-500/10 text-blue-500 flex items-center justify-center shrink-0">
+                        <Smartphone className="size-4" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="font-mono font-bold text-sm text-foreground">{t.serial_number}</p>
+                          <Badge variant="secondary" className="font-mono text-[10px] font-semibold text-primary bg-primary/10">
+                            {idx === 0 ? "1ª Máquina" : `${idx + 1}ª Máquina`}
+                          </Badge>
+                          <Badge variant="outline" className="text-[10px] font-semibold border-emerald-500/30 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10">
+                            Isenção em {BRL(requiredGross)}
+                          </Badge>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {t.model ? `Modelo: ${t.model}` : "Modelo não especificado"} • Custo: R$ 100,00/mês
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-mono font-bold text-sm text-foreground">{t.serial_number}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {t.model ? `Modelo: ${t.model}` : "Modelo não especificado"}
-                      </p>
-                    </div>
-                  </div>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                        title="Desvincular terminal"
-                      >
-                        <Trash2 className="size-4" />
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Desvincular Terminal?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Deseja desvincular a maquininha serial <strong>{t.serial_number}</strong> deste estabelecimento?
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={() => remove.mutate(t.id)}
-                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 shrink-0 self-end sm:self-auto"
+                          title="Desvincular terminal"
                         >
-                          Sim, desvincular
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </div>
-              ))}
+                          <Trash2 className="size-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Desvincular Terminal?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Deseja desvincular a maquininha serial <strong>{t.serial_number}</strong> deste estabelecimento?
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => remove.mutate(t.id)}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          >
+                            Sim, desvincular
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
@@ -1801,6 +1845,11 @@ function BillingPanel({ merchant }: { merchant: Merchant }) {
   const actualRevenue = useMemo(() => {
     return filteredTxs.reduce((sum, t) => sum + (Number(t.gross_amount) || 0), 0);
   }, [filteredTxs]);
+
+  const terminalBilling = useMemo(
+    () => calculateTerminalBilling(list, actualRevenue),
+    [list, actualRevenue],
+  );
 
   // Meta de Faturamento do EC (salva em fee_plans.installment_rates.target_revenue e em localStorage)
   const savedTargetRevenue = useMemo(() => {
@@ -2061,6 +2110,124 @@ function BillingPanel({ merchant }: { merchant: Merchant }) {
               {savedTargetRevenue > 0 ? BRL(savedTargetRevenue) : "Meta"} (100%)
             </span>
           </div>
+        </div>
+
+        {/* CARD DE ISENÇÃO DE MAQUININHAS POR FATURAMENTO */}
+        <div className="p-4 sm:p-5 rounded-xl border border-border/80 bg-card space-y-4 shadow-card">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div>
+              <h4 className="text-xs font-bold text-foreground uppercase tracking-wider flex items-center gap-1.5">
+                <Smartphone className="size-3.5 text-blue-500" />
+                Isenção de Maquininhas por Faturamento
+              </h4>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                R$ 100,00/mês por máquina. A 1ª ganha isenção ao atingir R$ 50 mil e cada adicional a cada +R$ 30 mil.
+              </p>
+            </div>
+            {list.length > 0 && (
+              <Badge
+                variant="outline"
+                className={cn(
+                  "w-fit text-[11px] font-mono font-semibold px-2.5 py-0.5",
+                  terminalBilling.exemptTerminals === terminalBilling.totalTerminals
+                    ? "border-emerald-500/30 text-emerald-600 bg-emerald-500/10"
+                    : "border-primary/30 text-primary bg-primary/10",
+                )}
+              >
+                {terminalBilling.exemptTerminals} de {terminalBilling.totalTerminals} {terminalBilling.totalTerminals === 1 ? "isenta" : "isentas"}
+              </Badge>
+            )}
+          </div>
+
+          {list.length === 0 ? (
+            <div className="p-4 text-center rounded-xl border border-dashed border-border/80 bg-muted/10 text-muted-foreground">
+              <p className="text-xs">
+                Nenhuma maquininha vinculada a este estabelecimento. Acesse a aba <strong>Terminais</strong> para vincular maquininhas.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3.5">
+              {/* Métricas de Maquininhas */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                <div className="p-3 rounded-lg border border-border/60 bg-muted/20">
+                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-0.5">
+                    Total Maquininhas
+                  </span>
+                  <p className="text-lg font-black font-mono text-foreground">
+                    {terminalBilling.totalTerminals} {terminalBilling.totalTerminals === 1 ? "máquina" : "máquinas"}
+                  </p>
+                </div>
+                <div className="p-3 rounded-lg border border-emerald-500/20 bg-emerald-500/5">
+                  <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider block mb-0.5">
+                    Máquinas Isentas
+                  </span>
+                  <p className="text-lg font-black font-mono text-emerald-600 dark:text-emerald-400">
+                    {terminalBilling.exemptTerminals}
+                  </p>
+                </div>
+                <div className="p-3 rounded-lg border border-emerald-500/20 bg-emerald-500/5">
+                  <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider block mb-0.5">
+                    Economia Gerada
+                  </span>
+                  <p className="text-lg font-black font-mono text-emerald-600 dark:text-emerald-400">
+                    {BRL(terminalBilling.totalSavings)}
+                  </p>
+                </div>
+                <div className="p-3 rounded-lg border border-border/60 bg-muted/20">
+                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-0.5">
+                    Cobrança no Mês
+                  </span>
+                  <p className="text-lg font-black font-mono text-foreground">
+                    {BRL(terminalBilling.totalCharge)}
+                  </p>
+                </div>
+              </div>
+
+              {/* Status e Próxima Isenção */}
+              <div className="p-3.5 rounded-lg border border-border/60 bg-muted/15 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div className="text-xs">
+                  {terminalBilling.exemptTerminals === terminalBilling.totalTerminals ? (
+                    <span className="text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1.5">
+                      <Sparkles className="size-4 shrink-0" />
+                      Todas as maquininhas estão 100% isentas de mensalidade com o faturamento atual!
+                    </span>
+                  ) : terminalBilling.nextExemptionTarget ? (
+                    <span className="text-muted-foreground">
+                      Faltam <strong className="text-foreground font-mono">{BRL(terminalBilling.remainingForNextExemption!)}</strong> de faturamento para isentar a <strong className="text-foreground">{terminalBilling.exemptTerminals + 1}ª maquininha</strong> (Meta: <strong className="text-foreground font-mono">{BRL(terminalBilling.nextExemptionTarget)}</strong>).
+                    </span>
+                  ) : null}
+                </div>
+              </div>
+
+              {/* Lista Detalhada de Maquininhas e seu Status */}
+              <div className="divide-y divide-border/60 border border-border/80 rounded-lg overflow-hidden bg-background">
+                {terminalBilling.items.map((item) => (
+                  <div key={item.id} className="p-2.5 px-3.5 flex items-center justify-between gap-2 text-xs">
+                    <div className="flex items-center gap-2.5">
+                      <Smartphone className="size-3.5 text-muted-foreground shrink-0" />
+                      <span className="font-mono font-semibold text-foreground">
+                        {item.serialNumber}
+                      </span>
+                      <span className="text-[11px] text-muted-foreground">
+                        (Meta: {BRL(item.requiredGross)})
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {item.isExempt ? (
+                        <Badge variant="outline" className="text-[10px] font-bold border-emerald-500/30 text-emerald-600 bg-emerald-500/10">
+                          Isenta (R$ 0,00)
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="text-[10px] font-bold border-amber-500/30 text-amber-600 bg-amber-500/10">
+                          Paga (+R$ 100,00)
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* FORMULÁRIO DE CONFIGURAÇÃO DA META */}

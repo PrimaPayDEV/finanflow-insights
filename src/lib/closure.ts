@@ -1,5 +1,105 @@
-import type { Expense, FeePlan, Transaction } from "@/lib/db";
+import type { Expense, FeePlan, PosTerminal, Transaction } from "@/lib/db";
 import { MODALITIES, rateFieldByModality, type Modality } from "@/lib/format";
+
+export type TerminalBillingItem = {
+  id: string;
+  terminalId?: string;
+  serialNumber: string;
+  model?: string;
+  description: string;
+  amount: number; // 100 se cobrada, 0 se isenta
+  isExempt: boolean;
+  requiredGross: number; // 50000 para a 1ª, 80000 para a 2ª, 110000 para a 3ª, etc.
+};
+
+export type TerminalBillingSummary = {
+  totalTerminals: number;
+  exemptTerminals: number;
+  chargedTerminals: number;
+  terminalPrice: number; // 100
+  totalCharge: number; // chargedTerminals * 100
+  totalSavings: number; // exemptTerminals * 100
+  items: TerminalBillingItem[];
+  nextExemptionTarget: number | null;
+  remainingForNextExemption: number | null;
+};
+
+export const TERMINAL_PRICE = 100;
+export const TERMINAL_FIRST_TIER = 50000;
+export const TERMINAL_STEP_TIER = 30000;
+
+export function calculateTerminalBilling(
+  terminals: PosTerminal[] = [],
+  totalGross: number = 0,
+): TerminalBillingSummary {
+  const totalTerminals = terminals.length;
+  if (totalTerminals === 0) {
+    return {
+      totalTerminals: 0,
+      exemptTerminals: 0,
+      chargedTerminals: 0,
+      terminalPrice: TERMINAL_PRICE,
+      totalCharge: 0,
+      totalSavings: 0,
+      items: [],
+      nextExemptionTarget: null,
+      remainingForNextExemption: null,
+    };
+  }
+
+  // Regra de Isenção:
+  // - Atingindo R$ 50.000 de faturamento => 1ª maquininha isenta
+  // - A cada R$ 30.000 adicionais => ganha isenção de mais uma maquininha
+  let availableExemptions = 0;
+  if (totalGross >= TERMINAL_FIRST_TIER) {
+    availableExemptions = 1 + Math.floor((totalGross - TERMINAL_FIRST_TIER) / TERMINAL_STEP_TIER);
+  }
+
+  const exemptTerminals = Math.min(totalTerminals, availableExemptions);
+  const chargedTerminals = Math.max(0, totalTerminals - exemptTerminals);
+  const totalCharge = chargedTerminals * TERMINAL_PRICE;
+  const totalSavings = exemptTerminals * TERMINAL_PRICE;
+
+  const items: TerminalBillingItem[] = terminals.map((t, index) => {
+    const requiredGross = TERMINAL_FIRST_TIER + index * TERMINAL_STEP_TIER;
+    const isExempt = index < exemptTerminals;
+    const serialInfo = t.serial_number ? ` (${t.serial_number})` : ` #${index + 1}`;
+
+    const description = isExempt
+      ? `Maquininha${serialInfo} — Isenção por Faturamento (Meta de R$ 50k+ atingida)`
+      : `Maquininha${serialInfo} — Aluguel Mensal (Faturamento abaixo da meta de isenção)`;
+
+    return {
+      id: t.id || `term-${index}`,
+      terminalId: t.id,
+      serialNumber: t.serial_number || `Terminal #${index + 1}`,
+      model: t.model || undefined,
+      description,
+      amount: isExempt ? 0 : TERMINAL_PRICE,
+      isExempt,
+      requiredGross,
+    };
+  });
+
+  let nextExemptionTarget: number | null = null;
+  let remainingForNextExemption: number | null = null;
+  if (exemptTerminals < totalTerminals) {
+    nextExemptionTarget = TERMINAL_FIRST_TIER + exemptTerminals * TERMINAL_STEP_TIER;
+    remainingForNextExemption = Math.max(0, nextExemptionTarget - totalGross);
+  }
+
+  return {
+    totalTerminals,
+    exemptTerminals,
+    chargedTerminals,
+    terminalPrice: TERMINAL_PRICE,
+    totalCharge,
+    totalSavings,
+    items,
+    nextExemptionTarget,
+    remainingForNextExemption,
+  };
+}
 
 export type ClosureCalc = {
   grossByModality: Record<Modality, number>;
@@ -16,6 +116,7 @@ export type ClosureCalc = {
   totalMerchantCost: number;
   appliedPrimaRate: number;
   appliedTraditionalRate: number;
+  terminalSummary: TerminalBillingSummary;
 };
 
 export function inMonth(dateIso: string, month: string) {
@@ -137,6 +238,7 @@ export function calculateClosure(
   transactions: Transaction[],
   expenses: Expense[],
   plan: FeePlan | undefined,
+  terminals: PosTerminal[] = [],
 ): ClosureCalc {
   const grossByModality = {} as Record<Modality, number>;
   const feeByModality = {} as Record<Modality, number>;
@@ -187,9 +289,21 @@ export function calculateClosure(
   // O valor a ser cobrado na plataforma é a soma da taxa operacional das transações
   const totalOpFee = (transactions.length > 0 && sumTransactionOpFee > 0) ? sumTransactionOpFee : fixedFeeAmount;
   
-  let totalExpenses = 0;
+  // Apuração de Maquininhas e Isenções por Faturamento
+  const terminalSummary = calculateTerminalBilling(terminals, totalGross);
+
+  // Se houver terminais cadastrados no EC, removemos lançamentos manuais com nome "maquina" para não cobrar em dobro
+  const filteredExpenses = terminals.length > 0
+    ? expenses.filter((e) => {
+        const desc = (e.description || "").toLowerCase().trim();
+        return !desc.match(/^maquina\s*(\(\d+\/\d+\))?$/i) && !desc.match(/^maquininha/i);
+      })
+    : expenses;
+
+  // Lançamentos incluem cobranças das máquinas não isentas (R$ 100 cada)
+  let totalExpenses = terminalSummary.totalCharge;
   let totalCharges = 0;
-  for (const e of expenses) {
+  for (const e of filteredExpenses) {
     if (e.category === "cobranca") {
       totalCharges += Number(e.amount);
     } else {
@@ -199,11 +313,13 @@ export function calculateClosure(
   
   const netInvoice = totalOpFee + totalExpenses - totalCharges;
   
-  // Traditional Cost = Custo das taxas descontadas nas transações + markup tradicional
+  // Custo Tradicional = Taxas de transação + markup de mercado + custo de todas as máquinas (R$ 100 cada)
   traditionalCost += (totalGross * traditionalRate) / 100;
+  traditionalCost += terminalSummary.totalTerminals * TERMINAL_PRICE;
   
-  // Economia é o custo tradicional menos o custo com a solução Prima
-  const totalMerchantCost = modalityFeeTotal + totalOpFee;
+  // Custo Solução Prima = Taxas por modalidade + Taxa operacional + Cobrança das máquinas não isentas
+  const totalMerchantCost = modalityFeeTotal + totalOpFee + terminalSummary.totalCharge;
+  // Economia apurada = custo tradicional - custo com a solução Prima
   const savings = traditionalCost - totalMerchantCost;
   
   const effectiveTraditionalRate = totalGross > 0 ? (traditionalCost / totalGross) * 100 : 0;
@@ -223,5 +339,6 @@ export function calculateClosure(
     totalMerchantCost,
     appliedPrimaRate: customPrimaRate,
     appliedTraditionalRate: effectiveTraditionalRate,
+    terminalSummary,
   };
 }

@@ -35,6 +35,11 @@ export const getPublicReportData = createServerFn({ method: "GET" })
       .eq("merchant_id", merchantId)
       .eq("reference_month", refMonth);
 
+    const { data: terminals } = await supabaseAdmin
+      .from("pos_terminals")
+      .select("*")
+      .eq("merchant_id", merchantId);
+
     const { data: imports } = await supabaseAdmin
       .from("statements_imports")
       .select("id, reference_month");
@@ -53,5 +58,6 @@ export const getPublicReportData = createServerFn({ method: "GET" })
       plan: plan || null,
       txs,
       exps: expenses || [],
+      terminals: terminals || [],
     };
   });
