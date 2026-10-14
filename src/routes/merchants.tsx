@@ -620,8 +620,8 @@ function MerchantsPage() {
         {/* =========================================================================
             COLUNA DA ESQUERDA: CARTEIRA DE ECs COM BUSCA E FILTROS
             ========================================================================= */}
-        <Card className="border border-border/80 shadow-card rounded-2xl overflow-hidden bg-card">
-          <CardHeader className="p-4 pb-3 space-y-3 border-b border-border/60">
+        <Card className="border border-border/80 shadow-card rounded-2xl overflow-hidden bg-card flex flex-col h-[480px] sm:h-[540px] lg:h-[calc(100vh-105px)] lg:sticky lg:top-4">
+          <CardHeader className="p-4 pb-3 space-y-3 border-b border-border/60 shrink-0 bg-card">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Store className="size-4 text-primary" />
@@ -691,8 +691,8 @@ function MerchantsPage() {
           </CardHeader>
 
           {/* Lista de Estabelecimentos */}
-          <CardContent className="p-2">
-            <div className="max-h-[calc(100vh-320px)] min-h-[300px] overflow-y-auto pr-1 space-y-1.5 scrollbar-thin">
+          <CardContent className="p-2 flex-1 min-h-0 flex flex-col overflow-hidden">
+            <div className="flex-1 overflow-y-auto pr-1 space-y-1.5 scrollbar-thin">
               {filteredList.length === 0 ? (
                 <div className="p-8 text-center text-muted-foreground flex flex-col items-center justify-center space-y-2">
                   <Store className="size-8 opacity-30" />
