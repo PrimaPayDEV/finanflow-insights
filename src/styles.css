@@ -197,7 +197,7 @@
 
 @media print {
   @page {
-    size: auto;
+    size: A4 portrait;
     margin: 10mm 12mm 12mm 12mm;
   }
 
@@ -264,6 +264,16 @@
 
   [style*="transform"] {
     transform: none !important;
+  }
+
+  .print-page-1 {
+    height: 258mm !important;
+    min-height: 258mm !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
   }
 
   .print-page-break {
