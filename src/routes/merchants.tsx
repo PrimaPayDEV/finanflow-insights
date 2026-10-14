@@ -30,6 +30,10 @@ import {
   CheckCircle2,
   HelpCircle,
   RotateCcw,
+  Target,
+  TrendingUp,
+  BarChart3,
+  Trophy,
 } from "lucide-react";
 import { MerchantIcon } from "@/components/MerchantIcon";
 import { toast } from "sonner";
@@ -69,9 +73,11 @@ import {
   merchantsQuery,
   splitRulesQuery,
   terminalsQuery,
+  transactionsQuery,
   type Merchant,
 } from "@/lib/db";
-import { PCT, formatCpfCnpj, formatPhone, formatCurrencyInput } from "@/lib/format";
+import { PCT, formatCpfCnpj, formatPhone, formatCurrencyInput, BRL, monthLabel, currentMonth } from "@/lib/format";
+import { cn } from "@/lib/utils";
 import { getPartners } from "@/lib/partner.functions";
 import { useServerFn } from "@tanstack/react-start";
 import { translateError } from "@/lib/translateError";
@@ -1022,7 +1028,9 @@ function FeePlanForm({ merchant }: { merchant: Merchant }) {
     if (plan && (plan as any).installment_rates && typeof (plan as any).installment_rates === "object") {
       const parsed: Record<string, string> = {};
       Object.entries((plan as any).installment_rates).forEach(([k, v]) => {
-        parsed[k] = String(v ?? 0);
+        if (!isNaN(Number(k))) {
+          parsed[k] = String(v ?? 0);
+        }
       });
       setInstallmentRates(parsed);
     } else {
@@ -1094,6 +1102,7 @@ function FeePlanForm({ merchant }: { merchant: Merchant }) {
         throw new Error("A Taxa Operacional Variável é obrigatória e não pode ficar zerada. Preencha um valor válido (ex: 2%).");
       }
 
+      const currentTargetRevenue = (plan as any)?.installment_rates?.target_revenue;
       const payload = {
         merchant_id: merchant.id,
         fixed_rate_percent: fixedRate,
@@ -1102,9 +1111,13 @@ function FeePlanForm({ merchant }: { merchant: Merchant }) {
         credit_vista_rate: Number(values.credit_vista_rate || 0),
         credit_installment_rate: Number(values.credit_installment_rate || 0),
         cash_rate: 0,
-        installment_rates: Object.fromEntries(
-          Object.entries(installmentRates).map(([k, v]) => [k, Number(v || 0)]),
-        ),
+        installment_rates: {
+          ...Object.fromEntries(
+            Object.entries(installmentRates).map(([k, v]) => [k, Number(v || 0)]),
+          ),
+          ...(currentTargetRevenue !== undefined ? { target_revenue: currentTargetRevenue } : {}),
+        },
+        ...(merchant.company_id ? { company_id: merchant.company_id } : {}),
       };
       const { error } = await supabase.from("fee_plans").upsert(payload, { onConflict: "merchant_id" });
       if (error) throw new Error(error.message);
@@ -1572,15 +1585,124 @@ function FeePlanForm({ merchant }: { merchant: Merchant }) {
 }
 
 /* =========================================================================
-   PAINEL DE TERMINAIS (POS) REFINADO
+   PAINEL DE TERMINAIS (POS) & FATURAMENTO
    ========================================================================= */
 function TerminalsPanel({ merchant }: { merchant: Merchant }) {
   const qc = useQueryClient();
   const terminals = useQuery(terminalsQuery);
+  const txQuery = useQuery(transactionsQuery);
+  const plans = useQuery(feePlansQuery);
+
+  const [space, setSpace] = useState<"billing" | "terminals" | "all">("billing");
   const [serial, setSerial] = useState("");
   const [model, setModel] = useState("");
 
   const list = (terminals.data ?? []).filter((t) => t.merchant_id === merchant.id);
+  const plan = (plans.data ?? []).find((p) => p.merchant_id === merchant.id);
+
+  // Transações vinculadas a este estabelecimento
+  const merchantTxs = useMemo(() => {
+    return (txQuery.data ?? []).filter((t) => t.merchant_id === merchant.id);
+  }, [txQuery.data, merchant.id]);
+
+  // Meses com movimentação deste EC
+  const availableMonths = useMemo(() => {
+    const set = new Set<string>();
+    merchantTxs.forEach((t) => {
+      if (t.transaction_date) {
+        set.add(t.transaction_date.slice(0, 7));
+      }
+    });
+    return Array.from(set).sort().reverse();
+  }, [merchantTxs]);
+
+  const curMonth = currentMonth();
+  const [selectedPeriod, setSelectedPeriod] = useState<string>("auto");
+
+  const effectivePeriod = useMemo(() => {
+    if (selectedPeriod !== "auto") return selectedPeriod;
+    if (availableMonths.includes(curMonth)) return curMonth;
+    if (availableMonths.length > 0) return availableMonths[0];
+    return curMonth;
+  }, [selectedPeriod, availableMonths, curMonth]);
+
+  const filteredTxs = useMemo(() => {
+    if (effectivePeriod === "all") return merchantTxs;
+    return merchantTxs.filter((t) => (t.transaction_date || "").slice(0, 7) === effectivePeriod);
+  }, [merchantTxs, effectivePeriod]);
+
+  // Faturamento atingido bruto
+  const actualRevenue = useMemo(() => {
+    return filteredTxs.reduce((sum, t) => sum + (Number(t.gross_amount) || 0), 0);
+  }, [filteredTxs]);
+
+  // Meta de Faturamento do EC (salva em fee_plans.installment_rates.target_revenue e em localStorage)
+  const savedTargetRevenue = useMemo(() => {
+    if (plan && (plan as any).installment_rates && typeof (plan as any).installment_rates === "object") {
+      const val = (plan as any).installment_rates.target_revenue;
+      if (val !== undefined && val !== null && !isNaN(Number(val)) && Number(val) > 0) {
+        return Number(val);
+      }
+    }
+    if (typeof window !== "undefined") {
+      const local = localStorage.getItem(`merchant_target_revenue_${merchant.id}`);
+      if (local && !isNaN(Number(local)) && Number(local) > 0) {
+        return Number(local);
+      }
+    }
+    return 0;
+  }, [plan, merchant.id]);
+
+  const [targetInput, setTargetInput] = useState<string>("");
+
+  useEffect(() => {
+    if (savedTargetRevenue > 0) {
+      setTargetInput(formatCurrencyInput(String(Math.round(savedTargetRevenue * 100))));
+    } else {
+      setTargetInput("");
+    }
+  }, [savedTargetRevenue]);
+
+  const saveTarget = useMutation({
+    mutationFn: async (numericTarget: number) => {
+      const existingRates =
+        plan?.installment_rates && typeof plan.installment_rates === "object"
+          ? { ...(plan.installment_rates as Record<string, any>) }
+          : {};
+
+      existingRates.target_revenue = numericTarget;
+
+      const payload = {
+        merchant_id: merchant.id,
+        fixed_rate_percent: plan?.fixed_rate_percent ?? 2.0,
+        pix_rate: plan?.pix_rate ?? 0,
+        debit_rate: plan?.debit_rate ?? 0,
+        credit_vista_rate: plan?.credit_vista_rate ?? 0,
+        credit_installment_rate: plan?.credit_installment_rate ?? 0,
+        cash_rate: 0,
+        installment_rates: existingRates,
+        ...(merchant.company_id ? { company_id: merchant.company_id } : {}),
+      };
+
+      const { error } = await supabase.from("fee_plans").upsert(payload, { onConflict: "merchant_id" });
+      if (error) throw new Error(error.message);
+
+      if (typeof window !== "undefined") {
+        localStorage.setItem(`merchant_target_revenue_${merchant.id}`, String(numericTarget));
+      }
+    },
+    onSuccess: () => {
+      toast.success("Meta de faturamento do EC atualizada com sucesso!");
+      qc.invalidateQueries({ queryKey: ["fee_plans"] });
+    },
+    onError: (e: Error) => toast.error("Erro ao salvar meta: " + translateError(e.message)),
+  });
+
+  const progress = savedTargetRevenue > 0 ? (actualRevenue / savedTargetRevenue) * 100 : 0;
+  const clampedProgress = Math.min(100, Math.max(0, progress));
+  const isGoalReached = savedTargetRevenue > 0 && actualRevenue >= savedTargetRevenue;
+  const diffRemaining = savedTargetRevenue > actualRevenue ? savedTargetRevenue - actualRevenue : 0;
+  const diffSurplus = actualRevenue > savedTargetRevenue ? actualRevenue - savedTargetRevenue : 0;
 
   const add = useMutation({
     mutationFn: async () => {
@@ -1610,123 +1732,507 @@ function TerminalsPanel({ merchant }: { merchant: Merchant }) {
   });
 
   return (
-    <Card className="border border-border/80 shadow-card rounded-2xl bg-card overflow-hidden">
-      <CardHeader className="p-5 sm:p-6 pb-4 border-b border-border/60">
-        <div className="flex items-center justify-between">
-          <div className="space-y-0.5">
-            <div className="flex items-center gap-2">
-              <Smartphone className="size-5 text-blue-500" />
-              <CardTitle className="text-base sm:text-lg font-bold">Maquininhas Vinculadas</CardTitle>
-            </div>
-            <CardDescription className="text-xs text-muted-foreground">
-              Vincule equipamentos POS por número serial para conciliação automática das vendas.
-            </CardDescription>
-          </div>
-          <Badge variant="secondary" className="font-mono text-xs">
-            {list.length} {list.length === 1 ? "maquininha" : "maquininhas"}
-          </Badge>
-        </div>
-      </CardHeader>
+    <div className="space-y-4">
+      {/* Sub-navegador dos Espaços: Faturamento vs Maquininhas */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-1.5 bg-muted/40 rounded-2xl border border-border/60">
+        <div className="flex items-center gap-1.5 p-1 bg-background/80 rounded-xl border border-border/40 shadow-2xs">
+          <button
+            type="button"
+            onClick={() => setSpace("billing")}
+            className={cn(
+              "flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer",
+              space === "billing"
+                ? "bg-primary text-primary-foreground shadow-xs font-bold"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
+            )}
+          >
+            <Target className="size-4" />
+            <span>Faturamento</span>
+            {savedTargetRevenue > 0 && (
+              <Badge
+                variant="outline"
+                className={cn(
+                  "h-5 px-1.5 text-[10px] font-mono",
+                  space === "billing"
+                    ? "bg-primary-foreground/20 text-primary-foreground border-primary-foreground/30"
+                    : isGoalReached
+                    ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/30"
+                    : "bg-muted text-muted-foreground",
+                )}
+              >
+                {progress >= 100 ? "100%" : `${progress.toFixed(0)}%`}
+              </Badge>
+            )}
+          </button>
 
-      <CardContent className="p-5 sm:p-6 space-y-6">
-        {/* Formulário de Adição de Terminal */}
-        <div className="p-4 rounded-xl border border-border/80 bg-muted/15 space-y-3">
-          <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-            Vincular Novo Terminal POS
-          </h4>
-          <div className="grid sm:grid-cols-[1fr_1fr_auto] gap-3 items-end">
-            <div className="space-y-1.5">
-              <Label className="text-xs font-semibold">Número Serial *</Label>
-              <Input
-                placeholder="Ex: 9876543210"
-                value={serial}
-                onChange={(e) => setSerial(e.target.value)}
-                maxLength={60}
-                className="font-mono bg-background"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs font-semibold">Modelo (Opcional)</Label>
-              <Input
-                placeholder="Ex: PAX D195 / Sunmi V2"
-                value={model}
-                onChange={(e) => setModel(e.target.value)}
-                maxLength={60}
-                className="bg-background"
-              />
-            </div>
-            <Button
-              onClick={() => add.mutate()}
-              disabled={!serial.trim() || add.isPending}
-              className="gap-1.5 shadow-2xs"
-            >
-              <Plus className="size-4" />
-              <span>{add.isPending ? "Vinculando..." : "Vincular"}</span>
-            </Button>
-          </div>
+          <button
+            type="button"
+            onClick={() => setSpace("terminals")}
+            className={cn(
+              "flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer",
+              space === "terminals"
+                ? "bg-primary text-primary-foreground shadow-xs font-bold"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
+            )}
+          >
+            <Smartphone className="size-4" />
+            <span>Maquininhas POS</span>
+            {list.length > 0 && (
+              <Badge
+                variant="secondary"
+                className={cn(
+                  "h-5 px-1.5 text-[10px] font-mono",
+                  space === "terminals"
+                    ? "bg-primary-foreground/20 text-primary-foreground"
+                    : "",
+                )}
+              >
+                {list.length}
+              </Badge>
+            )}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setSpace("all")}
+            className={cn(
+              "hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer",
+              space === "all"
+                ? "bg-primary text-primary-foreground shadow-xs font-bold"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted/50",
+            )}
+          >
+            <span>Ver Ambos</span>
+          </button>
         </div>
 
-        {/* Lista de Terminais */}
-        <div className="space-y-2">
-          {list.length === 0 ? (
-            <div className="p-8 text-center border border-dashed rounded-xl text-muted-foreground bg-muted/10 space-y-2">
-              <Smartphone className="size-8 mx-auto opacity-30 text-blue-500" />
-              <p className="text-sm font-semibold text-foreground">Nenhuma maquininha vinculada a este EC.</p>
-              <p className="text-xs text-muted-foreground">
-                Informe o número de série da máquina POS acima para vincular.
-              </p>
-            </div>
-          ) : (
-            <div className="divide-y divide-border/60 border border-border/80 rounded-xl overflow-hidden bg-background">
-              {list.map((t) => (
-                <div key={t.id} className="flex items-center justify-between p-3.5 hover:bg-muted/30 transition-colors">
-                  <div className="flex items-center gap-3">
-                    <div className="size-9 rounded-lg bg-blue-500/10 text-blue-500 flex items-center justify-center shrink-0">
-                      <Smartphone className="size-4" />
-                    </div>
-                    <div>
-                      <p className="font-mono font-bold text-sm text-foreground">{t.serial_number}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {t.model ? `Modelo: ${t.model}` : "Modelo não especificado"}
-                      </p>
-                    </div>
+        {/* Informação resumida */}
+        <div className="flex items-center gap-2 px-3 text-xs text-muted-foreground">
+          <span className="size-2 rounded-full bg-emerald-500 shrink-0" />
+          <span className="truncate">
+            {list.length} {list.length === 1 ? "terminal ativo" : "terminais ativos"} • {BRL(actualRevenue)}
+          </span>
+        </div>
+      </div>
+
+      {/* =========================================================================
+          ESPAÇO 1: FATURAMENTO & META DO EC
+          ========================================================================= */}
+      {(space === "billing" || space === "all") && (
+        <Card className="border border-border/80 shadow-card rounded-2xl bg-card overflow-hidden">
+          <CardHeader className="p-5 sm:p-6 pb-4 border-b border-border/60">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="space-y-0.5">
+                <div className="flex items-center gap-2">
+                  <div className="size-8 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                    <Target className="size-4.5" />
                   </div>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                        title="Desvincular terminal"
-                      >
-                        <Trash2 className="size-4" />
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Desvincular Terminal?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Deseja desvincular a maquininha serial <strong>{t.serial_number}</strong> deste estabelecimento?
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={() => remove.mutate(t.id)}
-                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                        >
-                          Sim, desvincular
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
+                  <div>
+                    <CardTitle className="text-base sm:text-lg font-bold">
+                      Faturamento & Meta de Vendas
+                    </CardTitle>
+                    <CardDescription className="text-xs text-muted-foreground">
+                      Acompanhe o faturamento realizado e configure a meta de faturamento mensal do EC.
+                    </CardDescription>
+                  </div>
                 </div>
-              ))}
+              </div>
+
+              {/* Seletor de Período para o Faturamento */}
+              <div className="flex items-center gap-2 shrink-0">
+                <Label className="text-xs font-semibold text-muted-foreground">Período:</Label>
+                <select
+                  value={effectivePeriod}
+                  onChange={(e) => setSelectedPeriod(e.target.value)}
+                  className="h-9 px-3 rounded-xl border border-border bg-background text-xs font-medium text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                >
+                  <option value={curMonth}>Mês Atual ({monthLabel(curMonth)})</option>
+                  {availableMonths
+                    .filter((m) => m !== curMonth)
+                    .map((m) => (
+                      <option key={m} value={m}>
+                        {monthLabel(m)}
+                      </option>
+                    ))}
+                  <option value="all">Total Acumulado (Todas as vendas)</option>
+                </select>
+              </div>
             </div>
-          )}
-        </div>
-      </CardContent>
-    </Card>
+          </CardHeader>
+
+          <CardContent className="p-5 sm:p-6 space-y-6">
+            {/* Cards de Métricas Principais */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+              {/* Card 1: Faturamento Atingido */}
+              <div className="p-4 rounded-xl border border-border/70 bg-gradient-to-br from-emerald-500/[0.04] to-transparent relative overflow-hidden space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    Faturamento Atingido
+                  </span>
+                  <div className="size-8 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                    <TrendingUp className="size-4" />
+                  </div>
+                </div>
+                <div className="space-y-0.5">
+                  <p className="text-xl sm:text-2xl font-black tracking-tight text-foreground font-mono">
+                    {BRL(actualRevenue)}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground">
+                    {filteredTxs.length} {filteredTxs.length === 1 ? "venda registrada" : "vendas registradas"} no período
+                  </p>
+                </div>
+              </div>
+
+              {/* Card 2: Meta Estabelecida */}
+              <div className="p-4 rounded-xl border border-border/70 bg-gradient-to-br from-blue-500/[0.04] to-transparent relative overflow-hidden space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    Meta Estabelecida
+                  </span>
+                  <div className="size-8 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+                    <Target className="size-4" />
+                  </div>
+                </div>
+                <div className="space-y-0.5">
+                  <p className="text-xl sm:text-2xl font-black tracking-tight text-foreground font-mono">
+                    {savedTargetRevenue > 0 ? BRL(savedTargetRevenue) : "Não definida"}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground">
+                    {savedTargetRevenue > 0 ? "Objetivo de faturamento mensal" : "Defina a meta no formulário abaixo"}
+                  </p>
+                </div>
+              </div>
+
+              {/* Card 3: Saldo / Desempenho */}
+              <div className="p-4 rounded-xl border border-border/70 bg-gradient-to-br from-violet-500/[0.04] to-transparent relative overflow-hidden space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    {isGoalReached ? "Meta Superada" : "Saldo Restante"}
+                  </span>
+                  <div
+                    className={cn(
+                      "size-8 rounded-lg flex items-center justify-center",
+                      isGoalReached
+                        ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                        : "bg-violet-500/10 text-violet-600 dark:text-violet-400",
+                    )}
+                  >
+                    {isGoalReached ? <Trophy className="size-4" /> : <BarChart3 className="size-4" />}
+                  </div>
+                </div>
+                <div className="space-y-0.5">
+                  <p className="text-xl sm:text-2xl font-black tracking-tight text-foreground font-mono">
+                    {savedTargetRevenue > 0
+                      ? isGoalReached
+                        ? `+${BRL(diffSurplus)}`
+                        : BRL(diffRemaining)
+                      : "—"}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground">
+                    {savedTargetRevenue > 0
+                      ? isGoalReached
+                        ? "Objetivo atingido com sucesso! 🏆"
+                        : `Faltam ${(100 - progress).toFixed(1)}% para bater a meta`
+                      : "Aguardando definição da meta"}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* BARRA DE PROGRESSO VISUAL PREMIUM */}
+            <div className="p-4 sm:p-5 rounded-xl border border-border/80 bg-muted/20 space-y-3.5">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-2">
+                    <span className="text-2xl font-black tracking-tight text-foreground font-mono">
+                      {progress.toFixed(1)}%
+                    </span>
+                    <span className="text-xs text-muted-foreground font-medium">da meta atingida</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {savedTargetRevenue > 0
+                      ? `${BRL(actualRevenue)} de ${BRL(savedTargetRevenue)}`
+                      : "Configure a meta para visualizar a proporção atingida."}
+                  </p>
+                </div>
+
+                {savedTargetRevenue > 0 ? (
+                  isGoalReached ? (
+                    <Badge className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5 px-3 py-1 text-xs shadow-xs font-bold">
+                      <Trophy className="size-3.5" />
+                      <span>Meta Batida! (+{BRL(diffSurplus)})</span>
+                    </Badge>
+                  ) : (
+                    <Badge
+                      variant="outline"
+                      className="text-xs border-amber-500/30 text-amber-600 dark:text-amber-400 bg-amber-500/10 font-semibold px-2.5 py-1"
+                    >
+                      Faltam {BRL(diffRemaining)} ({(100 - progress).toFixed(1)}%)
+                    </Badge>
+                  )
+                ) : (
+                  <Badge variant="outline" className="text-xs text-muted-foreground border-border bg-background">
+                    Meta não configurada
+                  </Badge>
+                )}
+              </div>
+
+              {/* Barra de Progresso com Gradiente */}
+              <div className="relative w-full h-5 bg-muted/80 dark:bg-muted/50 rounded-full p-1 border border-border shadow-inner overflow-hidden">
+                {/* Linhas de Marcação em 25%, 50%, 75% */}
+                <div className="absolute inset-0 flex justify-between px-3 items-center pointer-events-none z-10 opacity-20 text-[9px] font-mono font-bold">
+                  <span className="left-1/4 absolute -translate-x-1/2">|</span>
+                  <span className="left-1/2 absolute -translate-x-1/2">|</span>
+                  <span className="left-3/4 absolute -translate-x-1/2">|</span>
+                </div>
+
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: `${clampedProgress}%` }}
+                  transition={{ duration: 0.9, ease: "easeOut" }}
+                  className={cn(
+                    "h-full rounded-full transition-all relative overflow-hidden",
+                    isGoalReached
+                      ? "bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-400 shadow-sm"
+                      : progress >= 70
+                      ? "bg-gradient-to-r from-blue-500 to-emerald-500"
+                      : progress >= 30
+                      ? "bg-gradient-to-r from-amber-500 to-blue-500"
+                      : "bg-gradient-to-r from-violet-500 to-indigo-500",
+                  )}
+                >
+                  <div className="absolute inset-0 bg-white/20 animate-pulse rounded-full" />
+                </motion.div>
+              </div>
+
+              {/* Legenda de Escala da Barra */}
+              <div className="flex justify-between items-center text-[11px] text-muted-foreground font-mono px-0.5">
+                <span>R$ 0,00 (0%)</span>
+                <span>25%</span>
+                <span>50%</span>
+                <span>75%</span>
+                <span className="font-bold text-foreground">
+                  {savedTargetRevenue > 0 ? BRL(savedTargetRevenue) : "Meta"} (100%)
+                </span>
+              </div>
+            </div>
+
+            {/* FORMULÁRIO DE CONFIGURAÇÃO DA META */}
+            <div className="p-4 sm:p-5 rounded-xl border border-border/80 bg-muted/15 space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                  <h4 className="text-xs font-bold text-foreground uppercase tracking-wider flex items-center gap-1.5">
+                    <Target className="size-3.5 text-blue-500" />
+                    Configurar Meta de Faturamento do EC
+                  </h4>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Defina o objetivo financeiro de vendas deste estabelecimento para cálculo da barra de progresso.
+                  </p>
+                </div>
+                {savedTargetRevenue > 0 && (
+                  <Badge
+                    variant="outline"
+                    className="w-fit text-[11px] font-mono border-blue-500/30 text-blue-600 dark:text-blue-400 bg-blue-500/10"
+                  >
+                    Meta Ativa: {BRL(savedTargetRevenue)}
+                  </Badge>
+                )}
+              </div>
+
+              <div className="grid sm:grid-cols-[1fr_auto] gap-3 items-end">
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold">Valor da Meta (R$) *</Label>
+                  <Input
+                    placeholder="R$ 50.000,00"
+                    value={targetInput}
+                    onChange={(e) => setTargetInput(formatCurrencyInput(e.target.value))}
+                    maxLength={20}
+                    className="font-mono text-base font-bold bg-background"
+                  />
+                </div>
+                <Button
+                  onClick={() => {
+                    const num = Number(targetInput.replace(/\D/g, "")) / 100;
+                    if (num <= 0) {
+                      toast.error("Informe um valor de meta maior que R$ 0,00.");
+                      return;
+                    }
+                    saveTarget.mutate(num);
+                  }}
+                  disabled={saveTarget.isPending}
+                  className="gap-2 shadow-2xs h-10 px-5"
+                >
+                  <Save className="size-4" />
+                  <span>{saveTarget.isPending ? "Salvando..." : "Salvar Meta"}</span>
+                </Button>
+              </div>
+
+              {/* Presets Rápidos de 1 Clique */}
+              <div className="space-y-1.5 pt-1">
+                <span className="text-[11px] text-muted-foreground font-medium">
+                  Atalhos de valores rápidos:
+                </span>
+                <div className="flex flex-wrap gap-1.5">
+                  {[20000, 50000, 100000, 200000, 500000].map((preset) => (
+                    <Button
+                      key={preset}
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setTargetInput(formatCurrencyInput(String(preset * 100)))}
+                      className="h-7 text-xs font-mono font-semibold px-2.5 hover:bg-primary/10 hover:text-primary hover:border-primary/40 transition-colors"
+                    >
+                      {BRL(preset)}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Rodapé Informativo / Vínculo com Maquininhas */}
+            <div className="flex items-center justify-between text-xs text-muted-foreground pt-1 border-t border-border/40">
+              <span className="flex items-center gap-1.5">
+                <Smartphone className="size-3.5 text-blue-500" />
+                <span>
+                  {list.length} {list.length === 1 ? "maquininha vinculada" : "maquininhas vinculadas"} a este EC
+                </span>
+              </span>
+              <button
+                type="button"
+                onClick={() => setSpace("terminals")}
+                className="text-primary hover:underline font-semibold flex items-center gap-1 cursor-pointer"
+              >
+                <span>Ver maquininhas e seriais</span>
+                <ChevronRight className="size-3" />
+              </button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* =========================================================================
+          ESPAÇO 2: MAQUININHAS POS VINCULADAS
+          ========================================================================= */}
+      {(space === "terminals" || space === "all") && (
+        <Card className="border border-border/80 shadow-card rounded-2xl bg-card overflow-hidden">
+          <CardHeader className="p-5 sm:p-6 pb-4 border-b border-border/60">
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <div className="flex items-center gap-2">
+                  <Smartphone className="size-5 text-blue-500" />
+                  <CardTitle className="text-base sm:text-lg font-bold">Maquininhas Vinculadas</CardTitle>
+                </div>
+                <CardDescription className="text-xs text-muted-foreground">
+                  Vincule equipamentos POS por número serial para conciliação automática das vendas.
+                </CardDescription>
+              </div>
+              <Badge variant="secondary" className="font-mono text-xs">
+                {list.length} {list.length === 1 ? "maquininha" : "maquininhas"}
+              </Badge>
+            </div>
+          </CardHeader>
+
+          <CardContent className="p-5 sm:p-6 space-y-6">
+            {/* Formulário de Adição de Terminal */}
+            <div className="p-4 rounded-xl border border-border/80 bg-muted/15 space-y-3">
+              <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                Vincular Novo Terminal POS
+              </h4>
+              <div className="grid sm:grid-cols-[1fr_1fr_auto] gap-3 items-end">
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold">Número Serial *</Label>
+                  <Input
+                    placeholder="Ex: 9876543210"
+                    value={serial}
+                    onChange={(e) => setSerial(e.target.value)}
+                    maxLength={60}
+                    className="font-mono bg-background"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-semibold">Modelo (Opcional)</Label>
+                  <Input
+                    placeholder="Ex: PAX D195 / Sunmi V2"
+                    value={model}
+                    onChange={(e) => setModel(e.target.value)}
+                    maxLength={60}
+                    className="bg-background"
+                  />
+                </div>
+                <Button
+                  onClick={() => add.mutate()}
+                  disabled={!serial.trim() || add.isPending}
+                  className="gap-1.5 shadow-2xs"
+                >
+                  <Plus className="size-4" />
+                  <span>{add.isPending ? "Vinculando..." : "Vincular"}</span>
+                </Button>
+              </div>
+            </div>
+
+            {/* Lista de Terminais */}
+            <div className="space-y-2">
+              {list.length === 0 ? (
+                <div className="p-8 text-center border border-dashed rounded-xl text-muted-foreground bg-muted/10 space-y-2">
+                  <Smartphone className="size-8 mx-auto opacity-30 text-blue-500" />
+                  <p className="text-sm font-semibold text-foreground">Nenhuma maquininha vinculada a este EC.</p>
+                  <p className="text-xs text-muted-foreground">
+                    Informe o número de série da máquina POS acima para vincular.
+                  </p>
+                </div>
+              ) : (
+                <div className="divide-y divide-border/60 border border-border/80 rounded-xl overflow-hidden bg-background">
+                  {list.map((t) => (
+                    <div key={t.id} className="flex items-center justify-between p-3.5 hover:bg-muted/30 transition-colors">
+                      <div className="flex items-center gap-3">
+                        <div className="size-9 rounded-lg bg-blue-500/10 text-blue-500 flex items-center justify-center shrink-0">
+                          <Smartphone className="size-4" />
+                        </div>
+                        <div>
+                          <p className="font-mono font-bold text-sm text-foreground">{t.serial_number}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {t.model ? `Modelo: ${t.model}` : "Modelo não especificado"}
+                          </p>
+                        </div>
+                      </div>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                            title="Desvincular terminal"
+                          >
+                            <Trash2 className="size-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Desvincular Terminal?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Deseja desvincular a maquininha serial <strong>{t.serial_number}</strong> deste estabelecimento?
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => remove.mutate(t.id)}
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            >
+                              Sim, desvincular
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
   );
 }
 
