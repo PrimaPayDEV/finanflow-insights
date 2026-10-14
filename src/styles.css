@@ -163,6 +163,17 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
+
+  /* Text selection — high contrast in both themes */
+  ::selection {
+    background-color: oklch(0.48 0.22 283 / 80%);
+    color: oklch(0.99 0 0);
+  }
+
+  .dark ::selection {
+    background-color: oklch(0.72 0.18 283 / 80%);
+    color: oklch(0.1 0 0);
+  }
 }
 
 @keyframes fadeIn {
