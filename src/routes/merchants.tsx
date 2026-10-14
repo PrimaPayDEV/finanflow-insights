@@ -2029,32 +2029,26 @@ function BillingPanel({ merchant }: { merchant: Merchant }) {
             )}
           </div>
 
-          {/* Barra de Progresso com Gradiente */}
-          <div className="relative w-full h-5 bg-muted/80 dark:bg-muted/50 rounded-full p-1 border border-border shadow-inner overflow-hidden">
-            {/* Linhas de Marcação em 25%, 50%, 75% */}
-            <div className="absolute inset-0 flex justify-between px-3 items-center pointer-events-none z-10 opacity-20 text-[9px] font-mono font-bold">
-              <span className="left-1/4 absolute -translate-x-1/2">|</span>
-              <span className="left-1/2 absolute -translate-x-1/2">|</span>
-              <span className="left-3/4 absolute -translate-x-1/2">|</span>
+          {/* Barra de Progresso com Cores Sólidas */}
+          <div className="relative w-full h-4 bg-muted/80 dark:bg-muted/50 rounded-full border border-border/80 overflow-hidden">
+            {/* Linhas de Marcação discretas em 25%, 50%, 75% */}
+            <div className="absolute inset-0 pointer-events-none z-10 flex">
+              <div className="absolute left-1/4 top-0 bottom-0 w-px bg-border/60" />
+              <div className="absolute left-1/2 top-0 bottom-0 w-px bg-border/60" />
+              <div className="absolute left-3/4 top-0 bottom-0 w-px bg-border/60" />
             </div>
 
             <motion.div
               initial={{ width: 0 }}
               animate={{ width: `${clampedProgress}%` }}
-              transition={{ duration: 0.9, ease: "easeOut" }}
+              transition={{ duration: 0.8, ease: "easeOut" }}
               className={cn(
-                "h-full rounded-full transition-all relative overflow-hidden",
+                "h-full rounded-full transition-all",
                 isGoalReached
-                  ? "bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-400 shadow-sm"
-                  : progress >= 70
-                  ? "bg-gradient-to-r from-blue-500 to-emerald-500"
-                  : progress >= 30
-                  ? "bg-gradient-to-r from-amber-500 to-blue-500"
-                  : "bg-gradient-to-r from-violet-500 to-indigo-500",
+                  ? "bg-emerald-500"
+                  : "bg-primary",
               )}
-            >
-              <div className="absolute inset-0 bg-white/20 animate-pulse rounded-full" />
-            </motion.div>
+            />
           </div>
 
           {/* Legenda de Escala da Barra */}
