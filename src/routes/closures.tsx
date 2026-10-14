@@ -26,6 +26,7 @@ import {
   Save,
   CheckCircle2,
   AlertCircle,
+  Wallet,
 } from "lucide-react";
 import { toast } from "sonner";
 import { AppLayout } from "@/components/AppLayout";
@@ -103,7 +104,7 @@ export const Route = createFileRoute("/closures")({
 });
 
 function RouteComponent() {
-  const { companyId } = useAuth();
+  const { companyId, companyName, logoUrl } = useAuth();
   const qc = useQueryClient();
   const merchants = useQuery(merchantsQuery);
   const plans = useQuery(feePlansQuery);
@@ -141,6 +142,18 @@ function RouteComponent() {
     (c) => c.merchant_id === merchantId && c.reference_month === month,
   );
   const merchantSplits = (splits.data ?? []).filter((s) => s.merchant_id === merchantId);
+
+  const totalGross = calc.totalGross;
+  const pixPct = totalGross > 0 ? (calc.grossByModality.pix / totalGross) * 100 : 0;
+  const debitPct = totalGross > 0 ? (calc.grossByModality.debit / totalGross) * 100 : 0;
+  const creditVistaPct = totalGross > 0 ? (calc.grossByModality.credit_vista / totalGross) * 100 : 0;
+  const creditInstallmentPct = totalGross > 0 ? (calc.grossByModality.credit_installment / totalGross) * 100 : 0;
+
+  const totalExpensesSum = useMemo(() => {
+    return exps.reduce((acc, exp) => {
+      return exp.category === "cobranca" ? acc + Number(exp.amount) : acc - Number(exp.amount);
+    }, 0);
+  }, [exps]);
 
   const totalsDetailed = useMemo(() => {
     let totalGross = 0;
@@ -434,202 +447,271 @@ function RouteComponent() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.4 }}
-          className="mt-6 space-y-8 print:mt-0 print:space-y-6"
+          className="mt-6 space-y-6 print:mt-0 print:space-y-4"
         >
-          {/* Cabeçalho de Impressão */}
-          <div className="hidden print:block mb-8 border-b-2 border-primary pb-6">
-            <div className="flex justify-between items-center mb-6">
-              <h1 className="text-3xl font-black text-primary tracking-tight uppercase">Relatório de Fechamento</h1>
+          {/* =========================================================================
+              CABEÇALHO CORPORATIVO DE IMPRESSÃO
+              ========================================================================= */}
+          <div className="hidden print:block mb-5 pb-3 border-b-2 border-primary/20">
+            <div className="flex justify-between items-start mb-3">
+              <div className="flex items-center gap-3">
+                {logoUrl ? (
+                  <img
+                    src={logoUrl}
+                    alt={companyName || "Logo"}
+                    className="h-9 w-auto max-w-[160px] object-contain"
+                  />
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <div className="size-8 rounded-xl bg-primary text-primary-foreground flex items-center justify-center font-bold shadow-xs">
+                      <Wallet className="size-4" />
+                    </div>
+                    <p className="text-xl font-black tracking-tight text-foreground" style={{ fontFamily: '"Montserrat Arabic", Montserrat, sans-serif' }}>
+                      {companyName === 'PrimaPay' ? 'PrimaHub' : (companyName || "PrimaPay")}
+                    </p>
+                  </div>
+                )}
+                <div className="border-l border-border pl-3">
+                  <h1 className="text-base font-black text-primary tracking-tight uppercase leading-none">
+                    Relatório de Fechamento & Economia
+                  </h1>
+                  <p className="text-[10px] text-muted-foreground font-medium mt-0.5">
+                    Demonstrativo mensal consolidado de faturamento, lançamentos e economia apurada
+                  </p>
+                </div>
+              </div>
+
               <div className="text-right">
-                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Período</p>
-                <p className="text-xl font-bold text-foreground capitalize">{monthLabel(month)}</p>
+                <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-primary/10 border border-primary/20 text-xs font-bold text-primary">
+                  <Calendar className="size-3" />
+                  <span className="capitalize">{monthLabel(month)}</span>
+                </div>
+                <p className="text-[9px] text-muted-foreground mt-0.5 font-mono">
+                  Emissão: {format(new Date(), "dd/MM/yyyy HH:mm")}
+                </p>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-6 bg-muted/20 p-5 rounded-xl border border-primary/20 print:color-adjust-exact print:bg-transparent print:border-border/50">
+
+            {/* Ficha Cadastral do Estabelecimento */}
+            <div className="grid grid-cols-4 gap-2.5 bg-muted/20 p-2.5 rounded-xl border border-border/70 text-xs">
               <div>
-                <p className="text-xs font-bold text-primary uppercase tracking-wider mb-1">Estabelecimento</p>
-                <p className="font-bold text-lg text-foreground">{merchant.name}</p>
+                <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider block">
+                  Estabelecimento
+                </span>
+                <span className="font-bold text-xs text-foreground truncate block">
+                  {merchant.name}
+                </span>
               </div>
               <div>
-                <p className="text-xs font-bold text-primary uppercase tracking-wider mb-1">CNPJ</p>
-                <p className="font-semibold text-foreground">{merchant.document_cnpj || "Não informado"}</p>
+                <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider block">
+                  CNPJ
+                </span>
+                <span className="font-semibold text-xs font-mono text-foreground block">
+                  {merchant.document_cnpj || "Não informado"}
+                </span>
               </div>
-              {merchant.email && (
-                <div>
-                  <p className="text-xs font-bold text-primary uppercase tracking-wider mb-1">E-mail</p>
-                  <p className="font-semibold text-foreground">{merchant.email}</p>
-                </div>
-              )}
-              {merchant.phone_whatsapp && (
-                <div>
-                  <p className="text-xs font-bold text-primary uppercase tracking-wider mb-1">WhatsApp</p>
-                  <p className="font-semibold text-foreground">{merchant.phone_whatsapp}</p>
-                </div>
-              )}
+              <div>
+                <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider block">
+                  E-mail
+                </span>
+                <span className="font-medium text-[11px] text-foreground truncate block">
+                  {merchant.email || "Não informado"}
+                </span>
+              </div>
+              <div>
+                <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider block">
+                  WhatsApp / Contato
+                </span>
+                <span className="font-medium text-[11px] text-foreground block">
+                  {merchant.phone_whatsapp || "Não informado"}
+                </span>
+              </div>
             </div>
           </div>
 
           {/* =========================================================================
-              SEÇÃO 1: EXTRATO BÁSICO DE MOVIMENTAÇÕES
+              SEÇÃO 1: FATURAMENTO BRUTO & MOVIMENTAÇÕES (UNIFICADO E ESTRUTURADO)
               ========================================================================= */}
-          <section className="space-y-4 print:space-y-3 print:break-inside-avoid">
-            <div className="flex items-center gap-2">
-              <TrendingUp className="size-5 text-primary" />
-              <h2 className="text-lg font-bold tracking-tight text-foreground">
-                Extrato Básico de Movimentações
-              </h2>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 print:grid-cols-4 print:gap-3">
-              {/* PIX */}
-              <Card className="rounded-2xl border border-border/80 shadow-card bg-card overflow-hidden hover:border-emerald-500/40 transition-colors print:shadow-none">
-                <CardHeader className="p-4 pb-1">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-xs font-bold text-muted-foreground uppercase tracking-wide">
-                      Pix
-                    </CardTitle>
-                    <Sparkles className="size-4 text-emerald-500" />
+          <section className="space-y-3 print:space-y-2 print:break-inside-avoid">
+            <Card className="rounded-2xl border border-border/80 shadow-card bg-card overflow-hidden print:shadow-none print:border-border/60">
+              {/* Header do Card com Total em Destaque */}
+              <div className="p-3.5 sm:p-4 border-b border-border/60 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 bg-muted/15 print:p-2.5 print:bg-muted/10">
+                <div className="flex items-center gap-2">
+                  <div className="size-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                    <TrendingUp className="size-3.5" />
                   </div>
-                </CardHeader>
-                <CardContent className="p-4 pt-1">
-                  <p className="text-2xl font-black text-foreground font-mono">{BRL(calc.grossByModality.pix)}</p>
-                </CardContent>
-              </Card>
-
-              {/* DÉBITO */}
-              <Card className="rounded-2xl border border-border/80 shadow-card bg-card overflow-hidden hover:border-blue-500/40 transition-colors print:shadow-none">
-                <CardHeader className="p-4 pb-1">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-xs font-bold text-muted-foreground uppercase tracking-wide">
-                      Débito
-                    </CardTitle>
-                    <CreditCard className="size-4 text-blue-500" />
+                  <div>
+                    <h2 className="text-xs sm:text-sm font-bold tracking-tight text-foreground uppercase">
+                      1. Faturamento Bruto & Movimentações
+                    </h2>
+                    <p className="text-[11px] text-muted-foreground">
+                      Volume total de vendas e distribuição por modalidade ({txs.length} {txs.length === 1 ? "venda" : "vendas"})
+                    </p>
                   </div>
-                </CardHeader>
-                <CardContent className="p-4 pt-1">
-                  <p className="text-2xl font-black text-foreground font-mono">{BRL(calc.grossByModality.debit)}</p>
-                </CardContent>
-              </Card>
+                </div>
 
-              {/* CRÉDITO À VISTA */}
-              <Card className="rounded-2xl border border-border/80 shadow-card bg-card overflow-hidden hover:border-violet-500/40 transition-colors print:shadow-none">
-                <CardHeader className="p-4 pb-1">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-xs font-bold text-muted-foreground uppercase tracking-wide">
-                      Crédito à Vista
-                    </CardTitle>
-                    <CreditCard className="size-4 text-violet-500" />
+                <div className="flex items-center gap-2 self-start sm:self-auto bg-primary/10 border border-primary/25 px-3 py-1.5 rounded-xl text-right print:px-2.5 print:py-1">
+                  <div>
+                    <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground block">
+                      Faturamento Total Bruto
+                    </span>
+                    <span className="text-lg sm:text-xl font-black text-primary font-mono tracking-tight leading-none">
+                      {BRL(calc.totalGross)}
+                    </span>
                   </div>
-                </CardHeader>
-                <CardContent className="p-4 pt-1">
-                  <p className="text-2xl font-black text-foreground font-mono">
-                    {BRL(calc.grossByModality.credit_vista)}
-                  </p>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
 
-              {/* CRÉDITO PARCELADO */}
-              <Card className="rounded-2xl border border-border/80 shadow-card bg-card overflow-hidden hover:border-primary/40 transition-colors print:shadow-none">
-                <CardHeader className="p-4 pb-1">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-xs font-bold text-muted-foreground uppercase tracking-wide">
-                      Créd. Parcelado
-                    </CardTitle>
-                    <Layers className="size-4 text-primary" />
+              {/* Grid das 4 Modalidades com Valores, Cores e Participação % */}
+              <CardContent className="p-3.5 sm:p-4 print:p-2.5">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 print:grid-cols-4 print:gap-2">
+                  {/* PIX */}
+                  <div className="p-2.5 sm:p-3 rounded-xl border border-emerald-500/20 bg-emerald-500/5 flex flex-col justify-between space-y-1 print:p-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-1">
+                        <Sparkles className="size-3" /> Pix
+                      </span>
+                      <span className="text-[10px] font-mono font-bold text-emerald-700/90 bg-emerald-500/15 px-1 py-0.2 rounded">
+                        {pixPct.toFixed(1)}%
+                      </span>
+                    </div>
+                    <p className="text-base sm:text-lg font-black text-foreground font-mono">
+                      {BRL(calc.grossByModality.pix)}
+                    </p>
+                    <div className="w-full bg-emerald-500/15 rounded-full h-1 overflow-hidden">
+                      <div className="bg-emerald-500 h-full rounded-full" style={{ width: `${Math.min(100, Math.max(0, pixPct))}%` }} />
+                    </div>
                   </div>
-                </CardHeader>
-                <CardContent className="p-4 pt-1">
-                  <p className="text-2xl font-black text-foreground font-mono">
-                    {BRL(calc.grossByModality.credit_installment)}
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
 
-            {/* Faturamento Total em Destaque */}
-            <Card className="rounded-2xl border border-primary/20 bg-gradient-to-r from-primary/5 via-primary/2 to-transparent shadow-card text-center py-5 sm:py-7 print:shadow-none print:py-4">
-              <CardHeader className="p-2 pb-1">
-                <CardTitle className="text-xs sm:text-sm font-bold text-muted-foreground uppercase tracking-widest">
-                  Faturamento Total Bruto
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-2 pt-1">
-                <p className="text-4xl sm:text-5xl font-black text-primary tracking-tight font-mono print:text-3xl">
-                  {BRL(calc.totalGross)}
-                </p>
+                  {/* DÉBITO */}
+                  <div className="p-2.5 sm:p-3 rounded-xl border border-blue-500/20 bg-blue-500/5 flex flex-col justify-between space-y-1 print:p-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-blue-700 dark:text-blue-400 flex items-center gap-1">
+                        <CreditCard className="size-3" /> Débito
+                      </span>
+                      <span className="text-[10px] font-mono font-bold text-blue-700/90 bg-blue-500/15 px-1 py-0.2 rounded">
+                        {debitPct.toFixed(1)}%
+                      </span>
+                    </div>
+                    <p className="text-base sm:text-lg font-black text-foreground font-mono">
+                      {BRL(calc.grossByModality.debit)}
+                    </p>
+                    <div className="w-full bg-blue-500/15 rounded-full h-1 overflow-hidden">
+                      <div className="bg-blue-500 h-full rounded-full" style={{ width: `${Math.min(100, Math.max(0, debitPct))}%` }} />
+                    </div>
+                  </div>
+
+                  {/* CRÉDITO À VISTA */}
+                  <div className="p-2.5 sm:p-3 rounded-xl border border-violet-500/20 bg-violet-500/5 flex flex-col justify-between space-y-1 print:p-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-violet-700 dark:text-violet-400 flex items-center gap-1">
+                        <CreditCard className="size-3" /> Créd. à Vista
+                      </span>
+                      <span className="text-[10px] font-mono font-bold text-violet-700/90 bg-violet-500/15 px-1 py-0.2 rounded">
+                        {creditVistaPct.toFixed(1)}%
+                      </span>
+                    </div>
+                    <p className="text-base sm:text-lg font-black text-foreground font-mono">
+                      {BRL(calc.grossByModality.credit_vista)}
+                    </p>
+                    <div className="w-full bg-violet-500/15 rounded-full h-1 overflow-hidden">
+                      <div className="bg-violet-500 h-full rounded-full" style={{ width: `${Math.min(100, Math.max(0, creditVistaPct))}%` }} />
+                    </div>
+                  </div>
+
+                  {/* CRÉDITO PARCELADO */}
+                  <div className="p-2.5 sm:p-3 rounded-xl border border-amber-500/20 bg-amber-500/5 flex flex-col justify-between space-y-1 print:p-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-amber-700 dark:text-amber-400 flex items-center gap-1">
+                        <Layers className="size-3" /> Créd. Parcelado
+                      </span>
+                      <span className="text-[10px] font-mono font-bold text-amber-700/90 bg-amber-500/15 px-1 py-0.2 rounded">
+                        {creditInstallmentPct.toFixed(1)}%
+                      </span>
+                    </div>
+                    <p className="text-base sm:text-lg font-black text-foreground font-mono">
+                      {BRL(calc.grossByModality.credit_installment)}
+                    </p>
+                    <div className="w-full bg-amber-500/15 rounded-full h-1 overflow-hidden">
+                      <div className="bg-amber-500 h-full rounded-full" style={{ width: `${Math.min(100, Math.max(0, creditInstallmentPct))}%` }} />
+                    </div>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </section>
 
           {/* =========================================================================
-              SEÇÃO 2: LANÇAMENTOS E DEDUÇÕES
+              SEÇÃO 2: LANÇAMENTOS E DEDUÇÕES OPERACIONAIS
               ========================================================================= */}
-          <section className="space-y-4 print:space-y-3 print:break-inside-avoid">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Receipt className="size-5 text-primary" />
-                <h2 className="text-lg font-bold tracking-tight text-foreground">
-                  Lançamentos (Cobranças e Deduções)
-                </h2>
+          <section className="space-y-3 print:space-y-2 print:break-inside-avoid">
+            <Card className="rounded-2xl border border-border/80 shadow-card bg-card overflow-hidden print:shadow-none print:border-border/60">
+              <div className="p-3 sm:p-3.5 border-b border-border/60 flex items-center justify-between bg-muted/15 print:p-2 print:bg-muted/10">
+                <div className="flex items-center gap-2">
+                  <div className="size-6 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                    <Receipt className="size-3" />
+                  </div>
+                  <h2 className="text-xs sm:text-sm font-bold tracking-tight text-foreground uppercase">
+                    2. Lançamentos Operacionais (Cobranças & Deduções)
+                  </h2>
+                </div>
+                <Badge variant="secondary" className="font-mono text-[10px]">
+                  {exps.length} {exps.length === 1 ? "item" : "itens"}
+                </Badge>
               </div>
-              <Badge variant="secondary" className="font-mono text-xs">
-                {exps.length} {exps.length === 1 ? "lançamento" : "lançamentos"}
-              </Badge>
-            </div>
 
-            <Card className="rounded-2xl border border-border/80 shadow-card bg-card overflow-hidden print:overflow-visible print:shadow-none">
-              <CardContent className="p-0 print:overflow-visible">
-                <div className="overflow-x-auto print:overflow-visible print:max-h-none print:h-auto">
+              <CardContent className="p-0">
+                <div className="overflow-x-auto print:overflow-visible">
                   <Table className="print:w-full">
-                    <TableHeader className="bg-muted/40 print:table-header-group">
+                    <TableHeader className="bg-muted/30 print:table-header-group">
                       <TableRow className="print:table-row">
-                        <TableHead className="font-semibold text-xs print:py-1.5 print:px-2">Categoria</TableHead>
-                        <TableHead className="font-semibold text-xs print:py-1.5 print:px-2">Descrição</TableHead>
-                        <TableHead className="text-right font-semibold text-xs print:py-1.5 print:px-2">Impacto no Boleto (R$)</TableHead>
+                        <TableHead className="font-semibold text-xs py-2 print:py-1 print:px-3 w-44">Tipo</TableHead>
+                        <TableHead className="font-semibold text-xs py-2 print:py-1 print:px-3">Descrição do Lançamento</TableHead>
+                        <TableHead className="text-right font-semibold text-xs py-2 print:py-1 print:px-3 w-48">Impacto no Fechamento</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody className="print:table-row-group">
                       {exps.length === 0 ? (
                         <TableRow className="print:table-row">
-                          <TableCell colSpan={3} className="h-28 text-center text-muted-foreground text-sm print:h-12">
-                            Nenhum lançamento extra registrado para este mês.
+                          <TableCell colSpan={3} className="py-3 text-center text-muted-foreground text-xs italic">
+                            Nenhum lançamento adicional ou dedução no período.
                           </TableCell>
                         </TableRow>
                       ) : (
                         exps.map((exp) => (
                           <TableRow key={exp.id} className="hover:bg-muted/30 transition-colors print:table-row print:break-inside-avoid">
-                            <TableCell className="print:py-1.5 print:px-2">
+                            <TableCell className="py-1.5 print:py-1 print:px-3">
                               <Badge
-                                variant={exp.category === "cobranca" ? "outline" : "destructive"}
-                                className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full ${
+                                variant={exp.category === "cobranca" ? "outline" : "secondary"}
+                                className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-md ${
                                   exp.category === "cobranca"
-                                    ? "text-emerald-600 border-emerald-500/30 bg-emerald-500/10"
-                                    : ""
+                                    ? "text-blue-700 bg-blue-500/10 border-blue-500/30 dark:text-blue-400"
+                                    : "text-emerald-700 bg-emerald-500/10 border-emerald-500/30 dark:text-emerald-400"
                                 }`}
                               >
                                 {exp.category === "cobranca" ? (
                                   <span className="flex items-center gap-1">
-                                    <ArrowDownRight className="size-3" /> Dedução (-)
+                                    <ArrowUpRight className="size-3 text-blue-600" /> Cobrança de Serviço (+)
                                   </span>
                                 ) : (
                                   <span className="flex items-center gap-1">
-                                    <ArrowUpRight className="size-3" /> Cobrança (+)
+                                    <ArrowDownRight className="size-3 text-emerald-600" /> Dedução / Desconto (-)
                                   </span>
                                 )}
                               </Badge>
                             </TableCell>
-                            <TableCell className="font-medium text-sm text-foreground print:py-1.5 print:px-2">
+                            <TableCell className="font-medium text-xs text-foreground py-1.5 print:py-1 print:px-3">
                               {exp.description}
                             </TableCell>
-                            <TableCell className="text-right font-bold font-mono text-sm print:py-1.5 print:px-2">
+                            <TableCell className="text-right font-bold font-mono text-xs py-1.5 print:py-1 print:px-3">
                               <span
                                 className={
                                   exp.category === "cobranca"
-                                    ? "text-emerald-600 dark:text-emerald-400"
-                                    : "text-destructive"
+                                    ? "text-foreground font-semibold"
+                                    : "text-emerald-600 dark:text-emerald-400"
                                 }
                               >
-                                {exp.category === "cobranca" ? "-" : "+"}
+                                {exp.category === "cobranca" ? "+" : "-"}
                                 {BRL(exp.amount)}
                               </span>
                             </TableCell>
@@ -637,6 +719,20 @@ function RouteComponent() {
                         ))
                       )}
                     </TableBody>
+                    {exps.length > 0 && (
+                      <TableFooter className="bg-muted/40 font-bold border-t print:table-footer-group">
+                        <TableRow className="print:table-row">
+                          <TableCell colSpan={2} className="text-xs font-bold py-1.5 print:py-1 print:px-3 text-muted-foreground">
+                            Subtotal de Lançamentos ({exps.length} {exps.length === 1 ? "item" : "itens"}):
+                          </TableCell>
+                          <TableCell className="text-right font-black font-mono text-xs py-1.5 print:py-1 print:px-3">
+                            <span className={totalExpensesSum >= 0 ? "text-foreground" : "text-emerald-600"}>
+                              {totalExpensesSum >= 0 ? "+" : "-"} {BRL(Math.abs(totalExpensesSum))}
+                            </span>
+                          </TableCell>
+                        </TableRow>
+                      </TableFooter>
+                    )}
                   </Table>
                 </div>
               </CardContent>
@@ -644,62 +740,99 @@ function RouteComponent() {
           </section>
 
           {/* =========================================================================
-              SEÇÃO 3: COMPARATIVO E ECONOMIA GERADA
+              SEÇÃO 3: COMPARATIVO E ECONOMIA REAL GERADA (INTEGRADA NA PÁGINA 1)
               ========================================================================= */}
-          <section className="space-y-4 print:space-y-3 print:break-inside-avoid">
+          <section className="space-y-3 print:space-y-2 print:break-inside-avoid">
             <div className="flex items-center gap-2">
-              <TrendingUp className="size-5 text-primary" />
-              <h2 className="text-lg font-bold tracking-tight text-foreground">
-                Comparativo e Economia Gerada
-              </h2>
+              <div className="size-7 rounded-lg bg-emerald-500/10 text-emerald-600 flex items-center justify-center shrink-0">
+                <PiggyBank className="size-4" />
+              </div>
+              <div>
+                <h2 className="text-xs sm:text-sm font-bold tracking-tight text-foreground uppercase">
+                  3. Comparativo de Custos & Economia Gerada
+                </h2>
+                <p className="text-[11px] text-muted-foreground">
+                  Demonstração da economia líquida proporcionada pela plataforma PrimaPay neste fechamento
+                </p>
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 print:grid-cols-2 print:gap-3">
-              <Card className="rounded-2xl border border-border/80 shadow-card bg-muted/20 text-center p-6 sm:p-8 print:p-4 print:shadow-none">
-                <CardContent className="p-0 space-y-2">
-                  <h3 className="text-muted-foreground font-bold text-xs uppercase tracking-wider">
-                    Custo no Modelo Tradicional
-                  </h3>
-                  <p className="text-3xl sm:text-4xl font-bold text-destructive/80 line-through decoration-destructive/60 font-mono print:text-2xl">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 print:grid-cols-3 print:gap-2.5">
+              {/* CUSTO NO MODELO TRADICIONAL */}
+              <Card className="rounded-2xl border border-border/80 shadow-card bg-muted/20 text-center p-3.5 print:p-2.5 print:shadow-none flex flex-col justify-between">
+                <div>
+                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-0.5">
+                    Modelo Tradicional
+                  </span>
+                  <p className="text-[10px] text-muted-foreground line-clamp-1">
+                    Custo estimado com taxas médias de mercado
+                  </p>
+                </div>
+                <div className="my-1.5">
+                  <p className="text-xl sm:text-2xl font-black text-muted-foreground line-through decoration-destructive/60 font-mono">
                     {BRL(calc.traditionalCost)}
                   </p>
-                </CardContent>
+                </div>
+                <p className="text-[9px] text-muted-foreground/75">
+                  Baseado nas taxas médias praticadas no mercado
+                </p>
               </Card>
 
-              <Card className="rounded-2xl border border-primary/30 shadow-card bg-primary/5 text-center p-6 sm:p-8 print:p-4 print:shadow-none">
-                <CardContent className="p-0 space-y-2">
-                  <h3 className="text-primary font-bold text-xs uppercase tracking-wider">
-                    Custos com a Solução Prima
-                  </h3>
-                  <p className="text-3xl sm:text-4xl font-extrabold text-primary font-mono print:text-2xl">
+              {/* CUSTO COM A PRIMAPAY */}
+              <Card className="rounded-2xl border border-primary/30 shadow-card bg-primary/5 text-center p-3.5 print:p-2.5 print:shadow-none flex flex-col justify-between">
+                <div>
+                  <span className="text-[10px] font-bold text-primary uppercase tracking-wider block mb-0.5">
+                    Solução PrimaPay
+                  </span>
+                  <p className="text-[10px] text-muted-foreground line-clamp-1">
+                    Custo total apurado na plataforma
+                  </p>
+                </div>
+                <div className="my-1.5">
+                  <p className="text-xl sm:text-2xl font-black text-primary font-mono">
                     {BRL(calc.totalMerchantCost)}
                   </p>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Destaque Principal de Economia */}
-            <Card className="rounded-3xl border border-emerald-500/20 bg-gradient-to-br from-emerald-600 to-teal-700 text-white shadow-xl overflow-hidden p-8 sm:p-12 text-center print:p-6 print:rounded-2xl print:shadow-none">
-              <div className="flex flex-col items-center justify-center space-y-4 print:space-y-2">
-                <div className="size-16 sm:size-20 rounded-2xl bg-white/15 backdrop-blur-xs flex items-center justify-center text-white shadow-inner print:size-12">
-                  <PiggyBank className="size-9 sm:size-12 print:size-7" />
                 </div>
-                <div className="space-y-1">
-                  <h3 className="text-lg sm:text-2xl font-bold text-white/90 print:text-base">
-                    Sua economia real apurada neste mês:
-                  </h3>
-                  <p className="text-5xl sm:text-7xl font-black tracking-tight text-white font-mono drop-shadow-sm print:text-4xl">
+                <p className="text-[9px] text-primary/80 font-medium">
+                  Taxas reduzidas + Lançamentos operacionais
+                </p>
+              </Card>
+
+              {/* DESTAQUE DE ECONOMIA NO BOLSO */}
+              <Card className="rounded-2xl border border-emerald-500/30 bg-gradient-to-br from-emerald-600 to-teal-700 text-white shadow-card p-3.5 print:p-2.5 print:shadow-none flex flex-col justify-between text-center">
+                <div className="flex items-center justify-center gap-1.5 text-white/90">
+                  <Sparkles className="size-3" />
+                  <span className="text-[10px] font-bold uppercase tracking-wider">
+                    Economia Real Apurada
+                  </span>
+                </div>
+                <div className="my-1">
+                  <p className="text-2xl sm:text-3xl font-black tracking-tight text-white font-mono drop-shadow-sm">
                     {BRL(calc.savings)}
                   </p>
                 </div>
-              </div>
-            </Card>
+                <p className="text-[9px] text-white/90 font-medium">
+                  Valor líquido economizado pelo seu estabelecimento
+                </p>
+              </Card>
+            </div>
           </section>
 
           {/* =========================================================================
-              SEÇÃO 4: RELATÓRIO DETALHADO DE VENDAS
+              SEÇÃO 4: RELATÓRIO DETALHADO DE VENDAS (INICIA LIMPO NA PÁGINA 2)
               ========================================================================= */}
-          <section className="space-y-4 print:space-y-3 print:pt-2">
+          <section className="space-y-4 print:space-y-3 print:pt-4 print-page-break print:[break-before:page]">
+            {/* Mini-header de impressão para a página 2 em diante */}
+            <div className="hidden print:flex items-center justify-between pb-2 mb-2 border-b border-border/70 text-xs">
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-foreground uppercase">{merchant.name}</span>
+                {merchant.document_cnpj && <span className="text-muted-foreground font-mono">• {merchant.document_cnpj}</span>}
+              </div>
+              <div className="font-semibold text-muted-foreground capitalize">
+                Fechamento de {monthLabel(month)}
+              </div>
+            </div>
+
             <div className="flex items-center justify-between print:mb-2 print:break-after-avoid">
               <div className="flex items-center gap-2">
                 <Banknote className="size-5 text-primary" />

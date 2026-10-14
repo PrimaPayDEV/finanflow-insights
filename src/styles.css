@@ -265,4 +265,9 @@
   [style*="transform"] {
     transform: none !important;
   }
+
+  .print-page-break {
+    break-before: page !important;
+    page-break-before: always !important;
+  }
 }
