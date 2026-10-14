@@ -434,7 +434,7 @@ function RouteComponent() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.4 }}
-          className="mt-6 space-y-8 print:mt-0 print:space-y-0"
+          className="mt-6 space-y-8 print:mt-0 print:space-y-6"
         >
           {/* Cabeçalho de Impressão */}
           <div className="hidden print:block mb-8 border-b-2 border-primary pb-6">
@@ -472,7 +472,7 @@ function RouteComponent() {
           {/* =========================================================================
               SEÇÃO 1: EXTRATO BÁSICO DE MOVIMENTAÇÕES
               ========================================================================= */}
-          <section className="space-y-4">
+          <section className="space-y-4 print:space-y-3 print:break-inside-avoid">
             <div className="flex items-center gap-2">
               <TrendingUp className="size-5 text-primary" />
               <h2 className="text-lg font-bold tracking-tight text-foreground">
@@ -480,9 +480,9 @@ function RouteComponent() {
               </h2>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 print:grid-cols-4 print:gap-3">
               {/* PIX */}
-              <Card className="rounded-2xl border border-border/80 shadow-card bg-card overflow-hidden hover:border-emerald-500/40 transition-colors">
+              <Card className="rounded-2xl border border-border/80 shadow-card bg-card overflow-hidden hover:border-emerald-500/40 transition-colors print:shadow-none">
                 <CardHeader className="p-4 pb-1">
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-xs font-bold text-muted-foreground uppercase tracking-wide">
@@ -497,7 +497,7 @@ function RouteComponent() {
               </Card>
 
               {/* DÉBITO */}
-              <Card className="rounded-2xl border border-border/80 shadow-card bg-card overflow-hidden hover:border-blue-500/40 transition-colors">
+              <Card className="rounded-2xl border border-border/80 shadow-card bg-card overflow-hidden hover:border-blue-500/40 transition-colors print:shadow-none">
                 <CardHeader className="p-4 pb-1">
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-xs font-bold text-muted-foreground uppercase tracking-wide">
@@ -512,7 +512,7 @@ function RouteComponent() {
               </Card>
 
               {/* CRÉDITO À VISTA */}
-              <Card className="rounded-2xl border border-border/80 shadow-card bg-card overflow-hidden hover:border-violet-500/40 transition-colors">
+              <Card className="rounded-2xl border border-border/80 shadow-card bg-card overflow-hidden hover:border-violet-500/40 transition-colors print:shadow-none">
                 <CardHeader className="p-4 pb-1">
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-xs font-bold text-muted-foreground uppercase tracking-wide">
@@ -529,7 +529,7 @@ function RouteComponent() {
               </Card>
 
               {/* CRÉDITO PARCELADO */}
-              <Card className="rounded-2xl border border-border/80 shadow-card bg-card overflow-hidden hover:border-primary/40 transition-colors">
+              <Card className="rounded-2xl border border-border/80 shadow-card bg-card overflow-hidden hover:border-primary/40 transition-colors print:shadow-none">
                 <CardHeader className="p-4 pb-1">
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-xs font-bold text-muted-foreground uppercase tracking-wide">
@@ -547,14 +547,14 @@ function RouteComponent() {
             </div>
 
             {/* Faturamento Total em Destaque */}
-            <Card className="rounded-2xl border border-primary/20 bg-gradient-to-r from-primary/5 via-primary/2 to-transparent shadow-card text-center py-5 sm:py-7">
+            <Card className="rounded-2xl border border-primary/20 bg-gradient-to-r from-primary/5 via-primary/2 to-transparent shadow-card text-center py-5 sm:py-7 print:shadow-none print:py-4">
               <CardHeader className="p-2 pb-1">
                 <CardTitle className="text-xs sm:text-sm font-bold text-muted-foreground uppercase tracking-widest">
                   Faturamento Total Bruto
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-2 pt-1">
-                <p className="text-4xl sm:text-5xl font-black text-primary tracking-tight font-mono">
+                <p className="text-4xl sm:text-5xl font-black text-primary tracking-tight font-mono print:text-3xl">
                   {BRL(calc.totalGross)}
                 </p>
               </CardContent>
@@ -564,7 +564,7 @@ function RouteComponent() {
           {/* =========================================================================
               SEÇÃO 2: LANÇAMENTOS E DEDUÇÕES
               ========================================================================= */}
-          <section className="space-y-4">
+          <section className="space-y-4 print:space-y-3 print:break-inside-avoid">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Receipt className="size-5 text-primary" />
@@ -577,28 +577,28 @@ function RouteComponent() {
               </Badge>
             </div>
 
-            <Card className="rounded-2xl border border-border/80 shadow-card bg-card overflow-hidden">
-              <CardContent className="p-0">
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader className="bg-muted/40">
-                      <TableRow>
-                        <TableHead className="font-semibold text-xs">Categoria</TableHead>
-                        <TableHead className="font-semibold text-xs">Descrição</TableHead>
-                        <TableHead className="text-right font-semibold text-xs">Impacto no Boleto (R$)</TableHead>
+            <Card className="rounded-2xl border border-border/80 shadow-card bg-card overflow-hidden print:overflow-visible print:shadow-none">
+              <CardContent className="p-0 print:overflow-visible">
+                <div className="overflow-x-auto print:overflow-visible print:max-h-none print:h-auto">
+                  <Table className="print:w-full">
+                    <TableHeader className="bg-muted/40 print:table-header-group">
+                      <TableRow className="print:table-row">
+                        <TableHead className="font-semibold text-xs print:py-1.5 print:px-2">Categoria</TableHead>
+                        <TableHead className="font-semibold text-xs print:py-1.5 print:px-2">Descrição</TableHead>
+                        <TableHead className="text-right font-semibold text-xs print:py-1.5 print:px-2">Impacto no Boleto (R$)</TableHead>
                       </TableRow>
                     </TableHeader>
-                    <TableBody>
+                    <TableBody className="print:table-row-group">
                       {exps.length === 0 ? (
-                        <TableRow>
-                          <TableCell colSpan={3} className="h-28 text-center text-muted-foreground text-sm">
+                        <TableRow className="print:table-row">
+                          <TableCell colSpan={3} className="h-28 text-center text-muted-foreground text-sm print:h-12">
                             Nenhum lançamento extra registrado para este mês.
                           </TableCell>
                         </TableRow>
                       ) : (
                         exps.map((exp) => (
-                          <TableRow key={exp.id} className="hover:bg-muted/30 transition-colors">
-                            <TableCell>
+                          <TableRow key={exp.id} className="hover:bg-muted/30 transition-colors print:table-row print:break-inside-avoid">
+                            <TableCell className="print:py-1.5 print:px-2">
                               <Badge
                                 variant={exp.category === "cobranca" ? "outline" : "destructive"}
                                 className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full ${
@@ -618,10 +618,10 @@ function RouteComponent() {
                                 )}
                               </Badge>
                             </TableCell>
-                            <TableCell className="font-medium text-sm text-foreground">
+                            <TableCell className="font-medium text-sm text-foreground print:py-1.5 print:px-2">
                               {exp.description}
                             </TableCell>
-                            <TableCell className="text-right font-bold font-mono text-sm">
+                            <TableCell className="text-right font-bold font-mono text-sm print:py-1.5 print:px-2">
                               <span
                                 className={
                                   exp.category === "cobranca"
@@ -646,7 +646,7 @@ function RouteComponent() {
           {/* =========================================================================
               SEÇÃO 3: COMPARATIVO E ECONOMIA GERADA
               ========================================================================= */}
-          <section className="space-y-4">
+          <section className="space-y-4 print:space-y-3 print:break-inside-avoid">
             <div className="flex items-center gap-2">
               <TrendingUp className="size-5 text-primary" />
               <h2 className="text-lg font-bold tracking-tight text-foreground">
@@ -654,24 +654,24 @@ function RouteComponent() {
               </h2>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Card className="rounded-2xl border border-border/80 shadow-card bg-muted/20 text-center p-6 sm:p-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 print:grid-cols-2 print:gap-3">
+              <Card className="rounded-2xl border border-border/80 shadow-card bg-muted/20 text-center p-6 sm:p-8 print:p-4 print:shadow-none">
                 <CardContent className="p-0 space-y-2">
                   <h3 className="text-muted-foreground font-bold text-xs uppercase tracking-wider">
                     Custo no Modelo Tradicional
                   </h3>
-                  <p className="text-3xl sm:text-4xl font-bold text-destructive/80 line-through decoration-destructive/60 font-mono">
+                  <p className="text-3xl sm:text-4xl font-bold text-destructive/80 line-through decoration-destructive/60 font-mono print:text-2xl">
                     {BRL(calc.traditionalCost)}
                   </p>
                 </CardContent>
               </Card>
 
-              <Card className="rounded-2xl border border-primary/30 shadow-card bg-primary/5 text-center p-6 sm:p-8">
+              <Card className="rounded-2xl border border-primary/30 shadow-card bg-primary/5 text-center p-6 sm:p-8 print:p-4 print:shadow-none">
                 <CardContent className="p-0 space-y-2">
                   <h3 className="text-primary font-bold text-xs uppercase tracking-wider">
                     Custos com a Solução Prima
                   </h3>
-                  <p className="text-3xl sm:text-4xl font-extrabold text-primary font-mono">
+                  <p className="text-3xl sm:text-4xl font-extrabold text-primary font-mono print:text-2xl">
                     {BRL(calc.totalMerchantCost)}
                   </p>
                 </CardContent>
@@ -679,16 +679,16 @@ function RouteComponent() {
             </div>
 
             {/* Destaque Principal de Economia */}
-            <Card className="rounded-3xl border border-emerald-500/20 bg-gradient-to-br from-emerald-600 to-teal-700 text-white shadow-xl overflow-hidden p-8 sm:p-12 text-center">
-              <div className="flex flex-col items-center justify-center space-y-4">
-                <div className="size-16 sm:size-20 rounded-2xl bg-white/15 backdrop-blur-xs flex items-center justify-center text-white shadow-inner">
-                  <PiggyBank className="size-9 sm:size-12" />
+            <Card className="rounded-3xl border border-emerald-500/20 bg-gradient-to-br from-emerald-600 to-teal-700 text-white shadow-xl overflow-hidden p-8 sm:p-12 text-center print:p-6 print:rounded-2xl print:shadow-none">
+              <div className="flex flex-col items-center justify-center space-y-4 print:space-y-2">
+                <div className="size-16 sm:size-20 rounded-2xl bg-white/15 backdrop-blur-xs flex items-center justify-center text-white shadow-inner print:size-12">
+                  <PiggyBank className="size-9 sm:size-12 print:size-7" />
                 </div>
                 <div className="space-y-1">
-                  <h3 className="text-lg sm:text-2xl font-bold text-white/90">
+                  <h3 className="text-lg sm:text-2xl font-bold text-white/90 print:text-base">
                     Sua economia real apurada neste mês:
                   </h3>
-                  <p className="text-5xl sm:text-7xl font-black tracking-tight text-white font-mono drop-shadow-sm">
+                  <p className="text-5xl sm:text-7xl font-black tracking-tight text-white font-mono drop-shadow-sm print:text-4xl">
                     {BRL(calc.savings)}
                   </p>
                 </div>
@@ -699,8 +699,8 @@ function RouteComponent() {
           {/* =========================================================================
               SEÇÃO 4: RELATÓRIO DETALHADO DE VENDAS
               ========================================================================= */}
-          <section className="space-y-4">
-            <div className="flex items-center justify-between">
+          <section className="space-y-4 print:space-y-3 print:pt-2">
+            <div className="flex items-center justify-between print:mb-2 print:break-after-avoid">
               <div className="flex items-center gap-2">
                 <Banknote className="size-5 text-primary" />
                 <h2 className="text-lg font-bold tracking-tight text-foreground">
@@ -712,25 +712,25 @@ function RouteComponent() {
               </Badge>
             </div>
 
-            <Card className="rounded-2xl border border-border/80 shadow-card bg-card overflow-hidden">
-              <CardContent className="p-0">
-                <div className="overflow-x-auto max-h-[500px] overflow-y-auto scrollbar-thin">
-                  <Table>
-                    <TableHeader className="bg-muted/40 sticky top-0 z-10 backdrop-blur-xs">
-                      <TableRow>
-                        <TableHead className="font-semibold text-xs">Data</TableHead>
-                        <TableHead className="font-semibold text-xs">Modalidade</TableHead>
-                        <TableHead className="text-right font-semibold text-xs">Vlr. Bruto</TableHead>
-                        <TableHead className="text-right font-semibold text-xs">Vlr. Descontado</TableHead>
-                        <TableHead className="text-right font-semibold text-xs">% Descontado</TableHead>
-                        <TableHead className="text-right font-semibold text-xs">% Taxa Op.</TableHead>
-                        <TableHead className="text-right font-semibold text-xs">Vlr. Taxa Op.</TableHead>
+            <Card className="rounded-2xl border border-border/80 shadow-card bg-card overflow-hidden print:overflow-visible print:border print:border-border/60 print:shadow-none print:rounded-xl">
+              <CardContent className="p-0 print:overflow-visible">
+                <div className="overflow-x-auto max-h-[500px] overflow-y-auto scrollbar-thin print:max-h-none print:overflow-visible print:h-auto">
+                  <Table className="print:w-full">
+                    <TableHeader className="bg-muted/40 sticky top-0 z-10 backdrop-blur-xs print:static print:table-header-group">
+                      <TableRow className="print:table-row">
+                        <TableHead className="font-semibold text-xs print:py-1.5 print:px-2 print:text-foreground">Data</TableHead>
+                        <TableHead className="font-semibold text-xs print:py-1.5 print:px-2 print:text-foreground">Modalidade</TableHead>
+                        <TableHead className="text-right font-semibold text-xs print:py-1.5 print:px-2 print:text-foreground">Vlr. Bruto</TableHead>
+                        <TableHead className="text-right font-semibold text-xs print:py-1.5 print:px-2 print:text-foreground">Vlr. Descontado</TableHead>
+                        <TableHead className="text-right font-semibold text-xs print:py-1.5 print:px-2 print:text-foreground">% Descontado</TableHead>
+                        <TableHead className="text-right font-semibold text-xs print:py-1.5 print:px-2 print:text-foreground">% Taxa Op.</TableHead>
+                        <TableHead className="text-right font-semibold text-xs print:py-1.5 print:px-2 print:text-foreground">Vlr. Taxa Op.</TableHead>
                       </TableRow>
                     </TableHeader>
-                    <TableBody>
+                    <TableBody className="print:table-row-group">
                       {txs.length === 0 ? (
-                        <TableRow>
-                          <TableCell colSpan={7} className="h-28 text-center text-muted-foreground text-sm">
+                        <TableRow className="print:table-row">
+                          <TableCell colSpan={7} className="h-28 text-center text-muted-foreground text-sm print:h-12">
                             Nenhuma venda registrada neste período.
                           </TableCell>
                         </TableRow>
@@ -753,26 +753,26 @@ function RouteComponent() {
                           const opValue = gross * (opRate / 100);
 
                           return (
-                            <TableRow key={tx.id} className="hover:bg-muted/30 transition-colors">
-                              <TableCell className="font-medium whitespace-nowrap text-xs font-mono">
+                            <TableRow key={tx.id} className="hover:bg-muted/30 transition-colors print:table-row print:break-inside-avoid print:page-break-inside-avoid">
+                              <TableCell className="font-medium whitespace-nowrap text-xs font-mono print:py-1.5 print:px-2">
                                 {format(new Date(tx.transaction_date), "dd/MM/yyyy")}
                               </TableCell>
-                              <TableCell className="capitalize text-xs font-medium">
+                              <TableCell className="capitalize text-xs font-medium print:py-1.5 print:px-2">
                                 {modalityLabel(tx.modality as any)}
                               </TableCell>
-                              <TableCell className="text-right font-medium text-xs font-mono">
+                              <TableCell className="text-right font-medium text-xs font-mono print:py-1.5 print:px-2">
                                 {BRL(gross)}
                               </TableCell>
-                              <TableCell className="text-right text-destructive font-medium text-xs font-mono">
+                              <TableCell className="text-right text-destructive font-medium text-xs font-mono print:py-1.5 print:px-2">
                                 {BRL(discountedValue)}
                               </TableCell>
-                              <TableCell className="text-right text-muted-foreground text-xs font-mono">
+                              <TableCell className="text-right text-muted-foreground text-xs font-mono print:py-1.5 print:px-2">
                                 {tradRate.toFixed(2)}%
                               </TableCell>
-                              <TableCell className="text-right font-medium text-xs font-mono">
+                              <TableCell className="text-right font-medium text-xs font-mono print:py-1.5 print:px-2">
                                 {opRate.toFixed(2)}%
                               </TableCell>
-                              <TableCell className="text-right font-bold text-primary text-xs font-mono">
+                              <TableCell className="text-right font-bold text-primary text-xs font-mono print:py-1.5 print:px-2">
                                 {BRL(opValue)}
                               </TableCell>
                             </TableRow>
@@ -781,24 +781,24 @@ function RouteComponent() {
                       )}
                     </TableBody>
                     {txs.length > 0 && (
-                      <TableFooter className="bg-muted/50 font-bold border-t sticky bottom-0 z-10 backdrop-blur-xs">
-                        <TableRow>
-                          <TableCell colSpan={2} className="text-xs font-bold">
+                      <TableFooter className="bg-muted/50 font-bold border-t sticky bottom-0 z-10 backdrop-blur-xs print:static print:table-footer-group">
+                        <TableRow className="print:table-row print:break-inside-avoid print:page-break-inside-avoid">
+                          <TableCell colSpan={2} className="text-xs font-bold print:py-2 print:px-2">
                             Totais ({txs.length} vendas)
                           </TableCell>
-                          <TableCell className="text-right font-bold font-mono text-xs">
+                          <TableCell className="text-right font-bold font-mono text-xs print:py-2 print:px-2">
                             {BRL(totalsDetailed.totalGross)}
                           </TableCell>
-                          <TableCell className="text-right font-bold text-destructive font-mono text-xs">
+                          <TableCell className="text-right font-bold text-destructive font-mono text-xs print:py-2 print:px-2">
                             {BRL(totalsDetailed.totalDiscounted)}
                           </TableCell>
-                          <TableCell className="text-right font-bold text-muted-foreground font-mono text-xs">
+                          <TableCell className="text-right font-bold text-muted-foreground font-mono text-xs print:py-2 print:px-2">
                             {totalsDetailed.avgDiscountRate.toFixed(2)}%
                           </TableCell>
-                          <TableCell className="text-right font-bold font-mono text-xs">
+                          <TableCell className="text-right font-bold font-mono text-xs print:py-2 print:px-2">
                             {totalsDetailed.avgOpRate.toFixed(2)}%
                           </TableCell>
-                          <TableCell className="text-right font-black text-primary text-sm font-mono">
+                          <TableCell className="text-right font-black text-primary text-sm font-mono print:py-2 print:px-2">
                             {BRL(totalsDetailed.totalOpValue)}
                           </TableCell>
                         </TableRow>
