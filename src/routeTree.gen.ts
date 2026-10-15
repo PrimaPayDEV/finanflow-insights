@@ -21,6 +21,7 @@ import { Route as PartnersRouteImport } from './routes/partners'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as VehiclesRouteImport } from './routes/vehicles'
 import { Route as AdminCompaniesRouteImport } from './routes/admin.companies'
 import { Route as RealEstateAdvanceRouteImport } from './routes/real-estate/advance'
 import { Route as RealEstateChargesRouteImport } from './routes/real-estate/charges'
@@ -103,6 +104,11 @@ const ReportsRoute = ReportsRouteImport.update({
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VehiclesRoute = VehiclesRouteImport.update({
+  id: '/vehicles',
+  path: '/vehicles',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminCompaniesRoute = AdminCompaniesRouteImport.update({
@@ -234,6 +240,7 @@ export interface FileRoutesByFullPath {
   '/profile': typeof ProfileRoute
   '/reports': typeof ReportsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/vehicles': typeof VehiclesRoute
   '/admin/companies': typeof AdminCompaniesRoute
   '/real-estate/advance': typeof RealEstateAdvanceRoute
   '/real-estate/charges': typeof RealEstateChargesRoute
@@ -271,6 +278,7 @@ export interface FileRoutesByTo {
   '/profile': typeof ProfileRoute
   '/reports': typeof ReportsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/vehicles': typeof VehiclesRoute
   '/admin/companies': typeof AdminCompaniesRoute
   '/real-estate/advance': typeof RealEstateAdvanceRoute
   '/real-estate/charges': typeof RealEstateChargesRoute
@@ -309,6 +317,7 @@ export interface FileRoutesById {
   '/profile': typeof ProfileRoute
   '/reports': typeof ReportsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/vehicles': typeof VehiclesRoute
   '/admin/companies': typeof AdminCompaniesRoute
   '/real-estate/advance': typeof RealEstateAdvanceRoute
   '/real-estate/charges': typeof RealEstateChargesRoute
@@ -348,6 +357,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/reports'
     | '/sitemap.xml'
+    | '/vehicles'
     | '/admin/companies'
     | '/real-estate/advance'
     | '/real-estate/charges'
@@ -385,6 +395,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/reports'
     | '/sitemap.xml'
+    | '/vehicles'
     | '/admin/companies'
     | '/real-estate/advance'
     | '/real-estate/charges'
@@ -422,6 +433,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/reports'
     | '/sitemap.xml'
+    | '/vehicles'
     | '/admin/companies'
     | '/real-estate/advance'
     | '/real-estate/charges'
@@ -460,6 +472,7 @@ export interface RootRouteChildren {
   ProfileRoute: typeof ProfileRoute
   ReportsRoute: typeof ReportsRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  VehiclesRoute: typeof VehiclesRoute
   AdminCompaniesRoute: typeof AdminCompaniesRoute
   RealEstateAdvanceRoute: typeof RealEstateAdvanceRoute
   RealEstateChargesRoute: typeof RealEstateChargesRoute
@@ -569,6 +582,13 @@ declare module '@tanstack/react-router' {
       path: '/sitemap.xml'
       fullPath: '/sitemap.xml'
       preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/vehicles': {
+      id: '/vehicles'
+      path: '/vehicles'
+      fullPath: '/vehicles'
+      preLoaderRoute: typeof VehiclesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/companies': {
@@ -748,6 +768,7 @@ const rootRouteChildren: RootRouteChildren = {
   ProfileRoute: ProfileRoute,
   ReportsRoute: ReportsRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  VehiclesRoute: VehiclesRoute,
   AdminCompaniesRoute: AdminCompaniesRoute,
   RealEstateAdvanceRoute: RealEstateAdvanceRoute,
   RealEstateChargesRoute: RealEstateChargesRoute,

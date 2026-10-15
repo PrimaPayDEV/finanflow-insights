@@ -167,18 +167,47 @@ export const deleteMember = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export const getVehicles = createServerFn({ method: "GET" })
+  .validator((d: { companyId: string }) => d)
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: vehicles, error } = await supabaseAdmin
+      .from("vehicles")
+      .select("*, members(id, name, document, phone, email, partner_id, partners(id, name))")
+      .eq("company_id", data.companyId)
+      .order("created_at", { ascending: false });
+
+    if (error) throw new Error(error.message);
+    return vehicles || [];
+  });
+
 export const addVehicle = createServerFn({ method: "POST" })
-  .validator((d: { memberId: string; companyId: string; plate: string; brand: string; model: string; year?: number }) => d)
+  .validator((d: { memberId: string; companyId: string; plate: string; brand: string; model: string; year?: number; color?: string }) => d)
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin.from("vehicles").insert({
       member_id: data.memberId,
       company_id: data.companyId,
-      plate: data.plate.toUpperCase(),
+      plate: data.plate.toUpperCase().trim(),
       brand: data.brand,
       model: data.model,
       year: data.year,
+      color: data.color || null,
     });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const deleteVehicle = createServerFn({ method: "POST" })
+  .validator((d: { id: string; companyId: string }) => d)
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin
+      .from("vehicles")
+      .delete()
+      .eq("id", data.id)
+      .eq("company_id", data.companyId);
+
     if (error) throw new Error(error.message);
     return { ok: true };
   });

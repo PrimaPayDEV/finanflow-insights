@@ -29,6 +29,7 @@ import {
   PiggyBank,
   CreditCard,
   Clock,
+  Car,
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
@@ -81,17 +82,6 @@ export function AppLayout({
   const unreadCount = notifications.filter(n => !n.is_read).length;
 
   let currentNav = [...nav];
-  
-  // Filter for billing mode
-  if (appMode === "billing") {
-    currentNav = currentNav
-      .filter(item => !["/merchants", "/import", "/closures", "/expenses"].includes(item.to));
-    // Insert new billing-specific menus before reports
-    currentNav.splice(1, 0, 
-      { to: "/members", label: "Associados", icon: Users },
-      { to: "/invoices", label: "Faturas", icon: Receipt }
-    );
-  }
 
   if (role === "merchant") {
     currentNav = [
@@ -118,6 +108,19 @@ export function AppLayout({
       { to: "/real-estate/installments", label: "Parcelamento de Aluguel", icon: CreditCard, section: "Financeiro" },
       { to: "/real-estate/requests", label: "Solicitações", icon: Clock, section: "Controle" },
       { to: "/reports", label: "Relatórios", icon: FileBarChart2, section: "Controle" },
+    ];
+    if (isPlatformAdmin) {
+      currentNav.push({ to: "/admin/companies", label: "Administração", icon: ShieldCheck, section: "Administração" });
+    }
+  } else if (appMode === "billing") {
+    currentNav = [
+      { to: "/", label: "Dashboard", icon: LayoutDashboard },
+      { to: "/members", label: "Associados", icon: Users, section: "Proteção Veicular" },
+      { to: "/vehicles", label: "Veículos", icon: Car, section: "Proteção Veicular" },
+      { to: "/invoices", label: "Faturas", icon: Receipt, section: "Cobranças" },
+      { to: "/reports", label: "Relatórios", icon: FileBarChart2, section: "Cobranças" },
+      { to: "/settings/asaas", label: "Configuração Asaas", icon: Settings, section: "Configurações" },
+      { to: "/partners", label: "Parceiros", icon: Users, section: "Administração" },
     ];
     if (isPlatformAdmin) {
       currentNav.push({ to: "/admin/companies", label: "Administração", icon: ShieldCheck, section: "Administração" });
