@@ -30,6 +30,9 @@ import {
   CreditCard,
   Clock,
   Car,
+  User,
+  Palette,
+  CheckCheck,
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
@@ -334,14 +337,15 @@ export function AppLayout({
                         <Button 
                           variant="ghost" 
                           size="sm" 
-                          className="h-auto p-1 text-xs text-muted-foreground hover:bg-muted hover:text-foreground"
+                          className="h-auto px-2 py-1 text-xs text-muted-foreground hover:bg-muted hover:text-foreground flex items-center gap-1.5 rounded-lg"
                           onClick={(e) => {
                             e.preventDefault();
                             markAllAsRead.mutate();
                           }}
                           disabled={markAllAsRead.isPending}
                         >
-                          Marcar como lidas
+                          <CheckCheck className="size-3.5" />
+                          <span>Marcar como lidas</span>
                         </Button>
                       )}
                     </div>
@@ -397,23 +401,28 @@ export function AppLayout({
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-56 rounded-2xl border border-border/80 shadow-card bg-card p-1.5">
-                    <DropdownMenuLabel className="font-bold text-xs uppercase tracking-wider text-muted-foreground">Administrador</DropdownMenuLabel>
+                    <DropdownMenuLabel className="font-bold text-xs uppercase tracking-wider text-muted-foreground">
+                      {role === 'admin' ? 'Administrador' : role === 'merchant' ? 'Lojista' : 'Usuário'}
+                    </DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem asChild>
-                      <Link to="/profile" className="w-full cursor-pointer font-medium rounded-lg">
-                        Meu Perfil
+                      <Link to="/profile" className="w-full cursor-pointer font-medium rounded-lg flex items-center gap-2.5 py-2 px-2.5">
+                        <User className="size-4 text-muted-foreground" />
+                        <span>Meu Perfil</span>
                       </Link>
                     </DropdownMenuItem>
                     {role === 'admin' && (
                       <DropdownMenuItem asChild>
-                        <Link to="/settings/appearance" className="w-full cursor-pointer font-medium rounded-lg">
-                          Personalizar Ambiente
+                        <Link to="/settings/appearance" className="w-full cursor-pointer font-medium rounded-lg flex items-center gap-2.5 py-2 px-2.5">
+                          <Palette className="size-4 text-muted-foreground" />
+                          <span>Personalizar Ambiente</span>
                         </Link>
                       </DropdownMenuItem>
                     )}
-                    <DropdownMenuItem onClick={signOut} className="text-destructive focus:text-destructive cursor-pointer font-medium rounded-lg">
-                      <LogOut className="mr-2 h-4 w-4" />
-                      Sair
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={signOut} className="text-destructive focus:text-destructive cursor-pointer font-medium rounded-lg flex items-center gap-2.5 py-2 px-2.5">
+                      <LogOut className="size-4" />
+                      <span>Sair</span>
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
