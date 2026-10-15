@@ -72,18 +72,18 @@ export const getBillingReports = createServerFn({ method: "POST" })
     // 2. Buscar Associados com veículos e parceiros
     const { data: members = [] } = await supabaseAdmin
       .from("members")
-      .select("id, asaas_customer_id, name, document, phone, email, partner_id, partners(id, name, split_percent, phone, email), vehicles(*)")
+      .select("id, asaas_customer_id, name, document, phone, email, partner_id, partners(id, name, split_percent, email), vehicles(*)")
       .eq("company_id", data.companyId);
 
     // 3. Buscar Veículos diretamente
-    const { data: vehiclesDb = [] } = await supabaseAdmin
+    const { data: vehiclesDbRaw } = await supabaseAdmin
       .from("vehicles")
-      .select("*, members(id, name, document, phone, email, partner_id, partners(id, name, split_percent, phone, email))")
+      .select("*, members(id, name, document, phone, email, partner_id, partners(id, name, split_percent, email))")
       .eq("company_id", data.companyId)
       .order("created_at", { ascending: false });
 
     // 4. Buscar Parceiros cadastrados
-    const { data: partnersDb = [] } = await supabaseAdmin
+    const { data: partnersDbRaw } = await supabaseAdmin
       .from("partners")
       .select("*")
       .eq("company_id", data.companyId);
@@ -111,6 +111,8 @@ export const getBillingReports = createServerFn({ method: "POST" })
       }
     }
 
+    const vehiclesDb: any[] = (vehiclesDbRaw as any[]) ?? [];
+    const partnersDb: any[] = (partnersDbRaw as any[]) ?? [];
     const hasOwnKey = !!company?.asaas_api_key;
     const invoiceReports: any[] = [];
     const partnerReportsMap = new Map<string, any>();
