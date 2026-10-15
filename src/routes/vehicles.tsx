@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   Car,
   Plus,
@@ -26,7 +26,8 @@ import {
   Settings2,
   Receipt,
   CalendarDays,
-  Send
+  Send,
+  History
 } from "lucide-react";
 import { toast } from "sonner";
 import { AppLayout } from "@/components/AppLayout";
@@ -58,14 +59,22 @@ export const Route = createFileRoute("/vehicles")({
   component: VehiclesPage,
 });
 
-// Componente Visual de Placa Mercosul
+// Função utilitária para formatar placas no padrão nacional (ex: DFG2154 -> DFG-2154 ou BRA2E19)
+export function formatPlate(rawPlate: string): string {
+  const clean = (rawPlate || "BRA2E19").replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+  if (/^[A-Z]{3}[0-9]{4}$/.test(clean)) {
+    return `${clean.slice(0, 3)}-${clean.slice(3)}`;
+  }
+  return clean;
+}
+
+// Componente Visual de Placa Mercosul / Padrão Nacional
 function MercosulPlate({ plate, size = "md" }: { plate: string; size?: "sm" | "md" | "lg" }) {
-  const cleanPlate = (plate || "BRA2E19").replace(/[^A-Za-z0-9]/g, "").toUpperCase();
-  const formatted = cleanPlate.length === 7 ? `${cleanPlate.slice(0, 3)}${cleanPlate.slice(3)}` : cleanPlate;
+  const formatted = formatPlate(plate);
 
   const sizeClasses = {
-    sm: "w-22 h-6 text-[11px] border-[1.5px]",
-    md: "w-26 h-7 text-xs border-[1.5px]",
+    sm: "w-24 h-6.5 text-[11px] border-[1.5px]",
+    md: "w-28 h-7.5 text-xs border-[1.5px]",
     lg: "w-32 h-9 text-sm border-2",
   };
 
@@ -88,6 +97,42 @@ function MercosulPlate({ plate, size = "md" }: { plate: string; size?: "sm" | "m
       </div>
     </div>
   );
+}
+
+// Estimativa coerente da Tabela FIPE por categoria de veículo e ano de fabricação
+export function estimateRealisticFipe(brand?: string, model?: string, year?: number): number {
+  const y = year || 2020;
+  const b = (brand || "").toLowerCase();
+  const m = (model || "").toLowerCase();
+
+  // Veículos clássicos/populares antigos específicos
+  if (m.includes("escort")) {
+    if (y <= 1995) return 9800;
+    if (y <= 2000) return 15800;
+    return 19500;
+  }
+  if (m.includes("gol") || m.includes("palio") || m.includes("uno") || m.includes("celta") || m.includes("corsa") || m.includes("clio") || m.includes("ka") || m.includes("fiesta") || m.includes("fusca") || m.includes("chevette") || m.includes("monza")) {
+    if (y <= 1990) return 8500;
+    if (y <= 1998) return 9800;
+    if (y <= 2002) return 13800;
+    if (y <= 2008) return 19500;
+    if (y <= 2014) return 29800;
+    if (y <= 2020) return 44500;
+    return 56800;
+  }
+
+  const isLuxury = /bmw|mercedes|audi|porsche|land rover|volvo|jaguar|lexus/.test(b) || /sw4|hilux|ram|commander|ranger|amarok/.test(m);
+  const isSuvOrMid = /corolla|civic|compass|creta|renegade|kicks|t-cross|tracker|duster|hr-v|cruze|focus/.test(m);
+
+  if (y <= 1995) return isLuxury ? 28000 : 11000;
+  if (y <= 2000) return isLuxury ? 38000 : 16500;
+  if (y <= 2005) return isLuxury ? 49000 : 22000;
+  if (y <= 2010) return isLuxury ? 65000 : (isSuvOrMid ? 42000 : 31000);
+  if (y <= 2015) return isLuxury ? 95000 : (isSuvOrMid ? 64000 : 45000);
+  if (y <= 2018) return isLuxury ? 139000 : (isSuvOrMid ? 82000 : 59000);
+  if (y <= 2021) return isLuxury ? 189000 : (isSuvOrMid ? 112000 : 76000);
+  if (y <= 2024) return isLuxury ? 245000 : (isSuvOrMid ? 142000 : 92000);
+  return isLuxury ? 295000 : (isSuvOrMid ? 158000 : 108000);
 }
 
 // Configuração granular de coberturas do associado
@@ -383,12 +428,12 @@ function VehiclesPage() {
       color: v.color || "Prata",
       chassi: `9BW${(v.id || "").slice(0, 8).toUpperCase()}`,
       renavam: `00${(v.id || "").replace(/\D/g, "").slice(0, 9)}`,
-      fipeValue: 75000 + ((v.year || 2020) % 10) * 12000,
+      fipeValue: v.fipe_value || estimateRealisticFipe(v.brand, v.model, v.year),
       status: "ACTIVE" as const,
       coveragePlan: "Plano Ouro 100% FIPE",
       monthlyFee: 179.90,
       dueDay: 10,
-      fuel: "Flex",
+      fuel: v.year && v.year <= 2002 ? "Gasolina" : "Flex",
       isDemo: false,
       coverageConfig: { ...DEFAULT_COVERAGE },
       member: {
@@ -821,9 +866,21 @@ function VehicleDossierDialog({
   });
 
   // Estado local para edição da Mensalidade
-  const [monthlyFeeInput, setMonthlyFeeInput] = useState((vehicle.monthlyFee || 179.9).toFixed(2));
+  const [monthlyFeeInput, setMonthlyFeeInput] = useState((vehicle.monthlyFee || 179.9).toFixed(2).replace(".", ","));
   const [dueDay, setDueDay] = useState(vehicle.dueDay ? vehicle.dueDay.toString() : "10");
   const [protectionStatus, setProtectionStatus] = useState<VehicleItem["status"]>(vehicle.status || "ACTIVE");
+
+  // Sincronizar estado caso o veículo selecionado mude ou seja atualizado
+  useEffect(() => {
+    setCoveragePlan(vehicle.coveragePlan || "Plano Ouro 100% FIPE");
+    setCoverage({
+      ...DEFAULT_COVERAGE,
+      ...(vehicle.coverageConfig || {}),
+    });
+    setMonthlyFeeInput((vehicle.monthlyFee || 179.9).toFixed(2).replace(".", ","));
+    setDueDay(vehicle.dueDay ? vehicle.dueDay.toString() : "10");
+    setProtectionStatus(vehicle.status || "ACTIVE");
+  }, [vehicle]);
 
   // Salvar Coberturas
   const handleSaveCoverage = () => {
@@ -838,7 +895,7 @@ function VehicleDossierDialog({
 
   // Salvar Mensalidade
   const handleSaveMonthly = () => {
-    const fee = parseFloat(monthlyFeeInput.replace(",", ".")) || vehicle.monthlyFee;
+    const fee = parseFloat(monthlyFeeInput.replace(/\./g, "").replace(",", ".")) || vehicle.monthlyFee;
     const updated: VehicleItem = {
       ...vehicle,
       monthlyFee: fee,
@@ -852,13 +909,13 @@ function VehicleDossierDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[88vh] overflow-y-auto rounded-3xl p-0 gap-0 border-border bg-card shadow-2xl">
-        {/* Cabeçalho Compacto e Refinado */}
-        <div className="relative bg-gradient-to-r from-primary/15 via-primary/5 to-card px-5 py-3.5 border-b border-border/70">
+        {/* Cabeçalho Compacto, Refinado e com espaço livre garantido para o botão Fechar (X) */}
+        <div className="relative bg-gradient-to-r from-primary/15 via-primary/5 to-card pl-5 pr-14 sm:pr-16 py-3.5 border-b border-border/70">
           <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-2.5 min-w-0">
               <MercosulPlate plate={vehicle.plate} size="md" />
-              <div>
-                <div className="flex items-center gap-1.5">
+              <div className="min-w-0">
+                <div className="flex items-center gap-1.5 flex-wrap">
                   <span className="text-[11px] font-bold text-primary uppercase tracking-wide">
                     {vehicle.brand} • {vehicle.year}
                   </span>
@@ -868,7 +925,7 @@ function VehicleDossierDialog({
                     </Badge>
                   )}
                 </div>
-                <h2 className="text-sm sm:text-base font-bold text-foreground leading-tight line-clamp-1">
+                <h2 className="text-sm sm:text-base font-bold text-foreground leading-tight truncate">
                   {vehicle.model}
                 </h2>
               </div>
@@ -876,9 +933,11 @@ function VehicleDossierDialog({
 
             <div className="flex items-center gap-2 shrink-0">
               {getStatusBadge(vehicle.status)}
-              <div className="text-right hidden sm:block">
-                <span className="text-[9px] text-muted-foreground block leading-none">FIPE</span>
-                <span className="text-xs font-extrabold text-emerald-600 dark:text-emerald-400">
+              <div className="text-right hidden sm:flex flex-col items-end justify-center bg-card/85 backdrop-blur-xs px-2.5 py-1 rounded-xl border border-border/60 shadow-xs">
+                <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground leading-none">
+                  FIPE
+                </span>
+                <span className="text-xs font-black text-emerald-600 dark:text-emerald-400 mt-0.5">
                   {BRL(vehicle.fipeValue || 0)}
                 </span>
               </div>
@@ -892,19 +951,19 @@ function VehicleDossierDialog({
             <TabsList className="bg-transparent h-10 p-0 gap-6">
               <TabsTrigger
                 value="overview"
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary font-bold text-xs px-1 h-10"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary font-bold text-xs px-1 h-10 transition-colors"
               >
                 Ficha Técnica
               </TabsTrigger>
               <TabsTrigger
                 value="coverage"
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary font-bold text-xs px-1 h-10"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary font-bold text-xs px-1 h-10 transition-colors"
               >
                 Coberturas
               </TabsTrigger>
               <TabsTrigger
                 value="financial"
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary font-bold text-xs px-1 h-10"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary font-bold text-xs px-1 h-10 transition-colors"
               >
                 Mensalidades
               </TabsTrigger>
@@ -912,36 +971,36 @@ function VehicleDossierDialog({
           </div>
 
           {/* ABA 1: Ficha Técnica */}
-          <TabsContent value="overview" className="p-4 sm:p-5 space-y-4 m-0">
+          <TabsContent value="overview" className="p-4 sm:p-5 space-y-3.5 m-0">
             <div>
               <h3 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5">
                 <Car className="size-3.5 text-primary" /> Informações do Veículo
               </h3>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                <div className="p-2.5 rounded-xl bg-muted/40 border border-border/50">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                <div className="p-2.5 rounded-xl bg-muted/35 border border-border/50">
                   <span className="text-[10px] text-muted-foreground block">Placa</span>
-                  <span className="font-mono font-bold text-xs text-foreground">{vehicle.plate}</span>
+                  <span className="font-mono font-bold text-xs text-foreground">{formatPlate(vehicle.plate)}</span>
                 </div>
-                <div className="p-2.5 rounded-xl bg-muted/40 border border-border/50">
+                <div className="p-2.5 rounded-xl bg-muted/35 border border-border/50">
                   <span className="text-[10px] text-muted-foreground block">Ano / Mod</span>
                   <span className="font-bold text-xs text-foreground">{vehicle.year}</span>
                 </div>
-                <div className="p-2.5 rounded-xl bg-muted/40 border border-border/50">
+                <div className="p-2.5 rounded-xl bg-muted/35 border border-border/50">
                   <span className="text-[10px] text-muted-foreground block">Cor</span>
                   <span className="font-bold text-xs text-foreground truncate block">{vehicle.color || "Prata"}</span>
                 </div>
-                <div className="p-2.5 rounded-xl bg-muted/40 border border-border/50">
+                <div className="p-2.5 rounded-xl bg-muted/35 border border-border/50">
                   <span className="text-[10px] text-muted-foreground block">Combustível</span>
                   <span className="font-bold text-xs text-foreground truncate block">{vehicle.fuel || "Flex"}</span>
                 </div>
 
-                <div className="p-2.5 rounded-xl bg-muted/40 border border-border/50 sm:col-span-2">
+                <div className="p-2.5 rounded-xl bg-muted/35 border border-border/50 sm:col-span-2">
                   <span className="text-[10px] text-muted-foreground block">Chassi</span>
                   <span className="font-mono font-semibold text-xs text-foreground truncate block">
                     {vehicle.chassi || "9BWCA11108P019283"}
                   </span>
                 </div>
-                <div className="p-2.5 rounded-xl bg-muted/40 border border-border/50 sm:col-span-2">
+                <div className="p-2.5 rounded-xl bg-muted/35 border border-border/50 sm:col-span-2">
                   <span className="text-[10px] text-muted-foreground block">Renavam</span>
                   <span className="font-mono font-semibold text-xs text-foreground truncate block">
                     {vehicle.renavam || "00918237461"}
@@ -954,12 +1013,12 @@ function VehicleDossierDialog({
               <h3 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5">
                 <User className="size-3.5 text-primary" /> Associado Proprietário
               </h3>
-              <div className="p-3.5 rounded-2xl bg-muted/30 border border-border/60 flex items-center justify-between gap-3">
-                <div className="flex items-center gap-3">
+              <div className="p-3.5 rounded-2xl bg-muted/25 border border-border/60 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3 min-w-0">
                   <div className="size-9 rounded-xl bg-primary text-primary-foreground flex items-center justify-center font-bold text-xs shadow-xs shrink-0">
                     {vehicle.member.name.charAt(0)}
                   </div>
-                  <div className="overflow-hidden">
+                  <div className="min-w-0">
                     <h4 className="font-bold text-foreground text-xs sm:text-sm truncate">{vehicle.member.name}</h4>
                     <p className="text-[11px] text-muted-foreground font-mono">
                       CPF: {formatCpfCnpj(vehicle.member.document)}
@@ -1000,18 +1059,23 @@ function VehicleDossierDialog({
 
           {/* ABA 2: Coberturas (EDITÁVEL) */}
           <TabsContent value="coverage" className="p-4 sm:p-5 space-y-3.5 m-0">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-xs font-bold text-foreground">Coberturas Contratadas</h3>
-                <p className="text-[11px] text-muted-foreground">
-                  Marque e ajuste o que o associado contratou na adesão deste veículo
-                </p>
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <div className="size-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                  <ShieldCheck className="size-4" />
+                </div>
+                <div>
+                  <h3 className="text-xs font-bold text-foreground">Coberturas Contratadas</h3>
+                  <p className="text-[10px] text-muted-foreground">
+                    Marque e ajuste o que o associado contratou na adesão deste veículo
+                  </p>
+                </div>
               </div>
 
               <Button
                 size="sm"
                 onClick={handleSaveCoverage}
-                className="rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground gap-1.5 font-bold text-xs h-8 shadow-xs"
+                className="rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground gap-1.5 font-bold text-xs h-8 px-3 shadow-xs shrink-0"
               >
                 <Save className="size-3.5" />
                 Salvar Coberturas
@@ -1025,14 +1089,14 @@ function VehicleDossierDialog({
                 value={coveragePlan}
                 onChange={(e) => setCoveragePlan(e.target.value)}
                 placeholder="Ex: Plano Ouro 100% FIPE"
-                className="h-8.5 rounded-xl text-xs bg-background"
+                className="h-8.5 rounded-xl text-xs bg-background border-border/80"
               />
             </div>
 
             {/* Grade de Coberturas Editáveis */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
               {/* Tabela FIPE % */}
-              <div className="p-2.5 rounded-xl bg-muted/40 border border-border/50 flex items-center justify-between">
+              <div className="p-2.5 rounded-xl bg-muted/35 border border-border/50 flex items-center justify-between">
                 <div>
                   <span className="font-bold text-foreground block text-xs">Tabela FIPE</span>
                   <span className="text-[10px] text-muted-foreground">Indenização integral</span>
@@ -1041,7 +1105,7 @@ function VehicleDossierDialog({
                   value={coverage.fipePercent.toString()}
                   onValueChange={(val) => setCoverage({ ...coverage, fipePercent: parseInt(val, 10) })}
                 >
-                  <SelectTrigger className="w-24 h-7 text-xs rounded-lg">
+                  <SelectTrigger className="w-24 h-7 text-xs rounded-lg bg-background">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl">
@@ -1053,7 +1117,7 @@ function VehicleDossierDialog({
               </div>
 
               {/* Roubo e Furto */}
-              <div className="p-2.5 rounded-xl bg-muted/40 border border-border/50 flex items-center justify-between">
+              <div className="p-2.5 rounded-xl bg-muted/35 border border-border/50 flex items-center justify-between">
                 <div>
                   <span className="font-bold text-foreground block text-xs">Roubo e Furto</span>
                   <span className="text-[10px] text-muted-foreground">Proteção qualificada</span>
@@ -1065,7 +1129,7 @@ function VehicleDossierDialog({
               </div>
 
               {/* Colisão e Perda Total */}
-              <div className="p-2.5 rounded-xl bg-muted/40 border border-border/50 flex items-center justify-between">
+              <div className="p-2.5 rounded-xl bg-muted/35 border border-border/50 flex items-center justify-between">
                 <div>
                   <span className="font-bold text-foreground block text-xs">Colisão & Perda Total</span>
                   <span className="text-[10px] text-muted-foreground">Reparo ou indenização</span>
@@ -1077,7 +1141,7 @@ function VehicleDossierDialog({
               </div>
 
               {/* Danos Materiais a Terceiros */}
-              <div className="p-2.5 rounded-xl bg-muted/40 border border-border/50 flex items-center justify-between">
+              <div className="p-2.5 rounded-xl bg-muted/35 border border-border/50 flex items-center justify-between">
                 <div>
                   <span className="font-bold text-foreground block text-xs">Danos a Terceiros</span>
                   <span className="text-[10px] text-muted-foreground">Limite material</span>
@@ -1086,7 +1150,7 @@ function VehicleDossierDialog({
                   value={coverage.thirdPartyProperty.toString()}
                   onValueChange={(val) => setCoverage({ ...coverage, thirdPartyProperty: parseInt(val, 10) })}
                 >
-                  <SelectTrigger className="w-28 h-7 text-xs rounded-lg">
+                  <SelectTrigger className="w-28 h-7 text-xs rounded-lg bg-background">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl">
@@ -1099,7 +1163,7 @@ function VehicleDossierDialog({
               </div>
 
               {/* Guincho / Reboque */}
-              <div className="p-2.5 rounded-xl bg-muted/40 border border-border/50 flex items-center justify-between">
+              <div className="p-2.5 rounded-xl bg-muted/35 border border-border/50 flex items-center justify-between">
                 <div>
                   <span className="font-bold text-foreground block text-xs">Guincho / Reboque 24h</span>
                   <span className="text-[10px] text-muted-foreground">Raio de quilometragem</span>
@@ -1108,7 +1172,7 @@ function VehicleDossierDialog({
                   value={coverage.towKm.toString()}
                   onValueChange={(val) => setCoverage({ ...coverage, towKm: parseInt(val, 10) })}
                 >
-                  <SelectTrigger className="w-28 h-7 text-xs rounded-lg">
+                  <SelectTrigger className="w-28 h-7 text-xs rounded-lg bg-background">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl">
@@ -1121,7 +1185,7 @@ function VehicleDossierDialog({
               </div>
 
               {/* Carro Reserva */}
-              <div className="p-2.5 rounded-xl bg-muted/40 border border-border/50 flex items-center justify-between">
+              <div className="p-2.5 rounded-xl bg-muted/35 border border-border/50 flex items-center justify-between">
                 <div>
                   <span className="font-bold text-foreground block text-xs">Carro Reserva</span>
                   <span className="text-[10px] text-muted-foreground">Diárias após sinistro</span>
@@ -1130,7 +1194,7 @@ function VehicleDossierDialog({
                   value={coverage.reserveCarDays.toString()}
                   onValueChange={(val) => setCoverage({ ...coverage, reserveCarDays: parseInt(val, 10) })}
                 >
-                  <SelectTrigger className="w-28 h-7 text-xs rounded-lg">
+                  <SelectTrigger className="w-28 h-7 text-xs rounded-lg bg-background">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl">
@@ -1143,7 +1207,7 @@ function VehicleDossierDialog({
               </div>
 
               {/* Vidros, Faróis e Lanternas */}
-              <div className="p-2.5 rounded-xl bg-muted/40 border border-border/50 flex items-center justify-between">
+              <div className="p-2.5 rounded-xl bg-muted/35 border border-border/50 flex items-center justify-between">
                 <div>
                   <span className="font-bold text-foreground block text-xs">Vidros & Lanternas</span>
                   <span className="text-[10px] text-muted-foreground">Franquia reduzida</span>
@@ -1155,7 +1219,7 @@ function VehicleDossierDialog({
               </div>
 
               {/* Assistência 24h */}
-              <div className="p-2.5 rounded-xl bg-muted/40 border border-border/50 flex items-center justify-between">
+              <div className="p-2.5 rounded-xl bg-muted/35 border border-border/50 flex items-center justify-between">
                 <div>
                   <span className="font-bold text-foreground block text-xs">Assistência 24h</span>
                   <span className="text-[10px] text-muted-foreground">Chaveiro, pneu, bateria</span>
@@ -1167,7 +1231,7 @@ function VehicleDossierDialog({
               </div>
 
               {/* Rastreador / Telemetria */}
-              <div className="p-2.5 rounded-xl bg-muted/40 border border-border/50 flex items-center justify-between sm:col-span-2">
+              <div className="p-2.5 rounded-xl bg-muted/35 border border-border/50 flex items-center justify-between sm:col-span-2">
                 <div>
                   <span className="font-bold text-foreground block text-xs">Rastreador & Bloqueador Veicular</span>
                   <span className="text-[10px] text-muted-foreground">Monitoramento 24h via GPS</span>
@@ -1181,23 +1245,28 @@ function VehicleDossierDialog({
           </TabsContent>
 
           {/* ABA 3: Mensalidades (COM CAMPO PARA INSERIR VALOR DA PROTEÇÃO) */}
-          <TabsContent value="financial" className="p-4 sm:p-5 space-y-3.5 m-0">
+          <TabsContent value="financial" className="p-4 sm:p-5 space-y-4 m-0">
             {/* Bloco de Edição do Valor da Proteção */}
-            <div className="p-3.5 rounded-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-muted/30 border border-primary/25 space-y-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-xs font-bold text-foreground flex items-center gap-1.5">
-                    <Receipt className="size-3.5 text-primary" /> Definição do Valor da Proteção
-                  </h3>
-                  <p className="text-[10px] text-muted-foreground mt-0.5">
-                    Altere o valor da mensalidade recorrente cobrada deste associado
-                  </p>
+            <div className="p-3.5 sm:p-4 rounded-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-muted/20 border border-primary/25 space-y-3 shadow-xs">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                <div className="flex items-start gap-2.5">
+                  <div className="size-8 rounded-xl bg-primary/15 text-primary flex items-center justify-center shrink-0 mt-0.5">
+                    <Receipt className="size-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                      Definição do Valor da Proteção
+                    </h3>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">
+                      Altere o valor da mensalidade recorrente cobrada deste associado
+                    </p>
+                  </div>
                 </div>
 
                 <Button
                   size="sm"
                   onClick={handleSaveMonthly}
-                  className="rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground gap-1.5 font-bold text-xs h-7.5 shadow-xs"
+                  className="rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground gap-1.5 font-bold text-xs h-7.5 px-3.5 shadow-xs shrink-0 self-start sm:self-auto"
                 >
                   <Save className="size-3.5" />
                   Salvar Valor
@@ -1210,15 +1279,15 @@ function VehicleDossierDialog({
                     Valor Mensal (R$) *
                   </Label>
                   <div className="relative">
-                    <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-muted-foreground">
+                    <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-black text-primary">
                       R$
                     </span>
                     <Input
                       type="text"
                       value={monthlyFeeInput}
                       onChange={(e) => setMonthlyFeeInput(e.target.value)}
-                      placeholder="189,90"
-                      className="pl-8 h-8 rounded-xl text-xs font-bold bg-background text-foreground"
+                      placeholder="179,90"
+                      className="pl-8 h-8 rounded-xl text-xs font-bold bg-background text-foreground border-border/80 focus-visible:ring-primary"
                     />
                   </div>
                 </div>
@@ -1228,7 +1297,7 @@ function VehicleDossierDialog({
                     Dia de Vencimento
                   </Label>
                   <Select value={dueDay} onValueChange={setDueDay}>
-                    <SelectTrigger className="h-8 text-xs rounded-xl bg-background">
+                    <SelectTrigger className="h-8 text-xs font-semibold rounded-xl bg-background border-border/80">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="rounded-xl">
@@ -1249,7 +1318,7 @@ function VehicleDossierDialog({
                     value={protectionStatus}
                     onValueChange={(val: any) => setProtectionStatus(val)}
                   >
-                    <SelectTrigger className="h-8 text-xs rounded-xl bg-background">
+                    <SelectTrigger className="h-8 text-xs font-semibold rounded-xl bg-background border-border/80">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="rounded-xl">
@@ -1263,44 +1332,48 @@ function VehicleDossierDialog({
               </div>
             </div>
 
-            {/* Histórico Recente de Mensalidades */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <h4 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                  Lançamentos Recentes
-                </h4>
+            {/* Histórico Recente de Mensalidades em Extrato Unificado */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
+                  <History className="size-3.5 text-muted-foreground" />
+                  <h4 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                    Lançamentos Recentes
+                  </h4>
+                </div>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => {
                     if (vehicle.member.phone) {
                       const msg = encodeURIComponent(
-                        `Olá ${vehicle.member.name}, segue o lembrete de pagamento da proteção veicular Planmais (Veículo placa ${vehicle.plate}). Valor: ${BRL(vehicle.monthlyFee)}. Vencimento dia ${vehicle.dueDay}.`
+                        `Olá ${vehicle.member.name}, segue o lembrete de pagamento da proteção veicular Planmais (Veículo placa ${formatPlate(vehicle.plate)}). Valor: ${BRL(vehicle.monthlyFee)}. Vencimento dia ${vehicle.dueDay}.`
                       );
                       window.open(`https://wa.me/55${vehicle.member.phone.replace(/\D/g, "")}?text=${msg}`, "_blank");
                     } else {
                       toast.info("Associado não possui telefone cadastrado.");
                     }
                   }}
-                  className="rounded-lg h-7 text-[11px] gap-1 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-500/10"
+                  className="rounded-lg h-7 text-xs font-semibold gap-1 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-500/10 px-2"
                 >
                   <Send className="size-3" />
                   Enviar Cobrança WhatsApp
                 </Button>
               </div>
 
-              <div className="space-y-1.5 text-xs">
+              {/* Ledger Card Unificado */}
+              <div className="rounded-2xl border border-border/60 bg-muted/20 divide-y divide-border/50 overflow-hidden shadow-xs">
                 {[
-                  { month: "Março / 2026", due: `${vehicle.dueDay}/03/2026`, status: "RECEIVED", value: vehicle.monthlyFee },
-                  { month: "Fevereiro / 2026", due: `${vehicle.dueDay}/02/2026`, status: "RECEIVED", value: vehicle.monthlyFee },
-                  { month: "Janeiro / 2026", due: `${vehicle.dueDay}/01/2026`, status: "RECEIVED", value: vehicle.monthlyFee },
+                  { month: "Março / 2026", due: `${vehicle.dueDay.toString().padStart(2, "0")}/03/2026`, status: "RECEIVED", value: vehicle.monthlyFee },
+                  { month: "Fevereiro / 2026", due: `${vehicle.dueDay.toString().padStart(2, "0")}/02/2026`, status: "RECEIVED", value: vehicle.monthlyFee },
+                  { month: "Janeiro / 2026", due: `${vehicle.dueDay.toString().padStart(2, "0")}/01/2026`, status: "RECEIVED", value: vehicle.monthlyFee },
                 ].map((inv, i) => (
                   <div
                     key={i}
-                    className="p-2.5 rounded-xl bg-muted/30 border border-border/50 flex items-center justify-between"
+                    className="p-2.5 sm:px-3.5 flex items-center justify-between hover:bg-background/60 transition-colors"
                   >
                     <div className="flex items-center gap-2.5">
-                      <div className="size-6 rounded-md bg-emerald-500/15 text-emerald-600 flex items-center justify-center shrink-0">
+                      <div className="size-6.5 rounded-lg bg-emerald-500/15 text-emerald-600 flex items-center justify-center shrink-0">
                         <CheckCircle2 className="size-3.5" />
                       </div>
                       <div>
@@ -1310,8 +1383,8 @@ function VehicleDossierDialog({
                     </div>
 
                     <div className="flex items-center gap-2.5">
-                      <span className="font-bold text-foreground text-xs">{BRL(inv.value)}</span>
-                      <Badge className="bg-emerald-500/15 text-emerald-600 border border-emerald-500/30 text-[9px] font-bold px-1.5 py-0">
+                      <span className="font-extrabold text-foreground text-xs">{BRL(inv.value)}</span>
+                      <Badge className="bg-emerald-500/15 text-emerald-600 border border-emerald-500/30 text-[9px] font-bold px-1.5 py-0 rounded-md">
                         Pago
                       </Badge>
                     </div>
@@ -1337,7 +1410,7 @@ function VehicleDossierDialog({
           <Button
             size="sm"
             onClick={() => onOpenChange(false)}
-            className="rounded-xl text-xs h-8 font-semibold px-4"
+            className="rounded-xl text-xs h-8 font-semibold px-5"
           >
             Fechar
           </Button>
@@ -1393,7 +1466,7 @@ function CertificateDialog({
               </div>
               <div className="p-2.5 rounded-xl bg-muted/40 border border-border/40">
                 <span className="text-[9px] text-muted-foreground block">Placa</span>
-                <span className="font-mono font-bold text-xs text-foreground">{vehicle.plate}</span>
+                <span className="font-mono font-bold text-xs text-foreground">{formatPlate(vehicle.plate)}</span>
               </div>
             </div>
 
@@ -1409,7 +1482,7 @@ function CertificateDialog({
           {/* Rodapé com QR Code */}
           <div className="pt-3 border-t border-border/60 flex items-center justify-between text-[10px] text-muted-foreground">
             <div>
-              <p className="font-semibold text-foreground">Certificado nº PLAN-{vehicle.plate}-2026</p>
+              <p className="font-semibold text-foreground">Certificado nº PLAN-{formatPlate(vehicle.plate)}-2026</p>
               <p>Autenticação digital verificada pela Planmais</p>
             </div>
             <div className="size-10 bg-white rounded-lg p-0.5 border border-border flex items-center justify-center">
