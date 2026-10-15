@@ -249,7 +249,7 @@ export const generateInvoice = createServerFn({ method: "POST" })
     }
 
     const dueDate = data.dueDate || new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-    const partner = member.partners as any;
+    const partner = Array.isArray(member.partners) ? member.partners[0] : (member.partners as any);
     
     const paymentPayload: any = {
       customer: customerId,
