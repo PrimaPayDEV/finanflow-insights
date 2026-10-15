@@ -250,54 +250,56 @@ function ReportsPage() {
 
   return (
     <AppLayout
-      title="Relatórios e Previsibilidade"
-      subtitle={getSubtitle()}
+      title={appMode === "billing" ? "Central de Relatórios Planmais" : "Relatórios e Previsibilidade"}
+      subtitle={appMode === "billing" ? "Relatórios executivos de faturamento, frota protegida, comissões e inadimplência" : getSubtitle()}
       actions={
-        <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2">
-          <Select value={period} onValueChange={(v) => setPeriod(v as PeriodType)}>
-            <SelectTrigger className="w-[140px] h-8 text-xs">
-              <SelectValue placeholder="Período" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="month">Este Mês</SelectItem>
-              <SelectItem value="7d">Últimos 7 dias</SelectItem>
-              <SelectItem value="30d">Últimos 30 dias</SelectItem>
-              <SelectItem value="90d">Últimos 90 dias</SelectItem>
-              <SelectItem value="custom">Personalizado</SelectItem>
-            </SelectContent>
-          </Select>
-          {period === "custom" && (
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" size="sm" className="h-8 px-2 text-xs min-w-[180px] justify-start">
-                  <CalendarIcon className="mr-2 h-3 w-3" />
-                  {customRange?.from ? (
-                    customRange.to ? (
-                      <>
-                        {format(customRange.from, "P", { locale: ptBR })} -{" "}
-                        {format(customRange.to, "P", { locale: ptBR })}
-                      </>
+        appMode === "billing" ? undefined : (
+          <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2">
+            <Select value={period} onValueChange={(v) => setPeriod(v as PeriodType)}>
+              <SelectTrigger className="w-[140px] h-8 text-xs">
+                <SelectValue placeholder="Período" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="month">Este Mês</SelectItem>
+                <SelectItem value="7d">Últimos 7 dias</SelectItem>
+                <SelectItem value="30d">Últimos 30 dias</SelectItem>
+                <SelectItem value="90d">Últimos 90 dias</SelectItem>
+                <SelectItem value="custom">Personalizado</SelectItem>
+              </SelectContent>
+            </Select>
+            {period === "custom" && (
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm" className="h-8 px-2 text-xs min-w-[180px] justify-start">
+                    <CalendarIcon className="mr-2 h-3 w-3" />
+                    {customRange?.from ? (
+                      customRange.to ? (
+                        <>
+                          {format(customRange.from, "P", { locale: ptBR })} -{" "}
+                          {format(customRange.to, "P", { locale: ptBR })}
+                        </>
+                      ) : (
+                        format(customRange.from, "P", { locale: ptBR })
+                      )
                     ) : (
-                      format(customRange.from, "P", { locale: ptBR })
-                    )
-                  ) : (
-                    <span>Selecione a data</span>
-                  )}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="end">
-                <Calendar
-                  initialFocus
-                  mode="range"
-                  defaultMonth={customRange?.from}
-                  selected={{ from: customRange?.from, to: customRange?.to }}
-                  onSelect={(v: any) => setCustomRange(v)}
-                  numberOfMonths={1}
-                />
-              </PopoverContent>
-            </Popover>
-          )}
-        </div>
+                      <span>Selecione a data</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="end">
+                  <Calendar
+                    initialFocus
+                    mode="range"
+                    defaultMonth={customRange?.from}
+                    selected={{ from: customRange?.from, to: customRange?.to }}
+                    onSelect={(v: any) => setCustomRange(v)}
+                    numberOfMonths={1}
+                  />
+                </PopoverContent>
+              </Popover>
+            )}
+          </div>
+        )
       }
     >
       {appMode === "billing" ? (
