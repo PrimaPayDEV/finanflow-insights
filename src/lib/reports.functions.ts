@@ -72,13 +72,13 @@ export const getBillingReports = createServerFn({ method: "POST" })
     // 2. Buscar Associados com veículos e parceiros
     const { data: members = [] } = await supabaseAdmin
       .from("members")
-      .select("id, asaas_customer_id, name, document, phone, email, partner_id, partners(id, name, split_percent, email), vehicles(*)")
+      .select("id, asaas_customer_id, name, document, phone, email, partner_id, partners(id, name, split_percent, email, asaas_wallet_id), vehicles(*)")
       .eq("company_id", data.companyId);
 
     // 3. Buscar Veículos diretamente
     const { data: vehiclesDbRaw } = await supabaseAdmin
       .from("vehicles")
-      .select("*, members(id, name, document, phone, email, partner_id, partners(id, name, split_percent, email))")
+      .select("*, members(id, name, document, phone, email, partner_id, partners(id, name, split_percent, email, asaas_wallet_id))")
       .eq("company_id", data.companyId)
       .order("created_at", { ascending: false });
 
@@ -128,9 +128,22 @@ export const getBillingReports = createServerFn({ method: "POST" })
         splitPercent: Number(p.split_percent || 10),
         activeVehiclesCount: 0,
         paidInvoicesCount: 0,
-        totalValue: 0, // Comissão líquida a receber
-        grossVolume: 0, // Total faturado pelos associados do parceiro
+        pendingInvoicesCount: 0,
+        totalInvoicesCount: 0,
+        totalValue: 0, // Comissão líquida recebida (faturas pagas)
+        grossVolume: 0, // Total faturado liquidado
+        pendingSplitAmount: 0, // Comissão prevista (faturas a receber)
+        pendingGrossVolume: 0, // Faturamento a receber
       });
+    }
+
+    // Contabilizar veículos ativos por parceiro
+    for (const v of vehiclesDb) {
+      const mem = v.members;
+      const pId = mem?.partner_id || (Array.isArray(mem?.partners) ? mem.partners[0]?.id : mem?.partners?.id);
+      if (pId && partnerReportsMap.has(pId)) {
+        partnerReportsMap.get(pId).activeVehiclesCount += 1;
+      }
     }
 
     // Processar pagamentos reais do Asaas
@@ -143,10 +156,31 @@ export const getBillingReports = createServerFn({ method: "POST" })
         continue;
       }
 
-      const partner = member?.partners as any;
-      const vehicle = member?.vehicles?.[0];
+      let partner = Array.isArray(member?.partners) ? member.partners[0] : (member?.partners as any);
+      if (!partner && member?.partner_id) {
+        partner = partnersDb.find((pdb: any) => pdb.id === member.partner_id);
+      }
+
+      const asaasSplit = Array.isArray(p.split) && p.split.length > 0 ? p.split[0] : null;
+
+      if (!partner && asaasSplit?.walletId) {
+        partner = partnersDb.find((pdb: any) => pdb.asaas_wallet_id === asaasSplit.walletId);
+      }
+
+      let splitPercent = 0;
+      if (asaasSplit?.percentualValue) {
+        splitPercent = Number(asaasSplit.percentualValue);
+      } else if (partner?.split_percent) {
+        splitPercent = Number(partner.split_percent);
+      }
+
       const isPaid = p.status === "RECEIVED" || p.status === "CONFIRMED" || p.status === "RECEIVED_IN_CASH";
-      const splitAmount = partner ? (p.value * (Number(partner.split_percent || 0) / 100)) : 0;
+      const splitFixed = asaasSplit?.fixedValue ? Number(asaasSplit.fixedValue) : 0;
+      const splitAmount = splitFixed > 0 ? splitFixed : (splitPercent > 0 ? Number((p.value * (splitPercent / 100)).toFixed(2)) : 0);
+      const partnerId = partner?.id || (asaasSplit?.walletId ? `asaas-${asaasSplit.walletId}` : null);
+      const partnerName = partner?.name || (asaasSplit ? `Parceiro (${asaasSplit.walletId.slice(0, 8)}...)` : "Direto da Associação");
+
+      const vehicle = member?.vehicles?.[0];
 
       invoiceReports.push({
         id: p.id,
@@ -166,33 +200,45 @@ export const getBillingReports = createServerFn({ method: "POST" })
         status: p.status,
         invoiceUrl: p.invoiceUrl || p.bankSlipUrl || null,
         nossoNumero: p.nossoNumero || null,
-        partnerId: partner?.id || null,
-        partnerName: partner?.name || "Direto da Associação",
+        partnerId: partnerId,
+        partnerName: partnerName,
         partnerPhone: partner?.phone || null,
-        splitPercent: partner ? Number(partner.split_percent || 0) : 0,
+        splitPercent: splitPercent,
         splitAmount: splitAmount,
+        hasSplit: splitAmount > 0 || !!asaasSplit,
       });
 
-      // Contabilizar no parceiro
-      if (partner && isPaid) {
-        if (!partnerReportsMap.has(partner.id)) {
-          partnerReportsMap.set(partner.id, {
-            partnerId: partner.id,
-            partnerName: partner.name,
-            partnerDocument: partner.document || "",
-            partnerPhone: partner.phone || "",
-            partnerEmail: partner.email || "",
-            splitPercent: Number(partner.split_percent || 10),
+      // Contabilizar no parceiro (Pagas e Pendentes/A Vencer)
+      if (partnerId) {
+        if (!partnerReportsMap.has(partnerId)) {
+          partnerReportsMap.set(partnerId, {
+            partnerId: partnerId,
+            partnerName: partnerName,
+            partnerDocument: partner?.document || "",
+            partnerPhone: partner?.phone || "",
+            partnerEmail: partner?.email || "",
+            splitPercent: splitPercent || Number(partner?.split_percent || 10),
             activeVehiclesCount: 0,
             paidInvoicesCount: 0,
+            pendingInvoicesCount: 0,
+            totalInvoicesCount: 0,
             totalValue: 0,
             grossVolume: 0,
+            pendingSplitAmount: 0,
+            pendingGrossVolume: 0,
           });
         }
-        const pr = partnerReportsMap.get(partner.id);
-        pr.totalValue += splitAmount;
-        pr.grossVolume += p.value;
-        pr.paidInvoicesCount += 1;
+        const pr = partnerReportsMap.get(partnerId);
+        pr.totalInvoicesCount += 1;
+        if (isPaid) {
+          pr.paidInvoicesCount += 1;
+          pr.grossVolume += p.value;
+          pr.totalValue += splitAmount;
+        } else {
+          pr.pendingInvoicesCount += 1;
+          pr.pendingGrossVolume += p.value;
+          pr.pendingSplitAmount += splitAmount;
+        }
       }
     }
 
@@ -268,14 +314,22 @@ export const getBillingReports = createServerFn({ method: "POST" })
               splitPercent: splitPct,
               activeVehiclesCount: 0,
               paidInvoicesCount: 0,
+              pendingInvoicesCount: 0,
+              totalInvoicesCount: 0,
               totalValue: 0,
               grossVolume: 0,
+              pendingSplitAmount: 0,
+              pendingGrossVolume: 0,
             });
           }
           const pr = partnerReportsMap.get(partner.id);
+          pr.totalInvoicesCount += 2;
           pr.paidInvoicesCount += 1;
           pr.grossVolume += fee;
           pr.totalValue += splitVal;
+          pr.pendingInvoicesCount += 1;
+          pr.pendingGrossVolume += fee;
+          pr.pendingSplitAmount += splitVal;
         }
       }
     }
@@ -306,6 +360,7 @@ export const getBillingReports = createServerFn({ method: "POST" })
           partnerPhone: "(11) 99881-2233",
           splitPercent: 12,
           splitAmount: 22.78,
+          hasSplit: true,
         },
         {
           id: "demo-inv-2",
@@ -330,6 +385,7 @@ export const getBillingReports = createServerFn({ method: "POST" })
           partnerPhone: "(11) 97722-1144",
           splitPercent: 15,
           splitAmount: 29.77,
+          hasSplit: true,
         },
         {
           id: "demo-inv-3",
@@ -354,6 +410,7 @@ export const getBillingReports = createServerFn({ method: "POST" })
           partnerPhone: "(19) 99123-8899",
           splitPercent: 10,
           splitAmount: 21.90,
+          hasSplit: true,
         },
         {
           id: "demo-inv-4",
@@ -378,6 +435,7 @@ export const getBillingReports = createServerFn({ method: "POST" })
           partnerPhone: "(11) 99881-2233",
           splitPercent: 12,
           splitAmount: 21.00,
+          hasSplit: true,
         },
         {
           id: "demo-inv-5",
@@ -402,6 +460,7 @@ export const getBillingReports = createServerFn({ method: "POST" })
           partnerPhone: "(11) 97722-1144",
           splitPercent: 15,
           splitAmount: 26.98,
+          hasSplit: true,
         }
       ];
 
@@ -420,8 +479,12 @@ export const getBillingReports = createServerFn({ method: "POST" })
           splitPercent: 12,
           activeVehiclesCount: 8,
           paidInvoicesCount: 6,
+          pendingInvoicesCount: 2,
+          totalInvoicesCount: 8,
           totalValue: 136.68,
           grossVolume: 1139.40,
+          pendingSplitAmount: 45.56,
+          pendingGrossVolume: 379.80,
         });
         partnerReportsMap.set("part-2", {
           partnerId: "part-2",
@@ -432,8 +495,12 @@ export const getBillingReports = createServerFn({ method: "POST" })
           splitPercent: 15,
           activeVehiclesCount: 14,
           paidInvoicesCount: 11,
+          pendingInvoicesCount: 3,
+          totalInvoicesCount: 14,
           totalValue: 297.00,
           grossVolume: 1980.00,
+          pendingSplitAmount: 89.31,
+          pendingGrossVolume: 595.40,
         });
         partnerReportsMap.set("part-3", {
           partnerId: "part-3",
@@ -444,8 +511,12 @@ export const getBillingReports = createServerFn({ method: "POST" })
           splitPercent: 10,
           activeVehiclesCount: 5,
           paidInvoicesCount: 3,
+          pendingInvoicesCount: 2,
+          totalInvoicesCount: 5,
           totalValue: 65.70,
           grossVolume: 657.00,
+          pendingSplitAmount: 43.80,
+          pendingGrossVolume: 438.00,
         });
       }
     }

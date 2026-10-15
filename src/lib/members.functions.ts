@@ -25,7 +25,7 @@ export const getMembers = createServerFn({ method: "GET" })
 
     const { data: members, error } = await supabaseAdmin
       .from("members")
-      .select("*, vehicles(*)")
+      .select("*, vehicles(*), partners(id, name, split_percent, asaas_wallet_id)")
       .eq("company_id", data.companyId)
       .order("name");
 
@@ -217,7 +217,11 @@ export const generateInvoice = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    const { data: member } = await supabaseAdmin.from("members").select("asaas_customer_id, document, name, email, phone, partners(asaas_wallet_id, split_percent)").eq("id", data.memberId).single();
+    const { data: member } = await supabaseAdmin
+      .from("members")
+      .select("asaas_customer_id, document, name, email, phone, partner_id, partners(id, name, asaas_wallet_id, split_percent)")
+      .eq("id", data.memberId)
+      .single();
     if (!member) throw new Error("Associado não encontrado");
 
     let customerId = member.asaas_customer_id;
@@ -249,7 +253,16 @@ export const generateInvoice = createServerFn({ method: "POST" })
     }
 
     const dueDate = data.dueDate || new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-    const partner = Array.isArray(member.partners) ? member.partners[0] : (member.partners as any);
+    
+    let partner = Array.isArray(member.partners) ? member.partners[0] : (member.partners as any);
+    if (!partner && member.partner_id) {
+      const { data: pDb } = await supabaseAdmin
+        .from("partners")
+        .select("id, name, asaas_wallet_id, split_percent")
+        .eq("id", member.partner_id)
+        .maybeSingle();
+      partner = pDb;
+    }
     
     const paymentPayload: any = {
       customer: customerId,

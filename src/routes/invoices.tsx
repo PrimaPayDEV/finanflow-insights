@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Plus, Receipt, AlertCircle, MessageCircle, FileText, ExternalLink } from "lucide-react";
+import { Plus, Receipt, AlertCircle, MessageCircle, FileText, ExternalLink, Percent } from "lucide-react";
 import { toast } from "sonner";
 import { AppLayout } from "@/components/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -61,6 +61,9 @@ function NewInvoiceDialog() {
     enabled: !!companyId,
   });
 
+  const selectedMember = members?.find(m => m.id === memberId);
+  const partner = Array.isArray(selectedMember?.partners) ? selectedMember.partners[0] : (selectedMember?.partners as any);
+
   const generate = useMutation({
     mutationFn: async () => {
       if (!companyId) throw new Error("Empresa não identificada");
@@ -89,6 +92,7 @@ function NewInvoiceDialog() {
       setAmount("");
       setDescription("");
       qc.invalidateQueries({ queryKey: ["billing_metrics"] });
+      qc.invalidateQueries({ queryKey: ["billingReports"] });
     },
     onError: (e) => toast.error(translateError(e.message)),
   });
@@ -119,6 +123,38 @@ function NewInvoiceDialog() {
               </SelectContent>
             </Select>
           </div>
+
+          {selectedMember && (
+            <div className={`p-3 rounded-xl border text-xs ${
+              partner?.split_percent && Number(partner.split_percent) > 0
+                ? "bg-primary/10 border-primary/25 text-foreground"
+                : "bg-muted/40 border-border/60 text-muted-foreground"
+            }`}>
+              {partner?.split_percent && Number(partner.split_percent) > 0 ? (
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between font-bold">
+                    <span className="flex items-center gap-1.5 text-primary">
+                      <Percent className="size-3.5" /> Split de Parceiro Configurado
+                    </span>
+                    <Badge className="bg-primary text-primary-foreground font-black text-[10px]">
+                      {partner.split_percent}%
+                    </Badge>
+                  </div>
+                  <p className="text-[11px] text-foreground">
+                    Consultor/Parceiro: <strong>{partner.name}</strong>
+                  </p>
+                  <p className="text-[10px] text-muted-foreground">
+                    {partner.asaas_wallet_id ? `Wallet Asaas: ${partner.asaas_wallet_id}` : "Aviso: Parceiro sem Wallet ID"}
+                  </p>
+                </div>
+              ) : (
+                <span className="text-muted-foreground text-[11px]">
+                  Associado direto da associação (sem repasse para parceiro).
+                </span>
+              )}
+            </div>
+          )}
+
           <div className="space-y-2">
             <Label>Valor (R$)</Label>
             <Input type="text" value={amount} onChange={e => setAmount(formatCurrencyInput(e.target.value))} placeholder="R$ 0,00" />
@@ -187,6 +223,33 @@ function BoletoDetailDialog({
               <span className="font-extrabold text-foreground">{BRL(invoice.value)}</span>
             </div>
           </div>
+
+          {/* Seção de Split de Parceiro */}
+          {invoice.hasSplit && (
+            <div className="p-3.5 rounded-xl bg-primary/10 border border-primary/25 space-y-1.5">
+              <div className="flex justify-between items-center text-xs">
+                <span className="text-primary font-bold flex items-center gap-1.5">
+                  <Percent className="size-3.5" /> Split de Parceiro Configurado:
+                </span>
+                <Badge className="bg-primary text-primary-foreground font-black text-[11px]">
+                  {invoice.splitPercent}%
+                </Badge>
+              </div>
+              <div className="flex justify-between items-center text-xs pt-1 border-t border-primary/20">
+                <span className="text-muted-foreground">Beneficiário:</span>
+                <span className="font-bold text-foreground">{invoice.partnerName || "Consultor"}</span>
+              </div>
+              <div className="flex justify-between items-center text-xs">
+                <span className="text-muted-foreground">Valor Previsto do Repasse:</span>
+                <span className="font-extrabold text-emerald-600 dark:text-emerald-400 font-mono">
+                  {BRL(invoice.splitAmount || 0)}
+                </span>
+              </div>
+              <p className="text-[10px] text-muted-foreground pt-0.5">
+                O repasse será creditado automaticamente na conta Asaas do parceiro no momento da liquidação da fatura.
+              </p>
+            </div>
+          )}
 
           <div className="p-3 rounded-xl bg-muted/40 border border-border/50 flex justify-between items-center">
             <span className="text-muted-foreground font-semibold">Status:</span>
@@ -308,6 +371,7 @@ function InvoicesPage() {
                       <th className="h-11 px-4 text-left">Descrição</th>
                       <th className="h-11 px-4 text-left">Vencimento</th>
                       <th className="h-11 px-4 text-left">Valor</th>
+                      <th className="h-11 px-4 text-left">Split / Parceiro</th>
                       <th className="h-11 px-4 text-left">Status</th>
                       <th className="h-11 px-4 text-center">Ações</th>
                     </tr>
@@ -315,7 +379,7 @@ function InvoicesPage() {
                   <tbody className="divide-y divide-border/40">
                     {data.data.recentPayments.length === 0 ? (
                       <tr>
-                        <td colSpan={6} className="text-muted-foreground text-sm text-center py-12">
+                        <td colSpan={7} className="text-muted-foreground text-sm text-center py-12">
                           Nenhuma fatura encontrada. (Ambiente Atualizado)
                         </td>
                       </tr>
@@ -326,6 +390,21 @@ function InvoicesPage() {
                           <td className="p-4 align-middle text-muted-foreground">{p.description || "-"}</td>
                           <td className="p-4 align-middle font-mono text-xs">{p.dueDate ? p.dueDate.split('-').reverse().join('/') : "-"}</td>
                           <td className="p-4 align-middle font-semibold text-foreground">{BRL(p.value)}</td>
+                          <td className="p-4 align-middle whitespace-nowrap">
+                            {p.hasSplit ? (
+                              <div className="space-y-0.5">
+                                <Badge className="bg-primary/10 text-primary border border-primary/25 hover:bg-primary/20 text-xs font-semibold gap-1">
+                                  <Percent className="size-3" />
+                                  {p.partnerName || "Parceiro"}: {p.splitPercent}%
+                                </Badge>
+                                <span className="text-[11px] text-muted-foreground block font-mono">
+                                  Repasse: {BRL(p.splitAmount || 0)}
+                                </span>
+                              </div>
+                            ) : (
+                              <span className="text-xs text-muted-foreground italic">Direto (sem split)</span>
+                            )}
+                          </td>
                           <td className="p-4 align-middle">
                             {getStatusBadge(p.status)}
                           </td>

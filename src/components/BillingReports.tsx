@@ -392,14 +392,16 @@ export function BillingReports() {
       ]);
     } else if (reportTab === "partners") {
       title = "Relatório de Produção e Comissões de Consultores / Parceiros";
-      head = [["Consultor / Parceiro", "Contato", "Veículos", "Faturas Pagas", "Volume Arrecadado", "% Split", "Comissão a Receber"]];
+      head = [["Consultor / Parceiro", "Contato", "Veículos", "Faturas Pagas", "Faturas Pendentes", "Faturamento Total", "% Split", "Comissão Prevista", "Comissão Liquidada"]];
       body = filteredPartners.map((p: any) => [
         p.partnerName,
         `${p.partnerPhone || ""} ${p.partnerEmail ? "• " + p.partnerEmail : ""}`,
         p.activeVehiclesCount || 0,
         p.paidInvoicesCount || 0,
-        BRL(p.grossVolume || 0),
+        p.pendingInvoicesCount || 0,
+        BRL((p.grossVolume || 0) + (p.pendingGrossVolume || 0)),
         `${p.splitPercent}%`,
+        BRL(p.pendingSplitAmount || 0),
         BRL(p.totalValue || 0),
       ]);
     } else {
@@ -549,9 +551,12 @@ export function BillingReports() {
         "E-mail",
         "Veículos Ativos",
         "Faturas Pagas",
-        "Volume Arrecadado",
+        "Faturas Pendentes",
+        "Faturamento Pago",
+        "Faturamento Pendente",
         "% Comissão",
-        "Comissão a Receber",
+        "Comissão Prevista (Pendentes)",
+        "Comissão Liquidada (Pagas)",
       ];
       rows = filteredPartners.map((p: any) => [
         `"${p.partnerName}"`,
@@ -560,8 +565,11 @@ export function BillingReports() {
         `"${p.partnerEmail || ""}"`,
         p.activeVehiclesCount || 0,
         p.paidInvoicesCount || 0,
+        p.pendingInvoicesCount || 0,
         p.grossVolume?.toFixed(2) || "0.00",
+        p.pendingGrossVolume?.toFixed(2) || "0.00",
         p.splitPercent || "0",
+        p.pendingSplitAmount?.toFixed(2) || "0.00",
         p.totalValue?.toFixed(2) || "0.00",
       ]);
     } else {
@@ -1190,13 +1198,25 @@ export function BillingReports() {
                       {visibleColumns.partner && (
                         <td className="p-3.5 whitespace-nowrap">
                           <div className="font-semibold text-foreground text-[11px]">
-                            {inv.partnerName || "Direto"}
+                            {inv.partnerName || "Direto da Associação"}
                           </div>
-                          {inv.splitAmount > 0 && (
-                            <div className="text-[10px] text-primary font-mono">
-                              Split: {BRL(inv.splitAmount)} ({inv.splitPercent}%)
+                          {inv.splitAmount > 0 ? (
+                            <div className="mt-0.5">
+                              <Badge
+                                variant="outline"
+                                className={`text-[10px] px-1.5 py-0 font-mono font-bold ${
+                                  inv.status === "RECEIVED" || inv.status === "CONFIRMED" || inv.status === "RECEIVED_IN_CASH"
+                                    ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/30"
+                                    : "bg-amber-500/10 text-amber-600 border-amber-500/30"
+                                }`}
+                              >
+                                Split: {BRL(inv.splitAmount)} ({inv.splitPercent}%)
+                                {inv.status === "RECEIVED" || inv.status === "CONFIRMED" || inv.status === "RECEIVED_IN_CASH" ? " • Pago" : " • Previsto"}
+                              </Badge>
                             </div>
-                          )}
+                          ) : inv.partnerId ? (
+                            <div className="text-[10px] text-muted-foreground">Sem split configurado</div>
+                          ) : null}
                         </td>
                       )}
 
@@ -1355,21 +1375,29 @@ export function BillingReports() {
       {/* ABA 3: Consultores & Comissões */}
       {reportTab === "partners" && (
         <Card className="rounded-2xl border border-border/80 shadow-card bg-card overflow-hidden">
-          <CardHeader className="p-4 sm:p-5 pb-2 border-b border-border/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+          <CardHeader className="p-4 sm:p-5 pb-3 border-b border-border/60 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-3">
             <div>
               <CardTitle className="text-sm font-bold flex items-center gap-2">
                 <Users className="size-4.5 text-primary" />
-                Relatório de Produção e Comissões de Consultores
+                Relatório de Produção e Comissões de Consultores & Parceiros
               </CardTitle>
               <CardDescription className="text-xs">
-                Valores de repasse calculados sobre as mensalidades PAGAS no período.
+                Acompanhe as comissões líquidas já liberadas (pagas) e a previsão de repasse (faturas pendentes).
               </CardDescription>
             </div>
-            <div className="text-xs text-muted-foreground">
-              Comissão Total:{" "}
-              <strong className="text-emerald-600 font-black">
-                {BRL(filteredPartners.reduce((acc: number, p: any) => acc + (p.totalValue || 0), 0))}
-              </strong>
+            <div className="flex flex-wrap items-center gap-2.5 text-xs">
+              <div className="px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/25">
+                <span className="text-muted-foreground block text-[10px]">Comissão Prevista (Pendentes)</span>
+                <strong className="text-amber-600 dark:text-amber-400 font-black text-sm">
+                  {BRL(filteredPartners.reduce((acc: number, p: any) => acc + (p.pendingSplitAmount || 0), 0))}
+                </strong>
+              </div>
+              <div className="px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/25">
+                <span className="text-muted-foreground block text-[10px]">Comissão Liquidada (Pagas)</span>
+                <strong className="text-emerald-600 dark:text-emerald-400 font-black text-sm">
+                  {BRL(filteredPartners.reduce((acc: number, p: any) => acc + (p.totalValue || 0), 0))}
+                </strong>
+              </div>
             </div>
           </CardHeader>
           <CardContent className="p-0">
@@ -1379,10 +1407,12 @@ export function BillingReports() {
                   <tr>
                     <th className="p-3.5 pl-4">Consultor / Parceiro</th>
                     <th className="p-3.5">Contato</th>
-                    <th className="p-3.5 text-center">Faturas Pagas</th>
-                    <th className="p-3.5">Faturamento Gerado</th>
-                    <th className="p-3.5">% Comissão</th>
-                    <th className="p-3.5 font-bold">Comissão Líquida</th>
+                    <th className="p-3.5 text-center">Veículos</th>
+                    <th className="p-3.5 text-center">Faturas (Pagas / Pendentes)</th>
+                    <th className="p-3.5">Faturamento Total</th>
+                    <th className="p-3.5">% Split</th>
+                    <th className="p-3.5 font-bold text-amber-600 dark:text-amber-400">Comissão Prevista</th>
+                    <th className="p-3.5 font-bold text-emerald-600 dark:text-emerald-400">Comissão Liquidada</th>
                     <th className="p-3.5 pr-4">Status do Repasse</th>
                   </tr>
                 </thead>
@@ -1402,30 +1432,60 @@ export function BillingReports() {
                         <div className="text-[10px]">{p.partnerEmail || ""}</div>
                       </td>
                       <td className="p-3.5 text-center whitespace-nowrap">
-                        <Badge variant="outline" className="font-bold text-xs">
-                          {p.paidInvoicesCount || 0}
+                        <Badge variant="outline" className="font-semibold text-xs">
+                          {p.activeVehiclesCount || 0}
                         </Badge>
                       </td>
+                      <td className="p-3.5 text-center whitespace-nowrap">
+                        <div className="flex items-center justify-center gap-1.5">
+                          <Badge className="bg-emerald-500/15 text-emerald-600 border border-emerald-500/30 font-bold text-xs">
+                            {p.paidInvoicesCount || 0} pagas
+                          </Badge>
+                          {(p.pendingInvoicesCount || 0) > 0 && (
+                            <Badge className="bg-amber-500/15 text-amber-600 border border-amber-500/30 font-bold text-xs">
+                              {p.pendingInvoicesCount} pendentes
+                            </Badge>
+                          )}
+                        </div>
+                      </td>
                       <td className="p-3.5 font-semibold text-foreground whitespace-nowrap">
-                        {BRL(p.grossVolume || 0)}
+                        <div>{BRL((p.grossVolume || 0) + (p.pendingGrossVolume || 0))}</div>
+                        {(p.pendingGrossVolume || 0) > 0 && (
+                          <div className="text-[10px] text-muted-foreground font-normal">
+                            ({BRL(p.grossVolume || 0)} pago • {BRL(p.pendingGrossVolume || 0)} a vencer)
+                          </div>
+                        )}
                       </td>
                       <td className="p-3.5 font-bold text-primary whitespace-nowrap">
                         {p.splitPercent}%
+                      </td>
+                      <td className="p-3.5 font-black text-amber-600 dark:text-amber-400 whitespace-nowrap text-sm">
+                        {BRL(p.pendingSplitAmount || 0)}
                       </td>
                       <td className="p-3.5 font-black text-emerald-600 dark:text-emerald-400 whitespace-nowrap text-sm">
                         {BRL(p.totalValue || 0)}
                       </td>
                       <td className="p-3.5 pr-4 whitespace-nowrap">
-                        <Badge className="bg-emerald-500/15 text-emerald-600 border border-emerald-500/30 text-[10px] font-bold">
-                          Liberado para Pagamento
-                        </Badge>
+                        {(p.totalValue || 0) > 0 ? (
+                          <Badge className="bg-emerald-500/15 text-emerald-600 border border-emerald-500/30 text-[10px] font-bold">
+                            Liberado para Pagamento
+                          </Badge>
+                        ) : (p.pendingSplitAmount || 0) > 0 ? (
+                          <Badge className="bg-amber-500/15 text-amber-600 border border-amber-500/30 text-[10px] font-bold">
+                            Aguardando Liquidação
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-[10px] text-muted-foreground">
+                            Sem Movimentação
+                          </Badge>
+                        )}
                       </td>
                     </tr>
                   ))}
 
                   {filteredPartners.length === 0 && (
                     <tr>
-                      <td colSpan={7} className="p-10 text-center text-muted-foreground">
+                      <td colSpan={9} className="p-10 text-center text-muted-foreground">
                         <Users className="size-8 text-muted-foreground/40 mx-auto mb-2" />
                         Nenhum consultor encontrado para os filtros selecionados.
                       </td>

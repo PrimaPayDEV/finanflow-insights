@@ -346,16 +346,56 @@ export const getAsaasDashboardMetrics = createServerFn({ method: "POST" })
 
       if (recentPayments.length > 0) {
         const customerIds = [...uniqueCustomers] as string[];
-        const { data: members } = await supabaseAdmin.from("members").select("asaas_customer_id, name, phone, document").in("asaas_customer_id", customerIds);
-        const memberMap = new Map(members?.map((m: any) => [m.asaas_customer_id, m]));
+        const [{ data: members }, { data: partners }] = await Promise.all([
+          supabaseAdmin
+            .from("members")
+            .select("id, asaas_customer_id, name, phone, document, partner_id, partners(id, name, split_percent, asaas_wallet_id)")
+            .in("asaas_customer_id", customerIds),
+          supabaseAdmin
+            .from("partners")
+            .select("id, name, split_percent, asaas_wallet_id, phone, email")
+            .eq("company_id", data.companyId),
+        ]);
+
+        const memberMap = new Map((members || []).map((m: any) => [m.asaas_customer_id, m]));
+        const partnersMap = new Map((partners || []).map((pt: any) => [pt.id, pt]));
 
         recentPayments = recentPayments.map((p: any) => {
           const m = memberMap.get(p.customer);
+          let rawPt = Array.isArray(m?.partners) ? m.partners[0] : m?.partners;
+          if (!rawPt && m?.partner_id) {
+            rawPt = partnersMap.get(m.partner_id);
+          }
+
+          const asaasSplit = Array.isArray(p.split) && p.split.length > 0 ? p.split[0] : null;
+
+          if (!rawPt && asaasSplit?.walletId) {
+            rawPt = (partners || []).find((x: any) => x.asaas_wallet_id === asaasSplit.walletId);
+          }
+
+          let splitPercent = 0;
+          if (asaasSplit?.percentualValue) {
+            splitPercent = Number(asaasSplit.percentualValue);
+          } else if (rawPt?.split_percent) {
+            splitPercent = Number(rawPt.split_percent);
+          }
+
+          const splitFixed = asaasSplit?.fixedValue ? Number(asaasSplit.fixedValue) : 0;
+          const splitAmount = splitFixed > 0 ? splitFixed : (splitPercent > 0 ? Number((p.value * (splitPercent / 100)).toFixed(2)) : 0);
+          const partnerName = rawPt?.name || (asaasSplit ? `Carteira ${asaasSplit.walletId.slice(0, 8)}...` : null);
+          const hasSplit = splitAmount > 0 || !!asaasSplit || (!!rawPt && splitPercent > 0);
+
           return {
             ...p,
             customerName: m?.name || p.customerName || p.customer,
             customerPhone: m?.phone,
             customerDocument: m?.document,
+            partnerId: rawPt?.id || null,
+            partnerName,
+            splitPercent,
+            splitAmount,
+            hasSplit,
+            asaasSplit,
           };
         });
       }
