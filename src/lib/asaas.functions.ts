@@ -342,13 +342,18 @@ export const getAsaasDashboardMetrics = createServerFn({ method: "POST" })
 
       if (recentPayments.length > 0) {
         const customerIds = [...uniqueCustomers] as string[];
-        const { data: members } = await supabaseAdmin.from("members").select("asaas_customer_id, name").in("asaas_customer_id", customerIds);
-        const memberMap = new Map(members?.map(m => [m.asaas_customer_id, m.name]));
+        const { data: members } = await supabaseAdmin.from("members").select("asaas_customer_id, name, phone, document").in("asaas_customer_id", customerIds);
+        const memberMap = new Map(members?.map((m: any) => [m.asaas_customer_id, m]));
 
-        recentPayments = recentPayments.map((p: any) => ({
-          ...p,
-          customerName: memberMap.get(p.customer) || p.customer
-        }));
+        recentPayments = recentPayments.map((p: any) => {
+          const m = memberMap.get(p.customer);
+          return {
+            ...p,
+            customerName: m?.name || p.customerName || p.customer,
+            customerPhone: m?.phone,
+            customerDocument: m?.document,
+          };
+        });
       }
 
       return {

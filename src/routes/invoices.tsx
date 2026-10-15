@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Plus, Receipt, AlertCircle, MessageCircle } from "lucide-react";
+import { Plus, Receipt, AlertCircle, MessageCircle, FileText, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { AppLayout } from "@/components/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -139,15 +139,137 @@ function NewInvoiceDialog() {
   );
 }
 
+function BoletoDetailDialog({
+  open,
+  onOpenChange,
+  invoice,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  invoice: any | null;
+}) {
+  if (!invoice) return null;
+  const url = invoice.bankSlipUrl || invoice.invoiceUrl;
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md rounded-2xl p-6 bg-card border-border shadow-2xl">
+        <DialogHeader>
+          <DialogTitle className="text-base font-bold flex items-center gap-2 text-foreground">
+            <Receipt className="size-5 text-primary" />
+            Detalhes da Cobrança / Boleto
+          </DialogTitle>
+          <DialogDescription className="text-xs">
+            Consulte as informações e acesse a 2ª via da fatura
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-3 py-3 text-xs">
+          <div className="p-3 rounded-xl bg-muted/40 border border-border/50 flex justify-between items-center">
+            <span className="text-muted-foreground font-semibold">Cliente / Associado:</span>
+            <span className="font-bold text-foreground">{invoice.customerName || invoice.customer}</span>
+          </div>
+
+          <div className="p-3 rounded-xl bg-muted/40 border border-border/50 flex justify-between items-center">
+            <span className="text-muted-foreground font-semibold">Descrição:</span>
+            <span className="font-medium text-foreground">{invoice.description || "Mensalidade"}</span>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            <div className="p-3 rounded-xl bg-muted/40 border border-border/50">
+              <span className="text-[10px] text-muted-foreground block">Vencimento</span>
+              <span className="font-bold text-foreground">
+                {invoice.dueDate ? invoice.dueDate.split("-").reverse().join("/") : "—"}
+              </span>
+            </div>
+            <div className="p-3 rounded-xl bg-muted/40 border border-border/50">
+              <span className="text-[10px] text-muted-foreground block">Valor</span>
+              <span className="font-extrabold text-foreground">{BRL(invoice.value)}</span>
+            </div>
+          </div>
+
+          <div className="p-3 rounded-xl bg-muted/40 border border-border/50 flex justify-between items-center">
+            <span className="text-muted-foreground font-semibold">Status:</span>
+            {getStatusBadge(invoice.status)}
+          </div>
+
+          {url ? (
+            <div className="p-3 rounded-xl bg-primary/5 border border-primary/20 space-y-2">
+              <span className="text-[11px] font-semibold text-primary block">Link Seguro da Fatura:</span>
+              <a
+                href={url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-primary underline break-all block font-mono hover:text-primary/80"
+              >
+                {url}
+              </a>
+            </div>
+          ) : (
+            <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-700 text-xs">
+              O link direto desta cobrança não foi retornado pelo gateway ou está sendo processado.
+            </div>
+          )}
+        </div>
+
+        <div className="flex justify-between items-center gap-2 pt-2 border-t border-border/60">
+          <Button variant="outline" size="sm" onClick={() => onOpenChange(false)} className="rounded-xl text-xs">
+            Fechar
+          </Button>
+
+          {url && (
+            <Button
+              size="sm"
+              asChild
+              className="rounded-xl text-xs font-bold bg-primary hover:bg-primary/90 text-primary-foreground gap-1.5"
+            >
+              <a href={url} target="_blank" rel="noopener noreferrer">
+                <ExternalLink className="size-3.5" />
+                Acessar Boleto
+              </a>
+            </Button>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function InvoicesPage() {
   const { companyId } = useAuth();
   const fetchMetrics = useServerFn(getAsaasDashboardMetrics);
   
+  const [selectedInvoice, setSelectedInvoice] = useState<any | null>(null);
+  const [boletoModalOpen, setBoletoModalOpen] = useState(false);
+
   const { data, isLoading } = useQuery({
     queryKey: ["billing_metrics", companyId],
     queryFn: () => fetchMetrics({ data: { companyId: companyId! } }),
     enabled: !!companyId,
   });
+
+  const handleViewBoleto = (p: any) => {
+    const url = p.bankSlipUrl || p.invoiceUrl;
+    if (url) {
+      window.open(url, "_blank", "noopener,noreferrer");
+      toast.success("Boleto aberto em nova aba!");
+    } else {
+      setSelectedInvoice(p);
+      setBoletoModalOpen(true);
+    }
+  };
+
+  const handleSendWhatsApp = (p: any) => {
+    const url = p.invoiceUrl || p.bankSlipUrl || "";
+    const dateFormatted = p.dueDate ? p.dueDate.split('-').reverse().join('/') : "";
+    const clientName = p.customerName || p.customer || "Associado";
+    const text = encodeURIComponent(
+      `Olá ${clientName}! Aqui está sua fatura no valor de ${BRL(p.value)} (Vencimento: ${dateFormatted}).\n\nVocê pode acessar e pagar através do link seguro abaixo:\n${url}\n\nQualquer dúvida, estamos à disposição!`
+    );
+    const phone = p.customerPhone ? p.customerPhone.replace(/\D/g, "") : "";
+    const waUrl = phone ? `https://wa.me/55${phone}?text=${text}` : `https://wa.me/?text=${text}`;
+    window.open(waUrl, "_blank");
+  };
 
   return (
     <AppLayout 
@@ -207,20 +329,32 @@ function InvoicesPage() {
                           <td className="p-4 align-middle">
                             {getStatusBadge(p.status)}
                           </td>
-                          <td className="p-4 align-middle text-center">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="rounded-xl h-8 px-3 text-xs text-emerald-600 border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700 hover:border-emerald-300"
-                              onClick={() => {
-                                const text = encodeURIComponent(
-                                  `Olá! Aqui está sua fatura no valor de ${BRL(p.value)}.\n\nVocê pode acessar e pagar através do link seguro abaixo:\n${p.invoiceUrl || p.bankSlipUrl || ""}`
-                                );
-                                window.open(`https://wa.me/?text=${text}`, "_blank");
-                              }}
-                            >
-                              <MessageCircle className="size-3.5 mr-1.5" /> Enviar
-                            </Button>
+                          <td className="p-4 align-middle text-center whitespace-nowrap">
+                            <div className="flex items-center justify-center gap-2">
+                              {/* Botão Ver Boleto */}
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="rounded-xl h-8 px-3 text-xs font-semibold text-primary border-primary/30 hover:bg-primary/10 hover:text-primary gap-1.5 shadow-xs"
+                                onClick={() => handleViewBoleto(p)}
+                                title="Acessar e visualizar o boleto"
+                              >
+                                <FileText className="size-3.5" />
+                                Ver Boleto
+                              </Button>
+
+                              {/* Botão Enviar WhatsApp */}
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="rounded-xl h-8 px-3 text-xs font-semibold text-emerald-600 border-emerald-300 hover:bg-emerald-500/10 hover:text-emerald-700 hover:border-emerald-400 gap-1.5 shadow-xs"
+                                onClick={() => handleSendWhatsApp(p)}
+                                title="Enviar cobrança pelo WhatsApp"
+                              >
+                                <MessageCircle className="size-3.5" />
+                                Enviar
+                              </Button>
+                            </div>
                           </td>
                         </tr>
                       ))
@@ -232,6 +366,13 @@ function InvoicesPage() {
           </Card>
         </div>
       )}
+
+      {/* Modal de Detalhes da Cobrança / Boleto */}
+      <BoletoDetailDialog
+        open={boletoModalOpen}
+        onOpenChange={setBoletoModalOpen}
+        invoice={selectedInvoice}
+      />
     </AppLayout>
   );
 }
