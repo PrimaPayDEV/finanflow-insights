@@ -16,7 +16,7 @@ export function KpiCard({
   value: string;
   hint?: string;
   icon: LucideIcon;
-  tone?: "default" | "success" | "primary";
+  tone?: "default" | "success" | "primary" | "warning" | "destructive";
   trend?: "up" | "down" | "neutral";
   trendValue?: string;
 }) {
@@ -32,6 +32,8 @@ export function KpiCard({
               "mt-2 truncate text-2xl sm:text-3xl font-extrabold tracking-tight",
               tone === "success" && "text-emerald-600 dark:text-emerald-400",
               tone === "primary" && "text-primary",
+              tone === "warning" && "text-amber-600 dark:text-amber-400",
+              tone === "destructive" && "text-rose-600 dark:text-rose-400",
               tone === "default" && "text-foreground",
             )}
           >
@@ -63,7 +65,11 @@ export function KpiCard({
               ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400"
               : tone === "primary"
                 ? "bg-primary/10 border-primary/20 text-primary"
-                : "bg-muted/80 border-border/60 text-muted-foreground",
+                : tone === "warning"
+                  ? "bg-amber-500/10 border-amber-500/20 text-amber-600 dark:text-amber-400"
+                  : tone === "destructive"
+                    ? "bg-rose-500/10 border-rose-500/20 text-rose-600 dark:text-rose-400"
+                    : "bg-muted/80 border-border/60 text-muted-foreground",
           )}
         >
           <Icon className="size-5" />

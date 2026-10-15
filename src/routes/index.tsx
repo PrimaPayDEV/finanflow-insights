@@ -12,6 +12,21 @@ import {
   BarChart3,
   ChevronRight,
   ArrowRight,
+  Users,
+  Car,
+  ShieldCheck,
+  FileText,
+  CheckCircle2,
+  AlertTriangle,
+  Clock,
+  ArrowUpRight,
+  ExternalLink,
+  MessageCircle,
+  Plus,
+  RefreshCw,
+  FileBarChart2,
+  Sparkles,
+  DollarSign,
 } from "lucide-react";
 import { MerchantIcon } from "@/components/MerchantIcon";
 import { format } from "date-fns";
@@ -59,6 +74,9 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { useServerFn } from "@tanstack/react-start";
 import { getAsaasDashboardMetrics } from "@/lib/asaas.functions";
+import { getMembers } from "@/lib/members.functions";
+import { Progress } from "@/components/ui/progress";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -89,82 +107,618 @@ const COLORS = [
 
 function BillingDashboard({ companyId }: { companyId: string }) {
   const fetchMetrics = useServerFn(getAsaasDashboardMetrics);
-  const { data, isLoading, error } = useQuery({
+  const fetchMembers = useServerFn(getMembers);
+
+  const { data, isLoading, error, refetch, isRefetching } = useQuery({
     queryKey: ["billing_metrics", companyId],
     queryFn: () => fetchMetrics({ data: { companyId } }),
   });
 
+  const { data: members = [] } = useQuery({
+    queryKey: ["members", companyId],
+    queryFn: () => fetchMembers({ data: { companyId } }),
+  });
+
+  const payments: any[] = data?.data?.recentPayments || [];
+
+  // Financial calculations
+  const balanceVal = data?.data?.balance || 0;
+  const totalReceivedVal = data?.data?.totalReceived || 0;
+  const totalPendingVal = data?.data?.totalPending || 0;
+  const totalOverdueVal = data?.data?.totalOverdue || 0;
+
+  let receivedCount = 0;
+  let pendingCount = 0;
+  let overdueCount = 0;
+
+  for (const p of payments) {
+    if (p.status === "RECEIVED" || p.status === "CONFIRMED" || p.status === "RECEIVED_IN_CASH") {
+      receivedCount++;
+    } else if (p.status === "PENDING") {
+      pendingCount++;
+    } else if (p.status === "OVERDUE") {
+      overdueCount++;
+    }
+  }
+
+  const totalVolume = totalReceivedVal + totalPendingVal + totalOverdueVal;
+  const overdueRate = totalVolume > 0 ? ((totalOverdueVal / totalVolume) * 100).toFixed(1) : "0";
+  const liquidationRate = totalVolume > 0 ? ((totalReceivedVal / totalVolume) * 100).toFixed(1) : "0";
+
+  // Members & vehicles calculation
+  const totalMembers = members.length;
+  const totalVehicles = members.reduce((acc: number, m: any) => {
+    if (Array.isArray(m.vehicles) && m.vehicles.length > 0) return acc + m.vehicles.length;
+    if (m.vehicle) return acc + 1;
+    return acc;
+  }, 0);
+
+  // Group payments by dueDate for chart
+  const chartData = useMemo(() => {
+    const map: Record<string, { date: string; dateFormatted: string; recebido: number; pendente: number; vencido: number }> = {};
+    const sorted = [...payments].sort((a, b) => (a.dueDate || "").localeCompare(b.dueDate || ""));
+
+    for (const p of sorted) {
+      if (!p.dueDate) continue;
+      const key = p.dueDate;
+      if (!map[key]) {
+        const parts = key.split("-");
+        const formatted = parts.length === 3 ? `${parts[2]}/${parts[1]}` : key;
+        map[key] = { date: key, dateFormatted: formatted, recebido: 0, pendente: 0, vencido: 0 };
+      }
+      if (p.status === "RECEIVED" || p.status === "CONFIRMED" || p.status === "RECEIVED_IN_CASH") {
+        map[key].recebido += p.value;
+      } else if (p.status === "PENDING") {
+        map[key].pendente += p.value;
+      } else if (p.status === "OVERDUE") {
+        map[key].vencido += p.value;
+      }
+    }
+
+    return Object.values(map).slice(-8);
+  }, [payments]);
+
+  // Donut chart distribution
+  const pieData = [
+    { name: "Recebido", value: totalReceivedVal, count: receivedCount, color: "#10b981" },
+    { name: "Pendente", value: totalPendingVal, count: pendingCount, color: "#f59e0b" },
+    { name: "Vencido", value: totalOverdueVal, count: overdueCount, color: "#ef4444" },
+  ].filter((d) => d.value > 0);
+
+  const handleViewBoleto = (p: any) => {
+    const url = p.bankSlipUrl || p.invoiceUrl;
+    if (url) {
+      window.open(url, "_blank", "noopener,noreferrer");
+      toast.success("Boleto aberto em nova aba!");
+    } else {
+      toast.error("Link direto do boleto não disponível no momento.");
+    }
+  };
+
+  const handleSendWhatsApp = (p: any) => {
+    const url = p.invoiceUrl || p.bankSlipUrl || "";
+    const dateFormatted = p.dueDate ? p.dueDate.split("-").reverse().join("/") : "";
+    const clientName = p.customerName || p.customer || "Associado";
+    const text = encodeURIComponent(
+      `Olá ${clientName}! Segue sua fatura no valor de ${BRL(p.value)} (Vencimento: ${dateFormatted}).\n\nVocê pode acessar e pagar pelo link seguro abaixo:\n${url}\n\nQualquer dúvida, estamos à disposição!`
+    );
+    const phone = p.customerPhone ? p.customerPhone.replace(/\D/g, "") : "";
+    const waUrl = phone ? `https://wa.me/55${phone}?text=${text}` : `https://wa.me/?text=${text}`;
+    window.open(waUrl, "_blank");
+  };
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case "RECEIVED":
+      case "CONFIRMED":
+      case "RECEIVED_IN_CASH":
+        return (
+          <Badge className="bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 border-emerald-500/30 text-xs font-semibold gap-1.5 py-0.5">
+            <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            Recebido
+          </Badge>
+        );
+      case "PENDING":
+        return (
+          <Badge className="bg-amber-500/10 text-amber-600 hover:bg-amber-500/20 border-amber-500/30 text-xs font-semibold gap-1.5 py-0.5">
+            <span className="size-1.5 rounded-full bg-amber-500" />
+            Pendente
+          </Badge>
+        );
+      case "OVERDUE":
+        return (
+          <Badge className="bg-rose-500/10 text-rose-600 hover:bg-rose-500/20 border-rose-500/30 text-xs font-semibold gap-1.5 py-0.5">
+            <span className="size-1.5 rounded-full bg-rose-500" />
+            Vencido
+          </Badge>
+        );
+      case "REFUNDED":
+        return (
+          <Badge className="bg-gray-500/10 text-gray-600 hover:bg-gray-500/20 border-gray-500/30 text-xs font-semibold py-0.5">
+            Estornado
+          </Badge>
+        );
+      default:
+        return (
+          <Badge variant="outline" className="text-xs py-0.5">
+            {status}
+          </Badge>
+        );
+    }
+  };
+
   return (
-    <AppLayout title="Dashboard" subtitle="Visão consolidada de Boletos e Cobranças">
+    <AppLayout
+      title="Dashboard"
+      subtitle="Visão executiva de cobranças, associados e faturamento"
+      actions={
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => refetch()}
+            disabled={isLoading || isRefetching}
+            className="rounded-xl h-9 px-3 text-xs gap-1.5 border-border/70 hover:bg-muted"
+            title="Atualizar dados do Asaas"
+          >
+            <RefreshCw className={cn("size-3.5", isRefetching && "animate-spin")} />
+            <span className="hidden sm:inline">Atualizar</span>
+          </Button>
+          <Button
+            size="sm"
+            asChild
+            className="rounded-xl h-9 px-3.5 text-xs font-bold bg-primary hover:bg-primary/90 text-primary-foreground gap-1.5 shadow-xs"
+          >
+            <Link to="/invoices">
+              <Plus className="size-4" />
+              <span>Gerar Fatura</span>
+            </Link>
+          </Button>
+        </div>
+      }
+    >
       {isLoading ? (
-        <div className="flex h-64 items-center justify-center">
-          <p className="text-muted-foreground text-sm">Carregando métricas...</p>
+        <div className="flex h-72 flex-col items-center justify-center space-y-3">
+          <div className="size-10 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+          <p className="text-muted-foreground text-sm font-medium">Carregando métricas e cobranças...</p>
         </div>
       ) : data?.ok ? (
-        <div className="space-y-6">
+        <div className="space-y-6 pb-6">
+          {/* 1. Quick Navigation Shortcuts */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <Link
+              to="/invoices"
+              className="group p-4 rounded-2xl bg-card border border-border/70 shadow-xs hover:border-primary/50 hover:shadow-md transition-all flex items-center gap-3.5"
+            >
+              <div className="size-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                <FileText className="size-5" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Cobranças</p>
+                <p className="text-sm font-bold text-foreground truncate group-hover:text-primary transition-colors">
+                  Faturas & Boletos
+                </p>
+              </div>
+            </Link>
+
+            <Link
+              to="/members"
+              className="group p-4 rounded-2xl bg-card border border-border/70 shadow-xs hover:border-emerald-500/50 hover:shadow-md transition-all flex items-center gap-3.5"
+            >
+              <div className="size-10 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                <Users className="size-5" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Associados</p>
+                <p className="text-sm font-bold text-foreground truncate group-hover:text-emerald-600 transition-colors">
+                  Novo Associado
+                </p>
+              </div>
+            </Link>
+
+            <Link
+              to="/vehicles"
+              className="group p-4 rounded-2xl bg-card border border-border/70 shadow-xs hover:border-blue-500/50 hover:shadow-md transition-all flex items-center gap-3.5"
+            >
+              <div className="size-10 rounded-xl bg-blue-500/10 text-blue-600 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                <Car className="size-5" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Frota</p>
+                <p className="text-sm font-bold text-foreground truncate group-hover:text-blue-600 transition-colors">
+                  Central de Veículos
+                </p>
+              </div>
+            </Link>
+
+            <Link
+              to="/reports"
+              className="group p-4 rounded-2xl bg-card border border-border/70 shadow-xs hover:border-purple-500/50 hover:shadow-md transition-all flex items-center gap-3.5"
+            >
+              <div className="size-10 rounded-xl bg-purple-500/10 text-purple-600 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                <FileBarChart2 className="size-5" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Relatórios</p>
+                <p className="text-sm font-bold text-foreground truncate group-hover:text-purple-600 transition-colors">
+                  Exportar Métricas
+                </p>
+              </div>
+            </Link>
+          </div>
+
+          {/* 2. Core Financial KPIs */}
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <KpiCard
               label="Saldo Asaas"
-              value={BRL(data.data.balance)}
+              value={BRL(balanceVal)}
               icon={Wallet}
-              hint="Atualizado agora"
+              hint="Disponível na conta Asaas"
               tone="primary"
             />
             <KpiCard
               label="Total Recebido (Mês)"
-              value={BRL(data.data.totalReceived)}
+              value={BRL(totalReceivedVal)}
               icon={TrendingUp}
-              hint="Em cobranças pagas"
+              hint={`${receivedCount} cobranças liquidadas`}
               tone="success"
             />
             <KpiCard
-              label="Inadimplência / Vencido"
-              value={BRL(data.data.totalOverdue)}
-              icon={FileCheck2}
-              hint="Atrasados"
+              label="Pendentes a Receber"
+              value={BRL(totalPendingVal)}
+              icon={Clock}
+              hint={`${pendingCount} aguardando pagamento`}
+              tone="warning"
             />
             <KpiCard
-              label="Pendentes a Receber"
-              value={BRL(data.data.totalPending)}
-              icon={PiggyBank}
-              hint="Aguardando pagamento"
+              label="Inadimplência / Vencido"
+              value={BRL(totalOverdueVal)}
+              icon={AlertTriangle}
+              hint={`${overdueCount} atrasadas (${overdueRate}% do total)`}
+              tone="destructive"
             />
           </div>
-          <Card className="border border-border/80 shadow-card rounded-2xl bg-card overflow-hidden">
-            <CardHeader className="p-5 border-b border-border/60">
-              <CardTitle className="text-base font-bold">Últimas Cobranças</CardTitle>
-              <CardDescription className="text-xs text-muted-foreground">
-                Extrato recente de boletos e transações Pix
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-5">
-              {data.data.recentPayments.length === 0 ? (
-                <p className="text-muted-foreground text-sm">Nenhuma cobrança encontrada.</p>
-              ) : (
-                <div className="divide-y divide-border/60">
-                  {data.data.recentPayments.map((p: any) => (
-                    <div key={p.id} className="flex items-center justify-between py-3 first:pt-0 last:pb-0">
-                      <div>
-                        <p className="font-semibold text-sm text-foreground">{p.customer}</p>
-                        <p className="text-xs text-muted-foreground">{p.description || "Cobrança"}</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-bold text-sm">{BRL(p.value)}</p>
-                        <Badge
-                          variant={
-                            p.status === "RECEIVED" || p.status === "CONFIRMED"
-                              ? "default"
-                              : p.status === "OVERDUE"
-                                ? "destructive"
-                                : "secondary"
-                          }
-                          className="text-[10px] uppercase font-mono mt-0.5"
-                        >
-                          {p.status}
-                        </Badge>
+
+          {/* 3. Proteção Veicular Operational Indicators */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="p-4 rounded-2xl bg-card border border-border/70 shadow-xs flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="size-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                  <Users className="size-5" />
+                </div>
+                <div>
+                  <p className="text-xs font-semibold text-muted-foreground">Associados Cadastrados</p>
+                  <p className="text-xl font-extrabold text-foreground">{totalMembers}</p>
+                </div>
+              </div>
+              <Badge variant="outline" className="text-xs font-semibold border-primary/30 text-primary bg-primary/5">
+                Base Ativa
+              </Badge>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-card border border-border/70 shadow-xs flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="size-10 rounded-xl bg-blue-500/10 text-blue-600 flex items-center justify-center shrink-0">
+                  <Car className="size-5" />
+                </div>
+                <div>
+                  <p className="text-xs font-semibold text-muted-foreground">Veículos Protegidos</p>
+                  <p className="text-xl font-extrabold text-foreground">{totalVehicles}</p>
+                </div>
+              </div>
+              <Badge variant="outline" className="text-xs font-semibold border-blue-500/30 text-blue-600 bg-blue-500/5">
+                Em Proteção
+              </Badge>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-card border border-border/70 shadow-xs flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="size-10 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center shrink-0">
+                  <CheckCircle2 className="size-5" />
+                </div>
+                <div>
+                  <p className="text-xs font-semibold text-muted-foreground">Taxa de Liquidação</p>
+                  <p className="text-xl font-extrabold text-foreground">{liquidationRate}%</p>
+                </div>
+              </div>
+              <Badge variant="outline" className="text-xs font-semibold border-emerald-500/30 text-emerald-600 bg-emerald-500/5">
+                Recebimento
+              </Badge>
+            </div>
+          </div>
+
+          {/* 4. Analytics & Charts */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Evolução de Vencimentos */}
+            <Card className="lg:col-span-2 border border-border/80 shadow-card rounded-2xl bg-card overflow-hidden">
+              <CardHeader className="p-5 border-b border-border/60 flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle className="text-base font-bold flex items-center gap-2">
+                    <BarChart3 className="size-4 text-primary" />
+                    Evolução por Vencimento
+                  </CardTitle>
+                  <CardDescription className="text-xs text-muted-foreground mt-0.5">
+                    Distribuição dos valores por data de vencimento recente
+                  </CardDescription>
+                </div>
+                <div className="flex items-center gap-3 text-xs">
+                  <span className="flex items-center gap-1.5 font-medium text-emerald-600">
+                    <span className="size-2 rounded-full bg-emerald-500" /> Recebido
+                  </span>
+                  <span className="flex items-center gap-1.5 font-medium text-amber-600">
+                    <span className="size-2 rounded-full bg-amber-500" /> Pendente
+                  </span>
+                  <span className="flex items-center gap-1.5 font-medium text-rose-600">
+                    <span className="size-2 rounded-full bg-rose-500" /> Vencido
+                  </span>
+                </div>
+              </CardHeader>
+              <CardContent className="p-5">
+                {chartData.length === 0 ? (
+                  <div className="flex h-56 items-center justify-center text-muted-foreground text-xs">
+                    Nenhuma data de cobrança registrada no período.
+                  </div>
+                ) : (
+                  <div className="h-64 w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={chartData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" opacity={0.15} vertical={false} />
+                        <XAxis
+                          dataKey="dateFormatted"
+                          fontSize={11}
+                          tickLine={false}
+                          axisLine={false}
+                          tick={{ fill: "currentColor", opacity: 0.7 }}
+                        />
+                        <YAxis
+                          fontSize={10}
+                          tickLine={false}
+                          axisLine={false}
+                          tickFormatter={(val) => `R$ ${val}`}
+                          tick={{ fill: "currentColor", opacity: 0.7 }}
+                        />
+                        <Tooltip
+                          formatter={(value: any) => [BRL(Number(value) || 0), ""]}
+                          labelFormatter={(label) => `Vencimento: ${label}`}
+                          contentStyle={{
+                            borderRadius: "12px",
+                            border: "1px solid var(--border)",
+                            backgroundColor: "var(--card)",
+                            color: "var(--foreground)",
+                            boxShadow: "0 8px 30px rgba(0,0,0,0.12)",
+                            fontSize: "12px",
+                          }}
+                        />
+                        <Bar dataKey="recebido" name="Recebido" fill="#10b981" radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="pendente" name="Pendente" fill="#f59e0b" radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="vencido" name="Vencido" fill="#ef4444" radius={[4, 4, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Composição da Carteira (Donut) */}
+            <Card className="border border-border/80 shadow-card rounded-2xl bg-card overflow-hidden">
+              <CardHeader className="p-5 border-b border-border/60">
+                <CardTitle className="text-base font-bold flex items-center gap-2">
+                  <PieChartIcon className="size-4 text-primary" />
+                  Composição da Carteira
+                </CardTitle>
+                <CardDescription className="text-xs text-muted-foreground mt-0.5">
+                  Volume total: <span className="font-bold text-foreground">{BRL(totalVolume)}</span>
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="p-5 space-y-4">
+                {pieData.length === 0 ? (
+                  <div className="flex h-56 items-center justify-center text-muted-foreground text-xs">
+                    Sem movimentações suficientes para gerar o gráfico.
+                  </div>
+                ) : (
+                  <>
+                    <div className="h-44 w-full relative flex items-center justify-center">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={pieData}
+                            dataKey="value"
+                            nameKey="name"
+                            innerRadius={50}
+                            outerRadius={75}
+                            paddingAngle={4}
+                            strokeWidth={0}
+                          >
+                            {pieData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.color} />
+                            ))}
+                          </Pie>
+                          <Tooltip
+                            formatter={(value: any) => [BRL(Number(value) || 0), "Valor"]}
+                            contentStyle={{
+                              borderRadius: "12px",
+                              border: "1px solid var(--border)",
+                              backgroundColor: "var(--card)",
+                              color: "var(--foreground)",
+                              boxShadow: "0 8px 30px rgba(0,0,0,0.12)",
+                              fontSize: "12px",
+                            }}
+                          />
+                        </PieChart>
+                      </ResponsiveContainer>
+                      <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                        <span className="text-[10px] uppercase font-bold text-muted-foreground">Volume</span>
+                        <span className="text-sm font-extrabold text-foreground">{BRL(totalVolume)}</span>
                       </div>
                     </div>
-                  ))}
+
+                    <div className="space-y-2.5 pt-1">
+                      <div className="space-y-1">
+                        <div className="flex justify-between text-xs">
+                          <span className="flex items-center gap-1.5 font-semibold text-emerald-600">
+                            <span className="size-2 rounded-full bg-emerald-500" />
+                            Recebidas ({liquidationRate}%)
+                          </span>
+                          <span className="font-bold text-foreground">{BRL(totalReceivedVal)}</span>
+                        </div>
+                        <Progress value={Number(liquidationRate)} className="h-1.5 bg-emerald-500/20 [&>div]:bg-emerald-500" />
+                      </div>
+
+                      <div className="space-y-1">
+                        <div className="flex justify-between text-xs">
+                          <span className="flex items-center gap-1.5 font-semibold text-amber-600">
+                            <span className="size-2 rounded-full bg-amber-500" />
+                            Pendentes ({totalVolume > 0 ? ((totalPendingVal / totalVolume) * 100).toFixed(1) : 0}%)
+                          </span>
+                          <span className="font-bold text-foreground">{BRL(totalPendingVal)}</span>
+                        </div>
+                        <Progress
+                          value={totalVolume > 0 ? (totalPendingVal / totalVolume) * 100 : 0}
+                          className="h-1.5 bg-amber-500/20 [&>div]:bg-amber-500"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <div className="flex justify-between text-xs">
+                          <span className="flex items-center gap-1.5 font-semibold text-rose-600">
+                            <span className="size-2 rounded-full bg-rose-500" />
+                            Vencidas ({overdueRate}%)
+                          </span>
+                          <span className="font-bold text-foreground">{BRL(totalOverdueVal)}</span>
+                        </div>
+                        <Progress value={Number(overdueRate)} className="h-1.5 bg-rose-500/20 [&>div]:bg-rose-500" />
+                      </div>
+                    </div>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* 5. Recent Payments Table */}
+          <Card className="border border-border/80 shadow-card rounded-2xl bg-card overflow-hidden">
+            <CardHeader className="p-5 border-b border-border/60 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div>
+                <CardTitle className="text-base font-bold flex items-center gap-2">
+                  <FileText className="size-4 text-primary" />
+                  Últimas Cobranças
+                </CardTitle>
+                <CardDescription className="text-xs text-muted-foreground mt-0.5">
+                  Extrato com emissão de boletos, visualização direta e disparo via WhatsApp
+                </CardDescription>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                asChild
+                className="rounded-xl h-8 text-xs font-semibold gap-1.5 self-start sm:self-auto border-border/80 hover:bg-muted"
+              >
+                <Link to="/invoices">
+                  <span>Ver todas as faturas</span>
+                  <ArrowRight className="size-3.5" />
+                </Link>
+              </Button>
+            </CardHeader>
+
+            <CardContent className="p-0">
+              {payments.length === 0 ? (
+                <div className="flex flex-col items-center justify-center p-12 text-center space-y-3">
+                  <div className="size-12 rounded-2xl bg-muted/60 flex items-center justify-center text-muted-foreground">
+                    <FileText className="size-6" />
+                  </div>
+                  <p className="font-semibold text-sm text-foreground">Nenhuma cobrança gerada ainda</p>
+                  <p className="text-xs text-muted-foreground max-w-sm">
+                    Gere cobranças e boletos para os seus associados no Asaas para acompanhar as métricas em tempo real.
+                  </p>
+                  <Button size="sm" asChild className="rounded-xl mt-2 text-xs font-bold">
+                    <Link to="/invoices">
+                      <Plus className="size-3.5 mr-1.5" />
+                      Gerar Primeira Cobrança
+                    </Link>
+                  </Button>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm text-left">
+                    <thead className="text-[11px] uppercase tracking-wider text-muted-foreground bg-muted/30 border-b border-border/60 font-semibold">
+                      <tr>
+                        <th className="px-5 py-3">Associado</th>
+                        <th className="px-5 py-3">Descrição</th>
+                        <th className="px-5 py-3">Vencimento</th>
+                        <th className="px-5 py-3">Valor</th>
+                        <th className="px-5 py-3">Status</th>
+                        <th className="px-5 py-3 text-center">Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border/50">
+                      {payments.slice(0, 10).map((p: any) => {
+                        const displayName = p.customerName || p.customer || "Associado";
+                        const initials = displayName
+                          .split(" ")
+                          .filter(Boolean)
+                          .slice(0, 2)
+                          .map((n: string) => n[0]?.toUpperCase())
+                          .join("") || "AS";
+
+                        return (
+                          <tr key={p.id} className="hover:bg-muted/30 transition-colors">
+                            <td className="px-5 py-3.5">
+                              <div className="flex items-center gap-3">
+                                <div className="size-8 rounded-full bg-primary/10 text-primary font-bold text-xs flex items-center justify-center shrink-0">
+                                  {initials}
+                                </div>
+                                <div className="min-w-0">
+                                  <p className="font-bold text-foreground text-xs sm:text-sm truncate max-w-[200px]">
+                                    {displayName}
+                                  </p>
+                                  {(p.customerDocument || p.customer) && (
+                                    <p className="text-[11px] text-muted-foreground font-mono truncate">
+                                      {p.customerDocument || p.customer}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-5 py-3.5 text-xs text-muted-foreground">
+                              <span className="font-medium text-foreground block">{p.description || "Mensalidade"}</span>
+                              <span className="text-[10px] text-muted-foreground/80">{p.billingType || "BOLETO"}</span>
+                            </td>
+                            <td className="px-5 py-3.5 text-xs font-medium text-foreground">
+                              {p.dueDate ? p.dueDate.split("-").reverse().join("/") : "—"}
+                            </td>
+                            <td className="px-5 py-3.5">
+                              <span className="font-extrabold text-foreground text-xs sm:text-sm">{BRL(p.value)}</span>
+                            </td>
+                            <td className="px-5 py-3.5">{getStatusBadge(p.status)}</td>
+                            <td className="px-5 py-3.5 text-center whitespace-nowrap">
+                              <div className="flex items-center justify-center gap-1.5">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="rounded-xl h-8 px-2.5 text-xs font-semibold text-primary border-primary/30 hover:bg-primary/10 hover:text-primary gap-1 shadow-2xs"
+                                  onClick={() => handleViewBoleto(p)}
+                                  title="Ver e abrir boleto"
+                                >
+                                  <FileText className="size-3.5" />
+                                  <span>Boleto</span>
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="rounded-xl h-8 px-2.5 text-xs font-semibold text-emerald-600 border-emerald-300 hover:bg-emerald-500/10 hover:text-emerald-700 hover:border-emerald-400 gap-1 shadow-2xs"
+                                  onClick={() => handleSendWhatsApp(p)}
+                                  title="Enviar fatura via WhatsApp"
+                                >
+                                  <MessageCircle className="size-3.5" />
+                                  <span>WhatsApp</span>
+                                </Button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
                 </div>
               )}
             </CardContent>
