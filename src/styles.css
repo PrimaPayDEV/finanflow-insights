@@ -292,3 +292,55 @@
     page-break-before: always !important;
   }
 }
+
+/* ==========================================================================
+   Sonner Toast Notifications — Universal Close Button & Right Alignment
+   ========================================================================== */
+[data-sonner-toaster] {
+  --toast-close-button-start: unset !important;
+  --toast-close-button-end: 10px !important;
+  --toast-close-button-transform: none !important;
+}
+
+[data-sonner-toast] {
+  padding-right: 42px !important;
+  border-radius: var(--radius-lg) !important;
+}
+
+[data-sonner-toast] [data-close-button] {
+  position: absolute !important;
+  left: auto !important;
+  right: 10px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  height: 22px !important;
+  width: 22px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 9999px !important;
+  opacity: 0.8 !important;
+  cursor: pointer !important;
+  z-index: 20 !important;
+  transition: opacity 0.15s ease, transform 0.15s ease, filter 0.15s ease !important;
+}
+
+[data-sonner-toast]:has([data-description]) [data-close-button] {
+  top: 14px !important;
+  transform: none !important;
+}
+
+[data-sonner-toast] [data-close-button]:hover {
+  opacity: 1 !important;
+  transform: translateY(-50%) scale(1.08) !important;
+  filter: brightness(0.92);
+}
+
+[data-sonner-toast]:has([data-description]) [data-close-button]:hover {
+  transform: scale(1.08) !important;
+}
+
+.dark [data-sonner-toast] [data-close-button]:hover {
+  filter: brightness(1.2);
+}
+
