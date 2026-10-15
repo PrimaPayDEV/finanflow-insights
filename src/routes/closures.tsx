@@ -435,9 +435,11 @@ function RouteComponent() {
                   {(merchants.data ?? []).map((m) => (
                     <SelectItem key={m.id} value={m.id} className="py-2.5">
                       <div className="flex items-center gap-2">
-                        <span className="font-semibold text-foreground">{m.name}</span>
+                        <span className="font-semibold text-foreground group-focus:text-primary-foreground group-data-[highlighted]:text-primary-foreground transition-colors">
+                          {m.name}
+                        </span>
                         {m.document_cnpj && (
-                          <span className="text-[11px] text-muted-foreground font-mono">
+                          <span className="text-[11px] text-muted-foreground group-focus:text-primary-foreground/90 group-data-[highlighted]:text-primary-foreground/90 font-mono transition-colors">
                             • {m.document_cnpj}
                           </span>
                         )}
