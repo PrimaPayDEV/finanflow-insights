@@ -259,11 +259,14 @@ export const generateInvoice = createServerFn({ method: "POST" })
       description: data.description,
     };
 
-    if (partner?.asaas_wallet_id && partner?.split_percent > 0) {
+    const splitPercent = partner?.split_percent ? Number(partner.split_percent) : 0;
+    const walletId = partner?.asaas_wallet_id ? String(partner.asaas_wallet_id).trim() : "";
+
+    if (walletId && !isNaN(splitPercent) && splitPercent > 0) {
       paymentPayload.split = [
         {
-          walletId: partner.asaas_wallet_id,
-          percentValue: Number(partner.split_percent)
+          walletId,
+          percentualValue: Number(splitPercent.toFixed(2)),
         }
       ];
     }

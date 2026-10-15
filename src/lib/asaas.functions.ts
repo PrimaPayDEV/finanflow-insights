@@ -161,10 +161,14 @@ export const createAsaasCharge = createServerFn({ method: "POST" })
               },
             }
           : {}),
-        split: data.splits.map((s) => ({
-          walletId: s.walletId,
-          percentualValue: s.percentualValue,
-        })),
+        ...(data.splits.length > 0
+          ? {
+              split: data.splits.map((s) => ({
+                walletId: s.walletId.trim(),
+                percentualValue: Number(s.percentualValue),
+              })),
+            }
+          : {}),
       }),
     });
     const payment = (await paymentRes.json()) as {
