@@ -27,6 +27,7 @@ import {
   CheckCircle2,
   AlertCircle,
   Wallet,
+  ShieldAlert,
 } from "lucide-react";
 import { toast } from "sonner";
 import { AppLayout } from "@/components/AppLayout";
@@ -91,6 +92,55 @@ import { useAuth } from "@/contexts/AuthContext";
 
 type FeePlan = Database["public"]["Tables"]["fee_plans"]["Row"];
 
+function MiniTrendline({ diffRate }: { diffRate: number }) {
+  if (Math.abs(diffRate) < 0.001) {
+    return (
+      <div className="inline-flex items-center justify-end gap-1.5 text-muted-foreground" title="Sem variação (0.00%)">
+        <svg className="w-12 h-5 overflow-visible" viewBox="0 0 48 20" fill="none">
+          <line x1="2" y1="10" x2="44" y2="10" stroke="currentColor" strokeWidth="2" strokeDasharray="3 3" />
+          <circle cx="44" cy="10" r="2.5" fill="currentColor" />
+        </svg>
+        <span className="text-[11px] font-bold font-mono">—</span>
+      </div>
+    );
+  }
+
+  const isPositive = diffRate > 0;
+  const strokeColor = isPositive ? "#10b981" : "#f43f5e";
+  const fillColor = isPositive ? "rgba(16, 185, 129, 0.15)" : "rgba(244, 63, 94, 0.15)";
+  const pathD = isPositive
+    ? "M 2 15 C 16 15, 24 9, 36 6 L 44 4"
+    : "M 2 5 C 16 5, 24 11, 36 14 L 44 16";
+  const areaD = isPositive
+    ? "M 2 15 C 16 15, 24 9, 36 6 L 44 4 L 44 18 L 2 18 Z"
+    : "M 2 5 C 16 5, 24 11, 36 14 L 44 16 L 44 18 L 2 18 Z";
+  const endY = isPositive ? 4 : 16;
+
+  return (
+    <div
+      className={`inline-flex items-center justify-end gap-1 ${
+        isPositive ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"
+      }`}
+      title={`Variação: ${isPositive ? "+" : ""}${diffRate.toFixed(2)}% (${isPositive ? "pra mais" : "pra menos"})`}
+    >
+      <svg className="w-12 h-5 overflow-visible" viewBox="0 0 48 20" fill="none">
+        <path d={areaD} fill={fillColor} />
+        <path
+          d={pathD}
+          stroke={strokeColor}
+          strokeWidth="2.2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <circle cx="44" cy={endY} r="2.5" fill={strokeColor} />
+      </svg>
+      <span className="text-[11px] font-bold font-mono">
+        {isPositive ? "↗" : "↘"}
+      </span>
+    </div>
+  );
+}
+
 export const Route = createFileRoute("/closures")({
   head: () => ({
     meta: [
@@ -119,6 +169,7 @@ function RouteComponent() {
   const [merchantId, setMerchantId] = useState("");
   const [month, setMonth] = useState(currentMonth());
   const [isConfigOpen, setIsConfigOpen] = useState(false);
+  const [reportMode, setReportMode] = useState<"client" | "internal">("client");
 
   const merchant = (merchants.data ?? []).find((m) => m.id === merchantId);
   const plan = (plans.data ?? []).find((p) => p.merchant_id === merchantId);
@@ -200,6 +251,7 @@ function RouteComponent() {
     let totalGross = 0;
     let totalDiscounted = 0;
     let totalOpValue = 0;
+    let totalExpectedDiscount = 0;
 
     for (const tx of txs) {
       const gross = Number(tx.gross_amount);
@@ -216,13 +268,19 @@ function RouteComponent() {
       const opRate = Math.max(0, maxDiscountRate - tradRate);
       const opValue = gross * (opRate / 100);
 
+      const expectedRate = getModalityRate(tx, plan);
+      const expectedValue = gross * (expectedRate / 100);
+
       totalGross += gross;
       totalDiscounted += discountedValue;
       totalOpValue += opValue;
+      totalExpectedDiscount += expectedValue;
     }
 
     const avgDiscountRate = totalGross > 0 ? (totalDiscounted / totalGross) * 100 : 0;
     const avgOpRate = totalGross > 0 ? (totalOpValue / totalGross) * 100 : 0;
+    const avgExpectedRate = totalGross > 0 ? (totalExpectedDiscount / totalGross) * 100 : 0;
+    const avgDiffRate = avgDiscountRate - avgExpectedRate;
 
     return {
       totalGross,
@@ -230,6 +288,9 @@ function RouteComponent() {
       totalOpValue,
       avgDiscountRate,
       avgOpRate,
+      totalExpectedDiscount,
+      avgExpectedRate,
+      avgDiffRate,
     };
   }, [txs, plan]);
 
@@ -307,8 +368,30 @@ function RouteComponent() {
     onError: (e: Error) => toast.error(translateError(e.message)),
   });
 
-  const handlePrint = () => {
-    window.print();
+  const handlePrintClient = () => {
+    setReportMode("client");
+    const originalTitle = document.title;
+    const safeMerchantName = merchant?.name ? merchant.name.replace(/[^a-zA-Z0-9_-]/g, "_") : "EC";
+    document.title = `Fechamento_Cliente_${safeMerchantName}_${month}`;
+    setTimeout(() => {
+      window.print();
+      setTimeout(() => {
+        document.title = originalTitle;
+      }, 1000);
+    }, 150);
+  };
+
+  const handlePrintInternal = () => {
+    setReportMode("internal");
+    const originalTitle = document.title;
+    const safeMerchantName = merchant?.name ? merchant.name.replace(/[^a-zA-Z0-9_-]/g, "_") : "EC";
+    document.title = `Fechamento_Interno_${safeMerchantName}_${month}`;
+    setTimeout(() => {
+      window.print();
+      setTimeout(() => {
+        document.title = originalTitle;
+      }, 1000);
+    }, 150);
   };
 
   return (
@@ -411,9 +494,25 @@ function RouteComponent() {
                 )}
               </SheetContent>
             </Sheet>
-            <Button variant="outline" size="sm" onClick={handlePrint} className="gap-1.5 shadow-2xs font-medium">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handlePrintClient}
+              className="gap-1.5 shadow-2xs font-medium"
+              title="Exportar PDF para enviar ao cliente"
+            >
               <Download className="size-3.5" />
-              <span>Exportar PDF</span>
+              <span>Exportar PDF (Cliente)</span>
+            </Button>
+            <Button
+              variant="default"
+              size="sm"
+              onClick={handlePrintInternal}
+              className="gap-1.5 shadow-2xs font-medium bg-amber-600 hover:bg-amber-700 text-white border-0 shadow-amber-500/20"
+              title="Exportar relatório de auditoria para uso interno"
+            >
+              <ShieldAlert className="size-3.5" />
+              <span>Exportar PDF (Uso Interno)</span>
             </Button>
           </div>
         ) : undefined
@@ -501,9 +600,16 @@ function RouteComponent() {
                 ========================================================================= */}
             <div className="hidden print:block border-b-2 border-primary/20 pb-3">
               <div className="flex justify-between items-center mb-2.5">
-                <h1 className="text-2xl font-black text-primary tracking-tight uppercase">
-                  Relatório de Fechamento
-                </h1>
+                <div className="flex items-center gap-2">
+                  <h1 className="text-2xl font-black text-primary tracking-tight uppercase">
+                    {reportMode === "internal" ? "Relatório de Fechamento (Auditoria Interna)" : "Relatório de Fechamento"}
+                  </h1>
+                  {reportMode === "internal" && (
+                    <span className="text-[10px] bg-amber-500/15 text-amber-800 dark:text-amber-300 font-bold px-2 py-0.5 rounded border border-amber-500/30 uppercase tracking-wider">
+                      Uso Interno
+                    </span>
+                  )}
+                </div>
                 <div className="text-right">
                   <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Período</p>
                   <p className="text-base font-bold text-foreground capitalize">{monthLabel(month)}</p>
@@ -787,23 +893,72 @@ function RouteComponent() {
               <div className="flex items-center gap-2">
                 <span className="font-bold text-foreground uppercase">{merchant.name}</span>
                 {merchant.document_cnpj && <span className="text-muted-foreground font-mono">• {merchant.document_cnpj}</span>}
+                {reportMode === "internal" && (
+                  <span className="text-[9px] bg-amber-500/15 text-amber-800 font-bold px-1.5 py-0.5 rounded border border-amber-500/30 uppercase">
+                    Auditoria Interna
+                  </span>
+                )}
               </div>
               <div className="font-semibold text-muted-foreground capitalize">
                 Fechamento de {monthLabel(month)}
               </div>
             </div>
 
-            <div className="flex items-center justify-between print:mb-2 print:break-after-avoid">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 print:mb-2 print:break-after-avoid">
               <div className="flex items-center gap-2">
                 <Banknote className="size-5 text-primary" />
                 <h2 className="text-lg font-bold tracking-tight text-foreground">
                   Relatório Detalhado de Vendas
                 </h2>
+                {reportMode === "internal" && (
+                  <Badge variant="outline" className="text-[11px] font-semibold text-amber-600 dark:text-amber-400 border-amber-500/30 bg-amber-500/10">
+                    Uso Interno
+                  </Badge>
+                )}
               </div>
-              <Badge variant="secondary" className="font-mono text-xs">
-                {txs.length} {txs.length === 1 ? "venda" : "vendas"}
-              </Badge>
+
+              <div className="flex items-center gap-3">
+                {/* Alternância em tela (Visão Cliente vs Auditoria Interna) */}
+                <div className="flex items-center rounded-lg border border-border/80 bg-muted/40 p-0.5 text-xs print:hidden shadow-2xs">
+                  <button
+                    type="button"
+                    onClick={() => setReportMode("client")}
+                    className={`px-3 py-1 rounded-md font-medium transition-all ${
+                      reportMode === "client"
+                        ? "bg-background text-foreground shadow-xs font-semibold"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    Visão Cliente
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setReportMode("internal")}
+                    className={`px-3 py-1 rounded-md font-medium transition-all ${
+                      reportMode === "internal"
+                        ? "bg-amber-500/15 text-amber-700 dark:text-amber-300 shadow-xs font-semibold"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    Auditoria Interna
+                  </button>
+                </div>
+                <Badge variant="secondary" className="font-mono text-xs">
+                  {txs.length} {txs.length === 1 ? "venda" : "vendas"}
+                </Badge>
+              </div>
             </div>
+
+            {reportMode === "internal" && (
+              <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2 print:hidden">
+                <div className="flex items-center gap-2">
+                  <ShieldAlert className="size-4 text-amber-600 shrink-0" />
+                  <span>
+                    <strong>Modo Auditoria Interna ativo:</strong> As colunas de Taxa Operacional foram substituídas pela Linha de Tendência e Equação de Desvio de Taxa (<code>% Descontado - % Esperado</code>).
+                  </span>
+                </div>
+              </div>
+            )}
 
             <Card className="rounded-2xl border border-border/80 shadow-card bg-card overflow-hidden print:overflow-visible print:border print:border-border/60 print:shadow-none print:rounded-xl">
               <CardContent className="p-0 print:overflow-visible">
@@ -816,8 +971,17 @@ function RouteComponent() {
                         <TableHead className="text-right font-semibold text-xs print:py-1.5 print:px-2 print:text-foreground">Vlr. Bruto</TableHead>
                         <TableHead className="text-right font-semibold text-xs print:py-1.5 print:px-2 print:text-foreground">Vlr. Descontado</TableHead>
                         <TableHead className="text-right font-semibold text-xs print:py-1.5 print:px-2 print:text-foreground">% Descontado</TableHead>
-                        <TableHead className="text-right font-semibold text-xs print:py-1.5 print:px-2 print:text-foreground">% Taxa Op.</TableHead>
-                        <TableHead className="text-right font-semibold text-xs print:py-1.5 print:px-2 print:text-foreground">Vlr. Taxa Op.</TableHead>
+                        {reportMode === "internal" ? (
+                          <>
+                            <TableHead className="text-right font-semibold text-xs print:py-1.5 print:px-2 print:text-foreground">Tendência</TableHead>
+                            <TableHead className="text-right font-semibold text-xs print:py-1.5 print:px-2 print:text-foreground">Diferença (% Desc. - % Esperado)</TableHead>
+                          </>
+                        ) : (
+                          <>
+                            <TableHead className="text-right font-semibold text-xs print:py-1.5 print:px-2 print:text-foreground">% Taxa Op.</TableHead>
+                            <TableHead className="text-right font-semibold text-xs print:py-1.5 print:px-2 print:text-foreground">Vlr. Taxa Op.</TableHead>
+                          </>
+                        )}
                       </TableRow>
                     </TableHeader>
                     <TableBody className="print:table-row-group">
@@ -845,6 +1009,9 @@ function RouteComponent() {
                           const opRate = Math.max(0, maxDiscountRate - tradRate);
                           const opValue = gross * (opRate / 100);
 
+                          const expectedRate = getModalityRate(tx, plan);
+                          const diffRate = tradRate - expectedRate;
+
                           return (
                             <TableRow key={tx.id} className="hover:bg-muted/30 transition-colors print:table-row print:break-inside-avoid print:page-break-inside-avoid">
                               <TableCell className="font-medium whitespace-nowrap text-xs font-mono print:py-1.5 print:px-2">
@@ -862,12 +1029,38 @@ function RouteComponent() {
                               <TableCell className="text-right text-muted-foreground text-xs font-mono print:py-1.5 print:px-2">
                                 {tradRate.toFixed(2)}%
                               </TableCell>
-                              <TableCell className="text-right font-medium text-xs font-mono print:py-1.5 print:px-2">
-                                {opRate.toFixed(2)}%
-                              </TableCell>
-                              <TableCell className="text-right font-bold text-primary text-xs font-mono print:py-1.5 print:px-2">
-                                {BRL(opValue)}
-                              </TableCell>
+                              {reportMode === "internal" ? (
+                                <>
+                                  <TableCell className="text-right print:py-1.5 print:px-2">
+                                    <MiniTrendline diffRate={diffRate} />
+                                  </TableCell>
+                                  <TableCell
+                                    className={`text-right font-bold text-xs font-mono print:py-1.5 print:px-2 ${
+                                      diffRate > 0.001
+                                        ? "text-emerald-600 dark:text-emerald-400"
+                                        : diffRate < -0.001
+                                        ? "text-rose-600 dark:text-rose-400"
+                                        : "text-muted-foreground"
+                                    }`}
+                                  >
+                                    <div className="flex flex-col items-end">
+                                      <span>{diffRate > 0 ? `+${diffRate.toFixed(2)}%` : `${diffRate.toFixed(2)}%`}</span>
+                                      <span className="text-[10px] font-normal text-muted-foreground">
+                                        ({tradRate.toFixed(2)}% - {expectedRate.toFixed(2)}%)
+                                      </span>
+                                    </div>
+                                  </TableCell>
+                                </>
+                              ) : (
+                                <>
+                                  <TableCell className="text-right font-medium text-xs font-mono print:py-1.5 print:px-2">
+                                    {opRate.toFixed(2)}%
+                                  </TableCell>
+                                  <TableCell className="text-right font-bold text-primary text-xs font-mono print:py-1.5 print:px-2">
+                                    {BRL(opValue)}
+                                  </TableCell>
+                                </>
+                              )}
                             </TableRow>
                           );
                         })
@@ -888,12 +1081,42 @@ function RouteComponent() {
                           <TableCell className="text-right font-bold text-muted-foreground font-mono text-xs print:py-2 print:px-2">
                             {totalsDetailed.avgDiscountRate.toFixed(2)}%
                           </TableCell>
-                          <TableCell className="text-right font-bold font-mono text-xs print:py-2 print:px-2">
-                            {totalsDetailed.avgOpRate.toFixed(2)}%
-                          </TableCell>
-                          <TableCell className="text-right font-black text-primary text-sm font-mono print:py-2 print:px-2">
-                            {BRL(totalsDetailed.totalOpValue)}
-                          </TableCell>
+                          {reportMode === "internal" ? (
+                            <>
+                              <TableCell className="text-right print:py-2 print:px-2">
+                                <MiniTrendline diffRate={totalsDetailed.avgDiffRate} />
+                              </TableCell>
+                              <TableCell
+                                className={`text-right font-black text-xs font-mono print:py-2 print:px-2 ${
+                                  totalsDetailed.avgDiffRate > 0.001
+                                    ? "text-emerald-600 dark:text-emerald-400"
+                                    : totalsDetailed.avgDiffRate < -0.001
+                                    ? "text-rose-600 dark:text-rose-400"
+                                    : "text-muted-foreground"
+                                }`}
+                              >
+                                <div className="flex flex-col items-end">
+                                  <span>
+                                    {totalsDetailed.avgDiffRate > 0
+                                      ? `+${totalsDetailed.avgDiffRate.toFixed(2)}%`
+                                      : `${totalsDetailed.avgDiffRate.toFixed(2)}%`}
+                                  </span>
+                                  <span className="text-[10px] font-medium opacity-80">
+                                    ({totalsDetailed.avgDiscountRate.toFixed(2)}% - {totalsDetailed.avgExpectedRate.toFixed(2)}%)
+                                  </span>
+                                </div>
+                              </TableCell>
+                            </>
+                          ) : (
+                            <>
+                              <TableCell className="text-right font-bold font-mono text-xs print:py-2 print:px-2">
+                                {totalsDetailed.avgOpRate.toFixed(2)}%
+                              </TableCell>
+                              <TableCell className="text-right font-black text-primary text-sm font-mono print:py-2 print:px-2">
+                                {BRL(totalsDetailed.totalOpValue)}
+                              </TableCell>
+                            </>
+                          )}
                         </TableRow>
                       </TableFooter>
                     )}
