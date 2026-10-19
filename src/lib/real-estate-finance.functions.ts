@@ -1,5 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { format, parseISO } from "date-fns";
+import { getNextBusinessDay } from "./dateUtils";
 
 const generateChargeSchema = z.object({
   companyId: z.string().uuid(),
@@ -95,12 +97,13 @@ export const generateRentCharge = createServerFn({ method: "POST" })
       });
     }
 
-    // 6. Create Charge in Asaas
+    // 6. Create Charge in Asaas (adjusted to next business day if weekend or holiday)
+    const effectiveDueDate = format(getNextBusinessDay(parseISO(data.dueDate)), "yyyy-MM-dd");
     const chargePayload = {
       customer: customerId,
       billingType: "UNDEFINED", // Let customer choose (BOLETO or PIX)
       value: grossAmount,
-      dueDate: data.dueDate,
+      dueDate: effectiveDueDate,
       description: `Aluguel + Encargos | Ref: ${data.competence} | Imóvel ID: ${contract.property_id}`,
       split: splits.length > 0 ? splits : undefined,
     };
@@ -124,7 +127,7 @@ export const generateRentCharge = createServerFn({ method: "POST" })
       owner_id: contract.owner_id,
       tenant_id: contract.tenant_id,
       competence: data.competence,
-      due_date: data.dueDate,
+      due_date: effectiveDueDate,
       gross_amount: grossAmount,
       admin_fee_amount: adminFeeAmount,
       platform_fee_amount: platformFeeAmount,

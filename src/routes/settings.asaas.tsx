@@ -191,6 +191,7 @@ function AsaasSettingsPage() {
                 value={form.due_day}
                 onChange={(v) => setForm({ ...form, due_day: Number(v) })}
                 type="number"
+                hint="Se cair em fim de semana ou feriado, prorroga automaticamente para o próximo dia útil."
               />
               <Field
                 label="Multa após vencimento (%)"
@@ -346,16 +347,19 @@ function Field({
   value,
   onChange,
   type = "text",
+  hint,
 }: {
   label: string;
   value: string | number;
   onChange: (v: string) => void;
   type?: string;
+  hint?: string;
 }) {
   return (
     <div className="space-y-1.5">
       <Label className="text-xs font-semibold text-muted-foreground">{label}</Label>
       <Input type={type} value={value} onChange={(e) => onChange(e.target.value)} className="bg-background rounded-xl" />
+      {hint && <p className="text-[11px] text-muted-foreground leading-tight">{hint}</p>}
     </div>
   );
 }

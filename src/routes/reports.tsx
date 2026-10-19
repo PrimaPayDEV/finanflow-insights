@@ -543,14 +543,24 @@ function ReportsPage() {
                                 <TableCell className="py-5">
                                   <div className={!newDueDate && isBefore(dueDate, today) && status !== "paid" ? "text-destructive font-medium flex items-center justify-center gap-2.5" : "flex items-center justify-center gap-2.5"}>
                                     {!newDueDate && isBefore(dueDate, today) && status !== "paid" ? <AlertCircle className="w-4 h-4 shrink-0" /> : <CalendarDays className="w-4 h-4 text-muted-foreground shrink-0" />}
-                                    <span className={newDueDate ? "line-through text-muted-foreground opacity-70" : ""}>{format(dueDate, "dd/MM/yyyy")}</span>
+                                    <span
+                                      className={newDueDate ? "line-through text-muted-foreground opacity-70" : ""}
+                                      title={dueDate.getDate() !== dueDay ? "Vencimento ajustado para o próximo dia útil (fim de semana ou feriado)" : undefined}
+                                    >
+                                      {format(dueDate, "dd/MM/yyyy")}
+                                    </span>
                                   </div>
                                 </TableCell>
                                 <TableCell className="py-5">
                                   {newDueDate ? (
                                     <div className={isBefore(newDueDate, today) && status !== "paid" ? "text-destructive font-medium flex items-center justify-center gap-2.5" : "flex items-center justify-center gap-2.5"}>
                                       {isBefore(newDueDate, today) && status !== "paid" ? <AlertCircle className="w-4 h-4 shrink-0" /> : <CalendarDays className="w-4 h-4 text-muted-foreground shrink-0" />}
-                                      <span className="font-bold text-primary">{format(newDueDate, "dd/MM/yyyy")}</span>
+                                      <span
+                                        className="font-bold text-primary"
+                                        title={newDueDate.getDate() !== dueDay ? "Vencimento ajustado para o próximo dia útil (fim de semana ou feriado)" : undefined}
+                                      >
+                                        {format(newDueDate, "dd/MM/yyyy")}
+                                      </span>
                                     </div>
                                   ) : (
                                     <div className="flex items-center justify-center text-muted-foreground/50">-</div>

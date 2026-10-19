@@ -1,5 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { addDays, format, parseISO } from "date-fns";
+import { getNextBusinessDay } from "./dateUtils";
 
 const memberSchema = z.object({
   id: z.string().uuid().optional(),
@@ -252,7 +254,8 @@ export const generateInvoice = createServerFn({ method: "POST" })
         }
     }
 
-    const dueDate = data.dueDate || new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    const targetDate = data.dueDate ? parseISO(data.dueDate) : addDays(new Date(), 5);
+    const dueDate = format(getNextBusinessDay(targetDate), "yyyy-MM-dd");
     
     let partner = Array.isArray(member.partners) ? member.partners[0] : (member.partners as any);
     if (!partner && member.partner_id) {

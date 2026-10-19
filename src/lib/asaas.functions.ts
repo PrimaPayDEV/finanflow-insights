@@ -61,10 +61,10 @@ export const checkAsaasConfigured = createServerFn({ method: "GET" })
     };
   });
 
-import { getNextBusinessDueDate } from "./dateUtils";
+import { getNextBusinessDueDate, formatNextBusinessDueDate } from "./dateUtils";
 
 function nextDueDate(dueDay: number) {
-  return getNextBusinessDueDate(new Date(), dueDay).toISOString().slice(0, 10);
+  return formatNextBusinessDueDate(new Date(), dueDay);
 }
 
 export const createAsaasCharge = createServerFn({ method: "POST" })
