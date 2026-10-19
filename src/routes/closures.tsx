@@ -95,12 +95,12 @@ type FeePlan = Database["public"]["Tables"]["fee_plans"]["Row"];
 function MiniTrendline({ diffRate }: { diffRate: number }) {
   if (Math.abs(diffRate) < 0.001) {
     return (
-      <div className="inline-flex items-center justify-end gap-1.5 text-muted-foreground" title="Sem variação (0.00%)">
-        <svg className="w-12 h-5 overflow-visible" viewBox="0 0 48 20" fill="none">
+      <div className="inline-flex items-center justify-end gap-1 text-muted-foreground" title="Sem variação (0.00%)">
+        <svg className="w-10 h-4 print:w-7 print:h-2.5 overflow-visible" viewBox="0 0 48 20" fill="none">
           <line x1="2" y1="10" x2="44" y2="10" stroke="currentColor" strokeWidth="2" strokeDasharray="3 3" />
           <circle cx="44" cy="10" r="2.5" fill="currentColor" />
         </svg>
-        <span className="text-[11px] font-bold font-mono">—</span>
+        <span className="text-[11px] print:text-[8px] font-bold font-mono">—</span>
       </div>
     );
   }
@@ -123,7 +123,7 @@ function MiniTrendline({ diffRate }: { diffRate: number }) {
       }`}
       title={`Variação: ${isPositive ? "+" : ""}${diffRate.toFixed(2)}% (${isPositive ? "pra mais" : "pra menos"})`}
     >
-      <svg className="w-12 h-5 overflow-visible" viewBox="0 0 48 20" fill="none">
+      <svg className="w-10 h-4 print:w-7 print:h-2.5 overflow-visible" viewBox="0 0 48 20" fill="none">
         <path d={areaD} fill={fillColor} />
         <path
           d={pathD}
@@ -134,7 +134,7 @@ function MiniTrendline({ diffRate }: { diffRate: number }) {
         />
         <circle cx="44" cy={endY} r="2.5" fill={strokeColor} />
       </svg>
-      <span className="text-[11px] font-bold font-mono">
+      <span className="text-[11px] print:text-[8px] font-bold font-mono">
         {isPositive ? "↗" : "↘"}
       </span>
     </div>
@@ -638,75 +638,75 @@ function RouteComponent() {
             {/* =========================================================================
                 SEÇÃO 1: EXTRATO BÁSICO DE MOVIMENTAÇÕES
                 ========================================================================= */}
-            <section className="space-y-2.5 print:space-y-2 print:break-inside-avoid">
+            <section className="space-y-2.5 print:space-y-1.5 print:break-inside-avoid">
               <div className="flex items-center gap-1.5">
                 <TrendingUp className="size-4 text-primary" />
-                <h2 className="text-base font-bold tracking-tight text-foreground print:text-sm">
+                <h2 className="text-base font-bold tracking-tight text-foreground print:text-xs">
                   Extrato Básico de Movimentações
                 </h2>
               </div>
 
               {/* Demonstrando o valor recebido em cada operação */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 print:grid-cols-4 print:gap-2.5">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 print:grid-cols-4 print:gap-2">
                 {/* PIX */}
-                <Card className="rounded-xl border border-border/80 shadow-card bg-card overflow-hidden hover:border-emerald-500/40 transition-colors p-3.5 print:p-3 print:shadow-none">
+                <Card className="rounded-xl border border-border/80 shadow-card bg-card overflow-hidden hover:border-emerald-500/40 transition-colors p-3.5 print:p-2 print:shadow-none">
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs font-bold text-muted-foreground uppercase tracking-wide print:text-[10px]">
+                    <span className="text-xs font-bold text-muted-foreground uppercase tracking-wide print:text-[8.5px]">
                       Pix
                     </span>
-                    <Sparkles className="size-3.5 text-emerald-500" />
+                    <Sparkles className="size-3.5 text-emerald-500 print:size-3" />
                   </div>
-                  <p className="text-xl sm:text-2xl font-black text-foreground font-mono print:text-lg">
+                  <p className="text-xl sm:text-2xl font-black text-foreground font-mono print:text-sm">
                     {BRL(calc.grossByModality.pix)}
                   </p>
                 </Card>
 
                 {/* DÉBITO */}
-                <Card className="rounded-xl border border-border/80 shadow-card bg-card overflow-hidden hover:border-blue-500/40 transition-colors p-3.5 print:p-3 print:shadow-none">
+                <Card className="rounded-xl border border-border/80 shadow-card bg-card overflow-hidden hover:border-blue-500/40 transition-colors p-3.5 print:p-2 print:shadow-none">
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs font-bold text-muted-foreground uppercase tracking-wide print:text-[10px]">
+                    <span className="text-xs font-bold text-muted-foreground uppercase tracking-wide print:text-[8.5px]">
                       Débito
                     </span>
-                    <CreditCard className="size-3.5 text-blue-500" />
+                    <CreditCard className="size-3.5 text-blue-500 print:size-3" />
                   </div>
-                  <p className="text-xl sm:text-2xl font-black text-foreground font-mono print:text-lg">
+                  <p className="text-xl sm:text-2xl font-black text-foreground font-mono print:text-sm">
                     {BRL(calc.grossByModality.debit)}
                   </p>
                 </Card>
 
                 {/* CRÉDITO À VISTA */}
-                <Card className="rounded-xl border border-border/80 shadow-card bg-card overflow-hidden hover:border-violet-500/40 transition-colors p-3.5 print:p-3 print:shadow-none">
+                <Card className="rounded-xl border border-border/80 shadow-card bg-card overflow-hidden hover:border-violet-500/40 transition-colors p-3.5 print:p-2 print:shadow-none">
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs font-bold text-muted-foreground uppercase tracking-wide print:text-[10px]">
+                    <span className="text-xs font-bold text-muted-foreground uppercase tracking-wide print:text-[8.5px]">
                       Crédito à Vista
                     </span>
-                    <CreditCard className="size-3.5 text-violet-500" />
+                    <CreditCard className="size-3.5 text-violet-500 print:size-3" />
                   </div>
-                  <p className="text-xl sm:text-2xl font-black text-foreground font-mono print:text-lg">
+                  <p className="text-xl sm:text-2xl font-black text-foreground font-mono print:text-sm">
                     {BRL(calc.grossByModality.credit_vista)}
                   </p>
                 </Card>
 
                 {/* CRÉDITO PARCELADO */}
-                <Card className="rounded-xl border border-border/80 shadow-card bg-card overflow-hidden hover:border-primary/40 transition-colors p-3.5 print:p-3 print:shadow-none">
+                <Card className="rounded-xl border border-border/80 shadow-card bg-card overflow-hidden hover:border-primary/40 transition-colors p-3.5 print:p-2 print:shadow-none">
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs font-bold text-muted-foreground uppercase tracking-wide print:text-[10px]">
+                    <span className="text-xs font-bold text-muted-foreground uppercase tracking-wide print:text-[8.5px]">
                       Créd. Parcelado
                     </span>
-                    <Layers className="size-3.5 text-primary" />
+                    <Layers className="size-3.5 text-primary print:size-3" />
                   </div>
-                  <p className="text-xl sm:text-2xl font-black text-foreground font-mono print:text-lg">
+                  <p className="text-xl sm:text-2xl font-black text-foreground font-mono print:text-sm">
                     {BRL(calc.grossByModality.credit_installment)}
                   </p>
                 </Card>
               </div>
 
               {/* Destacando o Faturamento Total Bruto */}
-              <Card className="rounded-xl border border-primary/20 bg-gradient-to-r from-primary/5 via-primary/2 to-transparent shadow-card text-center py-3.5 px-4 print:shadow-none print:py-2.5 print:px-4">
-                <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest block mb-0.5 print:text-[10px]">
+              <Card className="rounded-xl border border-primary/20 bg-gradient-to-r from-primary/5 via-primary/2 to-transparent shadow-card text-center py-3.5 px-4 print:shadow-none print:py-1.5 print:px-3">
+                <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest block mb-0.5 print:text-[8.5px]">
                   Faturamento Total Bruto
                 </span>
-                <p className="text-3xl sm:text-4xl font-black text-primary tracking-tight font-mono print:text-2xl">
+                <p className="text-3xl sm:text-4xl font-black text-primary tracking-tight font-mono print:text-lg">
                   {BRL(calc.totalGross)}
                 </p>
               </Card>
@@ -715,21 +715,21 @@ function RouteComponent() {
             {/* =========================================================================
                 SEÇÃO 2: LANÇAMENTOS DO MÊS (COBRANÇAS E DEDUÇÕES)
                 ========================================================================= */}
-            <section className="space-y-2.5 print:space-y-2 print:break-inside-avoid">
+            <section className="space-y-2.5 print:space-y-1.5 print:break-inside-avoid">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5">
                   <Receipt className="size-4 text-primary" />
-                  <h2 className="text-base font-bold tracking-tight text-foreground print:text-sm">
+                  <h2 className="text-base font-bold tracking-tight text-foreground print:text-xs">
                     Lançamentos (Cobranças e Deduções)
                   </h2>
                 </div>
                 <div className="flex items-center gap-2">
                   {calc.terminalSummary.totalTerminals > 0 && (
-                    <Badge variant="outline" className="text-[10px] font-semibold border-primary/30 bg-primary/5 text-primary">
+                    <Badge variant="outline" className="text-[10px] print:text-[8px] font-semibold border-primary/30 bg-primary/5 text-primary">
                       {calc.terminalSummary.exemptTerminals} de {calc.terminalSummary.totalTerminals} {calc.terminalSummary.totalTerminals === 1 ? "máquina isenta" : "máquinas isentas"}
                     </Badge>
                   )}
-                  <Badge variant="secondary" className="font-mono text-xs print:text-[10px] print:h-5">
+                  <Badge variant="secondary" className="font-mono text-xs print:text-[8px] print:h-4">
                     {displayExpenses.length} {displayExpenses.length === 1 ? "lançamento" : "lançamentos"}
                   </Badge>
                 </div>
@@ -741,55 +741,55 @@ function RouteComponent() {
                     <Table className="print:w-full">
                       <TableHeader className="bg-muted/40 print:table-header-group">
                         <TableRow className="print:table-row">
-                          <TableHead className="font-semibold text-xs py-2 print:py-1.5 print:px-3 w-40">Categoria</TableHead>
-                          <TableHead className="font-semibold text-xs py-2 print:py-1.5 print:px-3">Descrição</TableHead>
-                          <TableHead className="text-right font-semibold text-xs py-2 print:py-1.5 print:px-3 w-48">Impacto no Boleto (R$)</TableHead>
+                          <TableHead className="font-semibold text-xs print:text-[8.5px] py-2 print:py-0.5 print:px-2 w-40">Categoria</TableHead>
+                          <TableHead className="font-semibold text-xs print:text-[8.5px] py-2 print:py-0.5 print:px-2">Descrição</TableHead>
+                          <TableHead className="text-right font-semibold text-xs print:text-[8.5px] py-2 print:py-0.5 print:px-2 w-48">Impacto no Boleto (R$)</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody className="print:table-row-group">
                         {displayExpenses.length === 0 ? (
                           <TableRow className="print:table-row">
-                            <TableCell colSpan={3} className="py-3 text-center text-muted-foreground text-xs italic print:py-2">
+                            <TableCell colSpan={3} className="py-3 text-center text-muted-foreground text-xs print:text-[8.5px] italic print:py-1">
                               Nenhum lançamento extra registrado para este mês.
                             </TableCell>
                           </TableRow>
                         ) : (
                           displayExpenses.map((exp) => (
                             <TableRow key={exp.id} className="hover:bg-muted/30 transition-colors print:table-row print:break-inside-avoid">
-                              <TableCell className="py-1.5 print:py-1 print:px-3">
+                              <TableCell className="py-1.5 print:py-0.5 print:px-2">
                                 {exp.isExempt ? (
                                   <Badge
                                     variant="outline"
-                                    className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full text-emerald-600 border-emerald-500/30 bg-emerald-500/10"
+                                    className="text-[10px] print:text-[7.5px] uppercase font-bold px-2 py-0.5 print:px-1.5 print:py-0 rounded-full text-emerald-600 border-emerald-500/30 bg-emerald-500/10"
                                   >
                                     <span className="flex items-center gap-1">
-                                      <Sparkles className="size-3" /> Isenção (Meta)
+                                      <Sparkles className="size-3 print:size-2.5" /> Isenção (Meta)
                                     </span>
                                   </Badge>
                                 ) : exp.category === "cobranca" ? (
                                   <Badge
                                     variant="outline"
-                                    className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full text-emerald-600 border-emerald-500/30 bg-emerald-500/10"
+                                    className="text-[10px] print:text-[7.5px] uppercase font-bold px-2 py-0.5 print:px-1.5 print:py-0 rounded-full text-emerald-600 border-emerald-500/30 bg-emerald-500/10"
                                   >
                                     <span className="flex items-center gap-1">
-                                      <ArrowDownRight className="size-3" /> Dedução (-)
+                                      <ArrowDownRight className="size-3 print:size-2.5" /> Dedução (-)
                                     </span>
                                   </Badge>
                                 ) : (
                                   <Badge
                                     variant="destructive"
-                                    className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full"
+                                    className="text-[10px] print:text-[7.5px] uppercase font-bold px-2 py-0.5 print:px-1.5 print:py-0 rounded-full"
                                   >
                                     <span className="flex items-center gap-1">
-                                      <ArrowUpRight className="size-3" /> Cobrança (+)
+                                      <ArrowUpRight className="size-3 print:size-2.5" /> Cobrança (+)
                                     </span>
                                   </Badge>
                                 )}
                               </TableCell>
-                              <TableCell className="font-medium text-xs text-foreground py-1.5 print:py-1 print:px-3">
+                              <TableCell className="font-medium text-xs print:text-[8.5px] text-foreground py-1.5 print:py-0.5 print:px-2">
                                 {exp.description}
                               </TableCell>
-                              <TableCell className="text-right font-bold font-mono text-xs py-1.5 print:py-1 print:px-3">
+                              <TableCell className="text-right font-bold font-mono text-xs print:text-[8.5px] py-1.5 print:py-0.5 print:px-2">
                                 {exp.isExempt ? (
                                   <span className="text-emerald-600 dark:text-emerald-400 font-bold">
                                     R$ 0,00 (Isento)
@@ -814,10 +814,10 @@ function RouteComponent() {
                       {displayExpenses.length > 0 && (
                         <TableFooter className="bg-muted/40 font-bold border-t print:table-footer-group">
                           <TableRow className="print:table-row">
-                            <TableCell colSpan={2} className="text-xs font-bold py-1.5 print:py-1 print:px-3 text-muted-foreground">
+                            <TableCell colSpan={2} className="text-xs print:text-[8.5px] font-bold py-1.5 print:py-0.5 print:px-2 text-muted-foreground">
                               Subtotal de Lançamentos ({displayExpenses.length} {displayExpenses.length === 1 ? "item" : "itens"}):
                             </TableCell>
-                            <TableCell className="text-right font-black font-mono text-xs py-1.5 print:py-1 print:px-3">
+                            <TableCell className="text-right font-black font-mono text-xs print:text-[8.5px] py-1.5 print:py-0.5 print:px-2">
                               <span className={totalExpensesSum <= 0 ? "text-emerald-600" : "text-foreground"}>
                                 {totalExpensesSum > 0 ? "+" : ""} {BRL(totalExpensesSum)}
                               </span>
@@ -834,48 +834,48 @@ function RouteComponent() {
             {/* =========================================================================
                 SEÇÃO 3: COMPARATIVO E ECONOMIA GERADA PELA NOSSA SOLUÇÃO (MAIOR DESTAQUE)
                 ========================================================================= */}
-            <section className="space-y-3 print:space-y-2.5 print:break-inside-avoid">
+            <section className="space-y-3 print:space-y-1.5 print:break-inside-avoid">
               <div className="flex items-center gap-1.5">
                 <TrendingUp className="size-4 text-primary" />
-                <h2 className="text-base font-bold tracking-tight text-foreground print:text-sm">
+                <h2 className="text-base font-bold tracking-tight text-foreground print:text-xs">
                   Comparativo e Economia Gerada
                 </h2>
               </div>
 
-              <div className="grid grid-cols-2 gap-3 print:grid-cols-2 print:gap-2.5">
-                <Card className="rounded-xl border border-border/80 shadow-card bg-muted/20 text-center p-3.5 print:p-2.5 print:shadow-none">
-                  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-0.5">
+              <div className="grid grid-cols-2 gap-3 print:grid-cols-2 print:gap-2">
+                <Card className="rounded-xl border border-border/80 shadow-card bg-muted/20 text-center p-3.5 print:p-1.5 print:shadow-none">
+                  <span className="text-[10px] print:text-[8.5px] font-bold text-muted-foreground uppercase tracking-wider block mb-0.5">
                     Custo no Modelo Tradicional
                   </span>
-                  <p className="text-2xl sm:text-3xl font-bold text-destructive/80 line-through decoration-destructive/60 font-mono print:text-xl">
+                  <p className="text-2xl sm:text-3xl font-bold text-destructive/80 line-through decoration-destructive/60 font-mono print:text-base">
                     {BRL(calc.traditionalCost)}
                   </p>
                 </Card>
 
-                <Card className="rounded-xl border border-primary/30 shadow-card bg-primary/5 text-center p-3.5 print:p-2.5 print:shadow-none">
-                  <span className="text-[10px] font-bold text-primary uppercase tracking-wider block mb-0.5">
+                <Card className="rounded-xl border border-primary/30 shadow-card bg-primary/5 text-center p-3.5 print:p-1.5 print:shadow-none">
+                  <span className="text-[10px] print:text-[8.5px] font-bold text-primary uppercase tracking-wider block mb-0.5">
                     Custos com a Solução Prima
                   </span>
-                  <p className="text-2xl sm:text-3xl font-extrabold text-primary font-mono print:text-xl">
+                  <p className="text-2xl sm:text-3xl font-extrabold text-primary font-mono print:text-base">
                     {BRL(calc.totalMerchantCost)}
                   </p>
                 </Card>
               </div>
 
               {/* O MAIOR DESTAQUE: CARD DE ECONOMIA GERADA PELA NOSSA SOLUÇÃO */}
-              <Card className="rounded-2xl border border-emerald-500/20 bg-gradient-to-br from-emerald-600 via-emerald-600 to-teal-700 text-white shadow-xl overflow-hidden p-6 sm:p-8 text-center print:p-4.5 print:rounded-2xl print:shadow-none">
-                <div className="flex flex-col items-center justify-center space-y-2 print:space-y-1">
-                  <div className="size-12 sm:size-14 rounded-2xl bg-white/15 backdrop-blur-xs flex items-center justify-center text-white shadow-inner print:size-9">
-                    <PiggyBank className="size-6 sm:size-8 print:size-5" />
+              <Card className="rounded-2xl border border-emerald-500/20 bg-gradient-to-br from-emerald-600 via-emerald-600 to-teal-700 text-white shadow-xl overflow-hidden p-6 sm:p-8 text-center print:p-2.5 print:rounded-xl print:shadow-none">
+                <div className="flex flex-col items-center justify-center space-y-2 print:space-y-0.5">
+                  <div className="size-12 sm:size-14 rounded-2xl bg-white/15 backdrop-blur-xs flex items-center justify-center text-white shadow-inner print:size-6">
+                    <PiggyBank className="size-6 sm:size-8 print:size-3.5" />
                   </div>
-                  <div className="space-y-1">
-                    <h3 className="text-base sm:text-lg font-bold text-white/95 print:text-sm">
+                  <div className="space-y-1 print:space-y-0.5">
+                    <h3 className="text-base sm:text-lg font-bold text-white/95 print:text-xs">
                       Sua economia real apurada neste mês:
                     </h3>
-                    <p className="text-4xl sm:text-5xl font-black tracking-tight text-white font-mono drop-shadow-sm print:text-4xl">
+                    <p className="text-4xl sm:text-5xl font-black tracking-tight text-white font-mono drop-shadow-sm print:text-xl">
                       {BRL(calc.savings)}
                     </p>
-                    <p className="text-xs text-white/80 font-medium print:text-[11px]">
+                    <p className="text-xs text-white/80 font-medium print:text-[9px]">
                       Valor líquido economizado pelo seu estabelecimento com a plataforma PrimaPay
                     </p>
                   </div>
@@ -966,20 +966,20 @@ function RouteComponent() {
                   <Table className="print:w-full">
                     <TableHeader className="bg-muted/40 sticky top-0 z-10 backdrop-blur-xs print:static print:table-header-group">
                       <TableRow className="print:table-row">
-                        <TableHead className="font-semibold text-xs print:py-1.5 print:px-2 print:text-foreground">Data</TableHead>
-                        <TableHead className="font-semibold text-xs print:py-1.5 print:px-2 print:text-foreground">Modalidade</TableHead>
-                        <TableHead className="text-right font-semibold text-xs print:py-1.5 print:px-2 print:text-foreground">Vlr. Bruto</TableHead>
-                        <TableHead className="text-right font-semibold text-xs print:py-1.5 print:px-2 print:text-foreground">Vlr. Descontado</TableHead>
-                        <TableHead className="text-right font-semibold text-xs print:py-1.5 print:px-2 print:text-foreground">% Descontado</TableHead>
+                        <TableHead className="font-semibold text-xs print:text-[8.5px] print:py-1 print:px-1 print:text-foreground">Data</TableHead>
+                        <TableHead className="font-semibold text-xs print:text-[8.5px] print:py-1 print:px-1 print:text-foreground">Modalidade</TableHead>
+                        <TableHead className="text-right font-semibold text-xs print:text-[8.5px] print:py-1 print:px-1 print:text-foreground">Vlr. Bruto</TableHead>
+                        <TableHead className="text-right font-semibold text-xs print:text-[8.5px] print:py-1 print:px-1 print:text-foreground">Vlr. Descontado</TableHead>
+                        <TableHead className="text-right font-semibold text-xs print:text-[8.5px] print:py-1 print:px-1 print:text-foreground">% Descontado</TableHead>
                         {reportMode === "internal" ? (
                           <>
-                            <TableHead className="text-right font-semibold text-xs print:py-1.5 print:px-2 print:text-foreground">Tendência</TableHead>
-                            <TableHead className="text-right font-semibold text-xs print:py-1.5 print:px-2 print:text-foreground">Diferença (% Desc. - % Esperado)</TableHead>
+                            <TableHead className="text-right font-semibold text-xs print:text-[8.5px] print:py-1 print:px-1 print:text-foreground">Tendência</TableHead>
+                            <TableHead className="text-right font-semibold text-xs print:text-[8.5px] print:py-1 print:px-1 print:text-foreground whitespace-nowrap">Diferença (% Desc. - % Esperado)</TableHead>
                           </>
                         ) : (
                           <>
-                            <TableHead className="text-right font-semibold text-xs print:py-1.5 print:px-2 print:text-foreground">% Taxa Op.</TableHead>
-                            <TableHead className="text-right font-semibold text-xs print:py-1.5 print:px-2 print:text-foreground">Vlr. Taxa Op.</TableHead>
+                            <TableHead className="text-right font-semibold text-xs print:text-[8.5px] print:py-1 print:px-1 print:text-foreground">% Taxa Op.</TableHead>
+                            <TableHead className="text-right font-semibold text-xs print:text-[8.5px] print:py-1 print:px-1 print:text-foreground">Vlr. Taxa Op.</TableHead>
                           </>
                         )}
                       </TableRow>
@@ -987,7 +987,7 @@ function RouteComponent() {
                     <TableBody className="print:table-row-group">
                       {txs.length === 0 ? (
                         <TableRow className="print:table-row">
-                          <TableCell colSpan={7} className="h-28 text-center text-muted-foreground text-sm print:h-12">
+                          <TableCell colSpan={7} className="h-28 text-center text-muted-foreground text-sm print:h-12 print:text-xs">
                             Nenhuma venda registrada neste período.
                           </TableCell>
                         </TableRow>
@@ -1014,28 +1014,28 @@ function RouteComponent() {
 
                           return (
                             <TableRow key={tx.id} className="hover:bg-muted/30 transition-colors print:table-row print:break-inside-avoid print:page-break-inside-avoid">
-                              <TableCell className="font-medium whitespace-nowrap text-xs font-mono print:py-1.5 print:px-2">
+                              <TableCell className="font-medium whitespace-nowrap text-xs print:text-[8px] font-mono print:py-0.5 print:px-1">
                                 {format(new Date(tx.transaction_date), "dd/MM/yyyy")}
                               </TableCell>
-                              <TableCell className="capitalize text-xs font-medium print:py-1.5 print:px-2">
+                              <TableCell className="capitalize text-xs print:text-[8px] font-medium print:py-0.5 print:px-1">
                                 {modalityLabel(tx.modality as any)}
                               </TableCell>
-                              <TableCell className="text-right font-medium text-xs font-mono print:py-1.5 print:px-2">
+                              <TableCell className="text-right font-medium text-xs print:text-[8px] font-mono print:py-0.5 print:px-1">
                                 {BRL(gross)}
                               </TableCell>
-                              <TableCell className="text-right text-destructive font-medium text-xs font-mono print:py-1.5 print:px-2">
+                              <TableCell className="text-right text-destructive font-medium text-xs print:text-[8px] font-mono print:py-0.5 print:px-1">
                                 {BRL(discountedValue)}
                               </TableCell>
-                              <TableCell className="text-right text-muted-foreground text-xs font-mono print:py-1.5 print:px-2">
+                              <TableCell className="text-right text-muted-foreground text-xs print:text-[8px] font-mono print:py-0.5 print:px-1">
                                 {tradRate.toFixed(2)}%
                               </TableCell>
                               {reportMode === "internal" ? (
                                 <>
-                                  <TableCell className="text-right print:py-1.5 print:px-2">
+                                  <TableCell className="text-right print:py-0.5 print:px-1">
                                     <MiniTrendline diffRate={diffRate} />
                                   </TableCell>
                                   <TableCell
-                                    className={`text-right font-bold text-xs font-mono print:py-1.5 print:px-2 ${
+                                    className={`text-right font-bold text-xs print:text-[8px] font-mono print:py-0.5 print:px-1 ${
                                       diffRate > 0.001
                                         ? "text-emerald-600 dark:text-emerald-400"
                                         : diffRate < -0.001
@@ -1045,7 +1045,7 @@ function RouteComponent() {
                                   >
                                     <div className="flex flex-col items-end">
                                       <span>{diffRate > 0 ? `+${diffRate.toFixed(2)}%` : `${diffRate.toFixed(2)}%`}</span>
-                                      <span className="text-[10px] font-normal text-muted-foreground">
+                                      <span className="text-[10px] print:text-[7px] font-normal text-muted-foreground">
                                         ({tradRate.toFixed(2)}% - {expectedRate.toFixed(2)}%)
                                       </span>
                                     </div>
@@ -1053,10 +1053,10 @@ function RouteComponent() {
                                 </>
                               ) : (
                                 <>
-                                  <TableCell className="text-right font-medium text-xs font-mono print:py-1.5 print:px-2">
+                                  <TableCell className="text-right font-medium text-xs print:text-[8px] font-mono print:py-0.5 print:px-1">
                                     {opRate.toFixed(2)}%
                                   </TableCell>
-                                  <TableCell className="text-right font-bold text-primary text-xs font-mono print:py-1.5 print:px-2">
+                                  <TableCell className="text-right font-bold text-primary text-xs print:text-[8px] font-mono print:py-0.5 print:px-1">
                                     {BRL(opValue)}
                                   </TableCell>
                                 </>
@@ -1069,25 +1069,25 @@ function RouteComponent() {
                     {txs.length > 0 && (
                       <TableFooter className="bg-muted/50 font-bold border-t sticky bottom-0 z-10 backdrop-blur-xs print:static print:table-footer-group">
                         <TableRow className="print:table-row print:break-inside-avoid print:page-break-inside-avoid">
-                          <TableCell colSpan={2} className="text-xs font-bold print:py-2 print:px-2">
+                          <TableCell colSpan={2} className="text-xs print:text-[8.5px] font-bold print:py-1 print:px-1">
                             Totais ({txs.length} vendas)
                           </TableCell>
-                          <TableCell className="text-right font-bold font-mono text-xs print:py-2 print:px-2">
+                          <TableCell className="text-right font-bold font-mono text-xs print:text-[8.5px] print:py-1 print:px-1">
                             {BRL(totalsDetailed.totalGross)}
                           </TableCell>
-                          <TableCell className="text-right font-bold text-destructive font-mono text-xs print:py-2 print:px-2">
+                          <TableCell className="text-right font-bold text-destructive font-mono text-xs print:text-[8.5px] print:py-1 print:px-1">
                             {BRL(totalsDetailed.totalDiscounted)}
                           </TableCell>
-                          <TableCell className="text-right font-bold text-muted-foreground font-mono text-xs print:py-2 print:px-2">
+                          <TableCell className="text-right font-bold text-muted-foreground font-mono text-xs print:text-[8.5px] print:py-1 print:px-1">
                             {totalsDetailed.avgDiscountRate.toFixed(2)}%
                           </TableCell>
                           {reportMode === "internal" ? (
                             <>
-                              <TableCell className="text-right print:py-2 print:px-2">
+                              <TableCell className="text-right print:py-1 print:px-1">
                                 <MiniTrendline diffRate={totalsDetailed.avgDiffRate} />
                               </TableCell>
                               <TableCell
-                                className={`text-right font-black text-xs font-mono print:py-2 print:px-2 ${
+                                className={`text-right font-black text-xs print:text-[8.5px] font-mono print:py-1 print:px-1 ${
                                   totalsDetailed.avgDiffRate > 0.001
                                     ? "text-emerald-600 dark:text-emerald-400"
                                     : totalsDetailed.avgDiffRate < -0.001
@@ -1101,7 +1101,7 @@ function RouteComponent() {
                                       ? `+${totalsDetailed.avgDiffRate.toFixed(2)}%`
                                       : `${totalsDetailed.avgDiffRate.toFixed(2)}%`}
                                   </span>
-                                  <span className="text-[10px] font-medium opacity-80">
+                                  <span className="text-[10px] print:text-[7px] font-medium opacity-80">
                                     ({totalsDetailed.avgDiscountRate.toFixed(2)}% - {totalsDetailed.avgExpectedRate.toFixed(2)}%)
                                   </span>
                                 </div>
@@ -1109,10 +1109,10 @@ function RouteComponent() {
                             </>
                           ) : (
                             <>
-                              <TableCell className="text-right font-bold font-mono text-xs print:py-2 print:px-2">
+                              <TableCell className="text-right font-bold font-mono text-xs print:text-[8.5px] print:py-1 print:px-1">
                                 {totalsDetailed.avgOpRate.toFixed(2)}%
                               </TableCell>
-                              <TableCell className="text-right font-black text-primary text-sm font-mono print:py-2 print:px-2">
+                              <TableCell className="text-right font-black text-primary text-sm print:text-[8.5px] font-mono print:py-1 print:px-1">
                                 {BRL(totalsDetailed.totalOpValue)}
                               </TableCell>
                             </>
