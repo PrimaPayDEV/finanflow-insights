@@ -63,7 +63,7 @@ export function AsaasBaasSeal({
   // Determinar fonte da imagem:
   // Se for "branco", sempre branco. Se "positivo", sempre azul.
   // Se for "auto", no tema escuro é branco e no tema claro é azul.
-  let sealSrc = ASAAS_SEALS.positivo;
+  let sealSrc: string = ASAAS_SEALS.positivo;
   if (variant === "branco") {
     sealSrc = ASAAS_SEALS.branco;
   } else if (variant === "positivo") {
