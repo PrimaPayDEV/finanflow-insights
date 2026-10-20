@@ -31,7 +31,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { closuresQuery, merchantsQuery, asaasSettingsQuery, splitRulesQuery } from "@/lib/db";
+import { closuresQuery, merchantsQuery, asaasSettingsQuery, splitRulesQuery, transactionsQuery, feePlansQuery } from "@/lib/db";
+import { MerchantsGeneralReport } from "@/components/MerchantsGeneralReport";
 import { BRL } from "@/lib/format";
 import { format, isBefore, startOfDay, addDays, subDays, startOfMonth, endOfMonth, isWithinInterval } from "date-fns";
 
@@ -49,10 +50,13 @@ function ReportsPage() {
   const merchants = useQuery(merchantsQuery);
   const settings = useQuery(asaasSettingsQuery);
   const splitRules = useQuery(splitRulesQuery);
+  const transactions = useQuery(transactionsQuery);
+  const feePlans = useQuery(feePlansQuery);
   const dueDay = settings.data?.due_day ?? 10;
   
   const { role, partnerId, appMode } = useAuth();
 
+  const [reportView, setReportView] = useState<"general" | "receivables">("general");
   const [period, setPeriod] = useState<PeriodType>("month");
   const [customRange, setCustomRange] = useState<{ from?: Date; to?: Date }>();
 
@@ -250,53 +254,85 @@ function ReportsPage() {
 
   return (
     <AppLayout
-      title={appMode === "billing" ? "Central de Relatórios Planmais" : "Relatórios e Previsibilidade"}
-      subtitle={appMode === "billing" ? "Relatórios executivos de faturamento, frota protegida, comissões e inadimplência" : getSubtitle()}
+      title={appMode === "billing" ? "Central de Relatórios Planmais" : reportView === "general" ? "Relatório Geral dos Estabelecimentos" : "Relatórios e Previsibilidade"}
+      subtitle={
+        appMode === "billing" 
+          ? "Relatórios executivos de faturamento, frota protegida, comissões e inadimplência" 
+          : reportView === "general"
+          ? "Demonstração consolidada dos estabelecimentos, auditoria de taxas e apuração da diferença (CPAG59)"
+          : getSubtitle()
+      }
       actions={
         appMode === "billing" ? undefined : (
           <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2">
-            <Select value={period} onValueChange={(v) => setPeriod(v as PeriodType)}>
-              <SelectTrigger className="w-[140px] h-8 text-xs">
-                <SelectValue placeholder="Período" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="month">Este Mês</SelectItem>
-                <SelectItem value="7d">Últimos 7 dias</SelectItem>
-                <SelectItem value="30d">Últimos 30 dias</SelectItem>
-                <SelectItem value="90d">Últimos 90 dias</SelectItem>
-                <SelectItem value="custom">Personalizado</SelectItem>
-              </SelectContent>
-            </Select>
-            {period === "custom" && (
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" size="sm" className="h-8 px-2 text-xs min-w-[180px] justify-start">
-                    <CalendarIcon className="mr-2 h-3 w-3" />
-                    {customRange?.from ? (
-                      customRange.to ? (
-                        <>
-                          {format(customRange.from, "P", { locale: ptBR })} -{" "}
-                          {format(customRange.to, "P", { locale: ptBR })}
-                        </>
-                      ) : (
-                        format(customRange.from, "P", { locale: ptBR })
-                      )
-                    ) : (
-                      <span>Selecione a data</span>
-                    )}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="end">
-                  <Calendar
-                    initialFocus
-                    mode="range"
-                    defaultMonth={customRange?.from}
-                    selected={{ from: customRange?.from, to: customRange?.to }}
-                    onSelect={(v: any) => setCustomRange(v)}
-                    numberOfMonths={1}
-                  />
-                </PopoverContent>
-              </Popover>
+            {/* Alternância entre Relatório Geral e Painel de Recebíveis */}
+            <div className="flex items-center gap-1 p-1 bg-muted/60 rounded-xl border border-border/60">
+              <Button
+                variant={reportView === "general" ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setReportView("general")}
+                className="rounded-lg text-xs font-bold gap-1.5 h-7 px-2.5 shadow-2xs"
+              >
+                <FileText className="size-3.5" />
+                <span>Relatório Geral</span>
+              </Button>
+              <Button
+                variant={reportView === "receivables" ? "default" : "ghost"}
+                size="sm"
+                onClick={() => setReportView("receivables")}
+                className="rounded-lg text-xs font-bold gap-1.5 h-7 px-2.5 shadow-2xs"
+              >
+                <Receipt className="size-3.5" />
+                <span>Recebíveis</span>
+              </Button>
+            </div>
+
+            {reportView === "receivables" && (
+              <>
+                <Select value={period} onValueChange={(v) => setPeriod(v as PeriodType)}>
+                  <SelectTrigger className="w-[140px] h-8 text-xs">
+                    <SelectValue placeholder="Período" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="month">Este Mês</SelectItem>
+                    <SelectItem value="7d">Últimos 7 dias</SelectItem>
+                    <SelectItem value="30d">Últimos 30 dias</SelectItem>
+                    <SelectItem value="90d">Últimos 90 dias</SelectItem>
+                    <SelectItem value="custom">Personalizado</SelectItem>
+                  </SelectContent>
+                </Select>
+                {period === "custom" && (
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" size="sm" className="h-8 px-2 text-xs min-w-[180px] justify-start">
+                        <CalendarIcon className="mr-2 h-3 w-3" />
+                        {customRange?.from ? (
+                          customRange.to ? (
+                            <>
+                              {format(customRange.from, "P", { locale: ptBR })} -{" "}
+                              {format(customRange.to, "P", { locale: ptBR })}
+                            </>
+                          ) : (
+                            format(customRange.from, "P", { locale: ptBR })
+                          )
+                        ) : (
+                          <span>Selecione a data</span>
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="end">
+                      <Calendar
+                        initialFocus
+                        mode="range"
+                        defaultMonth={customRange?.from}
+                        selected={{ from: customRange?.from, to: customRange?.to }}
+                        onSelect={(v: any) => setCustomRange(v)}
+                        numberOfMonths={1}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                )}
+              </>
             )}
           </div>
         )
@@ -304,6 +340,12 @@ function ReportsPage() {
     >
       {appMode === "billing" ? (
         <BillingReports />
+      ) : reportView === "general" ? (
+        <MerchantsGeneralReport
+          merchants={merchants.data ?? []}
+          transactions={transactions.data ?? []}
+          feePlans={feePlans.data ?? []}
+        />
       ) : (
       <div className="space-y-6">
         {/* Total a Receber Highlight */}
