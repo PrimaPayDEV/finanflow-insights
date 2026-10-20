@@ -37,6 +37,7 @@ import {
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "./ThemeToggle";
+import { AsaasBaasSeal, AsaasBaasFooterDisclosure } from "./AsaasBaasSeal";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "./ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "./ui/sheet";
@@ -220,7 +221,7 @@ export function AppLayout({
           ))}
         </nav>
 
-        <div className="flex flex-col gap-2 p-3">
+        <div className="flex flex-col gap-2 p-3 border-t border-sidebar-border/40">
           <Button
             variant="ghost"
             size="icon"
@@ -229,10 +230,18 @@ export function AppLayout({
           >
             {isCollapsed ? <PanelLeftOpen className="size-5" /> : <PanelLeftClose className="size-5" />}
           </Button>
-          {!isCollapsed && (
-            <p className="px-2 pb-2 pt-1 text-xs text-center text-sidebar-foreground/50">
-              Plataforma de fechamento e cobrança
-            </p>
+
+          {!isCollapsed ? (
+            <div className="flex flex-col items-center gap-1.5 px-2 pb-1 pt-1 border-t border-sidebar-border/30">
+              <AsaasBaasSeal variant="auto" size="xs" />
+              <p className="text-[10px] text-center text-sidebar-foreground/60 leading-tight">
+                Operações financeiras via Asaas
+              </p>
+            </div>
+          ) : (
+            <div className="flex justify-center pb-1" title="Serviços financeiros operados pelo Asaas">
+              <AsaasBaasSeal variant="auto" size="xs" className="scale-75 origin-center" />
+            </div>
           )}
         </div>
       </aside>
@@ -300,6 +309,13 @@ export function AppLayout({
                       </div>
                     ))}
                   </nav>
+
+                  <div className="p-4 border-t border-sidebar-border/40 flex flex-col items-center gap-2">
+                    <AsaasBaasSeal variant="auto" size="xs" />
+                    <p className="text-[10px] text-center text-sidebar-foreground/60 leading-tight">
+                      Serviços financeiros prestados por Asaas
+                    </p>
+                  </div>
                 </SheetContent>
               </Sheet>
               
@@ -431,7 +447,7 @@ export function AppLayout({
           </div>
         </header>
         
-        <main className="flex-1 overflow-hidden px-3 py-4 md:px-8 print:p-0 print:overflow-visible">
+        <main className="flex-1 overflow-x-hidden px-3 py-4 md:px-8 print:p-0 print:overflow-visible flex flex-col justify-between">
           <AnimatePresence mode="wait">
             <motion.div
               key={pathname}
@@ -439,11 +455,13 @@ export function AppLayout({
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -12 }}
               transition={{ duration: 0.25, ease: "easeOut" }}
-              className="h-full print:h-auto print:overflow-visible"
+              className="flex-1 print:h-auto print:overflow-visible"
             >
               {children}
             </motion.div>
           </AnimatePresence>
+
+          <AsaasBaasFooterDisclosure />
         </main>
       </div>
     </div>

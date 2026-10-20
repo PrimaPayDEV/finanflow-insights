@@ -10,6 +10,7 @@ import { PiggyBank, TrendingUp, SearchX, Receipt, Banknote, ArrowDownRight, Arro
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { motion, AnimatePresence } from "framer-motion";
+import { AsaasBaasFooterDisclosure } from "@/components/AsaasBaasSeal";
 
 export const Route = createFileRoute("/public/report/$closureId")({
   component: PublicReportPage,
@@ -254,6 +255,8 @@ function PublicReportPage() {
             </CardContent>
           </Card>
         </section>
+
+        <AsaasBaasFooterDisclosure />
       </div>
     </div>
   );

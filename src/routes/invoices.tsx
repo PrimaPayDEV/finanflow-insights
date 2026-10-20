@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Plus, Receipt, AlertCircle, MessageCircle, FileText, ExternalLink, Percent, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
 import { AppLayout } from "@/components/AppLayout";
+import { AsaasModalSeal } from "@/components/AsaasBaasSeal";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -177,11 +178,14 @@ function NewInvoiceDialog() {
             </div>
           )}
         </div>
-        <div className="flex justify-end gap-2">
-          <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
-          <Button onClick={() => generate.mutate()} disabled={generate.isPending}>
-            {generate.isPending ? "Gerando..." : "Gerar"}
-          </Button>
+        <div className="flex flex-col-reverse sm:flex-row items-center sm:justify-between gap-3 pt-3 border-t border-border/60">
+          <AsaasModalSeal variant="auto" />
+          <div className="flex justify-end gap-2 w-full sm:w-auto">
+            <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
+            <Button onClick={() => generate.mutate()} disabled={generate.isPending}>
+              {generate.isPending ? "Gerando..." : "Gerar"}
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
@@ -295,23 +299,26 @@ function BoletoDetailDialog({
           )}
         </div>
 
-        <div className="flex justify-between items-center gap-2 pt-2 border-t border-border/60">
-          <Button variant="outline" size="sm" onClick={() => onOpenChange(false)} className="rounded-xl text-xs">
-            Fechar
-          </Button>
-
-          {url && (
-            <Button
-              size="sm"
-              asChild
-              className="rounded-xl text-xs font-bold bg-primary hover:bg-primary/90 text-primary-foreground gap-1.5"
-            >
-              <a href={url} target="_blank" rel="noopener noreferrer">
-                <ExternalLink className="size-3.5" />
-                Acessar Boleto
-              </a>
+        <div className="flex flex-col-reverse sm:flex-row items-center sm:justify-between gap-3 pt-3 border-t border-border/60">
+          <AsaasModalSeal variant="auto" />
+          <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+            <Button variant="outline" size="sm" onClick={() => onOpenChange(false)} className="rounded-xl text-xs">
+              Fechar
             </Button>
-          )}
+
+            {url && (
+              <Button
+                size="sm"
+                asChild
+                className="rounded-xl text-xs font-bold bg-primary hover:bg-primary/90 text-primary-foreground gap-1.5"
+              >
+                <a href={url} target="_blank" rel="noopener noreferrer">
+                  <ExternalLink className="size-3.5" />
+                  Acessar Boleto
+                </a>
+              </Button>
+            )}
+          </div>
         </div>
       </DialogContent>
     </Dialog>

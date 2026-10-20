@@ -38,6 +38,7 @@ import {
 import { MerchantIcon } from "@/components/MerchantIcon";
 import { toast } from "sonner";
 import { AppLayout } from "@/components/AppLayout";
+import { AsaasModalSeal } from "@/components/AsaasBaasSeal";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -2453,7 +2454,10 @@ function CreateAsaasSubaccountDialog({ onCreated }: { onCreated: (walletId: stri
       </DialogTrigger>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
         <DialogHeader>
-          <DialogTitle>Criar Subconta Asaas (Não-BaaS)</DialogTitle>
+          <DialogTitle>Criar Subconta Asaas (BaaS)</DialogTitle>
+          <DialogDescription className="text-xs text-muted-foreground">
+            Abertura de conta de pagamento regulada operada pelo Asaas Gestão Financeira IP S.A.
+          </DialogDescription>
         </DialogHeader>
         <div className="grid gap-3 py-2">
           <div className="grid gap-1.5">
@@ -2541,13 +2545,16 @@ function CreateAsaasSubaccountDialog({ onCreated }: { onCreated: (walletId: stri
             </div>
           </div>
         </div>
-        <DialogFooter>
-          <DialogClose asChild>
-            <Button variant="ghost">Cancelar</Button>
-          </DialogClose>
-          <Button onClick={() => create.mutate()} disabled={create.isPending || !form.name || !form.cpfCnpj}>
-            {create.isPending ? "Criando..." : "Criar Subconta"}
-          </Button>
+        <DialogFooter className="flex flex-col-reverse sm:flex-row items-center sm:justify-between gap-3 pt-3 border-t border-border/60">
+          <AsaasModalSeal variant="auto" />
+          <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+            <DialogClose asChild>
+              <Button variant="ghost">Cancelar</Button>
+            </DialogClose>
+            <Button onClick={() => create.mutate()} disabled={create.isPending || !form.name || !form.cpfCnpj}>
+              {create.isPending ? "Criando..." : "Criar Subconta"}
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

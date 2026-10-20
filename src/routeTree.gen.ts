@@ -23,6 +23,7 @@ import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as VehiclesRouteImport } from './routes/vehicles'
 import { Route as AdminCompaniesRouteImport } from './routes/admin.companies'
+import { Route as PublicPrivacyRouteImport } from './routes/public.privacy'
 import { Route as RealEstateAdvanceRouteImport } from './routes/real-estate/advance'
 import { Route as RealEstateChargesRouteImport } from './routes/real-estate/charges'
 import { Route as RealEstateContractsRouteImport } from './routes/real-estate/contracts'
@@ -114,6 +115,11 @@ const VehiclesRoute = VehiclesRouteImport.update({
 const AdminCompaniesRoute = AdminCompaniesRouteImport.update({
   id: '/admin/companies',
   path: '/admin/companies',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PublicPrivacyRoute = PublicPrivacyRouteImport.update({
+  id: '/public/privacy',
+  path: '/public/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RealEstateAdvanceRoute = RealEstateAdvanceRouteImport.update({
@@ -242,6 +248,7 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/vehicles': typeof VehiclesRoute
   '/admin/companies': typeof AdminCompaniesRoute
+  '/public/privacy': typeof PublicPrivacyRoute
   '/real-estate/advance': typeof RealEstateAdvanceRoute
   '/real-estate/charges': typeof RealEstateChargesRoute
   '/real-estate/contracts': typeof RealEstateContractsRoute
@@ -280,6 +287,7 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/vehicles': typeof VehiclesRoute
   '/admin/companies': typeof AdminCompaniesRoute
+  '/public/privacy': typeof PublicPrivacyRoute
   '/real-estate/advance': typeof RealEstateAdvanceRoute
   '/real-estate/charges': typeof RealEstateChargesRoute
   '/real-estate/contracts': typeof RealEstateContractsRoute
@@ -319,6 +327,7 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/vehicles': typeof VehiclesRoute
   '/admin/companies': typeof AdminCompaniesRoute
+  '/public/privacy': typeof PublicPrivacyRoute
   '/real-estate/advance': typeof RealEstateAdvanceRoute
   '/real-estate/charges': typeof RealEstateChargesRoute
   '/real-estate/contracts': typeof RealEstateContractsRoute
@@ -359,6 +368,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/vehicles'
     | '/admin/companies'
+    | '/public/privacy'
     | '/real-estate/advance'
     | '/real-estate/charges'
     | '/real-estate/contracts'
@@ -397,6 +407,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/vehicles'
     | '/admin/companies'
+    | '/public/privacy'
     | '/real-estate/advance'
     | '/real-estate/charges'
     | '/real-estate/contracts'
@@ -435,6 +446,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/vehicles'
     | '/admin/companies'
+    | '/public/privacy'
     | '/real-estate/advance'
     | '/real-estate/charges'
     | '/real-estate/contracts'
@@ -474,6 +486,7 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   VehiclesRoute: typeof VehiclesRoute
   AdminCompaniesRoute: typeof AdminCompaniesRoute
+  PublicPrivacyRoute: typeof PublicPrivacyRoute
   RealEstateAdvanceRoute: typeof RealEstateAdvanceRoute
   RealEstateChargesRoute: typeof RealEstateChargesRoute
   RealEstateContractsRoute: typeof RealEstateContractsRoute
@@ -596,6 +609,13 @@ declare module '@tanstack/react-router' {
       path: '/admin/companies'
       fullPath: '/admin/companies'
       preLoaderRoute: typeof AdminCompaniesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/public/privacy': {
+      id: '/public/privacy'
+      path: '/public/privacy'
+      fullPath: '/public/privacy'
+      preLoaderRoute: typeof PublicPrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/real-estate/advance': {
@@ -770,6 +790,7 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   VehiclesRoute: VehiclesRoute,
   AdminCompaniesRoute: AdminCompaniesRoute,
+  PublicPrivacyRoute: PublicPrivacyRoute,
   RealEstateAdvanceRoute: RealEstateAdvanceRoute,
   RealEstateChargesRoute: RealEstateChargesRoute,
   RealEstateContractsRoute: RealEstateContractsRoute,

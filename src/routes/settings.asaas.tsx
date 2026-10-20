@@ -16,9 +16,14 @@ import {
   CheckCircle2,
   Clock,
   Eye,
+  Phone,
+  Mail,
+  ExternalLink,
+  FileText,
 } from "lucide-react";
 import { toast } from "sonner";
 import { AppLayout } from "@/components/AppLayout";
+import { AsaasBaasSeal, ASAAS_SEALS } from "@/components/AsaasBaasSeal";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -553,6 +558,98 @@ function AsaasSettingsPage() {
             </Card>
           </div>
         </div>
+
+        {/* ========================================================= */}
+        {/* SEÇÃO REGULATÓRIA: Conformidade BaaS e BACEN               */}
+        {/* ========================================================= */}
+        <Card className="rounded-2xl border-2 border-primary/20 bg-card shadow-card overflow-hidden">
+          <CardHeader className="p-6 pb-4 border-b border-border/60 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="size-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center border border-primary/20 shrink-0">
+                <ShieldCheck className="size-4.5" />
+              </div>
+              <div>
+                <CardTitle className="text-base font-bold text-foreground">
+                  Conformidade Regulatória BaaS Asaas (Resolução Conjunta nº 16/2025 BACEN)
+                </CardTitle>
+                <CardDescription className="text-xs text-muted-foreground mt-0.5">
+                  Instituição financeira de pagamento, identificação de marca e canais de suporte ao cliente
+                </CardDescription>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <AsaasBaasSeal variant="auto" size="sm" />
+            </div>
+          </CardHeader>
+
+          <CardContent className="p-6 space-y-6">
+            <div className="grid md:grid-cols-3 gap-4">
+              <div className="p-4 rounded-xl bg-muted/30 border border-border/60 space-y-1.5">
+                <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                  <ShieldCheck className="size-4 text-primary" />
+                  Instituição Regulada (BaaS)
+                </span>
+                <p className="text-xs font-semibold text-foreground">
+                  ASAAS GESTÃO FINANCEIRA INSTITUIÇÃO DE PAGAMENTOS S.A.
+                </p>
+                <p className="text-[11px] text-muted-foreground leading-relaxed">
+                  Autorizada pelo Banco Central do Brasil para processamento, abertura de contas de pagamento e liquidação.
+                </p>
+              </div>
+
+              <div className="p-4 rounded-xl bg-muted/30 border border-border/60 space-y-1.5">
+                <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                  <FileText className="size-4 text-primary" />
+                  Papel da Plataforma
+                </span>
+                <p className="text-xs font-semibold text-foreground">
+                  Integradora Tecnológica
+                </p>
+                <p className="text-[11px] text-muted-foreground leading-relaxed">
+                  Distribuidora da experiência do produto e software. Não realiza intermediação em nome próprio.
+                </p>
+              </div>
+
+              <div className="p-4 rounded-xl bg-muted/30 border border-border/60 space-y-1.5">
+                <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                  <Phone className="size-4 text-primary" />
+                  Canais Oficiais Asaas
+                </span>
+                <p className="text-xs font-semibold text-foreground">
+                  0800 009 0037 • contato@asaas.com.br
+                </p>
+                <p className="text-[11px] text-muted-foreground leading-relaxed">
+                  Suporte telefônico e mensagens (WhatsApp) para Pessoa Jurídica e clientes finais.
+                </p>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-xl bg-primary/5 border border-primary/20 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="space-y-1 text-center sm:text-left">
+                <p className="text-xs font-bold text-foreground">
+                  Selos Homologados do Asaas Integrados à Plataforma
+                </p>
+                <p className="text-[11px] text-muted-foreground">
+                  Os selos nas versões Positivo (Claro), Preto (Neutro) e Negativo (Escuro) são exibidos automaticamente nos modais, relatórios e rodapé.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-3 shrink-0">
+                <a
+                  href="/public/privacy"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-xs font-bold text-primary hover:underline px-3.5 py-2 rounded-xl bg-background border border-border/60 shadow-xs"
+                >
+                  <FileText className="size-3.5" />
+                  <span>Ver Termos BaaS Completos</span>
+                  <ExternalLink className="size-3" />
+                </a>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Modal de Detalhes do Evento do Webhook */}

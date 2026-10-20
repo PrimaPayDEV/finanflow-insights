@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -6,9 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { Wallet, Loader2, Eye, EyeOff } from "lucide-react";
+import { Wallet, Loader2, Eye, EyeOff, ShieldCheck } from "lucide-react";
 import { motion } from "framer-motion";
 import { translateError } from "@/lib/translateError";
+import { AsaasBaasSeal } from "@/components/AsaasBaasSeal";
 
 export const Route = createFileRoute("/login")({
   component: Login,
@@ -207,7 +208,31 @@ function Login() {
               "Entrar na plataforma"
             )}
           </Button>
+
+          <div className="pt-2 border-t border-border/60 flex flex-col items-center gap-2 text-center">
+            <AsaasBaasSeal variant="auto" size="xs" />
+            <p className="text-[10px] text-muted-foreground leading-tight max-w-xs">
+              Serviços financeiros operados por{" "}
+              <strong className="text-foreground font-semibold">
+                Asaas Gestão Financeira IP S.A.
+              </strong>
+            </p>
+            <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+              <Link to="/public/privacy" className="hover:text-primary underline">
+                Termos & Privacidade BaaS
+              </Link>
+              <span>•</span>
+              <span>Res. 16/2025 BACEN</span>
+            </div>
+          </div>
         </form>
+
+        <div className="text-center text-[11px] text-muted-foreground">
+          Precisa de suporte financeiro Asaas? Ligue{" "}
+          <a href="tel:08000090037" className="font-bold text-foreground hover:underline">
+            0800 009 0037
+          </a>
+        </div>
       </motion.div>
     </div>
   );
