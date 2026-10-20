@@ -345,19 +345,19 @@ export function MerchantsGeneralReport({
     };
   }, [processedRows]);
 
-  // Dados para Gráfico 1: Volume vs Descontado por EC (Top 7)
-  const chartVolumeData = useMemo(() => {
+  // Dados para Gráfico 2: Comparativo de Taxas por EC (% Descontado vs % CPAG59)
+  const chartRatesData = useMemo(() => {
     return [...processedRows]
-      .sort((a, b) => b.totalGross - a.totalGross)
-      .slice(0, 7)
+      .filter((r) => r.txCount > 0 || r.avgDiscountRate > 0)
+      .slice(0, 8)
       .map((r) => ({
         name: r.name.length > 18 ? r.name.slice(0, 16) + "..." : r.name,
-        faturamento: r.totalGross,
-        desconto: r.totalDiscounted,
+        taxaDescontada: Number(r.avgDiscountRate.toFixed(2)),
+        taxaCPAG59: Number(r.avgExpectedRate.toFixed(2)),
       }));
   }, [processedRows]);
 
-  // Dados para Gráfico 2: Vlr. Diferença por EC (Diferença Apurada)
+  // Dados para Gráfico 1: Vlr. Diferença por EC (Diferença Apurada)
   const chartDiffData = useMemo(() => {
     return [...processedRows]
       .sort((a, b) => a.totalDiffAmount - b.totalDiffAmount) // mais negativos primeiro
@@ -398,8 +398,6 @@ export function MerchantsGeneralReport({
       Documento: r.document,
       "Plano Financeiro": r.planName,
       "Qtd. Vendas": r.txCount,
-      "Faturamento Bruto (R$)": Number(r.totalGross.toFixed(2)),
-      "Total Descontado Máquina (R$)": Number(r.totalDiscounted.toFixed(2)),
       "% Médio Descontado": Number(r.avgDiscountRate.toFixed(2)),
       "% Esperado CPAG59": Number(r.avgExpectedRate.toFixed(2)),
       "Vlr. Diferença (R$)": Number(r.totalDiffAmount.toFixed(2)),
@@ -899,15 +897,15 @@ export function MerchantsGeneralReport({
               </div>
             </div>
 
-            {/* Gráfico 2: Faturamento Bruto vs Valor Descontado */}
+            {/* Gráfico 2: Comparativo de Taxas: % Descontado vs % Esperado (CPAG59) */}
             <div className="pt-2">
               <div className="flex items-center justify-between mb-2">
                 <div>
                   <h4 className="text-xs font-bold text-foreground uppercase tracking-wider">
-                    Volume de Faturamento vs Valor Descontado nas Máquinas
+                    Comparativo de Taxas: % Descontado vs % CPAG59 por EC
                   </h4>
                   <p className="text-[11px] text-muted-foreground">
-                    Comparativo dos principais estabelecimentos em volume financeiro transacionado.
+                    Comparativo direto entre a taxa média retida nos terminais e a taxa de referência contratual CPAG59.
                   </p>
                 </div>
               </div>
@@ -916,7 +914,7 @@ export function MerchantsGeneralReport({
                 {mounted && (
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart
-                      data={chartVolumeData}
+                      data={chartRatesData}
                       margin={{ top: 10, right: 20, left: 20, bottom: 20 }}
                     >
                       <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
@@ -928,26 +926,26 @@ export function MerchantsGeneralReport({
                         height={35}
                       />
                       <YAxis
-                        tickFormatter={(v) => `R$ ${(v / 1000).toFixed(0)}k`}
+                        tickFormatter={(v) => `${v}%`}
                         tick={{ fontSize: 10 }}
                       />
                       <RechartsTooltip
                         formatter={(val: any, name: any) => [
-                          BRL(Number(val)),
-                          name === "faturamento" ? "Faturamento Bruto" : "Valor Descontado",
+                          `${Number(val).toFixed(2)}%`,
+                          name === "taxaDescontada" ? "% Descontado Máquina" : "% Esperado CPAG59",
                         ]}
                       />
                       <Legend wrapperStyle={{ fontSize: "11px", paddingTop: "5px" }} />
                       <Bar
-                        dataKey="faturamento"
-                        name="Faturamento Bruto"
-                        fill="#003399"
+                        dataKey="taxaDescontada"
+                        name="% Descontado Máquina"
+                        fill="#f43f5e"
                         radius={[4, 4, 0, 0]}
                       />
                       <Bar
-                        dataKey="desconto"
-                        name="Valor Descontado"
-                        fill="#f43f5e"
+                        dataKey="taxaCPAG59"
+                        name="% Esperado CPAG59"
+                        fill="#003399"
                         radius={[4, 4, 0, 0]}
                       />
                     </BarChart>
@@ -1011,12 +1009,6 @@ export function MerchantsGeneralReport({
                       Vendas
                     </TableHead>
                     <TableHead className="text-right text-xs font-bold text-foreground py-2.5">
-                      Faturamento Bruto
-                    </TableHead>
-                    <TableHead className="text-right text-xs font-bold text-foreground py-2.5">
-                      Vlr. Descontado
-                    </TableHead>
-                    <TableHead className="text-right text-xs font-bold text-foreground py-2.5">
                       % Desc.
                     </TableHead>
                     <TableHead className="text-right text-xs font-bold text-foreground py-2.5">
@@ -1033,7 +1025,7 @@ export function MerchantsGeneralReport({
                   {filteredRows.length === 0 ? (
                     <TableRow>
                       <TableCell
-                        colSpan={8}
+                        colSpan={6}
                         className="h-32 text-center text-xs text-muted-foreground"
                       >
                         Nenhum estabelecimento encontrado com os filtros selecionados.
@@ -1064,14 +1056,6 @@ export function MerchantsGeneralReport({
 
                           <TableCell className="py-2 text-right text-xs font-mono">
                             {row.txCount}
-                          </TableCell>
-
-                          <TableCell className="py-2 text-right text-xs font-bold font-mono text-foreground">
-                            {BRL(row.totalGross)}
-                          </TableCell>
-
-                          <TableCell className="py-2 text-right text-xs font-medium font-mono text-rose-600 dark:text-rose-400">
-                            {BRL(row.totalDiscounted)}
                           </TableCell>
 
                           <TableCell className="py-2 text-right text-xs font-mono text-muted-foreground">
@@ -1122,14 +1106,6 @@ export function MerchantsGeneralReport({
 
                     <TableCell className="py-3 text-right text-xs font-black font-mono">
                       {totals.txs}
-                    </TableCell>
-
-                    <TableCell className="py-3 text-right text-xs font-black font-mono text-foreground">
-                      {BRL(totals.gross)}
-                    </TableCell>
-
-                    <TableCell className="py-3 text-right text-xs font-black font-mono text-rose-600 dark:text-rose-400">
-                      {BRL(totals.discounted)}
                     </TableCell>
 
                     <TableCell className="py-3 text-right text-xs font-black font-mono text-muted-foreground">
