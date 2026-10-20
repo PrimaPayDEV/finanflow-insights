@@ -228,7 +228,7 @@ export const generateInvoice = createServerFn({ method: "POST" })
 
     let customerId = member.asaas_customer_id;
 
-    const { data: company } = await supabaseAdmin.from("companies").select("asaas_api_key").eq("id", data.companyId).single();
+    const { data: company } = await supabaseAdmin.from("companies").select("asaas_api_key, name, app_mode, segment").eq("id", data.companyId).single();
     const { data: settings } = await supabaseAdmin.from("asaas_settings").select("*").eq("company_id", data.companyId).limit(1).maybeSingle();
 
     const sandbox = settings?.sandbox ?? false;
@@ -256,6 +256,9 @@ export const generateInvoice = createServerFn({ method: "POST" })
 
     const targetDate = data.dueDate ? parseISO(data.dueDate) : addDays(new Date(), 5);
     const dueDate = format(getNextBusinessDay(targetDate), "yyyy-MM-dd");
+
+    // Identificar ambiente Planmais / Proteção Veicular
+    const isPlanmais = company?.app_mode === "billing" || company?.segment === "veicular" || (company?.name || "").toLowerCase().includes("planmais");
     
     let partner = Array.isArray(member.partners) ? member.partners[0] : (member.partners as any);
     if (!partner && member.partner_id) {
@@ -267,12 +270,28 @@ export const generateInvoice = createServerFn({ method: "POST" })
       partner = pDb;
     }
     
+    const baseDescription = data.description?.trim() || "Cobrança de Proteção Veicular";
+    const description = isPlanmais
+      ? `${baseDescription} — NÃO RECEBER APÓS O VENCIMENTO`.slice(0, 500)
+      : baseDescription;
+
     const paymentPayload: any = {
       customer: customerId,
       billingType: "BOLETO",
       value: Number(data.amount.toFixed(2)),
       dueDate,
-      description: data.description,
+      description,
+      ...(isPlanmais
+        ? {
+            // No ambiente Planmais, os boletos não podem ser pagos após o vencimento
+            daysAfterDueDateToRegistrationCancellation: 0,
+            fine: { value: 0 },
+            interest: { value: 0 },
+          }
+        : {
+            ...(Number(settings?.fine_percent ?? 0) > 0 ? { fine: { value: Number(settings?.fine_percent ?? 0), type: "PERCENTAGE" } } : {}),
+            ...(Number(settings?.interest_percent ?? 0) > 0 ? { interest: { value: Number(settings?.interest_percent ?? 0) } } : {}),
+          }),
     };
 
     const splitPercent = partner?.split_percent ? Number(partner.split_percent) : 0;

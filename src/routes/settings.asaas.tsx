@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
-import { KeyRound, ShieldCheck, TriangleAlert, Split, QrCode, Save, Webhook, Copy } from "lucide-react";
+import { KeyRound, ShieldCheck, TriangleAlert, Split, QrCode, Save, Webhook, Copy, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
 import { AppLayout } from "@/components/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -50,7 +50,8 @@ const defaults = {
 };
 
 function AsaasSettingsPage() {
-  const { companyId } = useAuth();
+  const { companyId, appMode, companyName } = useAuth();
+  const isPlanmais = appMode === "billing" || companyName?.toLowerCase().includes("planmais");
   const qc = useQueryClient();
   const check = useServerFn(checkAsaasConfigured);
   const status = useQuery({ queryKey: ["asaas-status", companyId], queryFn: () => check({ data: { companyId: companyId! } }) });
@@ -185,6 +186,25 @@ function AsaasSettingsPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="p-5 space-y-4">
+            {isPlanmais && (
+              <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/25 flex items-start gap-3">
+                <ShieldAlert className="size-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-xs text-amber-800 dark:text-amber-300">
+                      Regra de Proteção Veicular (Planmais)
+                    </span>
+                    <Badge variant="outline" className="text-[10px] bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-500/30">
+                      Bloqueio Pós-Vencimento Ativo
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    No ramo de proteção veicular, os associados precisam estar com a mensalidade rigorosamente em dia para manter o veículo socorrido e com cobertura ativa. Por esse motivo, os boletos emitidos são registrados no Asaas com <strong>cancelamento do registro bancário imediatamente após a data de vencimento</strong> (não recebimento após o vencimento).
+                  </p>
+                </div>
+              </div>
+            )}
+
             <div className="grid gap-3.5 sm:grid-cols-2">
               <Field
                 label="Dia de vencimento"
@@ -198,12 +218,14 @@ function AsaasSettingsPage() {
                 value={form.fine_percent}
                 onChange={(v) => setForm({ ...form, fine_percent: Number(v) })}
                 type="number"
+                hint={isPlanmais ? "Inativo para Planmais: boletos não aceitam pagamento após o vencimento." : undefined}
               />
               <Field
                 label="Juros ao mês (%)"
                 value={form.interest_percent}
                 onChange={(v) => setForm({ ...form, interest_percent: Number(v) })}
                 type="number"
+                hint={isPlanmais ? "Inativo para Planmais: boletos não aceitam pagamento após o vencimento." : undefined}
               />
               <Field
                 label="Desconto (%)"

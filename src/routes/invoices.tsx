@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Plus, Receipt, AlertCircle, MessageCircle, FileText, ExternalLink, Percent } from "lucide-react";
+import { Plus, Receipt, AlertCircle, MessageCircle, FileText, ExternalLink, Percent, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
 import { AppLayout } from "@/components/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -48,7 +48,8 @@ export const Route = createFileRoute("/invoices")({
 
 function NewInvoiceDialog() {
   const qc = useQueryClient();
-  const { companyId } = useAuth();
+  const { companyId, appMode, companyName } = useAuth();
+  const isPlanmais = appMode === "billing" || companyName?.toLowerCase().includes("planmais");
   const [open, setOpen] = useState(false);
   const [memberId, setMemberId] = useState("");
   const [amount, setAmount] = useState("");
@@ -163,6 +164,18 @@ function NewInvoiceDialog() {
             <Label>Descrição / Referência</Label>
             <Input value={description} onChange={e => setDescription(e.target.value)} placeholder="Mensalidade Proteção Veicular" />
           </div>
+
+          {isPlanmais && (
+            <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-400 text-xs flex items-start gap-2.5">
+              <ShieldAlert className="size-4 shrink-0 mt-0.5" />
+              <div className="space-y-0.5">
+                <p className="font-bold">Regra Planmais: Não receber após o vencimento</p>
+                <p className="text-[11px] opacity-90 leading-relaxed">
+                  Para manter a cobertura ativa e o socorro do veículo do associado, este boleto será registrado no Asaas com bloqueio bancário para não aceitar pagamentos após o vencimento.
+                </p>
+              </div>
+            </div>
+          )}
         </div>
         <div className="flex justify-end gap-2">
           <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
@@ -184,6 +197,8 @@ function BoletoDetailDialog({
   onOpenChange: (open: boolean) => void;
   invoice: any | null;
 }) {
+  const { appMode, companyName } = useAuth();
+  const isPlanmais = appMode === "billing" || companyName?.toLowerCase().includes("planmais");
   if (!invoice) return null;
   const url = invoice.bankSlipUrl || invoice.invoiceUrl;
 
@@ -217,6 +232,11 @@ function BoletoDetailDialog({
               <span className="font-bold text-foreground">
                 {invoice.dueDate ? invoice.dueDate.split("-").reverse().join("/") : "—"}
               </span>
+              {isPlanmais && (
+                <span className="text-[10px] text-amber-600 dark:text-amber-400 font-semibold block mt-0.5">
+                  Não aceita após vencimento
+                </span>
+              )}
             </div>
             <div className="p-3 rounded-xl bg-muted/40 border border-border/50">
               <span className="text-[10px] text-muted-foreground block">Valor</span>
@@ -299,7 +319,8 @@ function BoletoDetailDialog({
 }
 
 function InvoicesPage() {
-  const { companyId } = useAuth();
+  const { companyId, appMode, companyName } = useAuth();
+  const isPlanmais = appMode === "billing" || companyName?.toLowerCase().includes("planmais");
   const fetchMetrics = useServerFn(getAsaasDashboardMetrics);
   
   const [selectedInvoice, setSelectedInvoice] = useState<any | null>(null);
@@ -326,8 +347,11 @@ function InvoicesPage() {
     const url = p.invoiceUrl || p.bankSlipUrl || "";
     const dateFormatted = p.dueDate ? p.dueDate.split('-').reverse().join('/') : "";
     const clientName = p.customerName || p.customer || "Associado";
+    const planmaisNotice = isPlanmais
+      ? `\n\n⚠️ Importante: Para garantir que seu veículo continue com cobertura ativa para assistência e socorro, o pagamento deve ser realizado impreterivelmente até a data de vencimento. Boletos vencidos não são aceitos pelo banco.`
+      : "";
     const text = encodeURIComponent(
-      `Olá ${clientName}! Aqui está sua fatura no valor de ${BRL(p.value)} (Vencimento: ${dateFormatted}).\n\nVocê pode acessar e pagar através do link seguro abaixo:\n${url}\n\nQualquer dúvida, estamos à disposição!`
+      `Olá ${clientName}! Aqui está sua fatura no valor de ${BRL(p.value)} (Vencimento: ${dateFormatted}).\n\nVocê pode acessar e pagar através do link seguro abaixo:\n${url}${planmaisNotice}\n\nQualquer dúvida, estamos à disposição!`
     );
     const phone = p.customerPhone ? p.customerPhone.replace(/\D/g, "") : "";
     const waUrl = phone ? `https://wa.me/55${phone}?text=${text}` : `https://wa.me/?text=${text}`;
@@ -388,7 +412,16 @@ function InvoicesPage() {
                         <tr key={p.id} className="transition-colors hover:bg-muted/40">
                           <td className="p-4 align-middle font-medium text-foreground">{p.customerName || p.customer}</td>
                           <td className="p-4 align-middle text-muted-foreground">{p.description || "-"}</td>
-                          <td className="p-4 align-middle font-mono text-xs">{p.dueDate ? p.dueDate.split('-').reverse().join('/') : "-"}</td>
+                          <td className="p-4 align-middle text-xs">
+                            <span className="font-mono font-semibold text-foreground block">
+                              {p.dueDate ? p.dueDate.split('-').reverse().join('/') : "-"}
+                            </span>
+                            {isPlanmais && (
+                              <span className="text-[10px] text-amber-600 dark:text-amber-400 font-medium block">
+                                Não aceita pós-venc.
+                              </span>
+                            )}
+                          </td>
                           <td className="p-4 align-middle font-semibold text-foreground">{BRL(p.value)}</td>
                           <td className="p-4 align-middle whitespace-nowrap">
                             {p.hasSplit ? (

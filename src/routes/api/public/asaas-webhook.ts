@@ -25,6 +25,7 @@ const REVERTED_EVENTS = new Set([
   "PAYMENT_DELETED",
   "PAYMENT_RESTORED",
   "PAYMENT_OVERDUE",
+  "PAYMENT_BANK_SLIP_CANCELLED",
 ]);
 
 export const Route = createFileRoute("/api/public/asaas-webhook")({
@@ -135,9 +136,15 @@ export const Route = createFileRoute("/api/public/asaas-webhook")({
                 await supabaseAdmin.from("notifications").insert({
                   company_id: companyId,
                   type: "error",
-                  title: parsed.event === "PAYMENT_OVERDUE" ? "Fatura Vencida" : "Pagamento Revertido",
+                  title: parsed.event === "PAYMENT_OVERDUE"
+                    ? "Fatura Vencida"
+                    : parsed.event === "PAYMENT_BANK_SLIP_CANCELLED"
+                    ? "Boleto Cancelado por Vencimento"
+                    : "Pagamento Revertido",
                   description: parsed.event === "PAYMENT_OVERDUE"
                     ? `A fatura de R$ ${parsed.payment?.value?.toFixed(2)} do associado ${memberRes.data.name} venceu sem pagamento.`
+                    : parsed.event === "PAYMENT_BANK_SLIP_CANCELLED"
+                    ? `O boleto do associado ${memberRes.data.name} foi cancelado no Asaas por ter atingido a data de vencimento (regra de não receber após vencimento).`
                     : `A cobrança do associado ${memberRes.data.name} teve seu status revertido no Asaas.`,
                 });
               }

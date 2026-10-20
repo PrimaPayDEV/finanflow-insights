@@ -75,7 +75,7 @@ export const createAsaasCharge = createServerFn({ method: "POST" })
     // 1. Fetch Company for API Key
     const { data: company } = await supabaseAdmin
       .from("companies")
-      .select("asaas_api_key, name")
+      .select("asaas_api_key, name, app_mode, segment")
       .eq("id", data.companyId)
       .single();
 
@@ -88,6 +88,7 @@ export const createAsaasCharge = createServerFn({ method: "POST" })
 
     const sandbox = settings?.sandbox ?? false;
     const isPrimaPay = company?.name === "Prima Hub" || company?.name === "PrimaPay";
+    const isPlanmais = company?.app_mode === "billing" || company?.segment === "veicular" || (company?.name || "").toLowerCase().includes("planmais");
     // Use company key, fallback to env ONLY for platform
     const apiKey = company?.asaas_api_key || (isPrimaPay ? (sandbox ? process.env.ASAAS_API_TESTE : process.env.ASAAS_API_KEY) : null);
 
@@ -139,6 +140,13 @@ export const createAsaasCharge = createServerFn({ method: "POST" })
 
     // 2. Cobrança híbrida Boleto/Pix com split
     const discountPercent = Number(settings?.discount_percent ?? 0);
+    const rawDescription = settings?.default_description
+      ? `${settings.default_description} — ${data.description}`
+      : data.description;
+    const finalDescription = isPlanmais
+      ? `${rawDescription} — NÃO RECEBER APÓS O VENCIMENTO`.slice(0, 500)
+      : rawDescription;
+
     const paymentRes = await fetch(`${base}/payments`, {
       method: "POST",
       headers,
@@ -147,11 +155,17 @@ export const createAsaasCharge = createServerFn({ method: "POST" })
         billingType: "BOLETO",
         value: Number(data.value.toFixed(2)),
         dueDate: nextDueDate(Number(settings?.due_day ?? 10)),
-        description: settings?.default_description
-          ? `${settings.default_description} — ${data.description}`
-          : data.description,
-        fine: { value: Number(settings?.fine_percent ?? 0), type: "PERCENTAGE" },
-        interest: { value: Number(settings?.interest_percent ?? 0) },
+        description: finalDescription,
+        ...(isPlanmais
+          ? {
+              daysAfterDueDateToRegistrationCancellation: 0,
+              fine: { value: 0, type: "PERCENTAGE" },
+              interest: { value: 0 },
+            }
+          : {
+              fine: { value: Number(settings?.fine_percent ?? 0), type: "PERCENTAGE" },
+              interest: { value: Number(settings?.interest_percent ?? 0) },
+            }),
         ...(discountPercent > 0
           ? {
               discount: {
