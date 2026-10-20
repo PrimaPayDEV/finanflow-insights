@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ShieldCheck, Lock, Phone, Mail, ArrowLeft, ExternalLink, FileText, CheckCircle2 } from "lucide-react";
-import { AsaasBaasSeal, ASAAS_SEALS } from "@/components/AsaasBaasSeal";
+import { AsaasBaasSeal } from "@/components/AsaasBaasSeal";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -145,44 +145,6 @@ function PrivacyAndBaaSTermsPage() {
           </CardContent>
         </Card>
 
-        {/* Selos Homologados e Padrão Visual */}
-        <Card className="rounded-3xl border border-border/80 bg-card shadow-xs">
-          <CardContent className="p-6 sm:p-8 space-y-4">
-            <h2 className="text-base sm:text-lg font-bold tracking-tight text-foreground">
-              Identificação Visual e Selos Homologados do Asaas
-            </h2>
-            <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-              Conforme exigência do Banco Central e do Asaas, as telas e formulários que envolvem movimentação de valores,
-              emissão de cobranças e abertura de contas contam com a identificação do selo oficial do Asaas:
-            </p>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
-              <div className="p-4 rounded-2xl bg-white border border-border/80 flex flex-col items-center justify-center gap-2 text-center">
-                <span className="text-[10px] font-bold text-slate-600 uppercase">Selo Positivo (Tema Claro)</span>
-                <img
-                  src={ASAAS_SEALS.positivo}
-                  alt="Selo Asaas Positivo"
-                  className="h-10 w-auto object-contain"
-                />
-              </div>
-              <div className="p-4 rounded-2xl bg-slate-100 border border-border/80 flex flex-col items-center justify-center gap-2 text-center">
-                <span className="text-[10px] font-bold text-slate-700 uppercase">Selo Preto (Neutro)</span>
-                <img
-                  src={ASAAS_SEALS.preto}
-                  alt="Selo Asaas Preto"
-                  className="h-10 w-auto object-contain"
-                />
-              </div>
-              <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 flex flex-col items-center justify-center gap-2 text-center">
-                <span className="text-[10px] font-bold text-slate-300 uppercase">Selo Branco (Tema Escuro)</span>
-                <img
-                  src={ASAAS_SEALS.branco}
-                  alt="Selo Asaas Branco"
-                  className="h-10 w-auto object-contain"
-                />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
 
         {/* Canais de Atendimento e Suporte (Slide 16 do Playbook Asaas) */}
         <Card className="rounded-3xl border-2 border-primary/20 bg-primary/5 shadow-xs">

@@ -2,7 +2,6 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { AppLayout } from "@/components/AppLayout";
-import { AsaasModalSeal, AsaasBaasSeal } from "@/components/AsaasBaasSeal";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -211,13 +210,6 @@ function RecebiveisLancamentos() {
                 </Button>
               </TabsContent>
             </Tabs>
-
-            <div className="mt-5 pt-3 border-t border-border/60 flex items-center justify-between gap-2">
-              <AsaasModalSeal variant="auto" />
-              <p className="text-[10px] text-muted-foreground text-right">
-                Transferências e liquidações via Asaas
-              </p>
-            </div>
           </CardContent>
         </Card>
 

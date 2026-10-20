@@ -38,7 +38,6 @@ import {
 import { MerchantIcon } from "@/components/MerchantIcon";
 import { toast } from "sonner";
 import { AppLayout } from "@/components/AppLayout";
-import { AsaasModalSeal } from "@/components/AsaasBaasSeal";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -2545,16 +2544,13 @@ function CreateAsaasSubaccountDialog({ onCreated }: { onCreated: (walletId: stri
             </div>
           </div>
         </div>
-        <DialogFooter className="flex flex-col-reverse sm:flex-row items-center sm:justify-between gap-3 pt-3 border-t border-border/60">
-          <AsaasModalSeal variant="auto" />
-          <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-            <DialogClose asChild>
-              <Button variant="ghost">Cancelar</Button>
-            </DialogClose>
-            <Button onClick={() => create.mutate()} disabled={create.isPending || !form.name || !form.cpfCnpj}>
-              {create.isPending ? "Criando..." : "Criar Subconta"}
-            </Button>
-          </div>
+        <DialogFooter className="pt-3 border-t border-border/60">
+          <DialogClose asChild>
+            <Button variant="ghost">Cancelar</Button>
+          </DialogClose>
+          <Button onClick={() => create.mutate()} disabled={create.isPending || !form.name || !form.cpfCnpj}>
+            {create.isPending ? "Criando..." : "Criar Subconta"}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

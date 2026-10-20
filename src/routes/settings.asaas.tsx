@@ -23,7 +23,6 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { AppLayout } from "@/components/AppLayout";
-import { AsaasBaasSeal, ASAAS_SEALS } from "@/components/AsaasBaasSeal";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -578,9 +577,10 @@ function AsaasSettingsPage() {
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
-              <AsaasBaasSeal variant="auto" size="sm" />
-            </div>
+            <Badge variant="outline" className="border-primary/30 bg-primary/10 text-primary text-xs font-semibold gap-1.5 py-1 px-3 shrink-0">
+              <ShieldCheck className="size-3.5" />
+              Homologado BACEN
+            </Badge>
           </CardHeader>
 
           <CardContent className="p-6 space-y-6">

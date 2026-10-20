@@ -1,5 +1,6 @@
-import { useState } from "react";
-import { ShieldCheck, HelpCircle, Phone, Mail, ExternalLink, Info } from "lucide-react";
+import { useState, useEffect } from "react";
+import { useTheme } from "next-themes";
+import { ShieldCheck, Phone, Mail, ExternalLink, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   Dialog,
@@ -13,20 +14,17 @@ import { Button } from "@/components/ui/button";
 export const ASAAS_SEALS = {
   positivo:
     "https://baas.asaas.com/selos/Servicos_financeiros_Asaas-Reduzida-Positivo.svg?id=d5013074-870a-43b1-9631-92ca8081495e",
-  preto:
-    "https://baas.asaas.com/selos/Servicos_financeiros_Asaas-Reduzida-Negativo-Preto.svg?id=d5013074-870a-43b1-9631-92ca8081495e",
   branco:
     "https://baas.asaas.com/selos/Servicos_financeiros_Asaas-Reduzida-Negativo-Branco.svg?id=d5013074-870a-43b1-9631-92ca8081495e",
 } as const;
 
 export interface AsaasBaasSealProps {
   /**
-   * "auto": alternância automática via CSS (Positivo no modo claro, Negativo-Branco no modo escuro)
-   * "positivo": logo oficial colorido (fundo claro/destaque azul)
-   * "preto": logo monocromático preto (fundo claro monocromático)
-   * "branco": logo monocromático branco (fundo escuro/dark mode)
+   * "auto": Azul (Positivo) no tema claro e Branco no tema escuro.
+   * "positivo": Sempre azul
+   * "branco": Sempre branco
    */
-  variant?: "auto" | "positivo" | "preto" | "branco";
+  variant?: "auto" | "positivo" | "branco";
   size?: "xs" | "sm" | "md" | "lg";
   className?: string;
   isLink?: boolean;
@@ -40,9 +38,11 @@ const sizeStyles = {
 };
 
 /**
- * Componente do Selo Oficial BaaS do Asaas em estrita conformidade com o Playbook BaaS.
- * NOTA CRÍTICA DE REGULAÇÃO: Nunca utilizar 'referrerpolicy="no-referrer"' na tag <img>,
- * pois o Asaas valida a origem via HTTP Referer para fins de compliance regulatório.
+ * Componente oficial do Selo BaaS Asaas.
+ * Regra: Renderiza estritamente UMA ÚNICA logo por vez.
+ * - Tema claro: logo azul oficial (positivo).
+ * - Tema escuro: logo branca oficial (branco).
+ * Não utiliza referrerpolicy="no-referrer" para permitir validação de conformidade pelo Asaas.
  */
 export function AsaasBaasSeal({
   variant = "auto",
@@ -50,36 +50,37 @@ export function AsaasBaasSeal({
   className,
   isLink = true,
 }: AsaasBaasSealProps) {
+  const { resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const currentSize = sizeStyles[size];
 
-  const renderImage = (src: string, extraClass = "") => (
+  // Determinar fonte da imagem:
+  // Se for "branco", sempre branco. Se "positivo", sempre azul.
+  // Se for "auto", no tema escuro é branco e no tema claro é azul.
+  let sealSrc = ASAAS_SEALS.positivo;
+  if (variant === "branco") {
+    sealSrc = ASAAS_SEALS.branco;
+  } else if (variant === "positivo") {
+    sealSrc = ASAAS_SEALS.positivo;
+  } else if (mounted && resolvedTheme === "dark") {
+    sealSrc = ASAAS_SEALS.branco;
+  }
+
+  // Elemento único de imagem
+  const imageElement = (
     <img
-      src={src}
-      alt="Serviços financeiros prestados por Asaas"
+      src={sealSrc}
+      alt="Serviços financeiros Asaas"
       width={currentSize.width}
       height={currentSize.height}
-      className={cn("object-contain select-none transition-opacity", currentSize.className, extraClass)}
-      style={{ display: "inline-block" }}
+      className={cn("object-contain select-none transition-opacity", currentSize.className)}
     />
   );
-
-  let content: React.ReactNode;
-
-  if (variant === "positivo") {
-    content = renderImage(ASAAS_SEALS.positivo);
-  } else if (variant === "preto") {
-    content = renderImage(ASAAS_SEALS.preto);
-  } else if (variant === "branco") {
-    content = renderImage(ASAAS_SEALS.branco);
-  } else {
-    // "auto": Positivo no tema claro e Negativo-Branco no tema escuro
-    content = (
-      <>
-        {renderImage(ASAAS_SEALS.positivo, "block dark:hidden")}
-        {renderImage(ASAAS_SEALS.branco, "hidden dark:block")}
-      </>
-    );
-  }
 
   if (isLink) {
     return (
@@ -93,12 +94,12 @@ export function AsaasBaasSeal({
           className
         )}
       >
-        {content}
+        {imageElement}
       </a>
     );
   }
 
-  return <div className={cn("inline-flex items-center justify-center", className)}>{content}</div>;
+  return <div className={cn("inline-flex items-center justify-center", className)}>{imageElement}</div>;
 }
 
 /**
@@ -147,13 +148,14 @@ export function AsaasLegalModal({
               , instituição de pagamento autorizada a funcionar pelo Banco Central do Brasil.
             </p>
             <p className="text-[13px] leading-relaxed text-foreground">
-              A nossa empresa atua exclusivamente como <strong className="font-bold">integradora tecnológica e distribuidora da experiência do produto</strong>,
+              A nossa empresa atua exclusivamente como{" "}
+              <strong className="font-bold">integradora tecnológica e distribuidora da experiência do produto</strong>,
               não sendo instituição financeira ou de pagamento, nem realizando intermediação financeira em nome próprio.
             </p>
             <p className="text-[13px] leading-relaxed text-foreground">
               O cliente declara ciência de que o relacionamento financeiro/de pagamentos e a responsabilidade
-              regulatória pelos serviços acima descritos são do <strong className="font-bold">ASAAS GESTÃO FINANCEIRA S.A.</strong>,
-              nos termos da regulamentação vigente.
+              regulatória pelos serviços acima descritos são do{" "}
+              <strong className="font-bold">ASAAS GESTÃO FINANCEIRA S.A.</strong>, nos termos da regulamentação vigente.
             </p>
           </div>
 
@@ -229,40 +231,7 @@ export function AsaasLegalModal({
 }
 
 /**
- * Componente do Selo para ser usado no rodapé de Modais/Diálogos financeiros (ex: Criar subconta, Nova Fatura, etc.)
- * exatamente como no Slide 10 do Playbook BaaS Asaas.
- */
-export function AsaasModalSeal({
-  variant = "auto",
-  className,
-}: {
-  variant?: "auto" | "positivo" | "preto" | "branco";
-  className?: string;
-}) {
-  const [legalOpen, setLegalOpen] = useState(false);
-
-  return (
-    <>
-      <div className={cn("flex items-center gap-2.5 text-left", className)}>
-        <AsaasBaasSeal variant={variant} size="xs" />
-        <button
-          type="button"
-          onClick={() => setLegalOpen(true)}
-          className="text-[10px] text-muted-foreground hover:text-primary transition-colors flex items-center gap-1 underline underline-offset-2"
-          title="Ver informações regulatórias do Asaas"
-        >
-          <span>Regulação BACEN</span>
-          <HelpCircle className="size-3 shrink-0" />
-        </button>
-      </div>
-
-      <AsaasLegalModal open={legalOpen} onOpenChange={setLegalOpen} />
-    </>
-  );
-}
-
-/**
- * Rodapé global de conformidade BaaS do Asaas
+ * Rodapé global de conformidade BaaS (SEM logo duplicada, já que a logo fica no canto inferior esquerdo da sidebar)
  */
 export function AsaasBaasFooterDisclosure({
   className,
@@ -275,28 +244,22 @@ export function AsaasBaasFooterDisclosure({
     <>
       <footer
         className={cn(
-          "w-full mt-10 pt-6 pb-6 border-t border-border/50 text-xs text-muted-foreground print:hidden",
+          "w-full mt-8 pt-4 pb-4 border-t border-border/40 text-xs text-muted-foreground print:hidden",
           className
         )}
       >
-        <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <AsaasBaasSeal variant="auto" size="sm" />
-            <div className="text-[11px] leading-tight text-muted-foreground max-w-xl">
-              <p>
-                Serviços financeiros operados por{" "}
-                <strong className="text-foreground font-semibold">
-                  ASAAS GESTÃO FINANCEIRA INSTITUIÇÃO DE PAGAMENTO S.A.
-                </strong>
-                , autorizada pelo Banco Central do Brasil.
-              </p>
-              <p className="text-[10px] text-muted-foreground/80 mt-0.5">
-                Em conformidade com a Resolução Conjunta nº 16/2025 do Banco Central do Brasil.
-              </p>
-            </div>
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-muted-foreground">
+          <div className="text-center sm:text-left leading-tight">
+            <span>
+              Serviços financeiros operados por{" "}
+              <strong className="text-foreground/90 font-semibold">
+                ASAAS GESTÃO FINANCEIRA INSTITUIÇÃO DE PAGAMENTO S.A.
+              </strong>{" "}
+              (Resolução Conjunta nº 16/2025 BACEN).
+            </span>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3 text-[11px]">
+          <div className="flex flex-wrap items-center justify-center gap-3 shrink-0">
             <button
               type="button"
               onClick={() => setLegalOpen(true)}
