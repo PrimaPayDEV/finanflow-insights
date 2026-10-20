@@ -29,6 +29,7 @@ import { getMembers, upsertMember, addVehicle, deleteMember } from "@/lib/member
 import { getPartners } from "@/lib/partner.functions";
 import { translateError } from "@/lib/translateError";
 import { formatCpfCnpj, formatPhone } from "@/lib/format";
+import { VehicleCategorySelector, VehicleCategoryBadge } from "@/components/VehicleCategorySelector";
 
 export const Route = createFileRoute("/members")({
   head: () => ({
@@ -56,6 +57,7 @@ function MemberDialog({ member }: { member?: any }) {
   const [brandName, setBrandName] = useState(firstVehicle?.brand || "");
   const [modelName, setModelName] = useState(firstVehicle?.model || "");
   const [year, setYear] = useState(firstVehicle?.year?.toString() || "");
+  const [category, setCategory] = useState<string>(firstVehicle?.category || "Leves e utilitários");
   const [brandCode, setBrandCode] = useState("");
 
   const fetchPartners = useServerFn(getPartners);
@@ -110,7 +112,8 @@ function MemberDialog({ member }: { member?: any }) {
             plate,
             brand: brandName,
             model: modelName,
-            year: year ? parseInt(year) : undefined
+            year: year ? parseInt(year) : undefined,
+            category,
           }
         },
       });
@@ -122,6 +125,7 @@ function MemberDialog({ member }: { member?: any }) {
       if (!member) {
         setName(""); setDocument(""); setEmail(""); setPhone(""); setPartnerId("");
         setVehicleId(""); setPlate(""); setBrandName(""); setModelName(""); setYear(""); setBrandCode("");
+        setCategory("Leves e utilitários");
       }
       qc.invalidateQueries({ queryKey: ["members"] });
     },
@@ -234,6 +238,10 @@ function MemberDialog({ member }: { member?: any }) {
               <Label>Ano de Fabricação</Label>
               <Input value={year} onChange={(e) => setYear(e.target.value)} placeholder="2020" type="number" />
             </div>
+
+            <div className="pt-1">
+              <VehicleCategorySelector value={category} onChange={setCategory} />
+            </div>
           </div>
         </div>
 
@@ -259,12 +267,13 @@ function VehicleDialog({ memberId, memberName }: { memberId: string; memberName:
   const [brand, setBrand] = useState("");
   const [model, setModel] = useState("");
   const [year, setYear] = useState("");
+  const [category, setCategory] = useState("Leves e utilitários");
 
   const submit = useMutation({
     mutationFn: async () => {
       if (!companyId) throw new Error("Empresa não identificada");
       await addVehicle({
-        data: { companyId, memberId, plate, brand, model, year: parseInt(year) || undefined },
+        data: { companyId, memberId, plate, brand, model, year: parseInt(year) || undefined, category },
       });
     },
     onSuccess: () => {
@@ -274,6 +283,7 @@ function VehicleDialog({ memberId, memberName }: { memberId: string; memberName:
       setBrand("");
       setModel("");
       setYear("");
+      setCategory("Leves e utilitários");
       qc.invalidateQueries({ queryKey: ["members"] });
     },
     onError: (e) => toast.error(translateError(e.message)),
@@ -286,28 +296,32 @@ function VehicleDialog({ memberId, memberName }: { memberId: string; memberName:
           <Car className="size-4" /> Adicionar Veículo
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>Veículo - {memberName}</DialogTitle>
         </DialogHeader>
-        <div className="grid gap-4 py-4">
-          <div className="space-y-2">
+        <div className="grid gap-3.5 py-3">
+          <div className="space-y-1.5">
             <Label>Placa</Label>
             <Input value={plate} onChange={(e) => setPlate(e.target.value.replace(/[^a-zA-Z0-9]/g, "").toUpperCase())} placeholder="ABC1234" maxLength={7} />
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
               <Label>Marca</Label>
               <Input value={brand} onChange={(e) => setBrand(e.target.value)} placeholder="Chevrolet" />
             </div>
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <Label>Modelo</Label>
               <Input value={model} onChange={(e) => setModel(e.target.value)} placeholder="Onix" />
             </div>
           </div>
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             <Label>Ano</Label>
             <Input value={year} onChange={(e) => setYear(e.target.value)} placeholder="2020" type="number" />
+          </div>
+
+          <div className="pt-1">
+            <VehicleCategorySelector value={category} onChange={setCategory} />
           </div>
         </div>
         <div className="flex flex-col-reverse sm:flex-row items-center sm:justify-between gap-3 border-t pt-3">
@@ -435,12 +449,15 @@ function MembersPage() {
                       <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Veículos ({m.vehicles?.length || 0})</p>
                     </div>
                     {m.vehicles?.map((v: any) => (
-                      <div key={v.id} className="flex justify-between items-center bg-muted/40 p-2.5 rounded-xl border border-border/40 text-sm">
-                        <div>
-                          <p className="font-mono font-bold text-xs text-foreground tracking-wide">{v.plate}</p>
-                          <p className="text-xs text-muted-foreground">{v.brand} {v.model}</p>
+                      <div key={v.id} className="flex justify-between items-center bg-muted/40 p-2.5 rounded-xl border border-border/40 text-sm gap-2">
+                        <div className="space-y-0.5 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className="font-mono font-bold text-xs text-foreground tracking-wide">{v.plate}</p>
+                            <VehicleCategoryBadge category={v.category} size="sm" />
+                          </div>
+                          <p className="text-xs text-muted-foreground truncate">{v.brand} {v.model}</p>
                         </div>
-                        <ShieldCheck className="size-4 text-emerald-600" />
+                        <ShieldCheck className="size-4 text-emerald-600 shrink-0" />
                       </div>
                     ))}
                     <div className="pt-1">

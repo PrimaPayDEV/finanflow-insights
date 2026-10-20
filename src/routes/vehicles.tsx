@@ -52,6 +52,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useAuth } from "@/contexts/AuthContext";
 import { getVehicles, getMembers, addVehicle, deleteVehicle } from "@/lib/members.functions";
 import { BRL, formatCpfCnpj, formatPhone } from "@/lib/format";
+import { VehicleCategorySelector, VehicleCategoryBadge } from "@/components/VehicleCategorySelector";
 
 export const Route = createFileRoute("/vehicles")({
   head: () => ({
@@ -157,6 +158,7 @@ export interface VehicleItem {
   model: string;
   year: number;
   color?: string;
+  category?: string;
   chassi?: string;
   renavam?: string;
   fipeValue?: number;
@@ -199,6 +201,7 @@ const DEMO_VEHICLES: VehicleItem[] = [
     model: "Corolla Altis 2.0 Dynamic Force Flex",
     year: 2024,
     color: "Branco Perolizado",
+    category: "Leves e utilitários",
     chassi: "9BRBL3HE8P0192841",
     renavam: "01398274619",
     fipeValue: 154800,
@@ -226,6 +229,7 @@ const DEMO_VEHICLES: VehicleItem[] = [
     model: "Compass Longitude 1.3 T270 Turbo",
     year: 2023,
     color: "Cinza Granite",
+    category: "Leves e utilitários",
     chassi: "9886FB981N0284712",
     renavam: "01284719284",
     fipeValue: 158900,
@@ -253,6 +257,7 @@ const DEMO_VEHICLES: VehicleItem[] = [
     model: "Toro Volcano 2.0 16V 4x4 Diesel Aut.",
     year: 2022,
     color: "Vermelho Colorado",
+    category: "Leves e utilitários",
     chassi: "9BD226392M0384719",
     renavam: "01192837465",
     fipeValue: 136400,
@@ -280,6 +285,7 @@ const DEMO_VEHICLES: VehicleItem[] = [
     model: "Civic Touring 1.5 Turbo 16V Aut.",
     year: 2021,
     color: "Preto Cristal",
+    category: "Leves e utilitários",
     chassi: "93HFC1640M0192837",
     renavam: "01092837461",
     fipeValue: 141200,
@@ -307,6 +313,7 @@ const DEMO_VEHICLES: VehicleItem[] = [
     model: "Onix Plus Premier 1.0 Turbo Aut.",
     year: 2023,
     color: "Azul Eclipse",
+    category: "Leves e utilitários",
     chassi: "9BGKT69F0P0284719",
     renavam: "01384719283",
     fipeValue: 97800,
@@ -334,6 +341,7 @@ const DEMO_VEHICLES: VehicleItem[] = [
     model: "320i M Sport 2.0 Turbo ActiveFlex",
     year: 2022,
     color: "Branco Alpino",
+    category: "Leves e utilitários",
     chassi: "95V5F3108M0294817",
     renavam: "01239847192",
     fipeValue: 248900,
@@ -427,6 +435,7 @@ function VehiclesPage() {
       model: v.model || "Modelo não informado",
       year: v.year || new Date().getFullYear(),
       color: v.color || "Prata",
+      category: v.category || "Leves e utilitários",
       chassi: `9BW${(v.id || "").slice(0, 8).toUpperCase()}`,
       renavam: `00${(v.id || "").replace(/\D/g, "").slice(0, 9)}`,
       fipeValue: v.fipe_value || estimateRealisticFipe(v.brand, v.model, v.year),
@@ -720,13 +729,14 @@ function VehiclesPage() {
                 <div>
                   {/* Topo do Card com Placa Mercosul e Status */}
                   <div className="p-3.5 sm:p-4 border-b border-border/50 bg-gradient-to-b from-muted/30 to-transparent flex items-start justify-between gap-2.5">
-                    <div className="flex items-center gap-2.5">
+                    <div className="flex items-center gap-2.5 min-w-0">
                       <MercosulPlate plate={vehicle.plate} size="md" />
-                      <div>
-                        <div className="flex items-center gap-1.5">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5 flex-wrap">
                           <span className="text-[11px] font-bold text-primary uppercase tracking-wide">
                             {vehicle.brand}
                           </span>
+                          <VehicleCategoryBadge category={vehicle.category} size="sm" />
                           {vehicle.isDemo && (
                             <Badge variant="outline" className="text-[9px] px-1 py-0 h-3.5 border-primary/30 text-primary">
                               Demo
@@ -920,6 +930,7 @@ function VehicleDossierDialog({
                   <span className="text-[11px] font-bold text-primary uppercase tracking-wide">
                     {vehicle.brand} • {vehicle.year}
                   </span>
+                  <VehicleCategoryBadge category={vehicle.category} size="sm" />
                   {vehicle.isDemo && (
                     <Badge className="bg-primary/20 text-primary border-primary/30 text-[9px] font-bold px-1.5 py-0 h-4">
                       DEMO
@@ -993,6 +1004,12 @@ function VehicleDossierDialog({
                 <div className="p-2.5 rounded-xl bg-muted/35 border border-border/50">
                   <span className="text-[10px] text-muted-foreground block">Combustível</span>
                   <span className="font-bold text-xs text-foreground truncate block">{vehicle.fuel || "Flex"}</span>
+                </div>
+                <div className="p-2.5 rounded-xl bg-muted/35 border border-border/50 sm:col-span-2">
+                  <span className="text-[10px] text-muted-foreground block">Categoria</span>
+                  <div className="mt-1">
+                    <VehicleCategoryBadge category={vehicle.category} size="sm" />
+                  </div>
                 </div>
 
                 <div className="p-2.5 rounded-xl bg-muted/35 border border-border/50 sm:col-span-2">
@@ -1531,6 +1548,7 @@ function NewVehicleDialog({ members }: { members: any[] }) {
   const [model, setModel] = useState("");
   const [year, setYear] = useState(new Date().getFullYear().toString());
   const [color, setColor] = useState("");
+  const [category, setCategory] = useState("Leves e utilitários");
 
   const createVeh = useMutation({
     mutationFn: async () => {
@@ -1548,6 +1566,7 @@ function NewVehicleDialog({ members }: { members: any[] }) {
           model,
           year: Number(year) || new Date().getFullYear(),
           color,
+          category,
         },
       });
     },
@@ -1560,6 +1579,7 @@ function NewVehicleDialog({ members }: { members: any[] }) {
       setBrand("");
       setModel("");
       setColor("");
+      setCategory("Leves e utilitários");
     },
     onError: (err: any) => {
       toast.error(err.message || "Erro ao cadastrar veículo.");
@@ -1574,7 +1594,7 @@ function NewVehicleDialog({ members }: { members: any[] }) {
           <span>Cadastrar Veículo</span>
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-md rounded-2xl bg-card border-border">
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl bg-card border-border">
         <DialogHeader>
           <DialogTitle className="text-base font-bold flex items-center gap-2">
             <Car className="size-4.5 text-primary" /> Novo Veículo na Frota
@@ -1658,6 +1678,10 @@ function NewVehicleDialog({ members }: { members: any[] }) {
               onChange={(e) => setModel(e.target.value)}
               className="rounded-xl text-xs h-9"
             />
+          </div>
+
+          <div className="pt-1">
+            <VehicleCategorySelector value={category} onChange={setCategory} />
           </div>
 
           <DialogFooter className="pt-2 flex flex-col-reverse sm:flex-row items-center sm:justify-between gap-3">

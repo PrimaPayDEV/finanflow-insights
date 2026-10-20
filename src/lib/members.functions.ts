@@ -16,7 +16,8 @@ const memberSchema = z.object({
     plate: z.string().max(7).optional().or(z.literal("")),
     brand: z.string().optional().or(z.literal("")),
     model: z.string().optional().or(z.literal("")),
-    year: z.number().optional()
+    year: z.number().optional(),
+    category: z.string().optional().or(z.literal(""))
   }).optional()
 });
 
@@ -136,19 +137,28 @@ export const upsertMember = createServerFn({ method: "POST" })
 
     // Upsert vehicle if provided
     if (data.id && data.vehicle && (data.vehicle.plate || data.vehicle.brand || data.vehicle.model)) {
-      const vData = {
+      const vData: any = {
         member_id: data.id,
         company_id: data.companyId,
         plate: (data.vehicle.plate || "").toUpperCase(),
         brand: data.vehicle.brand || "",
         model: data.vehicle.model || "",
         year: data.vehicle.year,
+        category: data.vehicle.category || "Leves e utilitários",
       };
       
       if (data.vehicle.id) {
-        await supabaseAdmin.from("vehicles").update(vData).eq("id", data.vehicle.id).eq("company_id", data.companyId);
+        const { error: vError } = await supabaseAdmin.from("vehicles").update(vData).eq("id", data.vehicle.id).eq("company_id", data.companyId);
+        if (vError && (vError.message?.includes("category") || (vError as any).code === "42703")) {
+          delete vData.category;
+          await supabaseAdmin.from("vehicles").update(vData).eq("id", data.vehicle.id).eq("company_id", data.companyId);
+        }
       } else {
-        await supabaseAdmin.from("vehicles").insert(vData);
+        const { error: vError } = await supabaseAdmin.from("vehicles").insert(vData);
+        if (vError && (vError.message?.includes("category") || (vError as any).code === "42703")) {
+          delete vData.category;
+          await supabaseAdmin.from("vehicles").insert(vData);
+        }
       }
     }
 
@@ -184,10 +194,10 @@ export const getVehicles = createServerFn({ method: "GET" })
   });
 
 export const addVehicle = createServerFn({ method: "POST" })
-  .validator((d: { memberId: string; companyId: string; plate: string; brand: string; model: string; year?: number; color?: string }) => d)
+  .validator((d: { memberId: string; companyId: string; plate: string; brand: string; model: string; year?: number; color?: string; category?: string }) => d)
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await supabaseAdmin.from("vehicles").insert({
+    const vData: any = {
       member_id: data.memberId,
       company_id: data.companyId,
       plate: data.plate.toUpperCase().trim(),
@@ -195,8 +205,18 @@ export const addVehicle = createServerFn({ method: "POST" })
       model: data.model,
       year: data.year,
       color: data.color || null,
-    });
-    if (error) throw new Error(error.message);
+      category: data.category || "Leves e utilitários",
+    };
+    const { error } = await supabaseAdmin.from("vehicles").insert(vData);
+    if (error) {
+      if (error.message?.includes("category") || (error as any).code === "42703") {
+        delete vData.category;
+        const { error: retryError } = await supabaseAdmin.from("vehicles").insert(vData);
+        if (retryError) throw new Error(retryError.message);
+      } else {
+        throw new Error(error.message);
+      }
+    }
     return { ok: true };
   });
 
