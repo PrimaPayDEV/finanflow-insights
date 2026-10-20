@@ -228,6 +228,10 @@ export function getModalityRate(t: Transaction, plan?: FeePlan): number {
   return 0;
 }
 
+export function getCPAG59Rate(t: Transaction): number {
+  return getModalityRate(t, undefined);
+}
+
 export function getMaxDiscountRate(t: Transaction, plan?: FeePlan): number {
   const opRatePlan = Number(plan?.fixed_rate_percent || 0);
   const modalityBaseRate = getModalityRate(t, plan);

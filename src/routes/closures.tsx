@@ -72,7 +72,7 @@ import {
   importsQuery,
   terminalsQuery,
 } from "@/lib/db";
-import { calculateClosure, getModalityRate, getTraditionalRate, getMaxDiscountRate } from "@/lib/closure";
+import { calculateClosure, getModalityRate, getTraditionalRate, getMaxDiscountRate, getCPAG59Rate } from "@/lib/closure";
 import { createAsaasCharge } from "@/lib/asaas.functions";
 import {
   BRL,
@@ -106,8 +106,9 @@ function MiniTrendline({ diffRate }: { diffRate: number }) {
   }
 
   const isPositive = diffRate > 0;
-  const strokeColor = isPositive ? "#10b981" : "#f43f5e";
-  const fillColor = isPositive ? "rgba(16, 185, 129, 0.15)" : "rgba(244, 63, 94, 0.15)";
+  // Cores invertidas conforme solicitação: positivo passa a ser vermelho (rose) e negativo passa a ser verde (emerald)
+  const strokeColor = isPositive ? "#f43f5e" : "#10b981";
+  const fillColor = isPositive ? "rgba(244, 63, 94, 0.15)" : "rgba(16, 185, 129, 0.15)";
   const pathD = isPositive
     ? "M 2 15 C 16 15, 24 9, 36 6 L 44 4"
     : "M 2 5 C 16 5, 24 11, 36 14 L 44 16";
@@ -119,9 +120,9 @@ function MiniTrendline({ diffRate }: { diffRate: number }) {
   return (
     <div
       className={`inline-flex items-center justify-end gap-1 ${
-        isPositive ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"
+        isPositive ? "text-rose-600 dark:text-rose-400" : "text-emerald-600 dark:text-emerald-400"
       }`}
-      title={`Variação: ${isPositive ? "+" : ""}${diffRate.toFixed(2)}% (${isPositive ? "pra mais" : "pra menos"})`}
+      title={`Variação: ${isPositive ? "+" : ""}${diffRate.toFixed(2)}% (${isPositive ? "acima do esperado" : "abaixo do esperado"})`}
     >
       <svg className="w-10 h-4 print:w-7 print:h-2.5 overflow-visible" viewBox="0 0 48 20" fill="none">
         <path d={areaD} fill={fillColor} />
@@ -252,6 +253,7 @@ function RouteComponent() {
     let totalDiscounted = 0;
     let totalOpValue = 0;
     let totalExpectedDiscount = 0;
+    let totalDiffValue = 0;
 
     for (const tx of txs) {
       const gross = Number(tx.gross_amount);
@@ -268,13 +270,17 @@ function RouteComponent() {
       const opRate = Math.max(0, maxDiscountRate - tradRate);
       const opValue = gross * (opRate / 100);
 
-      const expectedRate = getModalityRate(tx, plan);
+      // No relatório interno, a taxa esperada de referência é SEMPRE a cadastrada no CPAG59
+      const expectedRate = getCPAG59Rate(tx);
       const expectedValue = gross * (expectedRate / 100);
+      const diffRate = tradRate - expectedRate;
+      const diffValue = gross * (diffRate / 100);
 
       totalGross += gross;
       totalDiscounted += discountedValue;
       totalOpValue += opValue;
       totalExpectedDiscount += expectedValue;
+      totalDiffValue += diffValue;
     }
 
     const avgDiscountRate = totalGross > 0 ? (totalDiscounted / totalGross) * 100 : 0;
@@ -291,6 +297,7 @@ function RouteComponent() {
       totalExpectedDiscount,
       avgExpectedRate,
       avgDiffRate,
+      totalDiffValue,
     };
   }, [txs, plan]);
 
@@ -947,7 +954,7 @@ function RouteComponent() {
                 <div className="flex items-center gap-2">
                   <ShieldAlert className="size-4 text-amber-600 shrink-0" />
                   <span>
-                    <strong>Modo Auditoria Interna ativo:</strong> As colunas de Taxa Operacional foram substituídas pela Linha de Tendência e Equação de Desvio de Taxa (<code>% Descontado - % Esperado</code>).
+                    <strong>Modo Auditoria Interna ativo:</strong> As colunas de Taxa Operacional foram substituídas pela Linha de Tendência, Valor Descontado da Diferença e Equação de Desvio de Taxa (<code>% Descontado - % Esperado CPAG59</code>). O cálculo considera a taxa de referência CPAG59 cadastrada no banco de dados.
                   </span>
                 </div>
               </div>
@@ -967,6 +974,7 @@ function RouteComponent() {
                         {reportMode === "internal" ? (
                           <>
                             <TableHead className="text-right font-semibold text-xs print:text-[8.5px] print:py-1 print:px-1 print:text-foreground">Tendência</TableHead>
+                            <TableHead className="text-right font-semibold text-xs print:text-[8.5px] print:py-1 print:px-1 print:text-foreground whitespace-nowrap">Vlr. Diferença</TableHead>
                             <TableHead className="text-right font-semibold text-xs print:text-[8.5px] print:py-1 print:px-1 print:text-foreground whitespace-nowrap">Diferença (% Desc. - % Esperado)</TableHead>
                           </>
                         ) : (
@@ -980,7 +988,7 @@ function RouteComponent() {
                     <TableBody className="print:table-row-group">
                       {txs.length === 0 ? (
                         <TableRow className="print:table-row">
-                          <TableCell colSpan={7} className="h-28 text-center text-muted-foreground text-sm print:h-12 print:text-xs">
+                          <TableCell colSpan={reportMode === "internal" ? 8 : 7} className="h-28 text-center text-muted-foreground text-sm print:h-12 print:text-xs">
                             Nenhuma venda registrada neste período.
                           </TableCell>
                         </TableRow>
@@ -1002,8 +1010,10 @@ function RouteComponent() {
                           const opRate = Math.max(0, maxDiscountRate - tradRate);
                           const opValue = gross * (opRate / 100);
 
-                          const expectedRate = getModalityRate(tx, plan);
+                          // Relatório interno considera a taxa de referência do CPAG59
+                          const expectedRate = getCPAG59Rate(tx);
                           const diffRate = tradRate - expectedRate;
+                          const diffValue = gross * (diffRate / 100);
 
                           return (
                             <TableRow key={tx.id} className="hover:bg-muted/30 transition-colors print:table-row print:break-inside-avoid print:page-break-inside-avoid">
@@ -1027,12 +1037,25 @@ function RouteComponent() {
                                   <TableCell className="text-right print:py-0.5 print:px-1">
                                     <MiniTrendline diffRate={diffRate} />
                                   </TableCell>
+                                  {/* Nova coluna: Valor Descontado da Diferença */}
+                                  <TableCell
+                                    className={`text-right font-bold text-xs print:text-[8px] font-mono print:py-0.5 print:px-1 ${
+                                      diffValue > 0.001
+                                        ? "text-rose-600 dark:text-rose-400"
+                                        : diffValue < -0.001
+                                        ? "text-emerald-600 dark:text-emerald-400"
+                                        : "text-muted-foreground"
+                                    }`}
+                                  >
+                                    {diffValue > 0 ? `+${BRL(diffValue)}` : BRL(diffValue)}
+                                  </TableCell>
+                                  {/* Diferença % com cores invertidas */}
                                   <TableCell
                                     className={`text-right font-bold text-xs print:text-[8px] font-mono print:py-0.5 print:px-1 ${
                                       diffRate > 0.001
-                                        ? "text-emerald-600 dark:text-emerald-400"
-                                        : diffRate < -0.001
                                         ? "text-rose-600 dark:text-rose-400"
+                                        : diffRate < -0.001
+                                        ? "text-emerald-600 dark:text-emerald-400"
                                         : "text-muted-foreground"
                                     }`}
                                   >
@@ -1079,12 +1102,27 @@ function RouteComponent() {
                               <TableCell className="text-right print:py-1 print:px-1">
                                 <MiniTrendline diffRate={totalsDetailed.avgDiffRate} />
                               </TableCell>
+                              {/* Total da nova coluna Vlr. Diferença */}
+                              <TableCell
+                                className={`text-right font-black text-xs print:text-[8.5px] font-mono print:py-1 print:px-1 ${
+                                  totalsDetailed.totalDiffValue > 0.01
+                                    ? "text-rose-600 dark:text-rose-400"
+                                    : totalsDetailed.totalDiffValue < -0.01
+                                    ? "text-emerald-600 dark:text-emerald-400"
+                                    : "text-muted-foreground"
+                                }`}
+                              >
+                                {totalsDetailed.totalDiffValue > 0
+                                  ? `+${BRL(totalsDetailed.totalDiffValue)}`
+                                  : BRL(totalsDetailed.totalDiffValue)}
+                              </TableCell>
+                              {/* Total Diferença % com cores invertidas */}
                               <TableCell
                                 className={`text-right font-black text-xs print:text-[8.5px] font-mono print:py-1 print:px-1 ${
                                   totalsDetailed.avgDiffRate > 0.001
-                                    ? "text-emerald-600 dark:text-emerald-400"
-                                    : totalsDetailed.avgDiffRate < -0.001
                                     ? "text-rose-600 dark:text-rose-400"
+                                    : totalsDetailed.avgDiffRate < -0.001
+                                    ? "text-emerald-600 dark:text-emerald-400"
                                     : "text-muted-foreground"
                                 }`}
                               >
