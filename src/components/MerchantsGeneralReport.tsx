@@ -45,7 +45,8 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table";
 import { BRL, formatCpfCnpj } from "@/lib/format";
-import { getCPAG59Rate, getTraditionalRate, type Modality } from "@/lib/closure";
+import { getCPAG59Rate, getTraditionalRate } from "@/lib/closure";
+import type { Modality } from "@/lib/format";
 import type { Merchant, Transaction, FeePlan } from "@/lib/db";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -226,7 +227,7 @@ export function MerchantsGeneralReport({
 
     // Se houver merchants cadastrados, agrupar transações por merchant
     const rows: MerchantReportRow[] = (merchants || []).map((m) => {
-      const mPlan = m.fee_plan_id ? plansMap.get(m.fee_plan_id) : undefined;
+      const mPlan = (feePlans || []).find((p) => p.merchant_id === m.id);
       const mTxs = monthTxs.filter((t) => t.merchant_id === m.id);
 
       let totalGross = 0;
@@ -268,8 +269,8 @@ export function MerchantsGeneralReport({
       return {
         id: m.id,
         name: m.name,
-        document: m.document || "",
-        planName: mPlan?.name || "Plano Geral",
+        document: m.document_cnpj || "",
+        planName: mPlan ? "Plano do EC" : "Plano Geral",
         txCount: mTxs.length,
         totalGross,
         totalDiscounted,
