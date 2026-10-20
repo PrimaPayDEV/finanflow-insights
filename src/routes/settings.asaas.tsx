@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { AppLayout } from "@/components/AppLayout";
+import { AsaasFormSeal } from "@/components/AsaasBaasSeal";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -503,14 +504,17 @@ function AsaasSettingsPage() {
                   />
                 </div>
 
-                <Button
-                  onClick={() => save.mutate()}
-                  disabled={save.isPending}
-                  className="w-full h-11 rounded-xl font-bold shadow-xs gap-2"
-                >
-                  <Save className="size-4" />
-                  <span>{save.isPending ? "Salvando alterações..." : "Salvar Preferências"}</span>
-                </Button>
+                <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3">
+                  <AsaasFormSeal />
+                  <Button
+                    onClick={() => save.mutate()}
+                    disabled={save.isPending}
+                    className="w-full sm:w-auto h-11 px-6 rounded-xl font-bold shadow-xs gap-2"
+                  >
+                    <Save className="size-4" />
+                    <span>{save.isPending ? "Salvando alterações..." : "Salvar Preferências"}</span>
+                  </Button>
+                </div>
               </CardContent>
             </Card>
 

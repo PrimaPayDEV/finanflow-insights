@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { AppLayout } from "@/components/AppLayout";
+import { AsaasFormSeal } from "@/components/AsaasBaasSeal";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -210,6 +211,11 @@ function RecebiveisLancamentos() {
                 </Button>
               </TabsContent>
             </Tabs>
+
+            <div className="mt-4 pt-3 border-t border-border/50 flex items-center justify-between">
+              <AsaasFormSeal />
+              <span className="text-[10px] text-muted-foreground">Operações via Asaas BaaS</span>
+            </div>
           </CardContent>
         </Card>
 

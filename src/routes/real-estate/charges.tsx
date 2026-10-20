@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { AppLayout } from "@/components/AppLayout";
+import { AsaasFormSeal } from "@/components/AsaasBaasSeal";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { chargesQuery, contractsQuery } from "@/lib/real-estate";
 import { generateRentCharge } from "@/lib/real-estate-finance.functions";
@@ -104,11 +105,14 @@ function NewChargeDialog() {
             <span className="text-xs text-muted-foreground">O valor do aluguel será somado automaticamente.</span>
           </div>
         </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
-          <Button onClick={() => generateAction.mutate()} disabled={generateAction.isPending || !form.contractId || !form.competence || !form.dueDate}>
-            {generateAction.isPending ? "Gerando no Asaas..." : "Gerar Boleto/Pix"}
-          </Button>
+        <DialogFooter className="flex flex-col-reverse sm:flex-row items-center sm:justify-between gap-3 pt-3 border-t border-border/60">
+          <AsaasFormSeal />
+          <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+            <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
+            <Button onClick={() => generateAction.mutate()} disabled={generateAction.isPending || !form.contractId || !form.competence || !form.dueDate}>
+              {generateAction.isPending ? "Gerando no Asaas..." : "Gerar Boleto/Pix"}
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

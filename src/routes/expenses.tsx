@@ -18,6 +18,7 @@ import {
 import { MerchantIcon } from "@/components/MerchantIcon";
 import { toast } from "sonner";
 import { AppLayout } from "@/components/AppLayout";
+import { AsaasFormSeal } from "@/components/AsaasBaasSeal";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -253,14 +254,17 @@ function ExpensesPage() {
               </div>
             </div>
 
-            <Button
-              className="w-full gap-2 shadow-xs mt-2"
-              onClick={() => add.mutate()}
-              disabled={!description.trim() || !amount || add.isPending}
-            >
-              <Plus className="size-4" />
-              <span>{add.isPending ? "Registrando..." : "Registrar Lançamento"}</span>
-            </Button>
+            <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3">
+              <AsaasFormSeal />
+              <Button
+                className="w-full sm:w-auto gap-2 shadow-xs"
+                onClick={() => add.mutate()}
+                disabled={!description.trim() || !amount || add.isPending}
+              >
+                <Plus className="size-4" />
+                <span>{add.isPending ? "Registrando..." : "Registrar Lançamento"}</span>
+              </Button>
+            </div>
           </CardContent>
         </Card>
 

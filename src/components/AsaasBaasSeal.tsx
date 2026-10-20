@@ -25,12 +25,13 @@ export interface AsaasBaasSealProps {
    * "branco": Sempre branco
    */
   variant?: "auto" | "positivo" | "branco";
-  size?: "xs" | "sm" | "md" | "lg";
+  size?: "xxs" | "xs" | "sm" | "md" | "lg";
   className?: string;
   isLink?: boolean;
 }
 
 const sizeStyles = {
+  xxs: { width: 88, height: 26, className: "w-[88px] h-[26px]" },
   xs: { width: 110, height: 33, className: "w-[110px] h-[33px]" },
   sm: { width: 130, height: 39, className: "w-[130px] h-[39px]" },
   md: { width: 150, height: 45, className: "w-[150px] h-[45px]" },
@@ -100,6 +101,20 @@ export function AsaasBaasSeal({
   }
 
   return <div className={cn("inline-flex items-center justify-center", className)}>{imageElement}</div>;
+}
+
+/**
+ * Selo compacto e discreto do Asaas para rodapés de formulários e modais.
+ * - Tamanho menor (88x26px)
+ * - Tema claro: logo azul
+ * - Tema escuro: logo branca
+ */
+export function AsaasFormSeal({ className }: { className?: string }) {
+  return (
+    <div className={cn("inline-flex items-center select-none shrink-0", className)}>
+      <AsaasBaasSeal variant="auto" size="xxs" />
+    </div>
+  );
 }
 
 /**

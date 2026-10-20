@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { Plus, Car, Trash2, ShieldCheck, User, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { AppLayout } from "@/components/AppLayout";
+import { AsaasFormSeal } from "@/components/AsaasBaasSeal";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -236,11 +237,14 @@ function MemberDialog({ member }: { member?: any }) {
           </div>
         </div>
 
-        <div className="flex justify-end gap-2 border-t pt-4">
-          <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
-          <Button onClick={() => submit.mutate()} disabled={submit.isPending}>
-            {submit.isPending ? "Salvando..." : "Salvar"}
-          </Button>
+        <div className="flex flex-col-reverse sm:flex-row items-center sm:justify-between gap-3 border-t pt-4">
+          <AsaasFormSeal />
+          <div className="flex justify-end gap-2 w-full sm:w-auto">
+            <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
+            <Button onClick={() => submit.mutate()} disabled={submit.isPending}>
+              {submit.isPending ? "Salvando..." : "Salvar"}
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
@@ -306,11 +310,14 @@ function VehicleDialog({ memberId, memberName }: { memberId: string; memberName:
             <Input value={year} onChange={(e) => setYear(e.target.value)} placeholder="2020" type="number" />
           </div>
         </div>
-        <div className="flex justify-end gap-2">
-          <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
-          <Button onClick={() => submit.mutate()} disabled={submit.isPending}>
-            {submit.isPending ? "Salvando..." : "Salvar"}
-          </Button>
+        <div className="flex flex-col-reverse sm:flex-row items-center sm:justify-between gap-3 border-t pt-3">
+          <AsaasFormSeal />
+          <div className="flex justify-end gap-2 w-full sm:w-auto">
+            <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
+            <Button onClick={() => submit.mutate()} disabled={submit.isPending}>
+              {submit.isPending ? "Salvando..." : "Salvar"}
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

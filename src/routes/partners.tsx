@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Users, Plus, Settings, UserPlus, Trash2, KeyRound } from "lucide-react";
 import { toast } from "sonner";
 import { AppLayout } from "@/components/AppLayout";
+import { AsaasFormSeal } from "@/components/AsaasBaasSeal";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -162,9 +163,12 @@ function PartnerDialog({ partner }: { partner?: any }) {
               <Input name="split_percent" type="number" step="0.01" defaultValue={partner?.split_percent} placeholder="Ex: 10" />
             </div>
           </div>
-          <Button type="submit" disabled={save.isPending} className="w-full">
-            Salvar Parceiro
-          </Button>
+          <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-border/50">
+            <AsaasFormSeal />
+            <Button type="submit" disabled={save.isPending} className="w-full sm:w-auto px-6">
+              Salvar Parceiro
+            </Button>
+          </div>
         </form>
       </DialogContent>
     </Dialog>

@@ -31,6 +31,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { AppLayout } from "@/components/AppLayout";
+import { AsaasFormSeal } from "@/components/AsaasBaasSeal";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -1397,15 +1398,18 @@ function VehicleDossierDialog({
 
         {/* Rodapé Compacto */}
         <div className="px-5 py-3 border-t border-border/60 bg-muted/20 flex items-center justify-between gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onOpenCertificate}
-            className="rounded-xl border-primary/40 text-primary hover:bg-primary/10 gap-1.5 font-bold text-xs h-8"
-          >
-            <Award className="size-3.5" />
-            Certificado Digital
-          </Button>
+          <div className="flex items-center gap-3">
+            <AsaasFormSeal />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onOpenCertificate}
+              className="rounded-xl border-primary/40 text-primary hover:bg-primary/10 gap-1.5 font-bold text-xs h-8"
+            >
+              <Award className="size-3.5" />
+              Certificado Digital
+            </Button>
+          </div>
 
           <Button
             size="sm"
@@ -1656,22 +1660,25 @@ function NewVehicleDialog({ members }: { members: any[] }) {
             />
           </div>
 
-          <DialogFooter className="pt-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setOpen(false)}
-              className="rounded-xl text-xs h-8"
-            >
-              Cancelar
-            </Button>
-            <Button
-              type="submit"
-              disabled={createVeh.isPending}
-              className="rounded-xl bg-primary text-primary-foreground font-bold text-xs gap-1.5 shadow-xs h-8"
-            >
-              {createVeh.isPending ? "Cadastrando..." : "Salvar Veículo"}
-            </Button>
+          <DialogFooter className="pt-2 flex flex-col-reverse sm:flex-row items-center sm:justify-between gap-3">
+            <AsaasFormSeal />
+            <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setOpen(false)}
+                className="rounded-xl text-xs h-8"
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                disabled={createVeh.isPending}
+                className="rounded-xl bg-primary text-primary-foreground font-bold text-xs gap-1.5 shadow-xs h-8"
+              >
+                {createVeh.isPending ? "Cadastrando..." : "Salvar Veículo"}
+              </Button>
+            </div>
           </DialogFooter>
         </form>
       </DialogContent>
