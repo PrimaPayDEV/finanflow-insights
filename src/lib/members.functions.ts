@@ -346,3 +346,131 @@ export const generateInvoice = createServerFn({ method: "POST" })
 
     return { ok: true, invoiceId: paymentJson.id };
   });
+
+export const importBatchMembers = createServerFn({ method: "POST" })
+  .validator((d: {
+    companyId: string;
+    items: Array<{
+      name: string;
+      document: string;
+      phone?: string;
+      email?: string;
+      vehicle: {
+        plate: string;
+        brand: string;
+        model: string;
+        year: number;
+        category: string;
+        color?: string;
+      };
+    }>;
+  }) => d)
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    let membersAdded = 0;
+    let vehiclesAdded = 0;
+
+    // Obter associados existentes por documento na empresa
+    const { data: existingMembers } = await supabaseAdmin
+      .from("members")
+      .select("id, document")
+      .eq("company_id", data.companyId);
+
+    const memberMap = new Map<string, string>();
+    (existingMembers || []).forEach((m) => {
+      const clean = (m.document || "").replace(/\D/g, "");
+      if (clean) memberMap.set(clean, m.id);
+    });
+
+    // Obter veículos existentes por placa na empresa
+    const { data: existingVehicles } = await supabaseAdmin
+      .from("vehicles")
+      .select("id, plate")
+      .eq("company_id", data.companyId);
+
+    const vehicleSet = new Set<string>();
+    (existingVehicles || []).forEach((v) => {
+      const cleanPlate = (v.plate || "").replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+      if (cleanPlate) vehicleSet.add(cleanPlate);
+    });
+
+    for (const item of data.items) {
+      const cleanDoc = (item.document || "").replace(/\D/g, "");
+      let memberId = memberMap.get(cleanDoc);
+
+      if (!memberId) {
+        // Inserir novo associado
+        const { data: newMem, error: memError } = await supabaseAdmin
+          .from("members")
+          .insert({
+            company_id: data.companyId,
+            name: item.name.trim(),
+            document: item.document.trim(),
+            phone: item.phone?.trim() || null,
+            email: item.email?.trim() || null,
+          })
+          .select("id")
+          .single();
+
+        if (memError) {
+          console.error("Erro ao inserir associado do lote:", item.name, memError.message);
+          continue;
+        }
+
+        if (newMem?.id) {
+          memberId = newMem.id;
+          memberMap.set(cleanDoc, memberId);
+          membersAdded++;
+        }
+      }
+
+      if (memberId && item.vehicle) {
+        const cleanPlate = (item.vehicle.plate || "").replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+        if (!vehicleSet.has(cleanPlate)) {
+          const vData: any = {
+            member_id: memberId,
+            company_id: data.companyId,
+            plate: cleanPlate,
+            brand: item.vehicle.brand || "",
+            model: item.vehicle.model || "",
+            year: item.vehicle.year || new Date().getFullYear(),
+            color: item.vehicle.color || null,
+            category: item.vehicle.category || "Leves e utilitários",
+          };
+
+          const { error: vehError } = await supabaseAdmin.from("vehicles").insert(vData);
+          if (vehError) {
+            if (vehError.message?.includes("category") || (vehError as any).code === "42703") {
+              delete vData.category;
+              const { error: retryError } = await supabaseAdmin.from("vehicles").insert(vData);
+              if (!retryError) {
+                vehicleSet.add(cleanPlate);
+                vehiclesAdded++;
+              }
+            }
+          } else {
+            vehicleSet.add(cleanPlate);
+            vehiclesAdded++;
+          }
+        }
+      }
+    }
+
+    if (membersAdded > 0 || vehiclesAdded > 0) {
+      await supabaseAdmin.from("notifications").insert({
+        company_id: data.companyId,
+        type: "info",
+        title: "Lote de Associados Hinova Importado",
+        description: `${membersAdded} associados e ${vehiclesAdded} veículos foram adicionados com sucesso à plataforma.`,
+      });
+    }
+
+    return {
+      ok: true,
+      membersAdded,
+      vehiclesAdded,
+      totalProcessed: data.items.length,
+    };
+  });
+

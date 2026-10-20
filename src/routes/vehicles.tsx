@@ -53,6 +53,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { getVehicles, getMembers, addVehicle, deleteVehicle } from "@/lib/members.functions";
 import { BRL, formatCpfCnpj, formatPhone } from "@/lib/format";
 import { VehicleCategorySelector, VehicleCategoryBadge } from "@/components/VehicleCategorySelector";
+import { HinovaBatchImportDialog } from "@/components/HinovaBatchImportDialog";
 
 export const Route = createFileRoute("/vehicles")({
   head: () => ({
@@ -524,7 +525,9 @@ function VehiclesPage() {
       title="Central de Veículos"
       subtitle="Gestão da frota protegida, coberturas contratadas e mensalidades da Planmais"
       actions={
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <HinovaBatchImportDialog />
+
           <Button
             onClick={openFirstDemo}
             variant="outline"
