@@ -45,7 +45,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table";
 import { BRL, formatCpfCnpj } from "@/lib/format";
-import { getCPAG59Rate, getTraditionalRate } from "@/lib/closure";
+import { getCPAG59Rate, getTraditionalRate, getSavedMerchantRateTable } from "@/lib/closure";
 import type { Modality } from "@/lib/format";
 import type { Merchant, Transaction, FeePlan } from "@/lib/db";
 import { useAuth } from "@/contexts/AuthContext";
@@ -238,7 +238,7 @@ export function MerchantsGeneralReport({
     const rows: MerchantReportRow[] = (merchants || []).map((m) => {
       const mPlan = (feePlans || []).find((p) => p.merchant_id === m.id);
       const mTxs = monthTxs.filter((t) => t.merchant_id === m.id);
-      const mRateTable = ((m as any)?.rate_table || "CPAG59") as string;
+      const mRateTable = getSavedMerchantRateTable(m.id, (m as any)?.rate_table);
 
       let totalGross = 0;
       let totalDiscounted = 0;

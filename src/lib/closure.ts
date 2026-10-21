@@ -220,6 +220,27 @@ export function getReferenceTable(rateTableKey?: string) {
 }
 
 /**
+ * Obtém a tabela de taxas ativa para um estabelecimento.
+ * Prioriza o valor persistido no banco de dados; se a coluna ainda não existir no schema remoto,
+ * consulta o cache local persistido (localStorage).
+ */
+export function getSavedMerchantRateTable(
+  merchantId?: string,
+  dbRateTable?: string | null
+): "CPAG59" | "CPAG56" {
+  if (dbRateTable === "CPAG56" || dbRateTable === "CPAG59") return dbRateTable;
+  if (merchantId && typeof window !== "undefined") {
+    try {
+      const saved = localStorage.getItem(`merchant_rate_table_${merchantId}`);
+      if (saved === "CPAG56" || saved === "CPAG59") return saved;
+    } catch {
+      // ignore
+    }
+  }
+  return "CPAG59";
+}
+
+/**
  * Determina qual tabela de taxas (CPAG59 - F3 ou CPAG56 - F7) deve ser aplicada a uma transação específica.
  * Lê a coluna "adquirente" da transação:
  * - Se a transação for em Pix e a adquirente indicar F6 (ou F3/59), aplica a tabela CPAG59 - F3 (Pix: 1.39%).
@@ -255,11 +276,8 @@ export function resolveTransactionRateTable(
     }
   }
 
-  // Fallback para a tabela contratual ativa do EC
-  const isFallback56 =
-    (fallbackRateTableKey || "").toUpperCase().includes("56") ||
-    (fallbackRateTableKey || "").toUpperCase().includes("F7");
-  return isFallback56 ? "CPAG56" : "CPAG59";
+  // Fallback para a tabela contratual ativa do EC (verificando banco e cache local)
+  return getSavedMerchantRateTable((t as any)?.merchant_id, fallbackRateTableKey);
 }
 
 export function getModalityRate(t: Transaction, plan?: FeePlan, rateTableKey?: string): number {

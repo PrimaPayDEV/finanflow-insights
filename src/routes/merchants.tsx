@@ -78,6 +78,7 @@ import {
   type Merchant,
 } from "@/lib/db";
 import { PCT, formatCpfCnpj, formatPhone, formatCurrencyInput, BRL, monthLabel, currentMonth } from "@/lib/format";
+import { getSavedMerchantRateTable } from "@/lib/closure";
 import { cn } from "@/lib/utils";
 import { getPartners } from "@/lib/partner.functions";
 import { useServerFn } from "@tanstack/react-start";
@@ -233,7 +234,7 @@ function EditMerchantDialog({ merchant }: { merchant: Merchant }) {
     document_cnpj: merchant.document_cnpj || "",
     phone_whatsapp: merchant.phone_whatsapp || "",
     email: merchant.email || "",
-    rate_table: (merchant.rate_table || "CPAG59") as "CPAG59" | "CPAG56",
+    rate_table: getSavedMerchantRateTable(merchant.id, merchant.rate_table),
   });
 
   useEffect(() => {
@@ -242,16 +243,27 @@ function EditMerchantDialog({ merchant }: { merchant: Merchant }) {
       document_cnpj: merchant.document_cnpj || "",
       phone_whatsapp: merchant.phone_whatsapp || "",
       email: merchant.email || "",
-      rate_table: (merchant.rate_table || "CPAG59") as "CPAG59" | "CPAG56",
+      rate_table: getSavedMerchantRateTable(merchant.id, merchant.rate_table),
     });
   }, [merchant]);
 
   const save = useMutation({
     mutationFn: async () => {
+      try {
+        localStorage.setItem(`merchant_rate_table_${merchant.id}`, form.rate_table);
+      } catch {}
+
       const { error } = await supabase
         .from("merchants")
         .update(form)
         .eq("id", merchant.id);
+
+      if (error && (error.message.includes("rate_table") || error.message.includes("schema cache"))) {
+        const { rate_table, ...rest } = form;
+        const res = await supabase.from("merchants").update(rest).eq("id", merchant.id);
+        if (res.error) throw new Error(res.error.message);
+        return;
+      }
       if (error) throw new Error(error.message);
     },
     onSuccess: () => {
@@ -487,8 +499,24 @@ function MerchantsPage() {
 
   const save = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from("merchants").insert(form);
+      const { data, error } = await supabase.from("merchants").insert(form).select("id").single();
+      if (error && (error.message.includes("rate_table") || error.message.includes("schema cache"))) {
+        const { rate_table, ...rest } = form;
+        const res = await supabase.from("merchants").insert(rest).select("id").single();
+        if (res.error) throw new Error(res.error.message);
+        if (res.data?.id && form.rate_table) {
+          try {
+            localStorage.setItem(`merchant_rate_table_${res.data.id}`, form.rate_table);
+          } catch {}
+        }
+        return;
+      }
       if (error) throw new Error(error.message);
+      if (data?.id && form.rate_table) {
+        try {
+          localStorage.setItem(`merchant_rate_table_${data.id}`, form.rate_table);
+        } catch {}
+      }
     },
     onSuccess: () => {
       toast.success("Estabelecimento cadastrado com sucesso");
@@ -526,13 +554,25 @@ function MerchantsPage() {
 
   const updateRateTable = useMutation({
     mutationFn: async ({ id, newTable }: { id: string; newTable: "CPAG59" | "CPAG56" }) => {
+      try {
+        localStorage.setItem(`merchant_rate_table_${id}`, newTable);
+      } catch {}
+
       const { error } = await supabase.from("merchants").update({ rate_table: newTable }).eq("id", id);
+      if (error && (error.message.includes("rate_table") || error.message.includes("schema cache"))) {
+        console.warn("Coluna rate_table ainda não aplicada no Supabase. Salvo em cache local.");
+        return;
+      }
       if (error) throw new Error(error.message);
     },
     onSuccess: (_, vars) => {
       toast.success(
         `Tabela atualizada para ${vars.newTable === "CPAG56" ? "CPAG56 - F7" : "CPAG59 - F3"} com sucesso!`
       );
+      qc.setQueryData(["merchants"], (old: any[]) => {
+        if (!old) return old;
+        return old.map((m) => (m.id === vars.id ? { ...m, rate_table: vars.newTable } : m));
+      });
       invalidate();
     },
     onError: (e: Error) => toast.error(translateError(e.message)),
@@ -968,40 +1008,45 @@ function MerchantsPage() {
                       <span className="text-xs font-semibold text-muted-foreground whitespace-nowrap">
                         Tabela de taxas:
                       </span>
-                      <div className="inline-flex p-0.5 bg-muted/60 rounded-xl border border-border/60 gap-1">
-                        <Button
-                          type="button"
-                          variant={(!active.rate_table || active.rate_table === "CPAG59") ? "default" : "ghost"}
-                          size="sm"
-                          disabled={updateRateTable.isPending}
-                          onClick={() => updateRateTable.mutate({ id: active.id, newTable: "CPAG59" })}
-                          className={cn(
-                            "h-7 px-2.5 rounded-lg text-xs font-bold gap-1 transition-all",
-                            (!active.rate_table || active.rate_table === "CPAG59")
-                              ? "bg-primary text-primary-foreground shadow-2xs"
-                              : "text-muted-foreground hover:text-foreground"
-                          )}
-                        >
-                          {(!active.rate_table || active.rate_table === "CPAG59") && <Check className="size-3" />}
-                          <span>CPAG59 - F3</span>
-                        </Button>
-                        <Button
-                          type="button"
-                          variant={active.rate_table === "CPAG56" ? "default" : "ghost"}
-                          size="sm"
-                          disabled={updateRateTable.isPending}
-                          onClick={() => updateRateTable.mutate({ id: active.id, newTable: "CPAG56" })}
-                          className={cn(
-                            "h-7 px-2.5 rounded-lg text-xs font-bold gap-1 transition-all",
-                            active.rate_table === "CPAG56"
-                              ? "bg-primary text-primary-foreground shadow-2xs"
-                              : "text-muted-foreground hover:text-foreground"
-                          )}
-                        >
-                          {active.rate_table === "CPAG56" && <Check className="size-3" />}
-                          <span>CPAG56 - F7</span>
-                        </Button>
-                      </div>
+                      {(() => {
+                        const activeTable = getSavedMerchantRateTable(active.id, active.rate_table);
+                        return (
+                          <div className="inline-flex p-0.5 bg-muted/60 rounded-xl border border-border/60 gap-1">
+                            <Button
+                              type="button"
+                              variant={activeTable === "CPAG59" ? "default" : "ghost"}
+                              size="sm"
+                              disabled={updateRateTable.isPending}
+                              onClick={() => updateRateTable.mutate({ id: active.id, newTable: "CPAG59" })}
+                              className={cn(
+                                "h-7 px-2.5 rounded-lg text-xs font-bold gap-1 transition-all",
+                                activeTable === "CPAG59"
+                                  ? "bg-primary text-primary-foreground shadow-2xs"
+                                  : "text-muted-foreground hover:text-foreground"
+                              )}
+                            >
+                              {activeTable === "CPAG59" && <Check className="size-3" />}
+                              <span>CPAG59 - F3</span>
+                            </Button>
+                            <Button
+                              type="button"
+                              variant={activeTable === "CPAG56" ? "default" : "ghost"}
+                              size="sm"
+                              disabled={updateRateTable.isPending}
+                              onClick={() => updateRateTable.mutate({ id: active.id, newTable: "CPAG56" })}
+                              className={cn(
+                                "h-7 px-2.5 rounded-lg text-xs font-bold gap-1 transition-all",
+                                activeTable === "CPAG56"
+                                  ? "bg-primary text-primary-foreground shadow-2xs"
+                                  : "text-muted-foreground hover:text-foreground"
+                              )}
+                            >
+                              {activeTable === "CPAG56" && <Check className="size-3" />}
+                              <span>CPAG56 - F7</span>
+                            </Button>
+                          </div>
+                        );
+                      })()}
                     </div>
                   </div>
                 </div>

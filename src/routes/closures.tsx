@@ -72,7 +72,7 @@ import {
   importsQuery,
   terminalsQuery,
 } from "@/lib/db";
-import { calculateClosure, getModalityRate, getTraditionalRate, getMaxDiscountRate, getCPAG59Rate, resolveTransactionRateTable } from "@/lib/closure";
+import { calculateClosure, getModalityRate, getTraditionalRate, getMaxDiscountRate, getCPAG59Rate, resolveTransactionRateTable, getSavedMerchantRateTable } from "@/lib/closure";
 import { createAsaasCharge } from "@/lib/asaas.functions";
 import {
   BRL,
@@ -272,7 +272,7 @@ function RouteComponent() {
 
       // No relatório interno, a taxa esperada de referência considera a tabela ativa do EC (CPAG59 - F3 ou CPAG56 - F7)
       // Descontado a mais = negativo (Vermelho) | Descontado a menos = positivo (Verde)
-      const rateTableKey = (merchant as any)?.rate_table || "CPAG59";
+      const rateTableKey = getSavedMerchantRateTable(merchant?.id, (merchant as any)?.rate_table);
       const expectedRate = getCPAG59Rate(tx, rateTableKey);
       const expectedValue = gross * (expectedRate / 100);
       const diffRate = expectedRate - tradRate;
@@ -956,7 +956,7 @@ function RouteComponent() {
                 <div className="flex items-center gap-2">
                   <ShieldAlert className="size-4 text-amber-600 shrink-0" />
                   <span>
-                    <strong>Modo Auditoria Interna ativo ({(merchant as any)?.rate_table === "CPAG56" ? "CPAG56 - F7" : "CPAG59 - F3"}):</strong> As colunas de Taxa Operacional foram substituídas pela Linha de Tendência, Valor Descontado da Diferença e Equação de Desvio de Taxa (<code>% Esperado - % Descontado</code>). Valores negativos (em vermelho) representam taxas descontadas a mais do que o esperado; valores positivos (em verde) representam desconto a menos.
+                    <strong>Modo Auditoria Interna ativo ({getSavedMerchantRateTable(merchant?.id, (merchant as any)?.rate_table) === "CPAG56" ? "CPAG56 - F7" : "CPAG59 - F3"}):</strong> As colunas de Taxa Operacional foram substituídas pela Linha de Tendência, Valor Descontado da Diferença e Equação de Desvio de Taxa (<code>% Esperado - % Descontado</code>). Valores negativos (em vermelho) representam taxas descontadas a mais do que o esperado; valores positivos (em verde) representam desconto a menos.
                   </span>
                 </div>
               </div>
@@ -978,7 +978,7 @@ function RouteComponent() {
                             <TableHead className="text-right font-semibold text-xs print:text-[8.5px] print:py-1 print:px-1 print:text-foreground">Tendência</TableHead>
                             <TableHead className="text-right font-semibold text-xs print:text-[8.5px] print:py-1 print:px-1 print:text-foreground whitespace-nowrap">Vlr. Diferença</TableHead>
                             <TableHead className="text-right font-semibold text-xs print:text-[8.5px] print:py-1 print:px-1 print:text-foreground whitespace-nowrap">
-                              Diferença (% Esperado {(merchant as any)?.rate_table === "CPAG56" ? "F7" : "F3"} - % Desc.)
+                              Diferença (% Esperado {getSavedMerchantRateTable(merchant?.id, (merchant as any)?.rate_table) === "CPAG56" ? "F7" : "F3"} - % Desc.)
                             </TableHead>
                           </>
                         ) : (
@@ -1016,7 +1016,7 @@ function RouteComponent() {
 
                           // Relatório interno considera a taxa de referência ativa do EC (CPAG59 - F3 ou CPAG56 - F7)
                           // Descontado a mais = negativo (Vermelho) | Descontado a menos = positivo (Verde)
-                          const merchantRateTable = (merchant as any)?.rate_table || "CPAG59";
+                          const merchantRateTable = getSavedMerchantRateTable(merchant?.id, (merchant as any)?.rate_table);
                           const expectedRate = getCPAG59Rate(tx, merchantRateTable);
                           const txEffectiveTable = resolveTransactionRateTable(tx, merchantRateTable);
                           const diffRate = expectedRate - tradRate;
