@@ -189,6 +189,7 @@ export function MerchantsGeneralReport({
   );
   const [searchTerm, setSearchTerm] = useState("");
   const [diffFilter, setDiffFilter] = useState<"all" | "negative" | "positive">("all");
+  const [tableFilter, setTableFilter] = useState<"all" | "CPAG59" | "CPAG56">("all");
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -309,12 +310,13 @@ export function MerchantsGeneralReport({
         r.document.includes(searchTerm);
       if (!matchSearch) return false;
 
+      if (tableFilter !== "all" && r.rateTable !== tableFilter) return false;
       if (diffFilter === "negative" && r.totalDiffAmount >= -0.001) return false;
       if (diffFilter === "positive" && r.totalDiffAmount <= 0.001) return false;
 
       return true;
     });
-  }, [processedRows, searchTerm, diffFilter]);
+  }, [processedRows, searchTerm, diffFilter, tableFilter]);
 
   // Totais Gerais Consolidados
   const totals = useMemo(() => {
@@ -325,12 +327,19 @@ export function MerchantsGeneralReport({
     let negativeDiffCount = 0;
     let positiveDiffCount = 0;
     let negativeDiffTotal = 0;
+    let cpag59Count = 0;
+    let cpag56Count = 0;
 
     processedRows.forEach((r) => {
       gross += r.totalGross;
       discounted += r.totalDiscounted;
       diff += r.totalDiffAmount;
       txs += r.txCount;
+      if (r.rateTable === "CPAG56") {
+        cpag56Count++;
+      } else {
+        cpag59Count++;
+      }
       if (r.totalDiffAmount < -0.01) {
         negativeDiffCount++;
         negativeDiffTotal += r.totalDiffAmount;
@@ -353,6 +362,8 @@ export function MerchantsGeneralReport({
       positiveDiffCount,
       negativeDiffTotal,
       merchantCount: processedRows.length,
+      cpag59Count,
+      cpag56Count,
     };
   }, [processedRows]);
 
@@ -471,6 +482,20 @@ export function MerchantsGeneralReport({
               <SelectItem value="positive">Descontado a menos (Verde)</SelectItem>
             </SelectContent>
           </Select>
+
+          <Select
+            value={tableFilter}
+            onValueChange={(v: any) => setTableFilter(v)}
+          >
+            <SelectTrigger className="w-[180px] h-9 text-xs rounded-xl font-medium">
+              <SelectValue placeholder="Tabela de Taxas" />
+            </SelectTrigger>
+            <SelectContent className="rounded-xl">
+              <SelectItem value="all">Todas (CPAG59 & CPAG56)</SelectItem>
+              <SelectItem value="CPAG59">CPAG59 - F3</SelectItem>
+              <SelectItem value="CPAG56">CPAG56 - F7</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         <div className="flex items-center gap-2 justify-end">
@@ -535,7 +560,7 @@ export function MerchantsGeneralReport({
             <div className="pt-10 sm:pt-16 space-y-4 text-left">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-bold tracking-wide">
                 <ShieldCheck className="size-3.5" />
-                <span>AUDITORIA GERAL DE TAXAS & CONCILIAÇÃO</span>
+                <span>AUDITORIA GERAL DE TAXAS & CONCILIAÇÃO (CPAG59 & CPAG56)</span>
               </div>
 
               <h2 className="text-3xl sm:text-5xl font-black tracking-tight text-foreground leading-[1.1]">
@@ -545,7 +570,7 @@ export function MerchantsGeneralReport({
               <p className="text-sm sm:text-base text-muted-foreground max-w-xl leading-relaxed">
                 Demonstração consolidada do volume transacionado, apuração das taxas
                 aplicadas nos terminais POS/TEF e auditoria da diferença contratual
-                referenciada na tabela <strong>CPAG59</strong>.
+                referenciada nas tabelas de taxas <strong>CPAG59 - F3</strong> e <strong>CPAG56 - F7</strong>.
               </p>
             </div>
 
@@ -583,7 +608,7 @@ export function MerchantsGeneralReport({
                   {totals.merchantCount}
                 </p>
                 <span className="text-[10px] text-muted-foreground block">
-                  {totals.negativeDiffCount} com desconto excedente
+                  {totals.cpag59Count} em CPAG59 - F3 • {totals.cpag56Count} em CPAG56 - F7
                 </span>
               </div>
 
@@ -713,7 +738,7 @@ export function MerchantsGeneralReport({
                     {totals.avgExpRate.toFixed(2)}%
                   </p>
                   <span className="text-[10px] text-muted-foreground">
-                    Benchmark CPAG59 / CPAG56
+                    Benchmark CPAG59 - F3 / CPAG56 - F7
                   </span>
                 </Card>
 
@@ -979,7 +1004,7 @@ export function MerchantsGeneralReport({
               <div className="flex items-center gap-2">
                 <Building2 className="size-4 text-primary" />
                 <span className="text-xs font-bold text-foreground uppercase tracking-wider">
-                  Relatório Geral dos Estabelecimentos • Tabela Discriminada ({monthLabel})
+                  Relatório Geral dos Estabelecimentos • Tabelas CPAG59 & CPAG56 ({monthLabel})
                 </span>
               </div>
               <span className="text-[11px] text-muted-foreground font-mono">
@@ -993,12 +1018,17 @@ export function MerchantsGeneralReport({
                 <Info className="size-4 text-primary shrink-0" />
                 <span className="text-[11px] text-muted-foreground">
                   A coluna <strong>VLR. DIFERENÇA</strong> reflete a soma consolidada da
-                  diferença auditada no relatório interno de cada EC.
+                  diferença auditada no relatório interno de cada EC com base nas tabelas contratuais ativas (<strong>CPAG59 - F3</strong> e <strong>CPAG56 - F7</strong>).
                 </span>
               </div>
-              <Badge variant="outline" className="text-[10px] font-mono shrink-0">
-                Total: {filteredRows.length} ECs
-              </Badge>
+              <div className="flex items-center gap-1.5 shrink-0">
+                <Badge variant="outline" className="text-[10px] font-mono">
+                  CPAG59 & CPAG56
+                </Badge>
+                <Badge variant="outline" className="text-[10px] font-mono">
+                  Total: {filteredRows.length} ECs
+                </Badge>
+              </div>
             </div>
 
             {/* Tabela de Estabelecimentos */}
@@ -1007,7 +1037,7 @@ export function MerchantsGeneralReport({
                 <TableHeader className="bg-muted/50">
                   <TableRow>
                     <TableHead className="text-xs font-bold text-foreground py-2.5">
-                      Estabelecimento
+                      Estabelecimento (CPAG59 / CPAG56)
                     </TableHead>
                     <TableHead className="text-xs font-bold text-foreground py-2.5">
                       CNPJ / CPF
