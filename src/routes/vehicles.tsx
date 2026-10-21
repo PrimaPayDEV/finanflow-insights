@@ -922,13 +922,13 @@ function VehicleDossierDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[88vh] overflow-y-auto rounded-3xl p-0 gap-0 border-border bg-card shadow-2xl">
-        {/* Cabeçalho Compacto, Refinado e com espaço livre garantido para o botão Fechar (X) */}
-        <div className="relative bg-gradient-to-r from-primary/15 via-primary/5 to-card pl-5 pr-14 sm:pr-16 py-3.5 border-b border-border/70">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2.5 min-w-0">
+      <DialogContent className="w-[96vw] max-w-2xl max-h-[92vh] sm:max-h-[88vh] flex flex-col p-0 gap-0 border-border bg-card shadow-2xl rounded-2xl sm:rounded-3xl overflow-hidden">
+        {/* Cabeçalho Compacto, 100% Responsivo e com espaço livre garantido para o botão Fechar (X) */}
+        <div className="relative bg-gradient-to-r from-primary/15 via-primary/5 to-card pl-4 sm:pl-5 pr-12 sm:pr-14 py-3 sm:py-3.5 border-b border-border/70 shrink-0">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3">
+            <div className="flex items-center gap-2.5 min-w-0 flex-1">
               <MercosulPlate plate={vehicle.plate} size="md" />
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-1.5 flex-wrap">
                   <span className="text-[11px] font-bold text-primary uppercase tracking-wide">
                     {vehicle.brand} • {vehicle.year}
@@ -940,19 +940,19 @@ function VehicleDossierDialog({
                     </Badge>
                   )}
                 </div>
-                <h2 className="text-sm sm:text-base font-bold text-foreground leading-tight truncate">
+                <h2 className="text-sm sm:text-base font-bold text-foreground leading-tight truncate" title={vehicle.model}>
                   {vehicle.model}
                 </h2>
               </div>
             </div>
 
-            <div className="flex items-center gap-2 shrink-0">
+            <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto flex-wrap">
               {getStatusBadge(vehicle.status)}
-              <div className="text-right hidden sm:flex flex-col items-end justify-center bg-card/85 backdrop-blur-xs px-2.5 py-1 rounded-xl border border-border/60 shadow-xs">
+              <div className="text-right flex flex-col items-end justify-center bg-card/85 backdrop-blur-xs px-2.5 py-1 rounded-xl border border-border/60 shadow-xs">
                 <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground leading-none">
                   FIPE
                 </span>
-                <span className="text-xs font-black text-emerald-600 dark:text-emerald-400 mt-0.5">
+                <span className="text-xs font-black text-emerald-600 dark:text-emerald-400 mt-0.5 font-mono">
                   {BRL(vehicle.fipeValue || 0)}
                 </span>
               </div>
@@ -960,10 +960,10 @@ function VehicleDossierDialog({
           </div>
         </div>
 
-        {/* Abas Estritamente Solicitadas: Ficha Técnica, Coberturas, Mensalidades */}
-        <Tabs defaultValue="overview" className="w-full">
-          <div className="border-b border-border/60 px-5 bg-muted/20">
-            <TabsList className="bg-transparent h-10 p-0 gap-6">
+        {/* Abas com container rolável verticalmente e SEM rolagem horizontal */}
+        <Tabs defaultValue="overview" className="w-full flex-1 flex flex-col min-h-0 overflow-hidden">
+          <div className="border-b border-border/60 px-4 sm:px-5 bg-muted/20 shrink-0">
+            <TabsList className="bg-transparent h-10 p-0 gap-4 sm:gap-6 w-full justify-start overflow-x-auto no-scrollbar">
               <TabsTrigger
                 value="overview"
                 className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary font-bold text-xs px-1 h-10 transition-colors"
@@ -985,440 +985,442 @@ function VehicleDossierDialog({
             </TabsList>
           </div>
 
-          {/* ABA 1: Ficha Técnica */}
-          <TabsContent value="overview" className="p-4 sm:p-5 space-y-3.5 m-0">
-            <div>
-              <h3 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5">
-                <Car className="size-3.5 text-primary" /> Informações do Veículo
-              </h3>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
-                <div className="p-2.5 rounded-xl bg-muted/35 border border-border/50">
-                  <span className="text-[10px] text-muted-foreground block">Placa</span>
-                  <span className="font-mono font-bold text-xs text-foreground">{formatPlate(vehicle.plate)}</span>
-                </div>
-                <div className="p-2.5 rounded-xl bg-muted/35 border border-border/50">
-                  <span className="text-[10px] text-muted-foreground block">Ano / Mod</span>
-                  <span className="font-bold text-xs text-foreground">{vehicle.year}</span>
-                </div>
-                <div className="p-2.5 rounded-xl bg-muted/35 border border-border/50">
-                  <span className="text-[10px] text-muted-foreground block">Cor</span>
-                  <span className="font-bold text-xs text-foreground truncate block">{vehicle.color || "Prata"}</span>
-                </div>
-                <div className="p-2.5 rounded-xl bg-muted/35 border border-border/50">
-                  <span className="text-[10px] text-muted-foreground block">Combustível</span>
-                  <span className="font-bold text-xs text-foreground truncate block">{vehicle.fuel || "Flex"}</span>
-                </div>
-                <div className="p-2.5 rounded-xl bg-muted/35 border border-border/50 sm:col-span-2">
-                  <span className="text-[10px] text-muted-foreground block">Categoria</span>
-                  <div className="mt-1">
-                    <VehicleCategoryBadge category={vehicle.category} size="sm" />
+          <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-5">
+            {/* ABA 1: Ficha Técnica */}
+            <TabsContent value="overview" className="space-y-3.5 m-0 p-0">
+              <div>
+                <h3 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5">
+                  <Car className="size-3.5 text-primary" /> Informações do Veículo
+                </h3>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                  <div className="p-2.5 rounded-xl bg-muted/35 border border-border/50">
+                    <span className="text-[10px] text-muted-foreground block">Placa</span>
+                    <span className="font-mono font-bold text-xs text-foreground">{formatPlate(vehicle.plate)}</span>
                   </div>
-                </div>
+                  <div className="p-2.5 rounded-xl bg-muted/35 border border-border/50">
+                    <span className="text-[10px] text-muted-foreground block">Ano / Mod</span>
+                    <span className="font-bold text-xs text-foreground">{vehicle.year}</span>
+                  </div>
+                  <div className="p-2.5 rounded-xl bg-muted/35 border border-border/50">
+                    <span className="text-[10px] text-muted-foreground block">Cor</span>
+                    <span className="font-bold text-xs text-foreground truncate block">{vehicle.color || "Prata"}</span>
+                  </div>
+                  <div className="p-2.5 rounded-xl bg-muted/35 border border-border/50">
+                    <span className="text-[10px] text-muted-foreground block">Combustível</span>
+                    <span className="font-bold text-xs text-foreground truncate block">{vehicle.fuel || "Flex"}</span>
+                  </div>
+                  <div className="p-2.5 rounded-xl bg-muted/35 border border-border/50 col-span-2 sm:col-span-2">
+                    <span className="text-[10px] text-muted-foreground block">Categoria</span>
+                    <div className="mt-1">
+                      <VehicleCategoryBadge category={vehicle.category} size="sm" />
+                    </div>
+                  </div>
 
-                <div className="p-2.5 rounded-xl bg-muted/35 border border-border/50 sm:col-span-2">
-                  <span className="text-[10px] text-muted-foreground block">Chassi</span>
-                  <span className="font-mono font-semibold text-xs text-foreground truncate block">
-                    {vehicle.chassi || "9BWCA11108P019283"}
-                  </span>
-                </div>
-                <div className="p-2.5 rounded-xl bg-muted/35 border border-border/50 sm:col-span-2">
-                  <span className="text-[10px] text-muted-foreground block">Renavam</span>
-                  <span className="font-mono font-semibold text-xs text-foreground truncate block">
-                    {vehicle.renavam || "00918237461"}
-                  </span>
+                  <div className="p-2.5 rounded-xl bg-muted/35 border border-border/50 col-span-2 sm:col-span-2">
+                    <span className="text-[10px] text-muted-foreground block">Chassi</span>
+                    <span className="font-mono font-semibold text-xs text-foreground break-all block">
+                      {vehicle.chassi || "9BWCA11108P019283"}
+                    </span>
+                  </div>
+                  <div className="p-2.5 rounded-xl bg-muted/35 border border-border/50 col-span-2 sm:col-span-2">
+                    <span className="text-[10px] text-muted-foreground block">Renavam</span>
+                    <span className="font-mono font-semibold text-xs text-foreground break-all block">
+                      {vehicle.renavam || "00918237461"}
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <div>
-              <h3 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5">
-                <User className="size-3.5 text-primary" /> Associado Proprietário
-              </h3>
-              <div className="p-3.5 rounded-2xl bg-muted/25 border border-border/60 flex items-center justify-between gap-3">
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="size-9 rounded-xl bg-primary text-primary-foreground flex items-center justify-center font-bold text-xs shadow-xs shrink-0">
-                    {vehicle.member.name.charAt(0)}
+              <div>
+                <h3 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5">
+                  <User className="size-3.5 text-primary" /> Associado Proprietário
+                </h3>
+                <div className="p-3 sm:p-3.5 rounded-2xl bg-muted/25 border border-border/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="size-9 rounded-xl bg-primary text-primary-foreground flex items-center justify-center font-bold text-xs shadow-xs shrink-0">
+                      {vehicle.member.name.charAt(0)}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h4 className="font-bold text-foreground text-xs sm:text-sm truncate">{vehicle.member.name}</h4>
+                      <p className="text-[11px] text-muted-foreground font-mono">
+                        CPF: {formatCpfCnpj(vehicle.member.document)}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground truncate">
+                        {vehicle.member.city || "São Paulo - SP"} • {vehicle.member.email || "Sem e-mail"}
+                      </p>
+                    </div>
                   </div>
-                  <div className="min-w-0">
-                    <h4 className="font-bold text-foreground text-xs sm:text-sm truncate">{vehicle.member.name}</h4>
-                    <p className="text-[11px] text-muted-foreground font-mono">
-                      CPF: {formatCpfCnpj(vehicle.member.document)}
-                    </p>
-                    <p className="text-[10px] text-muted-foreground truncate">
-                      {vehicle.member.city || "São Paulo - SP"} • {vehicle.member.email || "Sem e-mail"}
-                    </p>
-                  </div>
-                </div>
 
-                {vehicle.member.phone && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    asChild
-                    className="rounded-xl border-emerald-500/40 text-emerald-600 hover:bg-emerald-500/10 gap-1.5 text-xs font-semibold h-8 shrink-0"
-                  >
-                    <a
-                      href={`https://wa.me/55${vehicle.member.phone.replace(/\D/g, "")}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                  {vehicle.member.phone && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      asChild
+                      className="rounded-xl border-emerald-500/40 text-emerald-600 hover:bg-emerald-500/10 gap-1.5 text-xs font-semibold h-8 w-full sm:w-auto shrink-0 justify-center"
                     >
-                      <MessageCircle className="size-3.5" />
-                      <span className="hidden sm:inline">{vehicle.member.phone}</span>
-                    </a>
-                  </Button>
-                )}
-              </div>
-            </div>
-
-            {vehicle.member.partnerName && (
-              <div className="p-2.5 rounded-xl bg-primary/5 border border-primary/20 flex items-center justify-between text-xs">
-                <span className="text-muted-foreground text-[11px]">Consultor de Captação:</span>
-                <span className="font-bold text-primary text-[11px]">{vehicle.member.partnerName}</span>
-              </div>
-            )}
-          </TabsContent>
-
-          {/* ABA 2: Coberturas (EDITÁVEL) */}
-          <TabsContent value="coverage" className="p-4 sm:p-5 space-y-3.5 m-0">
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <div className="size-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
-                  <ShieldCheck className="size-4" />
-                </div>
-                <div>
-                  <h3 className="text-xs font-bold text-foreground">Coberturas Contratadas</h3>
-                  <p className="text-[10px] text-muted-foreground">
-                    Marque e ajuste o que o associado contratou na adesão deste veículo
-                  </p>
+                      <a
+                        href={`https://wa.me/55${vehicle.member.phone.replace(/\D/g, "")}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <MessageCircle className="size-3.5" />
+                        <span>{vehicle.member.phone}</span>
+                      </a>
+                    </Button>
+                  )}
                 </div>
               </div>
 
-              <Button
-                size="sm"
-                onClick={handleSaveCoverage}
-                className="rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground gap-1.5 font-bold text-xs h-8 px-3 shadow-xs shrink-0"
-              >
-                <Save className="size-3.5" />
-                Salvar Coberturas
-              </Button>
-            </div>
-
-            {/* Nome do Plano */}
-            <div className="space-y-1">
-              <Label className="text-[11px] font-semibold text-muted-foreground">Nome do Plano / Categoria</Label>
-              <Input
-                value={coveragePlan}
-                onChange={(e) => setCoveragePlan(e.target.value)}
-                placeholder="Ex: Plano Ouro 100% FIPE"
-                className="h-8.5 rounded-xl text-xs bg-background border-border/80"
-              />
-            </div>
-
-            {/* Grade de Coberturas Editáveis */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-              {/* Tabela FIPE % */}
-              <div className="p-2.5 rounded-xl bg-muted/35 border border-border/50 flex items-center justify-between">
-                <div>
-                  <span className="font-bold text-foreground block text-xs">Tabela FIPE</span>
-                  <span className="text-[10px] text-muted-foreground">Indenização integral</span>
+              {vehicle.member.partnerName && (
+                <div className="p-2.5 rounded-xl bg-primary/5 border border-primary/20 flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-xs">
+                  <span className="text-muted-foreground text-[11px]">Consultor de Captação:</span>
+                  <span className="font-bold text-primary text-[11px] truncate">{vehicle.member.partnerName}</span>
                 </div>
-                <Select
-                  value={coverage.fipePercent.toString()}
-                  onValueChange={(val) => setCoverage({ ...coverage, fipePercent: parseInt(val, 10) })}
-                >
-                  <SelectTrigger className="w-24 h-7 text-xs rounded-lg bg-background">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="rounded-xl">
-                    <SelectItem value="100">100% FIPE</SelectItem>
-                    <SelectItem value="90">90% FIPE</SelectItem>
-                    <SelectItem value="80">80% FIPE</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              )}
+            </TabsContent>
 
-              {/* Roubo e Furto */}
-              <div className="p-2.5 rounded-xl bg-muted/35 border border-border/50 flex items-center justify-between">
-                <div>
-                  <span className="font-bold text-foreground block text-xs">Roubo e Furto</span>
-                  <span className="text-[10px] text-muted-foreground">Proteção qualificada</span>
-                </div>
-                <Switch
-                  checked={coverage.theft}
-                  onCheckedChange={(c) => setCoverage({ ...coverage, theft: c })}
-                />
-              </div>
-
-              {/* Colisão e Perda Total */}
-              <div className="p-2.5 rounded-xl bg-muted/35 border border-border/50 flex items-center justify-between">
-                <div>
-                  <span className="font-bold text-foreground block text-xs">Colisão & Perda Total</span>
-                  <span className="text-[10px] text-muted-foreground">Reparo ou indenização</span>
-                </div>
-                <Switch
-                  checked={coverage.collision}
-                  onCheckedChange={(c) => setCoverage({ ...coverage, collision: c })}
-                />
-              </div>
-
-              {/* Danos Materiais a Terceiros */}
-              <div className="p-2.5 rounded-xl bg-muted/35 border border-border/50 flex items-center justify-between">
-                <div>
-                  <span className="font-bold text-foreground block text-xs">Danos a Terceiros</span>
-                  <span className="text-[10px] text-muted-foreground">Limite material</span>
-                </div>
-                <Select
-                  value={coverage.thirdPartyProperty.toString()}
-                  onValueChange={(val) => setCoverage({ ...coverage, thirdPartyProperty: parseInt(val, 10) })}
-                >
-                  <SelectTrigger className="w-28 h-7 text-xs rounded-lg bg-background">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="rounded-xl">
-                    <SelectItem value="0">Não incluso</SelectItem>
-                    <SelectItem value="50000">R$ 50 mil</SelectItem>
-                    <SelectItem value="100000">R$ 100 mil</SelectItem>
-                    <SelectItem value="200000">R$ 200 mil</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Guincho / Reboque */}
-              <div className="p-2.5 rounded-xl bg-muted/35 border border-border/50 flex items-center justify-between">
-                <div>
-                  <span className="font-bold text-foreground block text-xs">Guincho / Reboque 24h</span>
-                  <span className="text-[10px] text-muted-foreground">Raio de quilometragem</span>
-                </div>
-                <Select
-                  value={coverage.towKm.toString()}
-                  onValueChange={(val) => setCoverage({ ...coverage, towKm: parseInt(val, 10) })}
-                >
-                  <SelectTrigger className="w-28 h-7 text-xs rounded-lg bg-background">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="rounded-xl">
-                    <SelectItem value="200">200 km</SelectItem>
-                    <SelectItem value="500">500 km</SelectItem>
-                    <SelectItem value="1000">1.000 km</SelectItem>
-                    <SelectItem value="9999">Ilimitado</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Carro Reserva */}
-              <div className="p-2.5 rounded-xl bg-muted/35 border border-border/50 flex items-center justify-between">
-                <div>
-                  <span className="font-bold text-foreground block text-xs">Carro Reserva</span>
-                  <span className="text-[10px] text-muted-foreground">Diárias após sinistro</span>
-                </div>
-                <Select
-                  value={coverage.reserveCarDays.toString()}
-                  onValueChange={(val) => setCoverage({ ...coverage, reserveCarDays: parseInt(val, 10) })}
-                >
-                  <SelectTrigger className="w-28 h-7 text-xs rounded-lg bg-background">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="rounded-xl">
-                    <SelectItem value="0">Não incluso</SelectItem>
-                    <SelectItem value="7">7 dias</SelectItem>
-                    <SelectItem value="15">15 dias</SelectItem>
-                    <SelectItem value="30">30 dias</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Vidros, Faróis e Lanternas */}
-              <div className="p-2.5 rounded-xl bg-muted/35 border border-border/50 flex items-center justify-between">
-                <div>
-                  <span className="font-bold text-foreground block text-xs">Vidros & Lanternas</span>
-                  <span className="text-[10px] text-muted-foreground">Franquia reduzida</span>
-                </div>
-                <Switch
-                  checked={coverage.glassProtection}
-                  onCheckedChange={(c) => setCoverage({ ...coverage, glassProtection: c })}
-                />
-              </div>
-
-              {/* Assistência 24h */}
-              <div className="p-2.5 rounded-xl bg-muted/35 border border-border/50 flex items-center justify-between">
-                <div>
-                  <span className="font-bold text-foreground block text-xs">Assistência 24h</span>
-                  <span className="text-[10px] text-muted-foreground">Chaveiro, pneu, bateria</span>
-                </div>
-                <Switch
-                  checked={coverage.assistance24h}
-                  onCheckedChange={(c) => setCoverage({ ...coverage, assistance24h: c })}
-                />
-              </div>
-
-              {/* Rastreador / Telemetria */}
-              <div className="p-2.5 rounded-xl bg-muted/35 border border-border/50 flex items-center justify-between sm:col-span-2">
-                <div>
-                  <span className="font-bold text-foreground block text-xs">Rastreador & Bloqueador Veicular</span>
-                  <span className="text-[10px] text-muted-foreground">Monitoramento 24h via GPS</span>
-                </div>
-                <Switch
-                  checked={coverage.tracker}
-                  onCheckedChange={(c) => setCoverage({ ...coverage, tracker: c })}
-                />
-              </div>
-            </div>
-          </TabsContent>
-
-          {/* ABA 3: Mensalidades (COM CAMPO PARA INSERIR VALOR DA PROTEÇÃO) */}
-          <TabsContent value="financial" className="p-4 sm:p-5 space-y-4 m-0">
-            {/* Bloco de Edição do Valor da Proteção */}
-            <div className="p-3.5 sm:p-4 rounded-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-muted/20 border border-primary/25 space-y-3 shadow-xs">
+            {/* ABA 2: Coberturas (EDITÁVEL) */}
+            <TabsContent value="coverage" className="space-y-3.5 m-0 p-0">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-                <div className="flex items-start gap-2.5">
-                  <div className="size-8 rounded-xl bg-primary/15 text-primary flex items-center justify-center shrink-0 mt-0.5">
-                    <Receipt className="size-4" />
+                <div className="flex items-center gap-2">
+                  <div className="size-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                    <ShieldCheck className="size-4" />
                   </div>
                   <div>
-                    <h3 className="text-xs font-bold text-foreground flex items-center gap-1.5">
-                      Definição do Valor da Proteção
-                    </h3>
-                    <p className="text-[10px] text-muted-foreground mt-0.5">
-                      Altere o valor da mensalidade recorrente cobrada deste associado
+                    <h3 className="text-xs font-bold text-foreground">Coberturas Contratadas</h3>
+                    <p className="text-[10px] text-muted-foreground">
+                      Marque e ajuste o que o associado contratou na adesão deste veículo
                     </p>
                   </div>
                 </div>
 
                 <Button
                   size="sm"
-                  onClick={handleSaveMonthly}
-                  className="rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground gap-1.5 font-bold text-xs h-7.5 px-3.5 shadow-xs shrink-0 self-start sm:self-auto"
+                  onClick={handleSaveCoverage}
+                  className="rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground gap-1.5 font-bold text-xs h-8 px-3 shadow-xs w-full sm:w-auto shrink-0 justify-center"
                 >
                   <Save className="size-3.5" />
-                  Salvar Valor
+                  Salvar Coberturas
                 </Button>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
-                <div className="space-y-1">
-                  <Label className="text-[10px] font-semibold text-muted-foreground">
-                    Valor Mensal (R$) *
-                  </Label>
-                  <div className="relative">
-                    <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-black text-primary">
-                      R$
-                    </span>
-                    <Input
-                      type="text"
-                      value={monthlyFeeInput}
-                      onChange={(e) => setMonthlyFeeInput(e.target.value)}
-                      placeholder="179,90"
-                      className="pl-8 h-8 rounded-xl text-xs font-bold bg-background text-foreground border-border/80 focus-visible:ring-primary"
-                    />
+              {/* Nome do Plano */}
+              <div className="space-y-1">
+                <Label className="text-[11px] font-semibold text-muted-foreground">Nome do Plano / Categoria</Label>
+                <Input
+                  value={coveragePlan}
+                  onChange={(e) => setCoveragePlan(e.target.value)}
+                  placeholder="Ex: Plano Ouro 100% FIPE"
+                  className="h-8.5 rounded-xl text-xs bg-background border-border/80"
+                />
+              </div>
+
+              {/* Grade de Coberturas Editáveis */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                {/* Tabela FIPE % */}
+                <div className="p-2.5 rounded-xl bg-muted/35 border border-border/50 flex items-center justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <span className="font-bold text-foreground block text-xs truncate">Tabela FIPE</span>
+                    <span className="text-[10px] text-muted-foreground truncate block">Indenização integral</span>
                   </div>
-                </div>
-
-                <div className="space-y-1">
-                  <Label className="text-[10px] font-semibold text-muted-foreground">
-                    Dia de Vencimento
-                  </Label>
-                  <Select value={dueDay} onValueChange={setDueDay}>
-                    <SelectTrigger className="h-8 text-xs font-semibold rounded-xl bg-background border-border/80">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="rounded-xl">
-                      <SelectItem value="5">Todo dia 05</SelectItem>
-                      <SelectItem value="10">Todo dia 10</SelectItem>
-                      <SelectItem value="15">Todo dia 15</SelectItem>
-                      <SelectItem value="20">Todo dia 20</SelectItem>
-                      <SelectItem value="25">Todo dia 25</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-1">
-                  <Label className="text-[10px] font-semibold text-muted-foreground">
-                    Status da Proteção
-                  </Label>
                   <Select
-                    value={protectionStatus}
-                    onValueChange={(val: any) => setProtectionStatus(val)}
+                    value={coverage.fipePercent.toString()}
+                    onValueChange={(val) => setCoverage({ ...coverage, fipePercent: parseInt(val, 10) })}
                   >
-                    <SelectTrigger className="h-8 text-xs font-semibold rounded-xl bg-background border-border/80">
+                    <SelectTrigger className="w-24 h-7 text-xs rounded-lg bg-background shrink-0">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="rounded-xl">
-                      <SelectItem value="ACTIVE">Proteção Ativa</SelectItem>
-                      <SelectItem value="PENDING_PAYMENT">Fatura Pendente</SelectItem>
-                      <SelectItem value="PENDING_INSPECTION">Em Vistoria</SelectItem>
-                      <SelectItem value="INACTIVE">Inativo</SelectItem>
+                      <SelectItem value="100">100% FIPE</SelectItem>
+                      <SelectItem value="90">90% FIPE</SelectItem>
+                      <SelectItem value="80">80% FIPE</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-              </div>
-            </div>
 
-            {/* Histórico Recente de Mensalidades em Extrato Unificado */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5">
-                  <History className="size-3.5 text-muted-foreground" />
-                  <h4 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-                    Lançamentos Recentes
-                  </h4>
+                {/* Roubo e Furto */}
+                <div className="p-2.5 rounded-xl bg-muted/35 border border-border/50 flex items-center justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <span className="font-bold text-foreground block text-xs truncate">Roubo e Furto</span>
+                    <span className="text-[10px] text-muted-foreground truncate block">Proteção qualificada</span>
+                  </div>
+                  <Switch
+                    checked={coverage.theft}
+                    onCheckedChange={(c) => setCoverage({ ...coverage, theft: c })}
+                  />
                 </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    if (vehicle.member.phone) {
-                      const msg = encodeURIComponent(
-                        `Olá ${vehicle.member.name}, segue o lembrete de pagamento da proteção veicular Planmais (Veículo placa ${formatPlate(vehicle.plate)}). Valor: ${BRL(vehicle.monthlyFee)}. Vencimento dia ${vehicle.dueDay}.\n\n⚠️ Atenção: Por regras de proteção veicular, o pagamento deve ser feito impreterivelmente até o vencimento para garantir a cobertura e socorro do seu veículo. Boletos vencidos não são aceitos pelo banco.`
-                      );
-                      window.open(`https://wa.me/55${vehicle.member.phone.replace(/\D/g, "")}?text=${msg}`, "_blank");
-                    } else {
-                      toast.info("Associado não possui telefone cadastrado.");
-                    }
-                  }}
-                  className="rounded-lg h-7 text-xs font-semibold gap-1 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-500/10 px-2"
-                >
-                  <Send className="size-3" />
-                  Enviar Cobrança WhatsApp
-                </Button>
-              </div>
 
-              {/* Ledger Card Unificado */}
-              <div className="rounded-2xl border border-border/60 bg-muted/20 divide-y divide-border/50 overflow-hidden shadow-xs">
-                {[
-                  { month: "Março / 2026", due: `${vehicle.dueDay.toString().padStart(2, "0")}/03/2026`, status: "RECEIVED", value: vehicle.monthlyFee },
-                  { month: "Fevereiro / 2026", due: `${vehicle.dueDay.toString().padStart(2, "0")}/02/2026`, status: "RECEIVED", value: vehicle.monthlyFee },
-                  { month: "Janeiro / 2026", due: `${vehicle.dueDay.toString().padStart(2, "0")}/01/2026`, status: "RECEIVED", value: vehicle.monthlyFee },
-                ].map((inv, i) => (
-                  <div
-                    key={i}
-                    className="p-2.5 sm:px-3.5 flex items-center justify-between hover:bg-background/60 transition-colors"
+                {/* Colisão e Perda Total */}
+                <div className="p-2.5 rounded-xl bg-muted/35 border border-border/50 flex items-center justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <span className="font-bold text-foreground block text-xs truncate">Colisão & Perda Total</span>
+                    <span className="text-[10px] text-muted-foreground truncate block">Reparo ou indenização</span>
+                  </div>
+                  <Switch
+                    checked={coverage.collision}
+                    onCheckedChange={(c) => setCoverage({ ...coverage, collision: c })}
+                  />
+                </div>
+
+                {/* Danos Materiais a Terceiros */}
+                <div className="p-2.5 rounded-xl bg-muted/35 border border-border/50 flex items-center justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <span className="font-bold text-foreground block text-xs truncate">Danos a Terceiros</span>
+                    <span className="text-[10px] text-muted-foreground truncate block">Limite material</span>
+                  </div>
+                  <Select
+                    value={coverage.thirdPartyProperty.toString()}
+                    onValueChange={(val) => setCoverage({ ...coverage, thirdPartyProperty: parseInt(val, 10) })}
                   >
-                    <div className="flex items-center gap-2.5">
-                      <div className="size-6.5 rounded-lg bg-emerald-500/15 text-emerald-600 flex items-center justify-center shrink-0">
-                        <CheckCircle2 className="size-3.5" />
-                      </div>
-                      <div>
-                        <p className="font-bold text-foreground text-xs leading-none">{inv.month}</p>
-                        <p className="text-[10px] text-muted-foreground mt-0.5">Vencimento em {inv.due}</p>
-                      </div>
-                    </div>
+                    <SelectTrigger className="w-28 h-7 text-xs rounded-lg bg-background shrink-0">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-xl">
+                      <SelectItem value="0">Não incluso</SelectItem>
+                      <SelectItem value="50000">R$ 50 mil</SelectItem>
+                      <SelectItem value="100000">R$ 100 mil</SelectItem>
+                      <SelectItem value="200000">R$ 200 mil</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
 
-                    <div className="flex items-center gap-2.5">
-                      <span className="font-extrabold text-foreground text-xs">{BRL(inv.value)}</span>
-                      <Badge className="bg-emerald-500/15 text-emerald-600 border border-emerald-500/30 text-[9px] font-bold px-1.5 py-0 rounded-md">
-                        Pago
-                      </Badge>
+                {/* Guincho / Reboque */}
+                <div className="p-2.5 rounded-xl bg-muted/35 border border-border/50 flex items-center justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <span className="font-bold text-foreground block text-xs truncate">Guincho / Reboque 24h</span>
+                    <span className="text-[10px] text-muted-foreground truncate block">Raio de quilometragem</span>
+                  </div>
+                  <Select
+                    value={coverage.towKm.toString()}
+                    onValueChange={(val) => setCoverage({ ...coverage, towKm: parseInt(val, 10) })}
+                  >
+                    <SelectTrigger className="w-28 h-7 text-xs rounded-lg bg-background shrink-0">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-xl">
+                      <SelectItem value="200">200 km</SelectItem>
+                      <SelectItem value="500">500 km</SelectItem>
+                      <SelectItem value="1000">1.000 km</SelectItem>
+                      <SelectItem value="9999">Ilimitado</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Carro Reserva */}
+                <div className="p-2.5 rounded-xl bg-muted/35 border border-border/50 flex items-center justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <span className="font-bold text-foreground block text-xs truncate">Carro Reserva</span>
+                    <span className="text-[10px] text-muted-foreground truncate block">Diárias após sinistro</span>
+                  </div>
+                  <Select
+                    value={coverage.reserveCarDays.toString()}
+                    onValueChange={(val) => setCoverage({ ...coverage, reserveCarDays: parseInt(val, 10) })}
+                  >
+                    <SelectTrigger className="w-28 h-7 text-xs rounded-lg bg-background shrink-0">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-xl">
+                      <SelectItem value="0">Não incluso</SelectItem>
+                      <SelectItem value="7">7 dias</SelectItem>
+                      <SelectItem value="15">15 dias</SelectItem>
+                      <SelectItem value="30">30 dias</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Vidros, Faróis e Lanternas */}
+                <div className="p-2.5 rounded-xl bg-muted/35 border border-border/50 flex items-center justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <span className="font-bold text-foreground block text-xs truncate">Vidros & Lanternas</span>
+                    <span className="text-[10px] text-muted-foreground truncate block">Franquia reduzida</span>
+                  </div>
+                  <Switch
+                    checked={coverage.glassProtection}
+                    onCheckedChange={(c) => setCoverage({ ...coverage, glassProtection: c })}
+                  />
+                </div>
+
+                {/* Assistência 24h */}
+                <div className="p-2.5 rounded-xl bg-muted/35 border border-border/50 flex items-center justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <span className="font-bold text-foreground block text-xs truncate">Assistência 24h</span>
+                    <span className="text-[10px] text-muted-foreground truncate block">Chaveiro, pneu, bateria</span>
+                  </div>
+                  <Switch
+                    checked={coverage.assistance24h}
+                    onCheckedChange={(c) => setCoverage({ ...coverage, assistance24h: c })}
+                  />
+                </div>
+
+                {/* Rastreador / Telemetria */}
+                <div className="p-2.5 rounded-xl bg-muted/35 border border-border/50 flex items-center justify-between gap-2 sm:col-span-2">
+                  <div className="min-w-0 flex-1">
+                    <span className="font-bold text-foreground block text-xs truncate">Rastreador & Bloqueador Veicular</span>
+                    <span className="text-[10px] text-muted-foreground truncate block">Monitoramento 24h via GPS</span>
+                  </div>
+                  <Switch
+                    checked={coverage.tracker}
+                    onCheckedChange={(c) => setCoverage({ ...coverage, tracker: c })}
+                  />
+                </div>
+              </div>
+            </TabsContent>
+
+            {/* ABA 3: Mensalidades */}
+            <TabsContent value="financial" className="space-y-4 m-0 p-0">
+              {/* Bloco de Edição do Valor da Proteção */}
+              <div className="p-3.5 sm:p-4 rounded-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-muted/20 border border-primary/25 space-y-3 shadow-xs">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                  <div className="flex items-start gap-2.5">
+                    <div className="size-8 rounded-xl bg-primary/15 text-primary flex items-center justify-center shrink-0 mt-0.5">
+                      <Receipt className="size-4" />
+                    </div>
+                    <div>
+                      <h3 className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                        Definição do Valor da Proteção
+                      </h3>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">
+                        Altere o valor da mensalidade recorrente cobrada deste associado
+                      </p>
                     </div>
                   </div>
-                ))}
+
+                  <Button
+                    size="sm"
+                    onClick={handleSaveMonthly}
+                    className="rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground gap-1.5 font-bold text-xs h-7.5 px-3.5 shadow-xs w-full sm:w-auto shrink-0 justify-center"
+                  >
+                    <Save className="size-3.5" />
+                    Salvar Valor
+                  </Button>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
+                  <div className="space-y-1">
+                    <Label className="text-[10px] font-semibold text-muted-foreground">
+                      Valor Mensal (R$) *
+                    </Label>
+                    <div className="relative">
+                      <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-black text-primary">
+                        R$
+                      </span>
+                      <Input
+                        type="text"
+                        value={monthlyFeeInput}
+                        onChange={(e) => setMonthlyFeeInput(e.target.value)}
+                        placeholder="179,90"
+                        className="pl-8 h-8 rounded-xl text-xs font-bold bg-background text-foreground border-border/80 focus-visible:ring-primary"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <Label className="text-[10px] font-semibold text-muted-foreground">
+                      Dia de Vencimento
+                    </Label>
+                    <Select value={dueDay} onValueChange={setDueDay}>
+                      <SelectTrigger className="h-8 text-xs font-semibold rounded-xl bg-background border-border/80">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="rounded-xl">
+                        <SelectItem value="5">Todo dia 05</SelectItem>
+                        <SelectItem value="10">Todo dia 10</SelectItem>
+                        <SelectItem value="15">Todo dia 15</SelectItem>
+                        <SelectItem value="20">Todo dia 20</SelectItem>
+                        <SelectItem value="25">Todo dia 25</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <Label className="text-[10px] font-semibold text-muted-foreground">
+                      Status da Proteção
+                    </Label>
+                    <Select
+                      value={protectionStatus}
+                      onValueChange={(val: any) => setProtectionStatus(val)}
+                    >
+                      <SelectTrigger className="h-8 text-xs font-semibold rounded-xl bg-background border-border/80">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="rounded-xl">
+                        <SelectItem value="ACTIVE">Proteção Ativa</SelectItem>
+                        <SelectItem value="PENDING_PAYMENT">Fatura Pendente</SelectItem>
+                        <SelectItem value="PENDING_INSPECTION">Em Vistoria</SelectItem>
+                        <SelectItem value="INACTIVE">Inativo</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
               </div>
-            </div>
-          </TabsContent>
+
+              {/* Histórico Recente de Mensalidades em Extrato Unificado */}
+              <div className="space-y-2">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div className="flex items-center gap-1.5">
+                    <History className="size-3.5 text-muted-foreground" />
+                    <h4 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                      Lançamentos Recentes
+                    </h4>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      if (vehicle.member.phone) {
+                        const msg = encodeURIComponent(
+                          `Olá ${vehicle.member.name}, segue o lembrete de pagamento da proteção veicular Planmais (Veículo placa ${formatPlate(vehicle.plate)}). Valor: ${BRL(vehicle.monthlyFee)}. Vencimento dia ${vehicle.dueDay}.\n\n⚠️ Atenção: Por regras de proteção veicular, o pagamento deve ser feito impreterivelmente até o vencimento para garantir a cobertura e socorro do seu veículo. Boletos vencidos não são aceitos pelo banco.`
+                        );
+                        window.open(`https://wa.me/55${vehicle.member.phone.replace(/\D/g, "")}?text=${msg}`, "_blank");
+                      } else {
+                        toast.info("Associado não possui telefone cadastrado.");
+                      }
+                    }}
+                    className="rounded-lg h-7 text-xs font-semibold gap-1 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-500/10 px-2 w-full sm:w-auto justify-center"
+                  >
+                    <Send className="size-3" />
+                    Enviar Cobrança WhatsApp
+                  </Button>
+                </div>
+
+                {/* Ledger Card Unificado */}
+                <div className="rounded-2xl border border-border/60 bg-muted/20 divide-y divide-border/50 overflow-hidden shadow-xs">
+                  {[
+                    { month: "Março / 2026", due: `${vehicle.dueDay.toString().padStart(2, "0")}/03/2026`, status: "RECEIVED", value: vehicle.monthlyFee },
+                    { month: "Fevereiro / 2026", due: `${vehicle.dueDay.toString().padStart(2, "0")}/02/2026`, status: "RECEIVED", value: vehicle.monthlyFee },
+                    { month: "Janeiro / 2026", due: `${vehicle.dueDay.toString().padStart(2, "0")}/01/2026`, status: "RECEIVED", value: vehicle.monthlyFee },
+                  ].map((inv, i) => (
+                    <div
+                      key={i}
+                      className="p-2.5 sm:px-3.5 flex items-center justify-between hover:bg-background/60 transition-colors gap-2"
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="size-6.5 rounded-lg bg-emerald-500/15 text-emerald-600 flex items-center justify-center shrink-0">
+                          <CheckCircle2 className="size-3.5" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-bold text-foreground text-xs leading-none truncate">{inv.month}</p>
+                          <p className="text-[10px] text-muted-foreground mt-0.5 truncate">Vencimento em {inv.due}</p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="font-extrabold text-foreground text-xs font-mono">{BRL(inv.value)}</span>
+                        <Badge className="bg-emerald-500/15 text-emerald-600 border border-emerald-500/30 text-[9px] font-bold px-1.5 py-0 rounded-md">
+                          Pago
+                        </Badge>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </TabsContent>
+          </div>
         </Tabs>
 
-        {/* Rodapé Compacto */}
-        <div className="px-5 py-3 border-t border-border/60 bg-muted/20 flex items-center justify-between gap-2">
-          <div className="flex items-center gap-3">
+        {/* Rodapé Compacto e 100% Responsivo */}
+        <div className="px-4 sm:px-5 py-3 border-t border-border/60 bg-muted/20 shrink-0 flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-2.5">
+          <div className="flex items-center justify-between sm:justify-start gap-2.5 sm:gap-3 w-full sm:w-auto">
             <AsaasFormSeal />
             <Button
               variant="outline"
@@ -1427,14 +1429,14 @@ function VehicleDossierDialog({
               className="rounded-xl border-primary/40 text-primary hover:bg-primary/10 gap-1.5 font-bold text-xs h-8"
             >
               <Award className="size-3.5" />
-              Certificado Digital
+              <span>Certificado Digital</span>
             </Button>
           </div>
 
           <Button
             size="sm"
             onClick={() => onOpenChange(false)}
-            className="rounded-xl text-xs h-8 font-semibold px-5"
+            className="rounded-xl text-xs h-8 font-semibold px-5 w-full sm:w-auto"
           >
             Fechar
           </Button>
@@ -1456,8 +1458,8 @@ function CertificateDialog({
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-xl rounded-3xl p-5 sm:p-6 bg-card border-border shadow-2xl">
-        <div className="border-2 border-primary/30 rounded-2xl p-5 bg-gradient-to-b from-primary/5 via-card to-card relative overflow-hidden">
+      <DialogContent className="w-[96vw] max-w-xl max-h-[90vh] overflow-y-auto overflow-x-hidden rounded-2xl sm:rounded-3xl p-4 sm:p-6 bg-card border-border shadow-2xl">
+        <div className="border-2 border-primary/30 rounded-2xl p-4 sm:p-5 bg-gradient-to-b from-primary/5 via-card to-card relative overflow-hidden">
           <ShieldCheck className="absolute -right-8 -bottom-8 size-44 text-primary/5 pointer-events-none" />
 
           {/* Cabeçalho */}
@@ -1475,15 +1477,15 @@ function CertificateDialog({
 
           {/* Dados */}
           <div className="py-4 space-y-2.5 text-xs">
-            <div className="p-2.5 rounded-xl bg-muted/40 border border-border/40 flex items-center justify-between">
+            <div className="p-2.5 rounded-xl bg-muted/40 border border-border/40 flex flex-col sm:flex-row sm:items-center justify-between gap-1">
               <div>
                 <span className="text-[9px] text-muted-foreground block">Associado Titular</span>
-                <span className="font-bold text-foreground text-xs">{vehicle.member.name}</span>
+                <span className="font-bold text-foreground text-xs truncate block">{vehicle.member.name}</span>
               </div>
               <span className="font-mono text-[11px] text-muted-foreground">{vehicle.member.document}</span>
             </div>
 
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <div className="p-2.5 rounded-xl bg-muted/40 border border-border/40">
                 <span className="text-[9px] text-muted-foreground block">Veículo Protegido</span>
                 <span className="font-bold text-foreground text-xs truncate block">{vehicle.brand} {vehicle.model}</span>
@@ -1504,23 +1506,23 @@ function CertificateDialog({
           </div>
 
           {/* Rodapé com QR Code */}
-          <div className="pt-3 border-t border-border/60 flex items-center justify-between text-[10px] text-muted-foreground">
-            <div>
-              <p className="font-semibold text-foreground">Certificado nº PLAN-{formatPlate(vehicle.plate)}-2026</p>
-              <p>Autenticação digital verificada pela Planmais</p>
+          <div className="pt-3 border-t border-border/60 flex items-center justify-between text-[10px] text-muted-foreground gap-2">
+            <div className="min-w-0">
+              <p className="font-semibold text-foreground truncate">Certificado nº PLAN-{formatPlate(vehicle.plate)}-2026</p>
+              <p className="truncate">Autenticação digital verificada pela Planmais</p>
             </div>
-            <div className="size-10 bg-white rounded-lg p-0.5 border border-border flex items-center justify-center">
+            <div className="size-10 bg-white rounded-lg p-0.5 border border-border flex items-center justify-center shrink-0">
               <QrCode className="size-9 text-slate-900" />
             </div>
           </div>
         </div>
 
-        <DialogFooter className="mt-3 flex sm:justify-between items-center gap-2">
+        <DialogFooter className="mt-3 flex flex-col-reverse sm:flex-row sm:justify-between items-center gap-2">
           <Button
             variant="outline"
             size="sm"
             onClick={() => window.print()}
-            className="rounded-xl text-xs gap-1.5 h-8"
+            className="rounded-xl text-xs gap-1.5 h-8 w-full sm:w-auto"
           >
             <FileText className="size-3.5" />
             Imprimir Certificado
@@ -1529,7 +1531,7 @@ function CertificateDialog({
           <Button
             size="sm"
             onClick={() => onOpenChange(false)}
-            className="rounded-xl text-xs font-semibold h-8"
+            className="rounded-xl text-xs font-semibold h-8 w-full sm:w-auto"
           >
             Concluir
           </Button>
@@ -1597,7 +1599,7 @@ function NewVehicleDialog({ members }: { members: any[] }) {
           <span>Cadastrar Veículo</span>
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl bg-card border-border">
+      <DialogContent className="w-[96vw] max-w-lg max-h-[90vh] overflow-y-auto overflow-x-hidden rounded-2xl bg-card border-border p-4 sm:p-6">
         <DialogHeader>
           <DialogTitle className="text-base font-bold flex items-center gap-2">
             <Car className="size-4.5 text-primary" /> Novo Veículo na Frota
@@ -1630,7 +1632,7 @@ function NewVehicleDialog({ members }: { members: any[] }) {
             </Select>
           </div>
 
-          <div className="grid grid-cols-2 gap-2.5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
             <div className="space-y-1">
               <Label className="text-xs font-semibold">Placa (Mercosul) *</Label>
               <Input
@@ -1652,7 +1654,7 @@ function NewVehicleDialog({ members }: { members: any[] }) {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-2.5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
             <div className="space-y-1">
               <Label className="text-xs font-semibold">Marca *</Label>
               <Input
@@ -1689,19 +1691,19 @@ function NewVehicleDialog({ members }: { members: any[] }) {
 
           <DialogFooter className="pt-2 flex flex-col-reverse sm:flex-row items-center sm:justify-between gap-3">
             <AsaasFormSeal />
-            <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+            <div className="flex flex-col-reverse sm:flex-row items-center gap-2 w-full sm:w-auto justify-end">
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => setOpen(false)}
-                className="rounded-xl text-xs h-8"
+                className="rounded-xl text-xs h-8 w-full sm:w-auto"
               >
                 Cancelar
               </Button>
               <Button
                 type="submit"
                 disabled={createVeh.isPending}
-                className="rounded-xl bg-primary text-primary-foreground font-bold text-xs gap-1.5 shadow-xs h-8"
+                className="rounded-xl bg-primary text-primary-foreground font-bold text-xs gap-1.5 shadow-xs h-8 w-full sm:w-auto"
               >
                 {createVeh.isPending ? "Cadastrando..." : "Salvar Veículo"}
               </Button>

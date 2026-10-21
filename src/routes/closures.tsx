@@ -178,7 +178,7 @@ function RouteComponent() {
 
   const isAll = merchantId === "all";
   const merchant = isAll ? null : (merchants.data ?? []).find((m) => m.id === merchantId);
-  const plan = isAll ? null : (plans.data ?? []).find((p) => p.merchant_id === merchantId);
+  const plan = isAll ? undefined : (plans.data ?? []).find((p) => p.merchant_id === merchantId);
   const importsData = useQuery(importsQuery);
 
   const importsMap = useMemo(() => {

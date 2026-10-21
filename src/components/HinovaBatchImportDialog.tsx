@@ -211,7 +211,7 @@ export function HinovaBatchImportDialog({
         </Button>
       </DialogTrigger>
 
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl p-6 bg-card border-border shadow-2xl">
+      <DialogContent className="w-[96vw] max-w-2xl max-h-[90vh] overflow-y-auto overflow-x-hidden rounded-2xl sm:rounded-3xl p-4 sm:p-6 bg-card border-border shadow-2xl">
         <DialogHeader className="space-y-1.5 border-b border-border/60 pb-4">
           <div className="flex items-center gap-2.5">
             <div className="size-10 rounded-2xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-500/30">
@@ -284,7 +284,7 @@ export function HinovaBatchImportDialog({
             Lista de Veículos e Associados do Relatório:
           </p>
 
-          <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
+          <div className="space-y-2 max-h-[300px] overflow-y-auto overflow-x-hidden pr-1">
             {HINOVA_SGA_IMPORT_DATA.map((item, idx) => (
               <Card
                 key={`${item.vehicle.plate}-${idx}`}
