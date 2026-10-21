@@ -345,7 +345,7 @@ function EditMerchantDialog({ merchant }: { merchant: Merchant }) {
                 )}
               >
                 {form.rate_table === "CPAG59" && <Check className="size-3.5" />}
-                <span>CPAG59 - F6</span>
+                <span>CPAG59 - F3</span>
               </Button>
 
               <Button
@@ -531,7 +531,7 @@ function MerchantsPage() {
     },
     onSuccess: (_, vars) => {
       toast.success(
-        `Tabela atualizada para ${vars.newTable === "CPAG56" ? "CPAG56 - F7" : "CPAG59 - F6"} com sucesso!`
+        `Tabela atualizada para ${vars.newTable === "CPAG56" ? "CPAG56 - F7" : "CPAG59 - F3"} com sucesso!`
       );
       invalidate();
     },
@@ -690,7 +690,7 @@ function MerchantsPage() {
                     )}
                   >
                     {form.rate_table === "CPAG59" && <Check className="size-3.5" />}
-                    <span>CPAG59 - F6</span>
+                    <span>CPAG59 - F3</span>
                   </Button>
 
                   <Button
@@ -963,7 +963,7 @@ function MerchantsPage() {
                       )}
                     </div>
 
-                    {/* Tabela de Taxas Contratual Ativa: CPAG59 - F6 ou CPAG56 - F7 */}
+                    {/* Tabela de Taxas Contratual Ativa: CPAG59 - F3 ou CPAG56 - F7 */}
                     <div className="flex items-center gap-2 pt-1 flex-wrap">
                       <span className="text-xs font-semibold text-muted-foreground whitespace-nowrap">
                         Tabela de taxas:
@@ -983,7 +983,7 @@ function MerchantsPage() {
                           )}
                         >
                           {(!active.rate_table || active.rate_table === "CPAG59") && <Check className="size-3" />}
-                          <span>CPAG59 - F6</span>
+                          <span>CPAG59 - F3</span>
                         </Button>
                         <Button
                           type="button"

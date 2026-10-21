@@ -270,7 +270,7 @@ function RouteComponent() {
       const opRate = Math.max(0, maxDiscountRate - tradRate);
       const opValue = gross * (opRate / 100);
 
-      // No relatório interno, a taxa esperada de referência considera a tabela ativa do EC (CPAG59 - F6 ou CPAG56 - F7)
+      // No relatório interno, a taxa esperada de referência considera a tabela ativa do EC (CPAG59 - F3 ou CPAG56 - F7)
       // Descontado a mais = negativo (Vermelho) | Descontado a menos = positivo (Verde)
       const rateTableKey = (merchant as any)?.rate_table || "CPAG59";
       const expectedRate = getCPAG59Rate(tx, rateTableKey);
@@ -956,7 +956,7 @@ function RouteComponent() {
                 <div className="flex items-center gap-2">
                   <ShieldAlert className="size-4 text-amber-600 shrink-0" />
                   <span>
-                    <strong>Modo Auditoria Interna ativo ({(merchant as any)?.rate_table === "CPAG56" ? "CPAG56 - F7" : "CPAG59 - F6"}):</strong> As colunas de Taxa Operacional foram substituídas pela Linha de Tendência, Valor Descontado da Diferença e Equação de Desvio de Taxa (<code>% Esperado - % Descontado</code>). Valores negativos (em vermelho) representam taxas descontadas a mais do que o esperado; valores positivos (em verde) representam desconto a menos.
+                    <strong>Modo Auditoria Interna ativo ({(merchant as any)?.rate_table === "CPAG56" ? "CPAG56 - F7" : "CPAG59 - F3"}):</strong> As colunas de Taxa Operacional foram substituídas pela Linha de Tendência, Valor Descontado da Diferença e Equação de Desvio de Taxa (<code>% Esperado - % Descontado</code>). Valores negativos (em vermelho) representam taxas descontadas a mais do que o esperado; valores positivos (em verde) representam desconto a menos.
                   </span>
                 </div>
               </div>
@@ -978,7 +978,7 @@ function RouteComponent() {
                             <TableHead className="text-right font-semibold text-xs print:text-[8.5px] print:py-1 print:px-1 print:text-foreground">Tendência</TableHead>
                             <TableHead className="text-right font-semibold text-xs print:text-[8.5px] print:py-1 print:px-1 print:text-foreground whitespace-nowrap">Vlr. Diferença</TableHead>
                             <TableHead className="text-right font-semibold text-xs print:text-[8.5px] print:py-1 print:px-1 print:text-foreground whitespace-nowrap">
-                              Diferença (% Esperado {(merchant as any)?.rate_table === "CPAG56" ? "F7" : "F6"} - % Desc.)
+                              Diferença (% Esperado {(merchant as any)?.rate_table === "CPAG56" ? "F7" : "F3"} - % Desc.)
                             </TableHead>
                           </>
                         ) : (
@@ -1014,7 +1014,7 @@ function RouteComponent() {
                           const opRate = Math.max(0, maxDiscountRate - tradRate);
                           const opValue = gross * (opRate / 100);
 
-                          // Relatório interno considera a taxa de referência ativa do EC (CPAG59 - F6 ou CPAG56 - F7)
+                          // Relatório interno considera a taxa de referência ativa do EC (CPAG59 - F3 ou CPAG56 - F7)
                           // Descontado a mais = negativo (Vermelho) | Descontado a menos = positivo (Verde)
                           const merchantRateTable = (merchant as any)?.rate_table || "CPAG59";
                           const expectedRate = getCPAG59Rate(tx, merchantRateTable);

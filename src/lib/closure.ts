@@ -162,7 +162,7 @@ export function getTraditionalRate(t: Transaction, plan?: FeePlan): number {
 export type RateTableType = "CPAG59" | "CPAG56";
 
 export const RATE_TABLE_OPTIONS = [
-  { id: "CPAG59", label: "CPAG59 - F6", code: "F6" },
+  { id: "CPAG59", label: "CPAG59 - F3", code: "F3" },
   { id: "CPAG56", label: "CPAG56 - F7", code: "F7" },
 ] as const;
 

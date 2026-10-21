@@ -261,7 +261,7 @@ export function MerchantsGeneralReport({
         totalDiscounted += discountedValue;
 
         // Regra do Relatório Interno:
-        // A taxa contratual de referência é baseada na tabela ativa do EC (CPAG59 - F6 ou CPAG56 - F7)
+        // A taxa contratual de referência é baseada na tabela ativa do EC (CPAG59 - F3 ou CPAG56 - F7)
         // diffRate = % Esperado - % Descontado na Máquina
         // diffValue = gross * (diffRate / 100)
         const expectedRate = getCPAG59Rate(tx, mRateTable);
@@ -407,7 +407,7 @@ export function MerchantsGeneralReport({
     const dataToExport = filteredRows.map((r) => ({
       Estabelecimento: r.name,
       Documento: r.document,
-      "Tabela Ativa": r.rateTable === "CPAG56" ? "CPAG56 - F7" : "CPAG59 - F6",
+      "Tabela Ativa": r.rateTable === "CPAG56" ? "CPAG56 - F7" : "CPAG59 - F3",
       "Plano Financeiro": r.planName,
       "Qtd. Vendas": r.txCount,
       "% Médio Descontado": Number(r.avgDiscountRate.toFixed(2)),
@@ -652,7 +652,7 @@ export function MerchantsGeneralReport({
 
             <p className="text-[10px] text-muted-foreground text-center pt-2">
               PrimaPay Meios de Pagamento • Documento gerado eletronicamente com
-              certificação de conciliação de taxas contratuais (CPAG59 - F6 / CPAG56 - F7).
+              certificação de conciliação de taxas contratuais (CPAG59 - F3 / CPAG56 - F7).
             </p>
           </div>
         </div>
@@ -761,7 +761,7 @@ export function MerchantsGeneralReport({
                   </div>
                   <p className="text-muted-foreground leading-relaxed text-[11px]">
                     No relatório interno, cada transação é comparada diretamente com a
-                    taxa contratual ativa cadastrada para o EC (<strong>CPAG59 - F6</strong> ou <strong>CPAG56 - F7</strong>). A
+                    taxa contratual ativa cadastrada para o EC (<strong>CPAG59 - F3</strong> ou <strong>CPAG56 - F7</strong>). A
                     diferença é obtida pela subtração:
                   </p>
                   <div className="p-2.5 rounded-xl bg-background border border-border/60 font-mono text-[11px] font-bold text-foreground">
@@ -795,7 +795,7 @@ export function MerchantsGeneralReport({
                       <span className="font-bold">🔴 Vermelho (Negativo):</span>
                       <span>
                         O que foi <strong>descontado a mais</strong> na máquina em relação
-                        à taxa contratual ativa do EC (CPAG59 - F6 ou CPAG56 - F7). Excedente retido na adquirente.
+                        à taxa contratual ativa do EC (CPAG59 - F3 ou CPAG56 - F7). Excedente retido na adquirente.
                       </span>
                     </div>
                     <div className="flex items-start gap-2 p-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-300">
@@ -808,19 +808,19 @@ export function MerchantsGeneralReport({
                   </div>
                 </div>
 
-                {/* Bloco 3: Tabelas de Referência CPAG59 - F6 e CPAG56 - F7 */}
+                {/* Bloco 3: Tabelas de Referência CPAG59 - F3 e CPAG56 - F7 */}
                 <div className="p-4 rounded-2xl bg-muted/30 border border-border/60 space-y-2 md:col-span-2">
                   <div className="flex items-center gap-2">
                     <div className="size-6 rounded-lg bg-primary/15 text-primary flex items-center justify-center font-bold text-xs">
                       C
                     </div>
                     <h4 className="font-bold text-foreground text-xs">
-                      Tabelas de Taxas Contratuais: CPAG59 - F6 e CPAG56 - F7
+                      Tabelas de Taxas Contratuais: CPAG59 - F3 e CPAG56 - F7
                     </h4>
                   </div>
                   <p className="text-muted-foreground leading-relaxed text-[11px]">
                     Cada estabelecimento comercial (EC) possui em seu cadastro a seleção da sua tabela
-                    de taxas contratual vigente (<strong>CPAG59 - F6</strong> ou <strong>CPAG56 - F7</strong>).
+                    de taxas contratual vigente (<strong>CPAG59 - F3</strong> ou <strong>CPAG56 - F7</strong>).
                     O motor de cálculo audita automaticamente cada transação de acordo com a tabela ativa do respectivo EC,
                     abrangendo todas as modalidades (Débito, Crédito à Vista e Parcelado de 2x a 21x) e bandeiras (Visa, Mastercard, Elo, Hipercard, Amex, Cabal e Pix).
                   </p>
@@ -915,7 +915,7 @@ export function MerchantsGeneralReport({
                     Comparativo de Taxas: % Descontado vs % Esperado (Tabela Ativa) por EC
                   </h4>
                   <p className="text-[11px] text-muted-foreground">
-                    Comparativo direto entre a taxa média retida nos terminais e a taxa contratual de referência (CPAG59 - F6 ou CPAG56 - F7).
+                    Comparativo direto entre a taxa média retida nos terminais e a taxa contratual de referência (CPAG59 - F3 ou CPAG56 - F7).
                   </p>
                 </div>
               </div>
@@ -1064,11 +1064,11 @@ export function MerchantsGeneralReport({
                                     : "bg-blue-600 hover:bg-blue-700 text-white"
                                 }`}
                               >
-                                {row.rateTable === "CPAG56" ? "F7" : "F6"}
+                                {row.rateTable === "CPAG56" ? "F7" : "F3"}
                               </Badge>
                             </div>
                             <span className="text-[10px] text-muted-foreground block">
-                              {row.rateTable === "CPAG56" ? "CPAG56 - F7" : "CPAG59 - F6"}
+                              {row.rateTable === "CPAG56" ? "CPAG56 - F7" : "CPAG59 - F3"}
                             </span>
                           </TableCell>
 
