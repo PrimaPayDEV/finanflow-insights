@@ -28,7 +28,11 @@ import {
   AlertCircle,
   Wallet,
   ShieldAlert,
+  Users,
+  FileSpreadsheet,
+  Building2,
 } from "lucide-react";
+import * as XLSX from "xlsx";
 import { toast } from "sonner";
 import { AppLayout } from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
@@ -172,8 +176,9 @@ function RouteComponent() {
   const [isConfigOpen, setIsConfigOpen] = useState(false);
   const [reportMode, setReportMode] = useState<"client" | "internal">("client");
 
-  const merchant = (merchants.data ?? []).find((m) => m.id === merchantId);
-  const plan = (plans.data ?? []).find((p) => p.merchant_id === merchantId);
+  const isAll = merchantId === "all";
+  const merchant = isAll ? null : (merchants.data ?? []).find((m) => m.id === merchantId);
+  const plan = isAll ? null : (plans.data ?? []).find((p) => p.merchant_id === merchantId);
   const importsData = useQuery(importsQuery);
 
   const importsMap = useMemo(() => {
@@ -182,24 +187,177 @@ function RouteComponent() {
     return map;
   }, [importsData.data]);
 
-  const txs = (transactions.data ?? []).filter((t) => {
-    if (t.merchant_id !== merchantId) return false;
-    const refMonth = t.import_id ? importsMap.get(t.import_id) : t.transaction_date.slice(0, 7);
-    return refMonth === month;
-  });
-  const exps = (expenses.data ?? []).filter(
-    (e) => e.merchant_id === merchantId && e.reference_month === month,
-  );
+  const isTxInSelectedMonth = (t: any, targetMonth: string) => {
+    if (t.import_id) {
+      const refMonth = importsMap.get(t.import_id);
+      if (refMonth && refMonth === targetMonth) return true;
+    }
+    if (t.transaction_date) {
+      const dateStr = String(t.transaction_date).trim();
+      if (dateStr.slice(0, 7) === targetMonth) return true;
+      if (dateStr.includes("/")) {
+        const parts = dateStr.split(" ")[0].split("/");
+        if (parts.length === 3) {
+          const ym = parts[2].length === 4
+            ? `${parts[2]}-${parts[1].padStart(2, "0")}`
+            : `${parts[0]}-${parts[1].padStart(2, "0")}`;
+          if (ym === targetMonth) return true;
+        }
+      }
+    }
+    return false;
+  };
+
+  const allPeriodTxs = useMemo(() => {
+    return (transactions.data ?? []).filter((t) => isTxInSelectedMonth(t, month));
+  }, [transactions.data, importsMap, month]);
+
+  const txs = useMemo(() => {
+    if (isAll) return allPeriodTxs;
+    return allPeriodTxs.filter((t) => t.merchant_id === merchantId);
+  }, [isAll, allPeriodTxs, merchantId]);
+
+  const exps = useMemo(() => {
+    if (isAll || !merchantId) return [];
+    return (expenses.data ?? []).filter(
+      (e) => e.merchant_id === merchantId && e.reference_month === month,
+    );
+  }, [isAll, expenses.data, merchantId, month]);
 
   const merchantTerminals = useMemo(() => {
+    if (isAll || !merchantId) return [];
     return (terminals.data ?? []).filter((t) => t.merchant_id === merchantId);
-  }, [terminals.data, merchantId]);
+  }, [isAll, terminals.data, merchantId]);
 
-  const calc = calculateClosure(txs, exps, plan, merchantTerminals);
-  const existing = (closures.data ?? []).find(
-    (c) => c.merchant_id === merchantId && c.reference_month === month,
-  );
-  const merchantSplits = (splits.data ?? []).filter((s) => s.merchant_id === merchantId);
+  const calc = useMemo(() => {
+    if (isAll || !merchant) {
+      return calculateClosure([], [], undefined, []);
+    }
+    return calculateClosure(txs, exps, plan, merchantTerminals);
+  }, [isAll, merchant, txs, exps, plan, merchantTerminals]);
+
+  const existing = useMemo(() => {
+    if (isAll || !merchantId) return undefined;
+    return (closures.data ?? []).find(
+      (c) => c.merchant_id === merchantId && c.reference_month === month,
+    );
+  }, [isAll, closures.data, merchantId, month]);
+
+  const merchantSplits = useMemo(() => {
+    if (isAll || !merchantId) return [];
+    return (splits.data ?? []).filter((s) => s.merchant_id === merchantId);
+  }, [isAll, splits.data, merchantId]);
+
+  // Lista consolidada de estabelecimentos que transacionaram no período selecionado
+  const transactingMerchantsData = useMemo(() => {
+    if (!isAll) return [];
+
+    const mList = merchants.data ?? [];
+    const plansList = plans.data ?? [];
+
+    const list: Array<{
+      merchant: (typeof mList)[number];
+      rateTable: "CPAG59" | "CPAG56";
+      txs: typeof allPeriodTxs;
+      totalGross: number;
+      totalDiscounted: number;
+      avgDiscountRate: number;
+      avgExpectedRate: number;
+      totalDiffAmount: number;
+      avgDiffRate: number;
+      plan: (typeof plansList)[number] | undefined;
+    }> = [];
+
+    mList.forEach((m) => {
+      const mTxs = allPeriodTxs.filter((t) => t.merchant_id === m.id);
+      if (mTxs.length === 0) return;
+
+      const mPlan = plansList.find((p) => p.merchant_id === m.id);
+      const mRateTable = getSavedMerchantRateTable(m.id, (m as any)?.rate_table);
+
+      let totalGross = 0;
+      let totalDiscounted = 0;
+      let sumExpectedFee = 0;
+      let totalDiffAmount = 0;
+
+      mTxs.forEach((tx) => {
+        const gross = Number(tx.gross_amount) || 0;
+        totalGross += gross;
+
+        let discountedValue = 0;
+        let tradRate = 0;
+        if (tx.net_amount !== null && tx.net_amount !== undefined) {
+          discountedValue = gross - Number(tx.net_amount);
+          tradRate = gross > 0 ? (discountedValue / gross) * 100 : 0;
+        } else {
+          tradRate = getTraditionalRate(tx, mPlan);
+          discountedValue = gross * (tradRate / 100);
+        }
+        totalDiscounted += discountedValue;
+
+        const expectedRate = getCPAG59Rate(tx, mRateTable);
+        sumExpectedFee += gross * (expectedRate / 100);
+
+        const diffRate = expectedRate - tradRate;
+        const diffValue = gross * (diffRate / 100);
+        totalDiffAmount += diffValue;
+      });
+
+      const avgDiscountRate = totalGross > 0 ? (totalDiscounted / totalGross) * 100 : 0;
+      const avgExpectedRate = totalGross > 0 ? (sumExpectedFee / totalGross) * 100 : 0;
+      const avgDiffRate = avgExpectedRate - avgDiscountRate;
+
+      list.push({
+        merchant: m,
+        rateTable: mRateTable,
+        txs: mTxs,
+        totalGross,
+        totalDiscounted,
+        avgDiscountRate,
+        avgExpectedRate,
+        totalDiffAmount,
+        avgDiffRate,
+        plan: mPlan,
+      });
+    });
+
+    return list.sort((a, b) => b.totalGross - a.totalGross);
+  }, [isAll, merchants.data, plans.data, allPeriodTxs]);
+
+  const allTotals = useMemo(() => {
+    let gross = 0;
+    let discounted = 0;
+    let diff = 0;
+    let txCount = 0;
+    let negativeCount = 0;
+    let negativeDiffTotal = 0;
+
+    transactingMerchantsData.forEach((item) => {
+      gross += item.totalGross;
+      discounted += item.totalDiscounted;
+      diff += item.totalDiffAmount;
+      txCount += item.txs.length;
+      if (item.totalDiffAmount < -0.01) {
+        negativeCount++;
+        negativeDiffTotal += item.totalDiffAmount;
+      }
+    });
+
+    const avgDisc = gross > 0 ? (discounted / gross) * 100 : 0;
+    const avgExp = gross > 0 ? ((discounted + diff) / gross) * 100 : 0;
+
+    return {
+      gross,
+      discounted,
+      diff,
+      txCount,
+      merchantCount: transactingMerchantsData.length,
+      avgDisc,
+      avgExp,
+      negativeCount,
+      negativeDiffTotal,
+    };
+  }, [transactingMerchantsData]);
 
   // Lista unificada de lançamentos (Cobranças/Isenções de Maquininhas + Lançamentos Manuais)
   const displayExpenses = useMemo(() => {
@@ -403,12 +561,167 @@ function RouteComponent() {
     }, 150);
   };
 
+  const handlePrintInternalAll = () => {
+    const originalTitle = document.title;
+    document.title = `Relatorio_Interno_Consolidado_${month}`;
+    setTimeout(() => {
+      window.print();
+      setTimeout(() => {
+        document.title = originalTitle;
+      }, 1000);
+    }, 150);
+  };
+
+  const handleExportAllExcel = () => {
+    if (transactingMerchantsData.length === 0) {
+      toast.error("Nenhuma venda registrada para os estabelecimentos neste mês.");
+      return;
+    }
+
+    try {
+      const rowsConsolidado = transactingMerchantsData.map((item) => {
+        return {
+          "Estabelecimento": item.merchant.name,
+          "CNPJ": item.merchant.document_cnpj || "Não informado",
+          "Tabela de Taxa": item.rateTable === "CPAG56" ? "CPAG56 - F7" : "CPAG59 - F3",
+          "Qtd. Vendas": item.txs.length,
+          "Volume Bruto (R$)": Number(item.totalGross.toFixed(2)),
+          "Vlr. Descontado Máquinas (R$)": Number(item.totalDiscounted.toFixed(2)),
+          "% Descontado Médio": Number(item.avgDiscountRate.toFixed(2)),
+          "% Esperado Médio": Number(item.avgExpectedRate.toFixed(2)),
+          "Vlr. Diferença Apurado (R$)": Number(item.totalDiffAmount.toFixed(2)),
+          "Diferença (%)": Number(item.avgDiffRate.toFixed(2)),
+          "Situação":
+            item.totalDiffAmount < -0.01
+              ? "Descontado a Mais (Alerta)"
+              : item.totalDiffAmount > 0.01
+              ? "Descontado a Menor"
+              : "Conforme Esperado",
+        };
+      });
+
+      const rowsDetalhado: any[] = [];
+      transactingMerchantsData.forEach((item) => {
+        item.txs.forEach((tx) => {
+          const gross = Number(tx.gross_amount) || 0;
+          let discountedValue = 0;
+          let tradRate = 0;
+          if (tx.net_amount !== null && tx.net_amount !== undefined) {
+            discountedValue = gross - Number(tx.net_amount);
+            tradRate = gross > 0 ? (discountedValue / gross) * 100 : 0;
+          } else {
+            tradRate = getTraditionalRate(tx, item.plan);
+            discountedValue = gross * (tradRate / 100);
+          }
+
+          const expectedRate = getCPAG59Rate(tx, item.rateTable);
+          const txEffectiveTable = resolveTransactionRateTable(tx, item.rateTable);
+          const diffRate = expectedRate - tradRate;
+          const diffValue = gross * (diffRate / 100);
+
+          let dateFormatted = String(tx.transaction_date);
+          try {
+            dateFormatted = format(new Date(tx.transaction_date), "dd/MM/yyyy");
+          } catch {}
+
+          rowsDetalhado.push({
+            "Estabelecimento": item.merchant.name,
+            "CNPJ": item.merchant.document_cnpj || "Não informado",
+            "Tabela EC": item.rateTable === "CPAG56" ? "CPAG56 - F7" : "CPAG59 - F3",
+            "Data": dateFormatted,
+            "Modalidade": modalityLabel(tx.modality as any),
+            "Adquirente": (tx as any)?.acquirer || "",
+            "Tabela Aplicada": txEffectiveTable === "CPAG56" ? "CPAG56 - F7" : "CPAG59 - F3",
+            "Volume Bruto (R$)": Number(gross.toFixed(2)),
+            "Vlr. Descontado (R$)": Number(discountedValue.toFixed(2)),
+            "% Descontado": Number(tradRate.toFixed(2)),
+            "% Esperado": Number(expectedRate.toFixed(2)),
+            "Vlr. Diferença (R$)": Number(diffValue.toFixed(2)),
+            "Diferença (%)": Number(diffRate.toFixed(2)),
+            "Status":
+              diffValue < -0.01
+                ? "Descontado a mais"
+                : diffValue > 0.01
+                ? "Descontado a menor"
+                : "Conforme",
+          });
+        });
+      });
+
+      const wb = XLSX.utils.book_new();
+      const wsConsolidado = XLSX.utils.json_to_sheet(rowsConsolidado);
+      const wsDetalhado = XLSX.utils.json_to_sheet(rowsDetalhado);
+
+      wsConsolidado["!cols"] = [
+        { wch: 30 },
+        { wch: 20 },
+        { wch: 16 },
+        { wch: 12 },
+        { wch: 18 },
+        { wch: 22 },
+        { wch: 18 },
+        { wch: 18 },
+        { wch: 22 },
+        { wch: 14 },
+        { wch: 25 },
+      ];
+
+      wsDetalhado["!cols"] = [
+        { wch: 30 },
+        { wch: 20 },
+        { wch: 16 },
+        { wch: 12 },
+        { wch: 20 },
+        { wch: 12 },
+        { wch: 16 },
+        { wch: 18 },
+        { wch: 18 },
+        { wch: 14 },
+        { wch: 14 },
+        { wch: 18 },
+        { wch: 14 },
+        { wch: 20 },
+      ];
+
+      XLSX.utils.book_append_sheet(wb, wsConsolidado, "Consolidado ECs");
+      XLSX.utils.book_append_sheet(wb, wsDetalhado, "Detalhamento Vendas");
+
+      XLSX.writeFile(wb, `Relatorio_Interno_Consolidado_${month}.xlsx`);
+      toast.success("Planilha Excel com todos os estabelecimentos exportada com sucesso!");
+    } catch (err: any) {
+      toast.error(`Erro ao exportar Excel: ${err?.message || err}`);
+    }
+  };
+
   return (
     <AppLayout
       title="Relatório de Fechamento"
       subtitle="Extrato mensal, custos comparativos e apuração de economia"
       actions={
-        merchant ? (
+        isAll ? (
+          <div className="flex items-center gap-2 print:hidden">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleExportAllExcel}
+              className="gap-1.5 shadow-2xs font-medium text-emerald-700 dark:text-emerald-300 border-emerald-500/30 hover:bg-emerald-500/10"
+              title="Exportar planilha Excel com consolidado e vendas de todos os ECs"
+            >
+              <FileSpreadsheet className="size-3.5 text-emerald-600" />
+              <span>Exportar Excel (Todos)</span>
+            </Button>
+            <Button
+              variant="default"
+              size="sm"
+              onClick={handlePrintInternalAll}
+              className="gap-1.5 shadow-2xs font-medium bg-amber-600 hover:bg-amber-700 text-white border-0 shadow-amber-500/20"
+              title="Exportar PDF de auditoria interna com todos os ECs"
+            >
+              <ShieldAlert className="size-3.5" />
+              <span>Exportar PDF (Auditoria Interna - Todos)</span>
+            </Button>
+          </div>
+        ) : merchant ? (
           <div className="flex items-center gap-2 print:hidden">
             <Sheet open={isConfigOpen} onOpenChange={setIsConfigOpen}>
               <SheetTrigger asChild>
@@ -540,6 +853,17 @@ function RouteComponent() {
                   <SelectValue placeholder="Selecione o estabelecimento" />
                 </SelectTrigger>
                 <SelectContent className="rounded-xl max-h-72">
+                  <SelectItem value="all" className="py-2.5 font-bold border-b border-border/60 text-primary">
+                    <div className="flex items-center gap-2">
+                      <Users className="size-4 text-primary shrink-0" />
+                      <div className="flex flex-col text-left">
+                        <span className="font-bold text-foreground">Todos os Estabelecimentos</span>
+                        <span className="text-[10px] text-muted-foreground font-normal">
+                          Relatório Interno Consolidado ({transactingMerchantsData.length} com vendas no período)
+                        </span>
+                      </div>
+                    </div>
+                  </SelectItem>
                   {(merchants.data ?? []).map((m) => (
                     <SelectItem key={m.id} value={m.id} className="py-2.5">
                       <div className="flex items-center gap-2">
@@ -579,7 +903,7 @@ function RouteComponent() {
         </CardContent>
       </Card>
 
-      {!merchant ? (
+      {!merchant && !isAll ? (
         <Card className="mt-6 border border-dashed border-border/90 shadow-none rounded-2xl bg-muted/10">
           <CardContent className="p-12 text-center text-sm text-muted-foreground flex flex-col items-center justify-center space-y-3">
             <div className="size-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center">
@@ -588,12 +912,627 @@ function RouteComponent() {
             <div>
               <p className="font-bold text-foreground">Nenhum estabelecimento selecionado</p>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Selecione um estabelecimento e o mês acima para carregar o extrato e calcular o fechamento.
+                Selecione um estabelecimento individual ou a opção &quot;Todos os Estabelecimentos&quot; e o mês acima para carregar o extrato e calcular o fechamento.
               </p>
             </div>
           </CardContent>
         </Card>
-      ) : (
+      ) : isAll ? (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.3 }}
+          className="mt-6 space-y-6 print:mt-0 print:space-y-4"
+        >
+          {/* Cabeçalho de Impressão Consolidado */}
+          <div className="hidden print:block border-b-2 border-primary/20 pb-3 mb-4">
+            <div className="flex justify-between items-center mb-2">
+              <div>
+                <h1 className="text-xl font-black text-primary tracking-tight uppercase">
+                  Relatório de Auditoria Interna Consolidada
+                </h1>
+                <p className="text-[10px] text-muted-foreground">
+                  Apuração analítica de todos os estabelecimentos que transacionaram no período
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Período</p>
+                <p className="text-sm font-bold text-foreground capitalize">{monthLabel(month)}</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-4 gap-2 bg-muted/20 p-2 rounded-xl border border-primary/20 text-xs">
+              <div>
+                <p className="text-[9px] font-bold text-primary uppercase tracking-wider">Total de ECs com Vendas</p>
+                <p className="font-bold text-xs text-foreground">{allTotals.merchantCount} estabelecimentos</p>
+              </div>
+              <div>
+                <p className="text-[9px] font-bold text-primary uppercase tracking-wider">Volume Bruto Total</p>
+                <p className="font-bold text-xs text-foreground font-mono">{BRL(allTotals.gross)}</p>
+              </div>
+              <div>
+                <p className="text-[9px] font-bold text-primary uppercase tracking-wider">Total Descontado</p>
+                <p className="font-bold text-xs text-foreground font-mono">
+                  {BRL(allTotals.discounted)} ({allTotals.avgDisc.toFixed(2)}%)
+                </p>
+              </div>
+              <div>
+                <p className="text-[9px] font-bold text-primary uppercase tracking-wider">Vlr. Diferença Total</p>
+                <p
+                  className={`font-bold text-xs font-mono ${
+                    allTotals.diff < -0.01
+                      ? "text-rose-600"
+                      : allTotals.diff > 0.01
+                      ? "text-emerald-600"
+                      : "text-foreground"
+                  }`}
+                >
+                  {allTotals.diff > 0 ? `+${BRL(allTotals.diff)}` : BRL(allTotals.diff)}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Banner de Controle em Tela */}
+          <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-amber-500/10 via-primary/5 to-muted/20 border border-amber-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-4 print:hidden">
+            <div className="flex items-start gap-3">
+              <div className="size-11 rounded-xl bg-amber-500/20 text-amber-700 dark:text-amber-300 flex items-center justify-center shrink-0">
+                <ShieldAlert className="size-6" />
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h2 className="text-base sm:text-lg font-bold text-foreground">
+                    Auditoria Interna Consolidada ({monthLabel(month)})
+                  </h2>
+                  <Badge
+                    variant="outline"
+                    className="text-[11px] font-bold text-amber-700 dark:text-amber-300 border-amber-500/40 bg-amber-500/10"
+                  >
+                    Modo Todos os ECs
+                  </Badge>
+                  <Badge variant="outline" className="text-[11px] font-medium border-primary/30 text-primary">
+                    CPAG59 - F3 & CPAG56 - F7
+                  </Badge>
+                </div>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Consolidação de todos os <strong>{allTotals.merchantCount} estabelecimentos</strong> que transacionaram em {monthLabel(month)}, totalizando <strong>{allTotals.txCount} vendas</strong>. Apuração de desvios entre taxas descontadas e taxas contratuais de referência.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleExportAllExcel}
+                className="gap-1.5 shadow-2xs font-semibold text-emerald-700 dark:text-emerald-300 border-emerald-500/40 hover:bg-emerald-500/10"
+              >
+                <FileSpreadsheet className="size-4 text-emerald-600" />
+                <span>Exportar Excel</span>
+              </Button>
+              <Button
+                size="sm"
+                onClick={handlePrintInternalAll}
+                className="gap-1.5 shadow-2xs font-semibold bg-amber-600 hover:bg-amber-700 text-white border-0 shadow-amber-500/20"
+              >
+                <ShieldAlert className="size-4" />
+                <span>Imprimir / PDF</span>
+              </Button>
+            </div>
+          </div>
+
+          {allTotals.negativeCount > 0 && (
+            <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-900 dark:text-rose-200 text-xs flex items-center gap-2.5 print:hidden">
+              <AlertCircle className="size-4 text-rose-600 shrink-0" />
+              <span>
+                <strong>Atenção de Auditoria:</strong> {allTotals.negativeCount} estabelecimento(s) apresentaram diferença negativa totalizando{" "}
+                <strong className="font-mono">{BRL(Math.abs(allTotals.negativeDiffTotal))}</strong> descontados a mais do que o previsto nas tabelas de referência.
+              </span>
+            </div>
+          )}
+
+          {transactingMerchantsData.length === 0 ? (
+            <Card className="border border-dashed border-border/90 shadow-none rounded-2xl bg-muted/10">
+              <CardContent className="p-12 text-center text-sm text-muted-foreground flex flex-col items-center justify-center space-y-3">
+                <div className="size-14 rounded-2xl bg-amber-500/10 text-amber-600 flex items-center justify-center">
+                  <SearchX className="size-7 opacity-75" />
+                </div>
+                <div>
+                  <p className="font-bold text-foreground text-base">
+                    Nenhum estabelecimento transacionou em {monthLabel(month)}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Não foram encontradas vendas importadas ou registradas para este período de referência.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <>
+              {/* 4 Cards de Métricas Principais */}
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 print:grid-cols-4 print:gap-2">
+                <Card className="p-4 rounded-xl border border-border/80 shadow-card bg-card print:p-2.5 print:shadow-none">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs font-bold text-muted-foreground uppercase tracking-wide print:text-[9px]">
+                      Volume Bruto Total
+                    </span>
+                    <DollarSign className="size-4 text-primary" />
+                  </div>
+                  <p className="text-xl sm:text-2xl font-black text-foreground font-mono print:text-base">
+                    {BRL(allTotals.gross)}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5 print:text-[8px]">
+                    {allTotals.txCount} vendas em {allTotals.merchantCount} ECs
+                  </p>
+                </Card>
+
+                <Card className="p-4 rounded-xl border border-border/80 shadow-card bg-card print:p-2.5 print:shadow-none">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs font-bold text-muted-foreground uppercase tracking-wide print:text-[9px]">
+                      Total Descontado
+                    </span>
+                    <CreditCard className="size-4 text-destructive" />
+                  </div>
+                  <p className="text-xl sm:text-2xl font-black text-destructive font-mono print:text-base">
+                    {BRL(allTotals.discounted)}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5 print:text-[8px]">
+                    Taxa média real de {allTotals.avgDisc.toFixed(2)}%
+                  </p>
+                </Card>
+
+                <Card className="p-4 rounded-xl border border-border/80 shadow-card bg-card print:p-2.5 print:shadow-none">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs font-bold text-muted-foreground uppercase tracking-wide print:text-[9px]">
+                      Taxa Média Esperada
+                    </span>
+                    <PiggyBank className="size-4 text-emerald-600" />
+                  </div>
+                  <p className="text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400 font-mono print:text-base">
+                    {allTotals.avgExp.toFixed(2)}%
+                  </p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5 print:text-[8px]">
+                    Base tabelas CPAG59 & CPAG56
+                  </p>
+                </Card>
+
+                <Card className="p-4 rounded-xl border border-border/80 shadow-card bg-card print:p-2.5 print:shadow-none">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs font-bold text-muted-foreground uppercase tracking-wide print:text-[9px]">
+                      Vlr. Diferença Total
+                    </span>
+                    <TrendingUp
+                      className={`size-4 ${allTotals.diff < -0.01 ? "text-rose-600" : "text-emerald-600"}`}
+                    />
+                  </div>
+                  <p
+                    className={`text-xl sm:text-2xl font-black font-mono print:text-base ${
+                      allTotals.diff < -0.01
+                        ? "text-rose-600 dark:text-rose-400"
+                        : allTotals.diff > 0.01
+                        ? "text-emerald-600 dark:text-emerald-400"
+                        : "text-foreground"
+                    }`}
+                  >
+                    {allTotals.diff > 0 ? `+${BRL(allTotals.diff)}` : BRL(allTotals.diff)}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5 print:text-[8px]">
+                    {allTotals.diff < -0.01
+                      ? "Descontado a maior no consolidado"
+                      : allTotals.diff > 0.01
+                      ? "Descontado a menor no consolidado"
+                      : "Equilibrado"}
+                  </p>
+                </Card>
+              </div>
+
+              {/* Quadro 1: Resumo Consolidado por Estabelecimento */}
+              <section className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Building2 className="size-4 text-primary" />
+                    <h3 className="text-base font-bold text-foreground print:text-sm">
+                      1. Resumo Consolidado por Estabelecimento
+                    </h3>
+                  </div>
+                  <Badge variant="secondary" className="font-mono text-xs">
+                    {transactingMerchantsData.length} estabelecimentos
+                  </Badge>
+                </div>
+
+                <Card className="rounded-2xl border border-border/80 shadow-card bg-card overflow-hidden print:shadow-none print:rounded-xl">
+                  <CardContent className="p-0">
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader className="bg-muted/40">
+                          <TableRow>
+                            <TableHead className="font-semibold text-xs print:text-[8.5px] print:py-1">
+                              Estabelecimento
+                            </TableHead>
+                            <TableHead className="font-semibold text-xs print:text-[8.5px] print:py-1 text-center">
+                              Tabela Ativa
+                            </TableHead>
+                            <TableHead className="text-right font-semibold text-xs print:text-[8.5px] print:py-1">
+                              Vendas
+                            </TableHead>
+                            <TableHead className="text-right font-semibold text-xs print:text-[8.5px] print:py-1">
+                              Volume Bruto
+                            </TableHead>
+                            <TableHead className="text-right font-semibold text-xs print:text-[8.5px] print:py-1">
+                              Vlr. Descontado
+                            </TableHead>
+                            <TableHead className="text-right font-semibold text-xs print:text-[8.5px] print:py-1">
+                              % Descontado
+                            </TableHead>
+                            <TableHead className="text-right font-semibold text-xs print:text-[8.5px] print:py-1">
+                              % Esperado
+                            </TableHead>
+                            <TableHead className="text-right font-semibold text-xs print:text-[8.5px] print:py-1">
+                              Tendência
+                            </TableHead>
+                            <TableHead className="text-right font-semibold text-xs print:text-[8.5px] print:py-1">
+                              Vlr. Diferença
+                            </TableHead>
+                            <TableHead className="text-right font-semibold text-xs print:text-[8.5px] print:py-1">
+                              Diferença %
+                            </TableHead>
+                            <TableHead className="text-center font-semibold text-xs print:hidden w-24">
+                              Ações
+                            </TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {transactingMerchantsData.map((item) => (
+                            <TableRow
+                              key={item.merchant.id}
+                              className="hover:bg-muted/30 transition-colors print:break-inside-avoid"
+                            >
+                              <TableCell className="py-2.5 print:py-1">
+                                <div className="flex flex-col">
+                                  <span className="font-bold text-xs print:text-[8.5px] text-foreground">
+                                    {item.merchant.name}
+                                  </span>
+                                  {item.merchant.document_cnpj && (
+                                    <span className="text-[11px] print:text-[7.5px] text-muted-foreground font-mono">
+                                      {item.merchant.document_cnpj}
+                                    </span>
+                                  )}
+                                </div>
+                              </TableCell>
+                              <TableCell className="text-center py-2.5 print:py-1">
+                                <Badge
+                                  variant="outline"
+                                  className={`text-[10px] print:text-[7.5px] font-bold ${
+                                    item.rateTable === "CPAG56"
+                                      ? "border-purple-500/30 text-purple-700 bg-purple-500/10 dark:text-purple-300"
+                                      : "border-blue-500/30 text-blue-700 bg-blue-500/10 dark:text-blue-300"
+                                  }`}
+                                >
+                                  {item.rateTable === "CPAG56" ? "CPAG56 - F7" : "CPAG59 - F3"}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-right font-mono text-xs print:text-[8.5px] py-2.5 print:py-1">
+                                {item.txs.length}
+                              </TableCell>
+                              <TableCell className="text-right font-mono font-medium text-xs print:text-[8.5px] py-2.5 print:py-1">
+                                {BRL(item.totalGross)}
+                              </TableCell>
+                              <TableCell className="text-right font-mono font-medium text-xs print:text-[8.5px] text-destructive py-2.5 print:py-1">
+                                {BRL(item.totalDiscounted)}
+                              </TableCell>
+                              <TableCell className="text-right font-mono text-xs print:text-[8.5px] text-muted-foreground py-2.5 print:py-1">
+                                {item.avgDiscountRate.toFixed(2)}%
+                              </TableCell>
+                              <TableCell className="text-right font-mono text-xs print:text-[8.5px] py-2.5 print:py-1">
+                                {item.avgExpectedRate.toFixed(2)}%
+                              </TableCell>
+                              <TableCell className="text-right py-2.5 print:py-1">
+                                <MiniTrendline diffRate={item.avgDiffRate} />
+                              </TableCell>
+                              <TableCell
+                                className={`text-right font-bold font-mono text-xs print:text-[8.5px] py-2.5 print:py-1 ${
+                                  item.totalDiffAmount < -0.01
+                                    ? "text-rose-600 dark:text-rose-400"
+                                    : item.totalDiffAmount > 0.01
+                                    ? "text-emerald-600 dark:text-emerald-400"
+                                    : "text-muted-foreground"
+                                }`}
+                              >
+                                {item.totalDiffAmount > 0
+                                  ? `+${BRL(item.totalDiffAmount)}`
+                                  : BRL(item.totalDiffAmount)}
+                              </TableCell>
+                              <TableCell
+                                className={`text-right font-bold font-mono text-xs print:text-[8.5px] py-2.5 print:py-1 ${
+                                  item.avgDiffRate < -0.001
+                                    ? "text-rose-600 dark:text-rose-400"
+                                    : item.avgDiffRate > 0.001
+                                    ? "text-emerald-600 dark:text-emerald-400"
+                                    : "text-muted-foreground"
+                                }`}
+                              >
+                                {item.avgDiffRate > 0
+                                  ? `+${item.avgDiffRate.toFixed(2)}%`
+                                  : `${item.avgDiffRate.toFixed(2)}%`}
+                              </TableCell>
+                              <TableCell className="text-center py-2.5 print:hidden">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-7 px-2 text-xs text-primary hover:text-primary hover:bg-primary/10"
+                                  onClick={() => setMerchantId(item.merchant.id)}
+                                  title="Ver fechamento individual deste EC"
+                                >
+                                  <ExternalLink className="size-3.5" />
+                                  <span className="sr-only">Abrir EC</span>
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                        <TableFooter className="bg-muted/50 font-bold border-t">
+                          <TableRow className="print:table-row">
+                            <TableCell colSpan={2} className="text-xs print:text-[8.5px] font-bold">
+                              Totais ({transactingMerchantsData.length} ECs)
+                            </TableCell>
+                            <TableCell className="text-right font-bold font-mono text-xs print:text-[8.5px]">
+                              {allTotals.txCount}
+                            </TableCell>
+                            <TableCell className="text-right font-bold font-mono text-xs print:text-[8.5px]">
+                              {BRL(allTotals.gross)}
+                            </TableCell>
+                            <TableCell className="text-right font-bold text-destructive font-mono text-xs print:text-[8.5px]">
+                              {BRL(allTotals.discounted)}
+                            </TableCell>
+                            <TableCell className="text-right font-bold text-muted-foreground font-mono text-xs print:text-[8.5px]">
+                              {allTotals.avgDisc.toFixed(2)}%
+                            </TableCell>
+                            <TableCell className="text-right font-bold font-mono text-xs print:text-[8.5px]">
+                              {allTotals.avgExp.toFixed(2)}%
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <MiniTrendline diffRate={allTotals.avgExp - allTotals.avgDisc} />
+                            </TableCell>
+                            <TableCell
+                              className={`text-right font-black font-mono text-xs print:text-[8.5px] ${
+                                allTotals.diff < -0.01
+                                  ? "text-rose-600 dark:text-rose-400"
+                                  : allTotals.diff > 0.01
+                                  ? "text-emerald-600 dark:text-emerald-400"
+                                  : "text-muted-foreground"
+                              }`}
+                            >
+                              {allTotals.diff > 0 ? `+${BRL(allTotals.diff)}` : BRL(allTotals.diff)}
+                            </TableCell>
+                            <TableCell
+                              className={`text-right font-black font-mono text-xs print:text-[8.5px] ${
+                                allTotals.avgExp - allTotals.avgDisc < -0.001
+                                  ? "text-rose-600 dark:text-rose-400"
+                                  : allTotals.avgExp - allTotals.avgDisc > 0.001
+                                  ? "text-emerald-600 dark:text-emerald-400"
+                                  : "text-muted-foreground"
+                              }`}
+                            >
+                              {allTotals.avgExp - allTotals.avgDisc > 0
+                                ? `+${(allTotals.avgExp - allTotals.avgDisc).toFixed(2)}%`
+                                : `${(allTotals.avgExp - allTotals.avgDisc).toFixed(2)}%`}
+                            </TableCell>
+                            <TableCell className="print:hidden"></TableCell>
+                          </TableRow>
+                        </TableFooter>
+                      </Table>
+                    </div>
+                  </CardContent>
+                </Card>
+              </section>
+
+              {/* Quadro 2: Detalhamento Analítico de Vendas por Estabelecimento */}
+              <section className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Receipt className="size-4 text-primary" />
+                    <h3 className="text-base font-bold text-foreground print:text-sm">
+                      2. Detalhamento Analítico de Vendas por Estabelecimento
+                    </h3>
+                  </div>
+                  <Badge
+                    variant="outline"
+                    className="text-xs font-semibold text-amber-600 dark:text-amber-400 border-amber-500/30 bg-amber-500/10"
+                  >
+                    Auditoria Transacional
+                  </Badge>
+                </div>
+
+                <div className="space-y-4">
+                  {transactingMerchantsData.map((item) => (
+                    <Card
+                      key={item.merchant.id}
+                      className="rounded-2xl border border-border/80 shadow-card bg-card overflow-hidden print:shadow-none print:rounded-xl print:break-inside-avoid"
+                    >
+                      <CardHeader className="p-4 pb-3 bg-muted/20 border-b border-border/60">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                          <div className="flex items-center gap-2.5">
+                            <Store className="size-4 text-primary shrink-0" />
+                            <div>
+                              <CardTitle className="text-sm font-bold flex items-center gap-2">
+                                <span>{item.merchant.name}</span>
+                                <Badge
+                                  variant="outline"
+                                  className={`text-[9px] font-bold ${
+                                    item.rateTable === "CPAG56"
+                                      ? "border-purple-500/30 text-purple-700 bg-purple-500/10"
+                                      : "border-blue-500/30 text-blue-700 bg-blue-500/10"
+                                  }`}
+                                >
+                                  {item.rateTable === "CPAG56" ? "CPAG56 - F7" : "CPAG59 - F3"}
+                                </Badge>
+                              </CardTitle>
+                              {item.merchant.document_cnpj && (
+                                <p className="text-[11px] text-muted-foreground font-mono">
+                                  CNPJ: {item.merchant.document_cnpj}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-3 text-xs">
+                            <div>
+                              <span className="text-muted-foreground">Volume: </span>
+                              <span className="font-bold font-mono">{BRL(item.totalGross)}</span>
+                            </div>
+                            <Separator orientation="vertical" className="h-3" />
+                            <div>
+                              <span className="text-muted-foreground">Descontado: </span>
+                              <span className="font-bold text-destructive font-mono">
+                                {BRL(item.totalDiscounted)}
+                              </span>
+                            </div>
+                            <Separator orientation="vertical" className="h-3" />
+                            <div>
+                              <span className="text-muted-foreground">Diferença: </span>
+                              <span
+                                className={`font-bold font-mono ${
+                                  item.totalDiffAmount < -0.01
+                                    ? "text-rose-600 dark:text-rose-400"
+                                    : item.totalDiffAmount > 0.01
+                                    ? "text-emerald-600 dark:text-emerald-400"
+                                    : "text-muted-foreground"
+                                }`}
+                              >
+                                {item.totalDiffAmount > 0
+                                  ? `+${BRL(item.totalDiffAmount)}`
+                                  : BRL(item.totalDiffAmount)}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </CardHeader>
+
+                      <CardContent className="p-0">
+                        <div className="overflow-x-auto">
+                          <Table>
+                            <TableHeader className="bg-muted/40">
+                              <TableRow>
+                                <TableHead className="font-semibold text-xs print:text-[8px] print:py-0.5 print:px-1">
+                                  Data
+                                </TableHead>
+                                <TableHead className="font-semibold text-xs print:text-[8px] print:py-0.5 print:px-1">
+                                  Modalidade
+                                </TableHead>
+                                <TableHead className="text-right font-semibold text-xs print:text-[8px] print:py-0.5 print:px-1">
+                                  Vlr. Bruto
+                                </TableHead>
+                                <TableHead className="text-right font-semibold text-xs print:text-[8px] print:py-0.5 print:px-1">
+                                  Vlr. Descontado
+                                </TableHead>
+                                <TableHead className="text-right font-semibold text-xs print:text-[8px] print:py-0.5 print:px-1">
+                                  % Descontado
+                                </TableHead>
+                                <TableHead className="text-right font-semibold text-xs print:text-[8px] print:py-0.5 print:px-1">
+                                  Tendência
+                                </TableHead>
+                                <TableHead className="text-right font-semibold text-xs print:text-[8px] print:py-0.5 print:px-1">
+                                  Vlr. Diferença
+                                </TableHead>
+                                <TableHead className="text-right font-semibold text-xs print:text-[8px] print:py-0.5 print:px-1">
+                                  Diferença %
+                                </TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {item.txs.map((tx) => {
+                                const gross = Number(tx.gross_amount) || 0;
+                                let discountedValue = 0;
+                                let tradRate = 0;
+                                if (tx.net_amount !== null && tx.net_amount !== undefined) {
+                                  discountedValue = gross - Number(tx.net_amount);
+                                  tradRate = gross > 0 ? (discountedValue / gross) * 100 : 0;
+                                } else {
+                                  tradRate = getTraditionalRate(tx, item.plan);
+                                  discountedValue = gross * (tradRate / 100);
+                                }
+
+                                const expectedRate = getCPAG59Rate(tx, item.rateTable);
+                                const txEffectiveTable = resolveTransactionRateTable(tx, item.rateTable);
+                                const diffRate = expectedRate - tradRate;
+                                const diffValue = gross * (diffRate / 100);
+
+                                return (
+                                  <TableRow
+                                    key={tx.id}
+                                    className="hover:bg-muted/30 transition-colors print:table-row"
+                                  >
+                                    <TableCell className="font-medium whitespace-nowrap text-xs print:text-[8px] font-mono print:py-0.5 print:px-1">
+                                      {format(new Date(tx.transaction_date), "dd/MM/yyyy")}
+                                    </TableCell>
+                                    <TableCell className="capitalize text-xs print:text-[8px] font-medium print:py-0.5 print:px-1">
+                                      <div className="flex items-center gap-1.5 flex-wrap">
+                                        <span>{modalityLabel(tx.modality as any)}</span>
+                                        {(tx as any)?.acquirer && (
+                                          <Badge
+                                            variant="outline"
+                                            className="text-[9px] px-1 py-0 font-mono text-muted-foreground font-semibold"
+                                          >
+                                            {(tx as any).acquirer}
+                                          </Badge>
+                                        )}
+                                      </div>
+                                    </TableCell>
+                                    <TableCell className="text-right font-medium text-xs print:text-[8px] font-mono print:py-0.5 print:px-1">
+                                      {BRL(gross)}
+                                    </TableCell>
+                                    <TableCell className="text-right text-destructive font-medium text-xs print:text-[8px] font-mono print:py-0.5 print:px-1">
+                                      {BRL(discountedValue)}
+                                    </TableCell>
+                                    <TableCell className="text-right text-muted-foreground text-xs print:text-[8px] font-mono print:py-0.5 print:px-1">
+                                      {tradRate.toFixed(2)}%
+                                    </TableCell>
+                                    <TableCell className="text-right print:py-0.5 print:px-1">
+                                      <MiniTrendline diffRate={diffRate} />
+                                    </TableCell>
+                                    <TableCell
+                                      className={`text-right font-bold text-xs print:text-[8px] font-mono print:py-0.5 print:px-1 ${
+                                        diffValue < -0.001
+                                          ? "text-rose-600 dark:text-rose-400"
+                                          : diffValue > 0.001
+                                          ? "text-emerald-600 dark:text-emerald-400"
+                                          : "text-muted-foreground"
+                                      }`}
+                                    >
+                                      {diffValue > 0 ? `+${BRL(diffValue)}` : BRL(diffValue)}
+                                    </TableCell>
+                                    <TableCell
+                                      className={`text-right font-bold text-xs print:text-[8px] font-mono print:py-0.5 print:px-1 ${
+                                        diffRate < -0.001
+                                          ? "text-rose-600 dark:text-rose-400"
+                                          : diffRate > 0.001
+                                          ? "text-emerald-600 dark:text-emerald-400"
+                                          : "text-muted-foreground"
+                                      }`}
+                                    >
+                                      <div className="flex flex-col items-end">
+                                        <span>
+                                          {diffRate > 0 ? `+${diffRate.toFixed(2)}%` : `${diffRate.toFixed(2)}%`}
+                                        </span>
+                                        <span className="text-[10px] print:text-[7px] font-normal text-muted-foreground">
+                                          ({expectedRate.toFixed(2)}% [{txEffectiveTable === "CPAG56" ? "F7" : "F3"}] -{" "}
+                                          {tradRate.toFixed(2)}%)
+                                        </span>
+                                      </div>
+                                    </TableCell>
+                                  </TableRow>
+                                );
+                              })}
+                            </TableBody>
+                          </Table>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </section>
+            </>
+          )}
+        </motion.div>
+      ) : merchant ? (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -1250,7 +2189,7 @@ function RouteComponent() {
             </Card>
           </section>
         </motion.div>
-      )}
+      ) : null}
     </AppLayout>
   );
 }
