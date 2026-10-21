@@ -23,7 +23,10 @@ import {
   Sparkles,
   ChevronDown,
   Info,
+  RefreshCw,
 } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import {
   BarChart,
   Bar,
@@ -47,7 +50,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFoo
 import { BRL, formatCpfCnpj } from "@/lib/format";
 import { getCPAG59Rate, getTraditionalRate, getSavedMerchantRateTable } from "@/lib/closure";
 import type { Modality } from "@/lib/format";
-import type { Merchant, Transaction, FeePlan } from "@/lib/db";
+import type { Merchant, Transaction, FeePlan, StatementImport, Closure } from "@/lib/db";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 
@@ -55,6 +58,8 @@ export interface MerchantsGeneralReportProps {
   merchants: Merchant[];
   transactions: Transaction[];
   feePlans: FeePlan[];
+  imports?: StatementImport[];
+  closures?: Closure[];
   selectedMonth?: string; // "yyyy-MM"
   onMonthChange?: (month: string) => void;
 }
@@ -180,10 +185,14 @@ export function MerchantsGeneralReport({
   merchants = [],
   transactions = [],
   feePlans = [],
+  imports = [],
+  closures = [],
   selectedMonth: initialMonth,
   onMonthChange,
 }: MerchantsGeneralReportProps) {
   const { companyName } = useAuth();
+  const qc = useQueryClient();
+  const [isSyncing, setIsSyncing] = useState(false);
   const [month, setMonth] = useState<string>(
     initialMonth || format(new Date(), "yyyy-MM")
   );
@@ -196,34 +205,97 @@ export function MerchantsGeneralReport({
     setMounted(true);
   }, []);
 
+  const handleSync = async () => {
+    setIsSyncing(true);
+    try {
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["transactions"] }),
+        qc.invalidateQueries({ queryKey: ["imports"] }),
+        qc.invalidateQueries({ queryKey: ["closures"] }),
+        qc.invalidateQueries({ queryKey: ["merchants"] }),
+        qc.invalidateQueries({ queryKey: ["fee_plans"] }),
+      ]);
+      toast.success("Dados sincronizados com sucesso!");
+    } catch (err: any) {
+      toast.error("Erro ao sincronizar: " + (err?.message || "falha na conexão"));
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
   const handleMonthSelect = (newMonth: string) => {
     setMonth(newMonth);
     if (onMonthChange) onMonthChange(newMonth);
+    // Dispara recarga em segundo plano para garantir sincronização do novo mês
+    qc.invalidateQueries({ queryKey: ["transactions"] });
+    qc.invalidateQueries({ queryKey: ["imports"] });
+    qc.invalidateQueries({ queryKey: ["closures"] });
   };
 
-  // Gerar lista de meses disponíveis (últimos 12 meses)
+  // Gerar lista de meses disponíveis (últimos 12 meses + meses com extratos/importações)
   const availableMonths = useMemo(() => {
-    const list = [];
+    const map = new Map<string, string>();
     const now = new Date();
     for (let i = 0; i < 12; i++) {
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
       const val = format(d, "yyyy-MM");
       const label = format(d, "MMMM 'de' yyyy", { locale: ptBR });
-      list.push({
-        value: val,
-        label: label.charAt(0).toUpperCase() + label.slice(1),
-      });
+      map.set(val, label.charAt(0).toUpperCase() + label.slice(1));
     }
-    return list;
-  }, []);
+    (imports || []).forEach((imp) => {
+      if (imp.reference_month && !map.has(imp.reference_month)) {
+        try {
+          const [y, m] = imp.reference_month.split("-");
+          const d = new Date(Number(y), Number(m) - 1, 1);
+          const label = format(d, "MMMM 'de' yyyy", { locale: ptBR });
+          map.set(imp.reference_month, label.charAt(0).toUpperCase() + label.slice(1));
+        } catch {}
+      }
+    });
+    return Array.from(map.entries())
+      .sort((a, b) => b[0].localeCompare(a[0]))
+      .map(([value, label]) => ({ value, label }));
+  }, [imports]);
 
   // Processar transações e calcular métricas exatas por estabelecimento
   const processedRows: MerchantReportRow[] = useMemo(() => {
-    // Filtrar transações do mês selecionado
-    const monthTxs = (transactions || []).filter((t) => {
-      if (!t.transaction_date) return false;
-      return t.transaction_date.slice(0, 7) === month;
+    // Mapa de importações por id
+    const importsMap = new Map<string, StatementImport>();
+    (imports || []).forEach((imp) => {
+      if (imp.id) importsMap.set(imp.id, imp);
     });
+
+    // Função para verificar se a transação é do mês selecionado
+    const isTxInMonth = (t: Transaction, targetMonth: string) => {
+      // 1. Verificar pelo extrato importado (reference_month do upload, ex: '2026-08')
+      if (t.import_id) {
+        const imp = importsMap.get(t.import_id);
+        if (imp?.reference_month) {
+          if (imp.reference_month === targetMonth) return true;
+        }
+      }
+
+      // 2. Verificar pela data direta da transação (yyyy-MM)
+      if (t.transaction_date) {
+        const dateStr = String(t.transaction_date).trim();
+        if (dateStr.slice(0, 7) === targetMonth) return true;
+
+        if (dateStr.includes("/")) {
+          const parts = dateStr.split(" ")[0].split("/");
+          if (parts.length === 3) {
+            const ym = parts[2].length === 4
+              ? `${parts[2]}-${parts[1].padStart(2, "0")}`
+              : `${parts[0]}-${parts[1].padStart(2, "0")}`;
+            if (ym === targetMonth) return true;
+          }
+        }
+      }
+
+      return false;
+    };
+
+    // Filtrar transações do mês selecionado
+    const monthTxs = (transactions || []).filter((t) => isTxInMonth(t, month));
 
     if (monthTxs.length === 0 && merchants.length === 0) {
       return DEMO_MERCHANTS_REPORT;
@@ -238,40 +310,61 @@ export function MerchantsGeneralReport({
     // Se houver merchants cadastrados, agrupar transações por merchant
     const rows: MerchantReportRow[] = (merchants || []).map((m) => {
       const mPlan = (feePlans || []).find((p) => p.merchant_id === m.id);
-      const mTxs = monthTxs.filter((t) => t.merchant_id === m.id);
+      const mTxs = monthTxs.filter((t) => {
+        if (t.merchant_id === m.id) return true;
+        // Se a transação não tiver merchant_id direto, buscar pelo import_id
+        if (!t.merchant_id && t.import_id) {
+          const imp = importsMap.get(t.import_id);
+          if (imp?.merchant_id === m.id) return true;
+        }
+        return false;
+      });
       const mRateTable = getSavedMerchantRateTable(m.id, (m as any)?.rate_table);
+
+      // Verificar se existe fechamento consolidado para este EC e mês (como fallback)
+      const mClosure = (closures || []).find(
+        (c) => c.merchant_id === m.id && c.reference_month === month
+      );
 
       let totalGross = 0;
       let totalDiscounted = 0;
       let totalDiffAmount = 0;
       let sumExpectedFee = 0;
 
-      mTxs.forEach((tx) => {
-        const gross = Number(tx.gross_amount) || 0;
-        totalGross += gross;
+      if (mTxs.length > 0) {
+        mTxs.forEach((tx) => {
+          const gross = Number(tx.gross_amount) || 0;
+          totalGross += gross;
 
-        let discountedValue = 0;
-        let tradRate = 0;
-        if (tx.net_amount !== null && tx.net_amount !== undefined) {
-          discountedValue = gross - Number(tx.net_amount);
-          tradRate = gross > 0 ? (discountedValue / gross) * 100 : 0;
-        } else {
-          tradRate = getTraditionalRate(tx, mPlan);
-          discountedValue = gross * (tradRate / 100);
-        }
-        totalDiscounted += discountedValue;
+          let discountedValue = 0;
+          let tradRate = 0;
+          if (tx.net_amount !== null && tx.net_amount !== undefined) {
+            discountedValue = gross - Number(tx.net_amount);
+            tradRate = gross > 0 ? (discountedValue / gross) * 100 : 0;
+          } else {
+            tradRate = getTraditionalRate(tx, mPlan);
+            discountedValue = gross * (tradRate / 100);
+          }
+          totalDiscounted += discountedValue;
 
-        // Regra do Relatório Interno:
-        // A taxa contratual de referência é baseada na tabela ativa do EC (CPAG59 - F3 ou CPAG56 - F7)
-        // diffRate = % Esperado - % Descontado na Máquina
-        // diffValue = gross * (diffRate / 100)
-        const expectedRate = getCPAG59Rate(tx, mRateTable);
-        sumExpectedFee += gross * (expectedRate / 100);
+          // Regra do Relatório Interno:
+          // A taxa contratual de referência é baseada na tabela ativa do EC (CPAG59 - F3 ou CPAG56 - F7)
+          // diffRate = % Esperado - % Descontado na Máquina
+          // diffValue = gross * (diffRate / 100)
+          const expectedRate = getCPAG59Rate(tx, mRateTable);
+          sumExpectedFee += gross * (expectedRate / 100);
 
-        const diffRate = expectedRate - tradRate;
-        const diffValue = gross * (diffRate / 100);
-        totalDiffAmount += diffValue;
-      });
+          const diffRate = expectedRate - tradRate;
+          const diffValue = gross * (diffRate / 100);
+          totalDiffAmount += diffValue;
+        });
+      } else if (mClosure && Number(mClosure.total_gross_volume) > 0) {
+        // Fallback usando o fechamento já registrado
+        totalGross = Number(mClosure.total_gross_volume);
+        totalDiscounted = Number(mClosure.traditional_cost_estimate) || 0;
+        sumExpectedFee = Number(mClosure.total_op_fee_amount) || 0;
+        totalDiffAmount = sumExpectedFee - totalDiscounted;
+      }
 
       const avgDiscountRate = totalGross > 0 ? (totalDiscounted / totalGross) * 100 : 0;
       const avgExpectedRate = totalGross > 0 ? (sumExpectedFee / totalGross) * 100 : 0;
@@ -300,7 +393,7 @@ export function MerchantsGeneralReport({
     }
 
     return rows;
-  }, [merchants, transactions, feePlans, month]);
+  }, [merchants, transactions, feePlans, imports, closures, month]);
 
   // Filtros de busca e sinal da diferença
   const filteredRows = useMemo(() => {
@@ -499,6 +592,17 @@ export function MerchantsGeneralReport({
         </div>
 
         <div className="flex items-center gap-2 justify-end">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleSync}
+            disabled={isSyncing}
+            className="rounded-xl text-xs h-9 gap-1.5 font-medium shadow-xs"
+          >
+            <RefreshCw className={cn("size-3.5 text-primary", isSyncing && "animate-spin")} />
+            <span>{isSyncing ? "Sincronizando..." : "Sincronizar"}</span>
+          </Button>
+
           <Button
             variant="outline"
             size="sm"

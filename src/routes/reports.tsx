@@ -31,7 +31,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { closuresQuery, merchantsQuery, asaasSettingsQuery, splitRulesQuery, transactionsQuery, feePlansQuery } from "@/lib/db";
+import { closuresQuery, merchantsQuery, asaasSettingsQuery, splitRulesQuery, transactionsQuery, feePlansQuery, importsQuery } from "@/lib/db";
 import { MerchantsGeneralReport } from "@/components/MerchantsGeneralReport";
 import { BRL } from "@/lib/format";
 import { format, isBefore, startOfDay, addDays, subDays, startOfMonth, endOfMonth, isWithinInterval } from "date-fns";
@@ -52,6 +52,7 @@ function ReportsPage() {
   const splitRules = useQuery(splitRulesQuery);
   const transactions = useQuery(transactionsQuery);
   const feePlans = useQuery(feePlansQuery);
+  const imports = useQuery(importsQuery);
   const dueDay = settings.data?.due_day ?? 10;
   
   const { role, partnerId, appMode } = useAuth();
@@ -345,6 +346,8 @@ function ReportsPage() {
           merchants={merchants.data ?? []}
           transactions={transactions.data ?? []}
           feePlans={feePlans.data ?? []}
+          imports={imports.data ?? []}
+          closures={closures.data ?? []}
         />
       ) : (
       <div className="space-y-6">

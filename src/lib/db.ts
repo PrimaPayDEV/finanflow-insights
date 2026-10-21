@@ -40,10 +40,33 @@ export const splitRulesQuery = {
 
 export const transactionsQuery = {
   queryKey: ["transactions"],
-  queryFn: async () =>
-    unwrap(
-      await supabase.from("transactions").select("*").order("transaction_date", { ascending: false }),
-    ) as Transaction[],
+  queryFn: async () => {
+    const PAGE_SIZE = 1000;
+    const all: Transaction[] = [];
+    let from = 0;
+    let hasMore = true;
+
+    while (hasMore) {
+      const res = await supabase
+        .from("transactions")
+        .select("*")
+        .order("transaction_date", { ascending: false })
+        .range(from, from + PAGE_SIZE - 1);
+
+      const chunk = unwrap(res) as Transaction[];
+      if (!chunk || chunk.length === 0) {
+        hasMore = false;
+        break;
+      }
+      all.push(...chunk);
+      if (chunk.length < PAGE_SIZE) {
+        hasMore = false;
+      } else {
+        from += PAGE_SIZE;
+      }
+    }
+    return all;
+  },
 };
 
 export const expensesQuery = {
