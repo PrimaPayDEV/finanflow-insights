@@ -159,7 +159,14 @@ export function getTraditionalRate(t: Transaction, plan?: FeePlan): number {
   return 0;
 }
 
-const CPAG59 = {
+export type RateTableType = "CPAG59" | "CPAG56";
+
+export const RATE_TABLE_OPTIONS = [
+  { id: "CPAG59", label: "CPAG59 - F6", code: "F6" },
+  { id: "CPAG56", label: "CPAG56 - F7", code: "F7" },
+] as const;
+
+export const CPAG59 = {
   vm: {
     debit: 1.36,
     credit: [0, 3.47, 5.08, 5.84, 6.60, 7.26, 8.11, 9.16, 9.91, 10.67, 11.43, 12.18, 12.94, 13.70, 14.45, 15.21, 15.97, 16.73, 17.48, 19.48, 21.48, 23.48]
@@ -183,8 +190,38 @@ const CPAG59 = {
   pix: 1.39
 };
 
-export function getModalityRate(t: Transaction, plan?: FeePlan): number {
-  if (t.modality === 'pix') return (plan && plan.pix_rate > 0) ? plan.pix_rate : CPAG59.pix;
+export const CPAG56 = {
+  vm: {
+    debit: 1.35,
+    credit: [0, 3.57, 5.99, 6.49, 7.49, 7.99, 8.59, 9.59, 10.39, 11.09, 11.79, 12.49, 12.99, 14.69, 15.49, 16.09, 16.79, 17.49, 18.19, 18.49, 19.49, 20.49]
+  },
+  elo: {
+    debit: 2.09,
+    credit: [0, 4.02, 6.90, 7.66, 8.31, 9.07, 9.61, 10.49, 11.09, 11.79, 12.49, 13.19, 13.99, 14.69, 15.49, 16.09, 16.79, 17.49, 18.19, 19.19, 20.19, 21.19]
+  },
+  hiper: {
+    debit: 0,
+    credit: [0, 4.02, 6.69, 7.49, 8.31, 8.99, 9.59, 10.49, 11.09, 11.79, 12.49, 13.19, 13.99, 14.69, 15.49, 16.09, 16.79, 17.49, 18.19, 19.19, 20.19, 21.19]
+  },
+  amex: {
+    debit: 0,
+    credit: [0, 5.25, 7.91, 8.66, 9.32, 10.07, 10.61, 11.49, 12.09, 12.79, 13.49, 14.19, 14.99, 15.69, 16.49, 17.09, 17.79, 18.49, 19.19, 20.19, 21.19, 22.19]
+  },
+  cabal: {
+    debit: 8.00,
+    credit: [0, 9.00, 10.00, 11.00, 12.00, 13.00, 14.00, 15.00, 16.00, 17.00, 18.00, 19.00, 20.00, 21.00, 22.00, 23.00, 24.00, 25.00, 26.00, 27.00, 28.00, 29.00]
+  },
+  pix: 1.29
+};
+
+export function getReferenceTable(rateTableKey?: string) {
+  const is56 = (rateTableKey || "").toUpperCase().includes("56") || (rateTableKey || "").toUpperCase().includes("F7");
+  return is56 ? CPAG56 : CPAG59;
+}
+
+export function getModalityRate(t: Transaction, plan?: FeePlan, rateTableKey?: string): number {
+  const table = getReferenceTable(rateTableKey);
+  if (t.modality === 'pix') return (plan && plan.pix_rate > 0) ? plan.pix_rate : table.pix;
   if (t.modality === 'cash') return plan ? plan.cash_rate : 0;
 
   const installments = t.installments || 1;
@@ -217,7 +254,7 @@ export function getModalityRate(t: Transaction, plan?: FeePlan): number {
   else if (brand.includes('amex')) bKey = 'amex';
   else if (brand.includes('cabal')) bKey = 'cabal';
   
-  const bData = CPAG59[bKey] as any;
+  const bData = table[bKey] as any;
   if (!bData) return 0;
   
   if (t.modality === 'debit') return bData.debit;
@@ -228,8 +265,12 @@ export function getModalityRate(t: Transaction, plan?: FeePlan): number {
   return 0;
 }
 
-export function getCPAG59Rate(t: Transaction): number {
-  return getModalityRate(t, undefined);
+export function getCPAG59Rate(t: Transaction, rateTableKey?: string): number {
+  return getModalityRate(t, undefined, rateTableKey);
+}
+
+export function getContractualRate(t: Transaction, rateTableKey?: string): number {
+  return getModalityRate(t, undefined, rateTableKey);
 }
 
 export function getMaxDiscountRate(t: Transaction, plan?: FeePlan): number {

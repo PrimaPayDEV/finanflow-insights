@@ -478,6 +478,7 @@ export type Database = {
           id: string
           name: string
           phone_whatsapp: string
+          rate_table: string | null
           status: Database["public"]["Enums"]["merchant_status"]
         }
         Insert: {
@@ -488,6 +489,7 @@ export type Database = {
           id?: string
           name: string
           phone_whatsapp?: string
+          rate_table?: string | null
           status?: Database["public"]["Enums"]["merchant_status"]
         }
         Update: {
@@ -498,6 +500,7 @@ export type Database = {
           id?: string
           name?: string
           phone_whatsapp?: string
+          rate_table?: string | null
           status?: Database["public"]["Enums"]["merchant_status"]
         }
         Relationships: [

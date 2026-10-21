@@ -49,6 +49,7 @@ import { getCPAG59Rate, getTraditionalRate } from "@/lib/closure";
 import type { Modality } from "@/lib/format";
 import type { Merchant, Transaction, FeePlan } from "@/lib/db";
 import { useAuth } from "@/contexts/AuthContext";
+import { cn } from "@/lib/utils";
 
 export interface MerchantsGeneralReportProps {
   merchants: Merchant[];
@@ -63,6 +64,7 @@ export interface MerchantReportRow {
   name: string;
   document: string;
   planName: string;
+  rateTable: string; // "CPAG59" | "CPAG56"
   txCount: number;
   totalGross: number;
   totalDiscounted: number;
@@ -79,6 +81,7 @@ const DEMO_MERCHANTS_REPORT: MerchantReportRow[] = [
     name: "Supermercado Primavera Ltda",
     document: "14.284.912/0001-83",
     planName: "Plano Supermercados 2.2%",
+    rateTable: "CPAG59",
     txCount: 428,
     totalGross: 248900.0,
     totalDiscounted: 7467.0,
@@ -92,6 +95,7 @@ const DEMO_MERCHANTS_REPORT: MerchantReportRow[] = [
     name: "Auto Posto Alvorada & Conveniência",
     document: "08.192.837/0001-44",
     planName: "Plano Combustíveis VIP",
+    rateTable: "CPAG56",
     txCount: 312,
     totalGross: 184500.0,
     totalDiscounted: 4243.5,
@@ -105,6 +109,7 @@ const DEMO_MERCHANTS_REPORT: MerchantReportRow[] = [
     name: "Drogaria & Farmácia Popular Central",
     document: "21.984.719/0001-20",
     planName: "Plano Farma Fidelidade",
+    rateTable: "CPAG59",
     txCount: 265,
     totalGross: 96400.0,
     totalDiscounted: 2410.0,
@@ -118,6 +123,7 @@ const DEMO_MERCHANTS_REPORT: MerchantReportRow[] = [
     name: "Padaria e Confeitaria Bella Vista",
     document: "33.482.918/0001-92",
     planName: "Plano Varejo Tradicional",
+    rateTable: "CPAG56",
     txCount: 189,
     totalGross: 62800.0,
     totalDiscounted: 2009.6,
@@ -131,6 +137,7 @@ const DEMO_MERCHANTS_REPORT: MerchantReportRow[] = [
     name: "Restaurante e Churrascaria Fogão Gaúcho",
     document: "19.384.712/0001-05",
     planName: "Plano Alimentação & Gastronomia",
+    rateTable: "CPAG59",
     txCount: 145,
     totalGross: 84300.0,
     totalDiscounted: 2613.3,
@@ -144,6 +151,7 @@ const DEMO_MERCHANTS_REPORT: MerchantReportRow[] = [
     name: "Ótica & Relojoaria Visão Nobre",
     document: "45.192.837/0001-63",
     planName: "Plano Luxo & Parcelados",
+    rateTable: "CPAG56",
     txCount: 78,
     totalGross: 58900.0,
     totalDiscounted: 3534.0,
@@ -157,6 +165,7 @@ const DEMO_MERCHANTS_REPORT: MerchantReportRow[] = [
     name: "Boutique Elegance Moda Feminina",
     document: "28.374.918/0001-19",
     planName: "Plano Varejo Fashion",
+    rateTable: "CPAG59",
     txCount: 94,
     totalGross: 43200.0,
     totalDiscounted: 2160.0,
@@ -229,6 +238,7 @@ export function MerchantsGeneralReport({
     const rows: MerchantReportRow[] = (merchants || []).map((m) => {
       const mPlan = (feePlans || []).find((p) => p.merchant_id === m.id);
       const mTxs = monthTxs.filter((t) => t.merchant_id === m.id);
+      const mRateTable = ((m as any)?.rate_table || "CPAG59") as string;
 
       let totalGross = 0;
       let totalDiscounted = 0;
@@ -251,10 +261,10 @@ export function MerchantsGeneralReport({
         totalDiscounted += discountedValue;
 
         // Regra do Relatório Interno:
-        // CPAG59 é a taxa contratual de referência no banco de dados
-        // diffRate = % Esperado (CPAG59) - % Descontado na Máquina
+        // A taxa contratual de referência é baseada na tabela ativa do EC (CPAG59 - F6 ou CPAG56 - F7)
+        // diffRate = % Esperado - % Descontado na Máquina
         // diffValue = gross * (diffRate / 100)
-        const expectedRate = getCPAG59Rate(tx);
+        const expectedRate = getCPAG59Rate(tx, mRateTable);
         sumExpectedFee += gross * (expectedRate / 100);
 
         const diffRate = expectedRate - tradRate;
@@ -271,6 +281,7 @@ export function MerchantsGeneralReport({
         name: m.name,
         document: m.document_cnpj || "",
         planName: mPlan ? "Plano do EC" : "Plano Geral",
+        rateTable: mRateTable,
         txCount: mTxs.length,
         totalGross,
         totalDiscounted,
@@ -345,7 +356,7 @@ export function MerchantsGeneralReport({
     };
   }, [processedRows]);
 
-  // Dados para Gráfico 2: Comparativo de Taxas por EC (% Descontado vs % CPAG59)
+  // Dados para Gráfico 2: Comparativo de Taxas por EC (% Descontado vs % Esperado Tabela)
   const chartRatesData = useMemo(() => {
     return [...processedRows]
       .filter((r) => r.txCount > 0 || r.avgDiscountRate > 0)
@@ -353,7 +364,7 @@ export function MerchantsGeneralReport({
       .map((r) => ({
         name: r.name.length > 18 ? r.name.slice(0, 16) + "..." : r.name,
         taxaDescontada: Number(r.avgDiscountRate.toFixed(2)),
-        taxaCPAG59: Number(r.avgExpectedRate.toFixed(2)),
+        taxaEsperada: Number(r.avgExpectedRate.toFixed(2)),
       }));
   }, [processedRows]);
 
@@ -396,10 +407,11 @@ export function MerchantsGeneralReport({
     const dataToExport = filteredRows.map((r) => ({
       Estabelecimento: r.name,
       Documento: r.document,
+      "Tabela Ativa": r.rateTable === "CPAG56" ? "CPAG56 - F7" : "CPAG59 - F6",
       "Plano Financeiro": r.planName,
       "Qtd. Vendas": r.txCount,
       "% Médio Descontado": Number(r.avgDiscountRate.toFixed(2)),
-      "% Esperado CPAG59": Number(r.avgExpectedRate.toFixed(2)),
+      "% Esperado (Tabela)": Number(r.avgExpectedRate.toFixed(2)),
       "Vlr. Diferença (R$)": Number(r.totalDiffAmount.toFixed(2)),
       Classificação:
         r.totalDiffAmount < -0.01
@@ -640,7 +652,7 @@ export function MerchantsGeneralReport({
 
             <p className="text-[10px] text-muted-foreground text-center pt-2">
               PrimaPay Meios de Pagamento • Documento gerado eletronicamente com
-              certificação de conciliação de taxas (CPAG59).
+              certificação de conciliação de taxas contratuais (CPAG59 - F6 / CPAG56 - F7).
             </p>
           </div>
         </div>
@@ -697,13 +709,13 @@ export function MerchantsGeneralReport({
 
                 <Card className="rounded-xl p-3.5 border border-border/70 bg-muted/20">
                   <span className="text-[10px] font-bold text-muted-foreground uppercase block">
-                    Taxa Esperada CPAG59
+                    Taxa Esperada Contratual
                   </span>
                   <p className="text-lg font-black text-foreground font-mono mt-0.5">
                     {totals.avgExpRate.toFixed(2)}%
                   </p>
                   <span className="text-[10px] text-muted-foreground">
-                    Benchmark contratual
+                    Benchmark CPAG59 / CPAG56
                   </span>
                 </Card>
 
@@ -749,11 +761,11 @@ export function MerchantsGeneralReport({
                   </div>
                   <p className="text-muted-foreground leading-relaxed text-[11px]">
                     No relatório interno, cada transação é comparada diretamente com a
-                    taxa cadastrada no banco de dados (<strong>CPAG59</strong>). A
+                    taxa contratual ativa cadastrada para o EC (<strong>CPAG59 - F6</strong> ou <strong>CPAG56 - F7</strong>). A
                     diferença é obtida pela subtração:
                   </p>
                   <div className="p-2.5 rounded-xl bg-background border border-border/60 font-mono text-[11px] font-bold text-foreground">
-                    Diferença % = % Esperado (CPAG59) - % Descontado
+                    Diferença % = % Esperado (Tabela Ativa) - % Descontado
                     <br />
                     Vlr. Diferença = Vlr. Venda × (Diferença % ÷ 100)
                   </div>
@@ -783,36 +795,34 @@ export function MerchantsGeneralReport({
                       <span className="font-bold">🔴 Vermelho (Negativo):</span>
                       <span>
                         O que foi <strong>descontado a mais</strong> na máquina em relação
-                        à taxa CPAG59 cadastrada. Excedente retido na adquirente.
+                        à taxa contratual ativa do EC (CPAG59 - F6 ou CPAG56 - F7). Excedente retido na adquirente.
                       </span>
                     </div>
                     <div className="flex items-start gap-2 p-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-300">
                       <span className="font-bold">🟢 Verde (Positivo):</span>
                       <span>
                         O que foi <strong>descontado a menos</strong> na máquina em
-                        relação à taxa de referência CPAG59.
+                        relação à taxa contratual ativa selecionada.
                       </span>
                     </div>
                   </div>
                 </div>
 
-                {/* Bloco 3: Tabela de Referência CPAG59 */}
+                {/* Bloco 3: Tabelas de Referência CPAG59 - F6 e CPAG56 - F7 */}
                 <div className="p-4 rounded-2xl bg-muted/30 border border-border/60 space-y-2 md:col-span-2">
                   <div className="flex items-center gap-2">
                     <div className="size-6 rounded-lg bg-primary/15 text-primary flex items-center justify-center font-bold text-xs">
                       C
                     </div>
                     <h4 className="font-bold text-foreground text-xs">
-                      Independência Contratual da Taxa CPAG59
+                      Tabelas de Taxas Contratuais: CPAG59 - F6 e CPAG56 - F7
                     </h4>
                   </div>
                   <p className="text-muted-foreground leading-relaxed text-[11px]">
-                    Conforme diretriz operacional, a auditoria interna independe da
-                    taxa cadastrada no plano financeiro do EC: o cálculo toma como base
-                    exclusiva a <strong>tabela CPAG59</strong> cadastrada no banco de
-                    dados. Esta tabela abrange todas as modalidades (Débito, Crédito à
-                    Vista e Crédito Parcelado de 2x a 21x) e bandeiras (Visa/Master, Elo,
-                    Hipercard, Amex, Cabal e Pix).
+                    Cada estabelecimento comercial (EC) possui em seu cadastro a seleção da sua tabela
+                    de taxas contratual vigente (<strong>CPAG59 - F6</strong> ou <strong>CPAG56 - F7</strong>).
+                    O motor de cálculo audita automaticamente cada transação de acordo com a tabela ativa do respectivo EC,
+                    abrangendo todas as modalidades (Débito, Crédito à Vista e Parcelado de 2x a 21x) e bandeiras (Visa, Mastercard, Elo, Hipercard, Amex, Cabal e Pix).
                   </p>
                 </div>
               </div>
@@ -897,15 +907,15 @@ export function MerchantsGeneralReport({
               </div>
             </div>
 
-            {/* Gráfico 2: Comparativo de Taxas: % Descontado vs % Esperado (CPAG59) */}
+            {/* Gráfico 2: Comparativo de Taxas: % Descontado vs % Esperado (Tabela Contratual) */}
             <div className="pt-2">
               <div className="flex items-center justify-between mb-2">
                 <div>
                   <h4 className="text-xs font-bold text-foreground uppercase tracking-wider">
-                    Comparativo de Taxas: % Descontado vs % CPAG59 por EC
+                    Comparativo de Taxas: % Descontado vs % Esperado (Tabela Ativa) por EC
                   </h4>
                   <p className="text-[11px] text-muted-foreground">
-                    Comparativo direto entre a taxa média retida nos terminais e a taxa de referência contratual CPAG59.
+                    Comparativo direto entre a taxa média retida nos terminais e a taxa contratual de referência (CPAG59 - F6 ou CPAG56 - F7).
                   </p>
                 </div>
               </div>
@@ -932,7 +942,7 @@ export function MerchantsGeneralReport({
                       <RechartsTooltip
                         formatter={(val: any, name: any) => [
                           `${Number(val).toFixed(2)}%`,
-                          name === "taxaDescontada" ? "% Descontado Máquina" : "% Esperado CPAG59",
+                          name === "taxaDescontada" ? "% Descontado Máquina" : "% Esperado Contratual",
                         ]}
                       />
                       <Legend wrapperStyle={{ fontSize: "11px", paddingTop: "5px" }} />
@@ -943,8 +953,8 @@ export function MerchantsGeneralReport({
                         radius={[4, 4, 0, 0]}
                       />
                       <Bar
-                        dataKey="taxaCPAG59"
-                        name="% Esperado CPAG59"
+                        dataKey="taxaEsperada"
+                        name="% Esperado Contratual"
                         fill="#003399"
                         radius={[4, 4, 0, 0]}
                       />
@@ -1012,7 +1022,7 @@ export function MerchantsGeneralReport({
                       % Desc.
                     </TableHead>
                     <TableHead className="text-right text-xs font-bold text-foreground py-2.5">
-                      % CPAG59
+                      % Esperado
                     </TableHead>
                     {/* COLUNA EM DESTAQUE EXPLICITADA PELO USUÁRIO */}
                     <TableHead className="text-right text-xs font-black text-primary py-2.5 bg-primary/10 border-l border-primary/20">
@@ -1042,11 +1052,23 @@ export function MerchantsGeneralReport({
                           className="hover:bg-muted/30 transition-colors"
                         >
                           <TableCell className="py-2 font-medium text-xs">
-                            <p className="font-bold text-foreground leading-tight">
-                              {row.name}
-                            </p>
-                            <span className="text-[10px] text-muted-foreground">
-                              {row.planName}
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <p className="font-bold text-foreground leading-tight">
+                                {row.name}
+                              </p>
+                              <Badge
+                                variant={row.rateTable === "CPAG56" ? "default" : "secondary"}
+                                className={`text-[9px] px-1.5 py-0 font-mono font-bold ${
+                                  row.rateTable === "CPAG56"
+                                    ? "bg-purple-600 hover:bg-purple-700 text-white"
+                                    : "bg-blue-600 hover:bg-blue-700 text-white"
+                                }`}
+                              >
+                                {row.rateTable === "CPAG56" ? "F7" : "F6"}
+                              </Badge>
+                            </div>
+                            <span className="text-[10px] text-muted-foreground block">
+                              {row.rateTable === "CPAG56" ? "CPAG56 - F7" : "CPAG59 - F6"}
                             </span>
                           </TableCell>
 

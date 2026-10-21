@@ -106,7 +106,13 @@ export const Route = createFileRoute("/merchants")({
   component: MerchantsPage,
 });
 
-const emptyMerchant = { name: "", document_cnpj: "", phone_whatsapp: "", email: "" };
+const emptyMerchant = {
+  name: "",
+  document_cnpj: "",
+  phone_whatsapp: "",
+  email: "",
+  rate_table: "CPAG59" as "CPAG59" | "CPAG56",
+};
 
 /* =========================================================================
    DIÁLOGO: GERAR ACESSO WEB
@@ -227,6 +233,7 @@ function EditMerchantDialog({ merchant }: { merchant: Merchant }) {
     document_cnpj: merchant.document_cnpj || "",
     phone_whatsapp: merchant.phone_whatsapp || "",
     email: merchant.email || "",
+    rate_table: (merchant.rate_table || "CPAG59") as "CPAG59" | "CPAG56",
   });
 
   useEffect(() => {
@@ -235,6 +242,7 @@ function EditMerchantDialog({ merchant }: { merchant: Merchant }) {
       document_cnpj: merchant.document_cnpj || "",
       phone_whatsapp: merchant.phone_whatsapp || "",
       email: merchant.email || "",
+      rate_table: (merchant.rate_table || "CPAG59") as "CPAG59" | "CPAG56",
     });
   }, [merchant]);
 
@@ -271,7 +279,7 @@ function EditMerchantDialog({ merchant }: { merchant: Merchant }) {
             <DialogTitle>Editar Estabelecimento</DialogTitle>
           </div>
           <DialogDescription>
-            Atualize os dados cadastrais e canais de contato de {merchant.name}.
+            Atualize os dados cadastrais e tabela de taxas contratuais de {merchant.name}.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-2">
@@ -313,6 +321,49 @@ function EditMerchantDialog({ merchant }: { merchant: Merchant }) {
               maxLength={200}
               placeholder="contato@empresa.com"
             />
+          </div>
+
+          {/* Seleção de Tabela de Taxas Contratual */}
+          <div className="space-y-1.5 pt-1">
+            <Label className="text-xs font-semibold flex items-center justify-between">
+              <span>Tabela de Taxas Contratual</span>
+              <span className="text-[10px] text-muted-foreground font-normal">
+                Base para cálculos e auditoria
+              </span>
+            </Label>
+            <div className="grid grid-cols-2 gap-2">
+              <Button
+                type="button"
+                variant={form.rate_table === "CPAG59" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setForm({ ...form, rate_table: "CPAG59" })}
+                className={cn(
+                  "h-10 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5",
+                  form.rate_table === "CPAG59"
+                    ? "bg-primary text-primary-foreground shadow-xs"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                {form.rate_table === "CPAG59" && <Check className="size-3.5" />}
+                <span>CPAG59 - F6</span>
+              </Button>
+
+              <Button
+                type="button"
+                variant={form.rate_table === "CPAG56" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setForm({ ...form, rate_table: "CPAG56" })}
+                className={cn(
+                  "h-10 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5",
+                  form.rate_table === "CPAG56"
+                    ? "bg-primary text-primary-foreground shadow-xs"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                {form.rate_table === "CPAG56" && <Check className="size-3.5" />}
+                <span>CPAG56 - F7</span>
+              </Button>
+            </div>
           </div>
         </div>
         <DialogFooter className="gap-2 sm:gap-0">
@@ -473,6 +524,20 @@ function MerchantsPage() {
     onError: (e: Error) => toast.error(translateError(e.message)),
   });
 
+  const updateRateTable = useMutation({
+    mutationFn: async ({ id, newTable }: { id: string; newTable: "CPAG59" | "CPAG56" }) => {
+      const { error } = await supabase.from("merchants").update({ rate_table: newTable }).eq("id", id);
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: (_, vars) => {
+      toast.success(
+        `Tabela atualizada para ${vars.newTable === "CPAG56" ? "CPAG56 - F7" : "CPAG59 - F6"} com sucesso!`
+      );
+      invalidate();
+    },
+    onError: (e: Error) => toast.error(translateError(e.message)),
+  });
+
   const list = merchants.data ?? [];
 
   // Filtragem da lista com normalização de acentos e correção da busca por dígitos
@@ -601,6 +666,49 @@ function MerchantsPage() {
                   maxLength={200}
                   placeholder="financeiro@empresa.com"
                 />
+              </div>
+
+              {/* Seleção de Tabela de Taxas Contratual */}
+              <div className="space-y-1.5 pt-1">
+                <Label className="text-xs font-semibold flex items-center justify-between">
+                  <span>Tabela de Taxas Contratual</span>
+                  <span className="text-[10px] text-muted-foreground font-normal">
+                    Referência para cálculo e auditoria
+                  </span>
+                </Label>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button
+                    type="button"
+                    variant={form.rate_table === "CPAG59" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setForm({ ...form, rate_table: "CPAG59" })}
+                    className={cn(
+                      "h-10 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5",
+                      form.rate_table === "CPAG59"
+                        ? "bg-primary text-primary-foreground shadow-xs"
+                        : "text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    {form.rate_table === "CPAG59" && <Check className="size-3.5" />}
+                    <span>CPAG59 - F6</span>
+                  </Button>
+
+                  <Button
+                    type="button"
+                    variant={form.rate_table === "CPAG56" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setForm({ ...form, rate_table: "CPAG56" })}
+                    className={cn(
+                      "h-10 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5",
+                      form.rate_table === "CPAG56"
+                        ? "bg-primary text-primary-foreground shadow-xs"
+                        : "text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    {form.rate_table === "CPAG56" && <Check className="size-3.5" />}
+                    <span>CPAG56 - F7</span>
+                  </Button>
+                </div>
               </div>
             </div>
             <DialogFooter className="gap-2 sm:gap-0">
@@ -853,6 +961,47 @@ function MerchantsPage() {
                           <span className="truncate">{active.email}</span>
                         </a>
                       )}
+                    </div>
+
+                    {/* Tabela de Taxas Contratual Ativa: CPAG59 - F6 ou CPAG56 - F7 */}
+                    <div className="flex items-center gap-2 pt-1 flex-wrap">
+                      <span className="text-xs font-semibold text-muted-foreground whitespace-nowrap">
+                        Tabela de taxas:
+                      </span>
+                      <div className="inline-flex p-0.5 bg-muted/60 rounded-xl border border-border/60 gap-1">
+                        <Button
+                          type="button"
+                          variant={(!active.rate_table || active.rate_table === "CPAG59") ? "default" : "ghost"}
+                          size="sm"
+                          disabled={updateRateTable.isPending}
+                          onClick={() => updateRateTable.mutate({ id: active.id, newTable: "CPAG59" })}
+                          className={cn(
+                            "h-7 px-2.5 rounded-lg text-xs font-bold gap-1 transition-all",
+                            (!active.rate_table || active.rate_table === "CPAG59")
+                              ? "bg-primary text-primary-foreground shadow-2xs"
+                              : "text-muted-foreground hover:text-foreground"
+                          )}
+                        >
+                          {(!active.rate_table || active.rate_table === "CPAG59") && <Check className="size-3" />}
+                          <span>CPAG59 - F6</span>
+                        </Button>
+                        <Button
+                          type="button"
+                          variant={active.rate_table === "CPAG56" ? "default" : "ghost"}
+                          size="sm"
+                          disabled={updateRateTable.isPending}
+                          onClick={() => updateRateTable.mutate({ id: active.id, newTable: "CPAG56" })}
+                          className={cn(
+                            "h-7 px-2.5 rounded-lg text-xs font-bold gap-1 transition-all",
+                            active.rate_table === "CPAG56"
+                              ? "bg-primary text-primary-foreground shadow-2xs"
+                              : "text-muted-foreground hover:text-foreground"
+                          )}
+                        >
+                          {active.rate_table === "CPAG56" && <Check className="size-3" />}
+                          <span>CPAG56 - F7</span>
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 </div>
