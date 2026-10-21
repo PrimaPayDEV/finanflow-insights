@@ -674,7 +674,7 @@ export function MerchantsGeneralReport({
               <p className="text-sm sm:text-base text-muted-foreground max-w-xl leading-relaxed">
                 Demonstração consolidada do volume transacionado, apuração das taxas
                 aplicadas nos terminais POS/TEF e auditoria da diferença contratual
-                referenciada nas tabelas de taxas <strong>CPAG59 - F3</strong> e <strong>CPAG56 - F7</strong>.
+                referenciada nas tabelas de taxas <strong>(CPAG59 F3/F6)</strong> e <strong>CPAG56 - F7</strong>.
               </p>
             </div>
 
@@ -947,8 +947,8 @@ export function MerchantsGeneralReport({
                   </div>
                   <p className="text-muted-foreground leading-relaxed text-[11px]">
                     Cada estabelecimento comercial (EC) possui em seu cadastro a seleção da sua tabela
-                    de taxas contratual vigente (<strong>CPAG59 - F3</strong> ou <strong>CPAG56 - F7</strong>).
-                    Além disso, o motor de conciliação faz a leitura individual da coluna <strong>Adquirente</strong> de cada lançamento importado: estabelecimentos que operam com adquirente <strong>F7</strong> para cartões e <strong>F6</strong> para Pix têm a taxa da tabela <strong>CPAG59 - F3</strong> aplicada automaticamente nas operações de Pix, mantendo <strong>CPAG56 - F7</strong> nas operações de cartão.
+                    de taxas contratual vigente (<strong>(CPAG59 F3/F6)</strong> ou <strong>CPAG56 - F7</strong>).
+                    Além disso, o motor de conciliação faz a leitura individual da coluna <strong>Adquirente</strong> de cada lançamento importado: estabelecimentos que operam com adquirente <strong>F7</strong> para cartões e <strong>F6</strong> para Pix têm a taxa da tabela <strong>(CPAG59 F3/F6)</strong> aplicada automaticamente nas operações de Pix, mantendo <strong>CPAG56 - F7</strong> nas operações de cartão.
                   </p>
                 </div>
               </div>
@@ -1122,7 +1122,7 @@ export function MerchantsGeneralReport({
                 <Info className="size-4 text-primary shrink-0" />
                 <span className="text-[11px] text-muted-foreground">
                   A coluna <strong>VLR. DIFERENÇA</strong> reflete a soma consolidada da
-                  diferença auditada no relatório interno de cada EC com base nas tabelas contratuais ativas (<strong>CPAG59 - F3</strong> e <strong>CPAG56 - F7</strong>).
+                  diferença auditada no relatório interno de cada EC com base nas tabelas contratuais ativas (<strong>(CPAG59 F3/F6)</strong> e <strong>CPAG56 - F7</strong>).
                 </span>
               </div>
               <div className="flex items-center gap-1.5 shrink-0">
