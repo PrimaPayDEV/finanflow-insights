@@ -259,7 +259,7 @@ function ReportsPage() {
         appMode === "billing" 
           ? "Relatórios executivos de faturamento, frota protegida, comissões e inadimplência" 
           : reportView === "general"
-          ? "Demonstração consolidada dos estabelecimentos, auditoria de taxas e apuração da diferença (CPAG59)"
+          ? "Demonstração consolidada dos estabelecimentos, auditoria de taxas e apuração da diferença (CPAG59 / CPAG56)"
           : getSubtitle()
       }
       actions={

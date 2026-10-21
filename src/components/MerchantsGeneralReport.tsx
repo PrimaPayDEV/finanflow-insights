@@ -1173,8 +1173,8 @@ export function MerchantsGeneralReport({
                 </p>
                 <p>
                   Certificamos que todos os valores calculados neste relatório geral foram
-                  apurados a partir dos dados de transações dos terminais e da tabela
-                  contratual <strong>CPAG59</strong> cadastrada na plataforma PrimaPay.
+                  apurados a partir dos dados de transações dos terminais e das tabelas
+                  contratuais <strong>CPAG59</strong> e <strong>CPAG56</strong> cadastradas na plataforma PrimaPay.
                 </p>
               </div>
 
