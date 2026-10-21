@@ -410,8 +410,6 @@ export function MerchantsGeneralReport({
       "Tabela Ativa": r.rateTable === "CPAG56" ? "CPAG56 - F7" : "CPAG59 - F3",
       "Plano Financeiro": r.planName,
       "Qtd. Vendas": r.txCount,
-      "% Médio Descontado": Number(r.avgDiscountRate.toFixed(2)),
-      "% Esperado (Tabela)": Number(r.avgExpectedRate.toFixed(2)),
       "Vlr. Diferença (R$)": Number(r.totalDiffAmount.toFixed(2)),
       Classificação:
         r.totalDiffAmount < -0.01
@@ -1017,12 +1015,6 @@ export function MerchantsGeneralReport({
                     <TableHead className="text-right text-xs font-bold text-foreground py-2.5">
                       Vendas
                     </TableHead>
-                    <TableHead className="text-right text-xs font-bold text-foreground py-2.5">
-                      % Desc.
-                    </TableHead>
-                    <TableHead className="text-right text-xs font-bold text-foreground py-2.5">
-                      % Esperado
-                    </TableHead>
                     {/* COLUNA EM DESTAQUE EXPLICITADA PELO USUÁRIO */}
                     <TableHead className="text-right text-xs font-black text-primary py-2.5 bg-primary/10 border-l border-primary/20">
                       VLR. DIFERENÇA
@@ -1034,7 +1026,7 @@ export function MerchantsGeneralReport({
                   {filteredRows.length === 0 ? (
                     <TableRow>
                       <TableCell
-                        colSpan={6}
+                        colSpan={4}
                         className="h-32 text-center text-xs text-muted-foreground"
                       >
                         Nenhum estabelecimento encontrado com os filtros selecionados.
@@ -1079,14 +1071,6 @@ export function MerchantsGeneralReport({
                             {row.txCount}
                           </TableCell>
 
-                          <TableCell className="py-2 text-right text-xs font-mono text-muted-foreground">
-                            {row.avgDiscountRate.toFixed(2)}%
-                          </TableCell>
-
-                          <TableCell className="py-2 text-right text-xs font-mono text-muted-foreground">
-                            {row.avgExpectedRate.toFixed(2)}%
-                          </TableCell>
-
                           {/* COLUNA VLR. DIFERENÇA COM CORES CONDICIONAIS */}
                           <TableCell
                             className={`py-2 text-right font-black text-xs font-mono bg-primary/5 border-l border-primary/20 ${
@@ -1127,14 +1111,6 @@ export function MerchantsGeneralReport({
 
                     <TableCell className="py-3 text-right text-xs font-black font-mono">
                       {totals.txs}
-                    </TableCell>
-
-                    <TableCell className="py-3 text-right text-xs font-black font-mono text-muted-foreground">
-                      {totals.avgDiscRate.toFixed(2)}%
-                    </TableCell>
-
-                    <TableCell className="py-3 text-right text-xs font-black font-mono text-muted-foreground">
-                      {totals.avgExpRate.toFixed(2)}%
                     </TableCell>
 
                     {/* SOMA TOTAL DO VLR. DIFERENÇA */}
