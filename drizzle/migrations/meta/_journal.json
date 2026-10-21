@@ -36,6 +36,20 @@
       "when": 1791908307801,
       "tag": "0004_add_net_amount_and_installment_rates",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1792593980742,
+      "tag": "0005_add_rate_table_and_acquirer",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1792594002061,
+      "tag": "0006_add_vehicle_category",
+      "breakpoints": true
     }
   ]
 }
