@@ -1435,6 +1435,7 @@ export type Database = {
       }
       transactions: {
         Row: {
+          acquirer: string | null
           brand: string
           company_id: string
           created_at: string
@@ -1449,6 +1450,7 @@ export type Database = {
           transaction_date: string
         }
         Insert: {
+          acquirer?: string | null
           brand?: string
           company_id?: string
           created_at?: string
@@ -1463,6 +1465,7 @@ export type Database = {
           transaction_date?: string
         }
         Update: {
+          acquirer?: string | null
           brand?: string
           company_id?: string
           created_at?: string

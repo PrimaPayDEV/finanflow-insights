@@ -72,7 +72,7 @@ import {
   importsQuery,
   terminalsQuery,
 } from "@/lib/db";
-import { calculateClosure, getModalityRate, getTraditionalRate, getMaxDiscountRate, getCPAG59Rate } from "@/lib/closure";
+import { calculateClosure, getModalityRate, getTraditionalRate, getMaxDiscountRate, getCPAG59Rate, resolveTransactionRateTable } from "@/lib/closure";
 import { createAsaasCharge } from "@/lib/asaas.functions";
 import {
   BRL,
@@ -1018,6 +1018,7 @@ function RouteComponent() {
                           // Descontado a mais = negativo (Vermelho) | Descontado a menos = positivo (Verde)
                           const merchantRateTable = (merchant as any)?.rate_table || "CPAG59";
                           const expectedRate = getCPAG59Rate(tx, merchantRateTable);
+                          const txEffectiveTable = resolveTransactionRateTable(tx, merchantRateTable);
                           const diffRate = expectedRate - tradRate;
                           const diffValue = gross * (diffRate / 100);
 
@@ -1027,7 +1028,14 @@ function RouteComponent() {
                                 {format(new Date(tx.transaction_date), "dd/MM/yyyy")}
                               </TableCell>
                               <TableCell className="capitalize text-xs print:text-[8px] font-medium print:py-0.5 print:px-1">
-                                {modalityLabel(tx.modality as any)}
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <span>{modalityLabel(tx.modality as any)}</span>
+                                  {(tx as any)?.acquirer && (
+                                    <Badge variant="outline" className="text-[9px] px-1 py-0 font-mono text-muted-foreground font-semibold">
+                                      {(tx as any).acquirer}
+                                    </Badge>
+                                  )}
+                                </div>
                               </TableCell>
                               <TableCell className="text-right font-medium text-xs print:text-[8px] font-mono print:py-0.5 print:px-1">
                                 {BRL(gross)}
@@ -1068,7 +1076,7 @@ function RouteComponent() {
                                     <div className="flex flex-col items-end">
                                       <span>{diffRate > 0 ? `+${diffRate.toFixed(2)}%` : `${diffRate.toFixed(2)}%`}</span>
                                       <span className="text-[10px] print:text-[7px] font-normal text-muted-foreground">
-                                        ({expectedRate.toFixed(2)}% - {tradRate.toFixed(2)}%)
+                                        ({expectedRate.toFixed(2)}% [{txEffectiveTable === "CPAG56" ? "F7" : "F3"}] - {tradRate.toFixed(2)}%)
                                       </span>
                                     </div>
                                   </TableCell>

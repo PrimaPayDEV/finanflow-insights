@@ -815,14 +815,13 @@ export function MerchantsGeneralReport({
                       C
                     </div>
                     <h4 className="font-bold text-foreground text-xs">
-                      Tabelas de Taxas Contratuais: CPAG59 - F3 e CPAG56 - F7
+                      Tabelas de Taxas Contratuais e Regra da Coluna Adquirente
                     </h4>
                   </div>
                   <p className="text-muted-foreground leading-relaxed text-[11px]">
                     Cada estabelecimento comercial (EC) possui em seu cadastro a seleção da sua tabela
                     de taxas contratual vigente (<strong>CPAG59 - F3</strong> ou <strong>CPAG56 - F7</strong>).
-                    O motor de cálculo audita automaticamente cada transação de acordo com a tabela ativa do respectivo EC,
-                    abrangendo todas as modalidades (Débito, Crédito à Vista e Parcelado de 2x a 21x) e bandeiras (Visa, Mastercard, Elo, Hipercard, Amex, Cabal e Pix).
+                    Além disso, o motor de conciliação faz a leitura individual da coluna <strong>Adquirente</strong> de cada lançamento importado: estabelecimentos que operam com adquirente <strong>F7</strong> para cartões e <strong>F6</strong> para Pix têm a taxa da tabela <strong>CPAG59 - F3</strong> aplicada automaticamente nas operações de Pix, mantendo <strong>CPAG56 - F7</strong> nas operações de cartão.
                   </p>
                 </div>
               </div>

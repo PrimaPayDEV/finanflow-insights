@@ -58,6 +58,7 @@ type PreviewRow = {
   date: string;
   installments: number;
   brand: string;
+  acquirer: string;
 };
 
 const MODALITY_ALIASES: Record<string, Modality> = {
@@ -287,6 +288,15 @@ function parseSpreadsheet(data: ArrayBuffer): PreviewRow[] {
     "num parcelas",
   ]);
 
+  // 8. Adquirente
+  const iAcquirer = findCol([
+    "adquirente",
+    "acquirer",
+    "adq",
+    "credenciadora",
+    "adquirente faturamento",
+  ]);
+
   const rows: PreviewRow[] = [];
   for (const cols of rawRows.slice(headerRowIndex + 1)) {
     if (!cols.some((c: any) => String(c).trim())) continue;
@@ -348,6 +358,11 @@ function parseSpreadsheet(data: ArrayBuffer): PreviewRow[] {
       brand = String(cols[iBrand] ?? "").trim();
     }
 
+    let acquirer = "";
+    if (iAcquirer !== -1) {
+      acquirer = String(cols[iAcquirer] ?? "").trim();
+    }
+
     rows.push({
       serial: String(cols[iSerial] ?? "").trim(),
       modality,
@@ -356,6 +371,7 @@ function parseSpreadsheet(data: ArrayBuffer): PreviewRow[] {
       date,
       installments,
       brand,
+      acquirer,
     });
   }
   return rows;
@@ -409,6 +425,7 @@ function ImportPage() {
         date: String(t.transaction_date).slice(0, 10),
         installments: t.installments || 1,
         brand: t.brand || "",
+        acquirer: (t as any).acquirer || "",
       }));
       setViewingRows(mapped);
       setViewingImport({ id: imp.id, name: imp.file_name });
@@ -448,6 +465,7 @@ function ImportPage() {
         transaction_date: new Date(`${r.date}T12:00:00`).toISOString(),
         installments: r.installments,
         brand: r.brand,
+        acquirer: r.acquirer || null,
         import_id: imp.id,
       }));
       const { error } = await supabase.from("transactions").insert(payload);
@@ -559,7 +577,7 @@ function ImportPage() {
                       {fileName || "Clique para selecionar o arquivo (CSV, XLSX, XLS ou PDF)"}
                     </span>
                     <p className="text-xs text-muted-foreground">
-                      Colunas detectadas automaticamente: serial, modalidade, valor bruto, valor líquido, data
+                      Colunas detectadas automaticamente: serial, modalidade, valor bruto, valor líquido, adquirente, data
                     </p>
                   </div>
                   <input
@@ -621,6 +639,7 @@ function ImportPage() {
                       <TableRow>
                         <TableHead>Serial POS</TableHead>
                         <TableHead>Modalidade</TableHead>
+                        <TableHead>Adquirente</TableHead>
                         <TableHead>Bandeira</TableHead>
                         <TableHead>Parcelas</TableHead>
                         <TableHead>Data</TableHead>
@@ -675,6 +694,15 @@ function ImportPage() {
                               </Select>
                             </TableCell>
                             <TableCell>
+                              {r.acquirer ? (
+                                <Badge variant="outline" className="text-xs font-mono font-semibold">
+                                  {r.acquirer}
+                                </Badge>
+                              ) : (
+                                <span className="text-xs text-muted-foreground">-</span>
+                              )}
+                            </TableCell>
+                            <TableCell>
                               <span className="text-sm">{r.brand}</span>
                             </TableCell>
                             <TableCell>
@@ -711,7 +739,7 @@ function ImportPage() {
                     </TableBody>
                     <TableFooter className="bg-muted/50 font-bold border-t">
                       <TableRow>
-                        <TableCell colSpan={5}>Total ({displayRows.length} lançamentos)</TableCell>
+                        <TableCell colSpan={6}>Total ({displayRows.length} lançamentos)</TableCell>
                         <TableCell className="text-right font-bold whitespace-nowrap">{BRL(grossTotal)}</TableCell>
                         <TableCell className="text-right font-bold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
                           {hasNetValues ? BRL(netTotal) : "-"}

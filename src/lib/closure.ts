@@ -219,8 +219,52 @@ export function getReferenceTable(rateTableKey?: string) {
   return is56 ? CPAG56 : CPAG59;
 }
 
+/**
+ * Determina qual tabela de taxas (CPAG59 - F3 ou CPAG56 - F7) deve ser aplicada a uma transação específica.
+ * Lê a coluna "adquirente" da transação:
+ * - Se a transação for em Pix e a adquirente indicar F6 (ou F3/59), aplica a tabela CPAG59 - F3 (Pix: 1.39%).
+ * - Se a adquirente indicar F7 (cartão ou Pix), aplica a tabela CPAG56 - F7 (Pix: 1.29%).
+ * - Caso a transação não especifique adquirente, utiliza a tabela ativa cadastrada no EC.
+ */
+export function resolveTransactionRateTable(
+  t: Transaction,
+  fallbackRateTableKey?: string
+): "CPAG59" | "CPAG56" {
+  const acq = String((t as any)?.acquirer || "").toUpperCase().trim();
+  const isPix = t.modality === "pix";
+
+  if (acq) {
+    // Pix com adquirente F6 / F3 / CPAG59 -> sempre tabela CPAG59 - F3
+    if (isPix && (acq.includes("F6") || acq.includes("F3") || acq.includes("CPAG59") || acq.includes("59"))) {
+      return "CPAG59";
+    }
+
+    // Pix com adquirente F7 -> tabela CPAG56 - F7
+    if (isPix && (acq.includes("F7") || acq.includes("CPAG56") || acq.includes("56"))) {
+      return "CPAG56";
+    }
+
+    // Cartão com adquirente F7 -> tabela CPAG56 - F7
+    if (acq.includes("F7") || acq.includes("CPAG56") || acq.includes("56")) {
+      return "CPAG56";
+    }
+
+    // Cartão com adquirente F6 / F3 -> tabela CPAG59 - F3
+    if (acq.includes("F6") || acq.includes("F3") || acq.includes("CPAG59") || acq.includes("59")) {
+      return "CPAG59";
+    }
+  }
+
+  // Fallback para a tabela contratual ativa do EC
+  const isFallback56 =
+    (fallbackRateTableKey || "").toUpperCase().includes("56") ||
+    (fallbackRateTableKey || "").toUpperCase().includes("F7");
+  return isFallback56 ? "CPAG56" : "CPAG59";
+}
+
 export function getModalityRate(t: Transaction, plan?: FeePlan, rateTableKey?: string): number {
-  const table = getReferenceTable(rateTableKey);
+  const effectiveKey = resolveTransactionRateTable(t, rateTableKey);
+  const table = getReferenceTable(effectiveKey);
   if (t.modality === 'pix') return (plan && plan.pix_rate > 0) ? plan.pix_rate : table.pix;
   if (t.modality === 'cash') return plan ? plan.cash_rate : 0;
 
