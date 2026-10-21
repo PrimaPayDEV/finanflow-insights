@@ -478,6 +478,7 @@ export type Database = {
           id: string
           name: string
           phone_whatsapp: string
+          rate_table: string | null
           status: Database["public"]["Enums"]["merchant_status"]
         }
         Insert: {
@@ -488,6 +489,7 @@ export type Database = {
           id?: string
           name: string
           phone_whatsapp?: string
+          rate_table?: string | null
           status?: Database["public"]["Enums"]["merchant_status"]
         }
         Update: {
@@ -498,6 +500,7 @@ export type Database = {
           id?: string
           name?: string
           phone_whatsapp?: string
+          rate_table?: string | null
           status?: Database["public"]["Enums"]["merchant_status"]
         }
         Relationships: [
@@ -1432,6 +1435,7 @@ export type Database = {
       }
       transactions: {
         Row: {
+          acquirer: string | null
           brand: string
           company_id: string
           created_at: string
@@ -1446,6 +1450,7 @@ export type Database = {
           transaction_date: string
         }
         Insert: {
+          acquirer?: string | null
           brand?: string
           company_id?: string
           created_at?: string
@@ -1460,6 +1465,7 @@ export type Database = {
           transaction_date?: string
         }
         Update: {
+          acquirer?: string | null
           brand?: string
           company_id?: string
           created_at?: string
@@ -1521,6 +1527,7 @@ export type Database = {
       vehicles: {
         Row: {
           brand: string
+          category: string | null
           color: string | null
           company_id: string
           created_at: string
@@ -1532,6 +1539,7 @@ export type Database = {
         }
         Insert: {
           brand: string
+          category?: string | null
           color?: string | null
           company_id: string
           created_at?: string
@@ -1543,6 +1551,7 @@ export type Database = {
         }
         Update: {
           brand?: string
+          category?: string | null
           color?: string | null
           company_id?: string
           created_at?: string
