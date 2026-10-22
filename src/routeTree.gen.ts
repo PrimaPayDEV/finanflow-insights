@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ClosuresRouteImport } from './routes/closures'
+import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as ExpensesRouteImport } from './routes/expenses'
 import { Route as ImportRouteImport } from './routes/import'
 import { Route as InvoicesRouteImport } from './routes/invoices'
@@ -55,6 +56,11 @@ const IndexRoute = IndexRouteImport.update({
 const ClosuresRoute = ClosuresRouteImport.update({
   id: '/closures',
   path: '/closures',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardRoute = DashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ExpensesRoute = ExpensesRouteImport.update({
@@ -236,6 +242,7 @@ const PublicReportClosureIdRoute = PublicReportClosureIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/closures': typeof ClosuresRoute
+  '/dashboard': typeof DashboardRoute
   '/expenses': typeof ExpensesRoute
   '/import': typeof ImportRoute
   '/invoices': typeof InvoicesRoute
@@ -275,6 +282,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/closures': typeof ClosuresRoute
+  '/dashboard': typeof DashboardRoute
   '/expenses': typeof ExpensesRoute
   '/import': typeof ImportRoute
   '/invoices': typeof InvoicesRoute
@@ -315,6 +323,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/closures': typeof ClosuresRoute
+  '/dashboard': typeof DashboardRoute
   '/expenses': typeof ExpensesRoute
   '/import': typeof ImportRoute
   '/invoices': typeof InvoicesRoute
@@ -356,6 +365,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/closures'
+    | '/dashboard'
     | '/expenses'
     | '/import'
     | '/invoices'
@@ -395,6 +405,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/closures'
+    | '/dashboard'
     | '/expenses'
     | '/import'
     | '/invoices'
@@ -434,6 +445,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/closures'
+    | '/dashboard'
     | '/expenses'
     | '/import'
     | '/invoices'
@@ -474,6 +486,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ClosuresRoute: typeof ClosuresRoute
+  DashboardRoute: typeof DashboardRoute
   ExpensesRoute: typeof ExpensesRoute
   ImportRoute: typeof ImportRoute
   InvoicesRoute: typeof InvoicesRoute
@@ -525,6 +538,13 @@ declare module '@tanstack/react-router' {
       path: '/closures'
       fullPath: '/closures'
       preLoaderRoute: typeof ClosuresRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/expenses': {
@@ -778,6 +798,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ClosuresRoute: ClosuresRoute,
+  DashboardRoute: DashboardRoute,
   ExpensesRoute: ExpensesRoute,
   ImportRoute: ImportRoute,
   InvoicesRoute: InvoicesRoute,

@@ -132,14 +132,14 @@ function AuthGuard({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!isLoading) {
-      const isPublicRoute = pathname.startsWith("/public") || pathname.startsWith("/api/public") || pathname === "/login";
+      const isPublicRoute = pathname === "/" || pathname === "/login" || pathname.startsWith("/public") || pathname.startsWith("/api/public");
       if (!user && !isPublicRoute) {
         navigate({ to: "/login" });
       } else if (user && pathname === "/login") {
         if (role === 'merchant') {
           navigate({ to: "/recebiveis/dashboard" });
         } else {
-          navigate({ to: "/" });
+          navigate({ to: "/dashboard" });
         }
       } else if (user && role === 'merchant' && !pathname.startsWith("/recebiveis") && !isPublicRoute) {
         // Protect merchants from seeing admin routes
@@ -156,7 +156,7 @@ function AuthGuard({ children }: { children: ReactNode }) {
     );
   }
 
-  const isPublicRoute = pathname.startsWith("/public") || pathname.startsWith("/api/public") || pathname === "/login";
+  const isPublicRoute = pathname === "/" || pathname === "/login" || pathname.startsWith("/public") || pathname.startsWith("/api/public");
   if (!user && !isPublicRoute) return null;
 
   if (user && !isActive && companyName !== "Prima Hub" && companyName !== "PrimaPay") {

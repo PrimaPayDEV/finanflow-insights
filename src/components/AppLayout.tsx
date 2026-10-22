@@ -33,6 +33,7 @@ import {
   User,
   Palette,
   CheckCheck,
+  LayoutGrid,
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
@@ -54,7 +55,7 @@ import {
 type NavItem = { to: string; label: string; icon: typeof LayoutDashboard; section?: string };
 
 const nav: NavItem[] = [
-  { to: "/", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/merchants", label: "Estabelecimentos", icon: Store },
   { to: "/import", label: "Importar Extrato", icon: Upload, section: "Cobranças" },
   { to: "/expenses", label: "Lançamentos", icon: Receipt, section: "Cobranças" },
@@ -118,7 +119,7 @@ export function AppLayout({
     }
   } else if (appMode === "billing") {
     currentNav = [
-      { to: "/", label: "Dashboard", icon: LayoutDashboard },
+      { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
       { to: "/members", label: "Associados", icon: Users, section: "Proteção Veicular" },
       { to: "/vehicles", label: "Veículos", icon: Car, section: "Proteção Veicular" },
       { to: "/invoices", label: "Faturas", icon: Receipt, section: "Cobranças" },
@@ -136,6 +137,9 @@ export function AppLayout({
       currentNav.push({ to: "/admin/companies", label: "Administração", icon: ShieldCheck, section: "Administração" });
     }
   }
+
+  // Atalho permanente para alternar entre os ambientes do PrimaHub
+  currentNav.push({ to: "/", label: "Hub de Ambientes", icon: LayoutGrid, section: "Ecossistema" });
 
   const markAsRead = useMutation({
     mutationFn: async (id: string) => {
@@ -435,6 +439,12 @@ export function AppLayout({
                         </Link>
                       </DropdownMenuItem>
                     )}
+                    <DropdownMenuItem asChild>
+                      <Link to="/" className="w-full cursor-pointer font-medium rounded-lg flex items-center gap-2.5 py-2 px-2.5 text-primary">
+                        <LayoutGrid className="size-4 text-primary" />
+                        <span>Hub de Ambientes</span>
+                      </Link>
+                    </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={signOut} className="text-destructive focus:text-destructive cursor-pointer font-medium rounded-lg flex items-center gap-2.5 py-2 px-2.5">
                       <LogOut className="size-4" />
