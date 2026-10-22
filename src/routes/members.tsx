@@ -30,7 +30,6 @@ import { getPartners } from "@/lib/partner.functions";
 import { translateError } from "@/lib/translateError";
 import { formatCpfCnpj, formatPhone } from "@/lib/format";
 import { VehicleCategorySelector, VehicleCategoryBadge } from "@/components/VehicleCategorySelector";
-import { HinovaBatchImportDialog } from "@/components/HinovaBatchImportDialog";
 
 export const Route = createFileRoute("/members")({
   head: () => ({
@@ -429,12 +428,7 @@ function MembersPage() {
     <AppLayout
       title="Gestão de Associados"
       subtitle="Cadastre seus clientes e veículos protegidos na Planmais"
-      actions={
-        <div className="flex items-center gap-2 flex-wrap">
-          <HinovaBatchImportDialog />
-          <MemberDialog />
-        </div>
-      }
+      actions={<MemberDialog />}
     >
       <div className="space-y-4">
         {/* KPIs Resumidos */}
@@ -526,11 +520,10 @@ function MembersPage() {
             <div>
               <p className="text-base font-semibold text-foreground">Nenhum associado cadastrado</p>
               <p className="text-sm text-muted-foreground max-w-sm mt-1">
-                Comece cadastrando seu primeiro cliente ou importe o lote de associados do relatório Planmais (SGA Hinova).
+                Comece cadastrando seu primeiro associado para gerenciar a proteção veicular.
               </p>
             </div>
             <div className="flex items-center gap-2.5 flex-wrap justify-center pt-1">
-              <HinovaBatchImportDialog />
               <MemberDialog />
             </div>
           </div>
