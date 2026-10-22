@@ -18,6 +18,12 @@ import { getMembers, generateInvoice } from "@/lib/members.functions";
 import { getAsaasDashboardMetrics } from "@/lib/asaas.functions";
 import { translateError } from "@/lib/translateError";
 import { BRL, formatCurrencyInput } from "@/lib/format";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { CalendarIcon } from "lucide-react";
+import { format, parseISO } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { cn } from "@/lib/utils";
 
 function getStatusBadge(status: string) {
   switch (status) {
@@ -138,12 +144,12 @@ function NewInvoiceDialog() {
           <Plus className="size-4" /> Gerar Fatura
         </Button>
       </DialogTrigger>
-      <DialogContent className="w-[95vw] max-w-lg max-h-[90vh] sm:max-h-[86vh] flex flex-col p-0 gap-0 rounded-2xl bg-card border-border shadow-2xl overflow-hidden">
+      <DialogContent className="w-[95vw] max-w-lg max-h-[94vh] flex flex-col p-0 gap-0 rounded-2xl bg-card border-border shadow-2xl overflow-hidden">
         <DialogHeader className="p-4 sm:p-5 pb-2.5 border-b border-border/60 shrink-0">
           <DialogTitle>Nova Fatura / Boleto</DialogTitle>
           <DialogDescription>Gere uma nova cobrança híbrida (Pix/Boleto) para um associado.</DialogDescription>
         </DialogHeader>
-        <div className="flex-1 overflow-y-auto min-h-0 p-4 sm:p-5 space-y-3.5">
+        <div className="flex-1 overflow-y-auto min-h-0 px-4 sm:px-5 py-3 space-y-3">
           <div className="space-y-2">
             <Label>Associado</Label>
             <Select value={memberId} onValueChange={handleSelectMember}>
@@ -201,16 +207,28 @@ function NewInvoiceDialog() {
             </div>
 
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label>Data de Vencimento</Label>
-                <Badge variant="outline" className="text-[10px] font-mono px-1.5 py-0">Dia 20 Padrão</Badge>
-              </div>
-              <Input
-                type="date"
-                value={dueDate}
-                onChange={e => setDueDate(e.target.value)}
-                className="font-medium text-xs"
-              />
+              <Label>Data de Vencimento</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn("w-full justify-start text-left font-normal", !dueDate && "text-muted-foreground")}
+                  >
+                    <CalendarIcon className="size-4" />
+                    {dueDate ? format(parseISO(dueDate), "dd/MM/yyyy") : <span>Escolha a data</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    locale={ptBR}
+                    selected={dueDate ? parseISO(dueDate) : undefined}
+                    onSelect={(d) => d && setDueDate(format(d, "yyyy-MM-dd"))}
+                    initialFocus
+                    className={cn("p-3 pointer-events-auto")}
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
 
@@ -218,18 +236,6 @@ function NewInvoiceDialog() {
             <Label>Descrição / Referência</Label>
             <Input value={description} onChange={e => setDescription(e.target.value)} placeholder="Mensalidade Proteção Veicular" />
           </div>
-
-          {isPlanmais && (
-            <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-400 text-xs flex items-start gap-2.5">
-              <ShieldAlert className="size-4 shrink-0 mt-0.5" />
-              <div className="space-y-0.5">
-                <p className="font-bold">Regra Planmais: Não receber após o vencimento</p>
-                <p className="text-[11px] opacity-90 leading-relaxed">
-                  Para manter a cobertura ativa e o socorro do veículo do associado, este boleto será registrado no Asaas com bloqueio bancário para não aceitar pagamentos após o vencimento.
-                </p>
-              </div>
-            </div>
-          )}
         </div>
         <div className="p-3.5 sm:p-4 border-t border-border/60 bg-muted/20 shrink-0 flex flex-col-reverse sm:flex-row items-center sm:justify-between gap-3">
           <AsaasFormSeal />
