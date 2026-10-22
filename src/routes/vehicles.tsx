@@ -653,17 +653,17 @@ function VehiclesPage() {
           </Card>
         ) : (
           <div className="rounded-2xl border border-border/80 bg-card shadow-card overflow-hidden">
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto w-full">
               <table className="w-full text-xs text-left">
                 <thead className="bg-muted/30 border-b border-border/60 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
                   <tr>
-                    <th className="px-4 py-3.5">Veículo</th>
-                    <th className="px-4 py-3.5">Categoria / Cor</th>
-                    <th className="px-4 py-3.5">Tabela FIPE</th>
-                    <th className="px-4 py-3.5">Associado</th>
-                    <th className="px-4 py-3.5">Mensalidade</th>
-                    <th className="px-4 py-3.5 text-center">Status</th>
-                    <th className="px-4 py-3.5 text-right">Ações</th>
+                    <th className="px-3 py-3 sm:px-3.5">Veículo</th>
+                    <th className="px-3 py-3 sm:px-3.5">Categoria / Cor</th>
+                    <th className="px-3 py-3 sm:px-3.5">Tabela FIPE</th>
+                    <th className="px-3 py-3 sm:px-3.5">Associado</th>
+                    <th className="px-3 py-3 sm:px-3.5">Mensalidade</th>
+                    <th className="px-3 py-3 sm:px-3.5 text-center">Status</th>
+                    <th className="px-3 py-3 sm:px-3.5 text-right">Ações</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border/50">
@@ -675,8 +675,8 @@ function VehiclesPage() {
                       title="Clique em qualquer lugar da linha para abrir o dossiê do veículo"
                     >
                       {/* Veículo */}
-                      <td className="px-4 py-3.5 align-middle">
-                        <div className="flex items-center gap-2.5 min-w-0">
+                      <td className="px-3 py-2.5 sm:px-3.5 sm:py-3 align-middle">
+                        <div className="flex items-center gap-2 min-w-0">
                           <MercosulPlate plate={vehicle.plate} size="sm" />
                           <div className="min-w-0">
                             <div className="flex items-center gap-1.5 flex-wrap">
@@ -687,7 +687,7 @@ function VehiclesPage() {
                                 • {vehicle.year}
                               </span>
                             </div>
-                            <h4 className="font-semibold text-xs text-foreground leading-tight truncate mt-0.5 max-w-[240px] group-hover:text-primary transition-colors">
+                            <h4 className="font-semibold text-xs text-foreground leading-tight truncate mt-0.5 max-w-[140px] sm:max-w-[170px] lg:max-w-[210px] group-hover:text-primary transition-colors">
                               {vehicle.model}
                             </h4>
                           </div>
@@ -695,17 +695,17 @@ function VehiclesPage() {
                       </td>
 
                       {/* Categoria / Cor */}
-                      <td className="px-4 py-3.5 align-middle">
-                        <div className="space-y-1">
+                      <td className="px-3 py-2.5 sm:px-3.5 sm:py-3 align-middle">
+                        <div className="space-y-0.5">
                           <VehicleCategoryBadge category={vehicle.category} size="sm" />
-                          <div className="text-[11px] text-muted-foreground truncate max-w-[140px]">
+                          <div className="text-[10px] text-muted-foreground truncate max-w-[120px]">
                             {vehicle.color || "Prata"} {vehicle.fuel ? `• ${vehicle.fuel}` : ""}
                           </div>
                         </div>
                       </td>
 
                       {/* FIPE */}
-                      <td className="px-4 py-3.5 align-middle">
+                      <td className="px-3 py-2.5 sm:px-3.5 sm:py-3 align-middle whitespace-nowrap">
                         <span className="font-bold text-emerald-600 dark:text-emerald-400 font-mono text-xs block">
                           {BRL(vehicle.fipeValue || 0)}
                         </span>
@@ -715,10 +715,10 @@ function VehiclesPage() {
                       </td>
 
                       {/* Associado */}
-                      <td className="px-4 py-3.5 align-middle">
-                        <div className="flex items-center justify-between gap-2 max-w-[220px]">
-                          <div className="overflow-hidden">
-                            <p className="text-xs font-semibold text-foreground truncate">
+                      <td className="px-3 py-2.5 sm:px-3.5 sm:py-3 align-middle">
+                        <div className="flex items-center justify-between gap-1.5 max-w-[180px] sm:max-w-[200px]">
+                          <div className="overflow-hidden min-w-0">
+                            <p className="text-xs font-semibold text-foreground truncate max-w-[120px] sm:max-w-[150px] lg:max-w-[180px]">
                               {vehicle.member.name}
                             </p>
                             <p className="text-[10px] text-muted-foreground font-mono">
@@ -732,16 +732,16 @@ function VehiclesPage() {
                               rel="noopener noreferrer"
                               onClick={(e) => e.stopPropagation()}
                               title="Conversar no WhatsApp"
-                              className="size-7 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 flex items-center justify-center transition-colors shrink-0"
+                              className="size-6.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 flex items-center justify-center transition-colors shrink-0"
                             >
-                              <MessageCircle className="size-3.5" />
+                              <MessageCircle className="size-3" />
                             </a>
                           )}
                         </div>
                       </td>
 
                       {/* Mensalidade */}
-                      <td className="px-4 py-3.5 align-middle">
+                      <td className="px-3 py-2.5 sm:px-3.5 sm:py-3 align-middle whitespace-nowrap">
                         <span className="font-bold text-foreground text-xs block">
                           {BRL(vehicle.monthlyFee || 179.9)}
                         </span>
@@ -751,19 +751,20 @@ function VehiclesPage() {
                       </td>
 
                       {/* Status */}
-                      <td className="px-4 py-3.5 align-middle text-center whitespace-nowrap">
+                      <td className="px-3 py-2.5 sm:px-3.5 sm:py-3 align-middle text-center whitespace-nowrap">
                         {getStatusBadge(vehicle.status)}
                       </td>
 
                       {/* Ações */}
-                      <td className="px-4 py-3.5 align-middle text-right whitespace-nowrap">
+                      <td className="px-3 py-2.5 sm:px-3.5 sm:py-3 align-middle text-right whitespace-nowrap">
                         <Button
                           size="sm"
                           onClick={() => openDossier(vehicle)}
-                          className="rounded-xl h-8 px-3 text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground gap-1.5 shadow-xs"
+                          className="rounded-xl h-7.5 px-2.5 sm:px-3 text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground gap-1 shadow-xs"
+                          title="Abrir Dossiê do Veículo"
                         >
-                          <Eye className="size-3.5" />
-                          <span>Ver Dossiê</span>
+                          <Eye className="size-3.5 shrink-0" />
+                          <span>Dossiê</span>
                         </Button>
                       </td>
                     </tr>
@@ -865,7 +866,7 @@ function VehicleDossierDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[96vw] max-w-4xl flex flex-col p-0 gap-0 border-border bg-card shadow-2xl rounded-2xl sm:rounded-3xl overflow-hidden">
+      <DialogContent className="w-[95vw] max-w-4xl max-h-[90vh] sm:max-h-[86vh] flex flex-col p-0 gap-0 border-border bg-card shadow-2xl rounded-2xl sm:rounded-3xl overflow-hidden">
         {/* Cabeçalho Compacto, 100% Responsivo e com espaço livre garantido para o botão Fechar (X) */}
         <div className="relative bg-gradient-to-r from-primary/15 via-primary/5 to-card pl-4 sm:pl-5 pr-12 sm:pr-14 py-3 border-b border-border/70 shrink-0">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3">
@@ -923,7 +924,7 @@ function VehicleDossierDialog({
             </TabsList>
           </div>
 
-          <div className="p-4 sm:p-5">
+          <div className="flex-1 overflow-y-auto min-h-0 p-3.5 sm:p-5">
             {/* ABA 1: Ficha Técnica */}
             <TabsContent value="overview" className="m-0 p-0">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1373,8 +1374,8 @@ function CertificateDialog({
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[96vw] max-w-lg rounded-2xl sm:rounded-3xl p-4 sm:p-5 bg-card border-border shadow-2xl overflow-hidden">
-        <div className="border-2 border-primary/30 rounded-2xl p-4 bg-gradient-to-b from-primary/5 via-card to-card relative overflow-hidden">
+      <DialogContent className="w-[95vw] max-w-lg max-h-[90vh] sm:max-h-[86vh] flex flex-col rounded-2xl sm:rounded-3xl p-3.5 sm:p-5 bg-card border-border shadow-2xl overflow-hidden">
+        <div className="flex-1 overflow-y-auto min-h-0 border-2 border-primary/30 rounded-2xl p-4 bg-gradient-to-b from-primary/5 via-card to-card relative overflow-hidden">
           <ShieldCheck className="absolute -right-8 -bottom-8 size-44 text-primary/5 pointer-events-none" />
 
           {/* Cabeçalho */}
@@ -1514,8 +1515,8 @@ function NewVehicleDialog({ members }: { members: any[] }) {
           <span>Cadastrar Veículo</span>
         </Button>
       </DialogTrigger>
-      <DialogContent className="w-[96vw] max-w-lg rounded-2xl bg-card border-border p-4 sm:p-5 shadow-2xl overflow-hidden">
-        <DialogHeader className="pb-1.5 border-b border-border/60">
+      <DialogContent className="w-[95vw] max-w-lg max-h-[90vh] sm:max-h-[86vh] flex flex-col rounded-2xl bg-card border-border p-0 gap-0 shadow-2xl overflow-hidden">
+        <DialogHeader className="p-4 sm:p-5 pb-2.5 border-b border-border/60 shrink-0">
           <DialogTitle className="text-base font-bold flex items-center gap-2">
             <Car className="size-4.5 text-primary" /> Novo Veículo na Frota
           </DialogTitle>
@@ -1529,7 +1530,7 @@ function NewVehicleDialog({ members }: { members: any[] }) {
             e.preventDefault();
             createVeh.mutate();
           }}
-          className="space-y-2.5 py-1"
+          className="flex-1 overflow-y-auto min-h-0 p-4 sm:p-5 space-y-2.5"
         >
           <div className="space-y-1">
             <Label className="text-xs font-semibold">Associado Proprietário *</Label>

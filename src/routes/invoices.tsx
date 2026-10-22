@@ -125,12 +125,12 @@ function NewInvoiceDialog() {
           <Plus className="size-4" /> Gerar Fatura
         </Button>
       </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
+      <DialogContent className="w-[95vw] max-w-lg max-h-[90vh] sm:max-h-[86vh] flex flex-col p-0 gap-0 rounded-2xl bg-card border-border shadow-2xl overflow-hidden">
+        <DialogHeader className="p-4 sm:p-5 pb-2.5 border-b border-border/60 shrink-0">
           <DialogTitle>Nova Fatura / Boleto</DialogTitle>
           <DialogDescription>Gere uma nova cobrança híbrida (Pix/Boleto) para um associado.</DialogDescription>
         </DialogHeader>
-        <div className="grid gap-4 py-4">
+        <div className="flex-1 overflow-y-auto min-h-0 p-4 sm:p-5 space-y-3.5">
           <div className="space-y-2">
             <Label>Associado</Label>
             <Select value={memberId} onValueChange={setMemberId}>
@@ -213,7 +213,7 @@ function NewInvoiceDialog() {
             </div>
           )}
         </div>
-        <div className="flex flex-col-reverse sm:flex-row items-center sm:justify-between gap-3 pt-3 border-t border-border/60">
+        <div className="p-3.5 sm:p-4 border-t border-border/60 bg-muted/20 shrink-0 flex flex-col-reverse sm:flex-row items-center sm:justify-between gap-3">
           <AsaasFormSeal />
           <div className="flex justify-end gap-2 w-full sm:w-auto">
             <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
@@ -243,7 +243,7 @@ function BoletoDetailDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md rounded-2xl p-6 bg-card border-border shadow-2xl">
+      <DialogContent className="w-[95vw] max-w-md max-h-[90vh] sm:max-h-[86vh] flex flex-col p-4 sm:p-5 rounded-2xl bg-card border-border shadow-2xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-base font-bold flex items-center gap-2 text-foreground">
             <Receipt className="size-5 text-primary" />

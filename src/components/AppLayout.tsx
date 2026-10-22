@@ -252,7 +252,7 @@ export function AppLayout({
 
       <div className="relative z-10 flex min-w-0 flex-1 flex-col print:overflow-visible print:h-auto">
         <header className="print:hidden sticky top-0 z-10 border-b border-border/60 bg-background/85 backdrop-blur-md">
-          <div className="flex items-center justify-between gap-2 px-3 py-3.5 md:px-8">
+          <div className="flex items-center justify-between gap-2 px-3 py-3.5 md:px-5 lg:px-6">
             <div className="flex items-center gap-3 overflow-hidden">
               <Sheet>
                 <SheetTrigger asChild>
@@ -457,7 +457,7 @@ export function AppLayout({
           </div>
         </header>
         
-        <main className="flex-1 overflow-x-hidden px-3 py-4 md:px-8 print:p-0 print:overflow-visible flex flex-col justify-between">
+        <main className="flex-1 overflow-x-hidden px-3 py-4 md:px-5 lg:px-6 print:p-0 print:overflow-visible flex flex-col justify-between">
           <AnimatePresence mode="wait">
             <motion.div
               key={pathname}

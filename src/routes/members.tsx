@@ -170,8 +170,8 @@ function MemberDialog({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="w-[96vw] max-w-4xl p-4 sm:p-5 border-border bg-card shadow-2xl rounded-2xl overflow-hidden">
-        <DialogHeader className="pb-2 border-b border-border/60">
+      <DialogContent className="w-[95vw] max-w-4xl max-h-[90vh] sm:max-h-[86vh] flex flex-col p-0 gap-0 border-border bg-card shadow-2xl rounded-2xl sm:rounded-3xl overflow-hidden">
+        <DialogHeader className="p-4 sm:p-5 pb-2.5 border-b border-border/60 shrink-0">
           <DialogTitle className="text-base font-bold flex items-center gap-2">
             <User className="size-4 text-primary" />
             {member ? "Editar Associado" : "Cadastrar Associado e Veículo"}
@@ -181,7 +181,8 @@ function MemberDialog({
           </DialogDescription>
         </DialogHeader>
         
-        <div className="grid md:grid-cols-2 gap-4 py-2.5">
+        <div className="flex-1 overflow-y-auto min-h-0 p-4 sm:p-5">
+          <div className="grid md:grid-cols-2 gap-4">
           {/* Lado Esquerdo: Associado */}
           <div className="space-y-2.5">
             <h3 className="font-bold text-xs uppercase tracking-wider text-primary border-b border-border/50 pb-1 flex items-center gap-1.5">
@@ -324,8 +325,9 @@ function MemberDialog({
             </div>
           </div>
         </div>
+      </div>
 
-        <div className="flex flex-col-reverse sm:flex-row items-center sm:justify-between gap-3 border-t border-border/60 pt-3">
+        <div className="p-3.5 sm:p-4 border-t border-border/60 bg-muted/20 shrink-0 flex flex-col-reverse sm:flex-row items-center sm:justify-between gap-3">
           <AsaasFormSeal />
           <div className="flex justify-end gap-2 w-full sm:w-auto">
             <Button variant="outline" size="sm" onClick={() => setOpen(false)} className="rounded-xl h-8 text-xs font-medium">
@@ -378,14 +380,14 @@ function VehicleDialog({ memberId, memberName }: { memberId: string; memberName:
           <Car className="size-3 text-primary" /> Adicionar Veículo
         </Button>
       </DialogTrigger>
-      <DialogContent className="w-[96vw] max-w-lg p-4 sm:p-5 border-border bg-card shadow-2xl rounded-2xl overflow-hidden">
-        <DialogHeader className="pb-2 border-b border-border/60">
+      <DialogContent className="w-[95vw] max-w-lg max-h-[90vh] sm:max-h-[86vh] flex flex-col p-0 gap-0 border-border bg-card shadow-2xl rounded-2xl overflow-hidden">
+        <DialogHeader className="p-4 sm:p-5 pb-2.5 border-b border-border/60 shrink-0">
           <DialogTitle className="text-base font-bold flex items-center gap-2">
             <Car className="size-4.5 text-primary" />
             Vincular Veículo - {memberName}
           </DialogTitle>
         </DialogHeader>
-        <div className="space-y-2.5 py-2">
+        <div className="flex-1 overflow-y-auto min-h-0 p-4 sm:p-5 space-y-2.5">
           <div className="grid grid-cols-2 gap-2.5">
             <div className="space-y-1">
               <Label className="text-xs font-semibold">Placa (Mercosul) *</Label>
@@ -435,7 +437,7 @@ function VehicleDialog({ memberId, memberName }: { memberId: string; memberName:
           </div>
         </div>
 
-        <div className="flex flex-col-reverse sm:flex-row items-center sm:justify-between gap-3 border-t border-border/60 pt-3">
+        <div className="p-3.5 sm:p-4 border-t border-border/60 bg-muted/20 shrink-0 flex flex-col-reverse sm:flex-row items-center sm:justify-between gap-3">
           <AsaasFormSeal />
           <div className="flex justify-end gap-2 w-full sm:w-auto">
             <Button variant="outline" size="sm" onClick={() => setOpen(false)} className="rounded-xl h-8 text-xs font-medium">
@@ -673,16 +675,16 @@ function MembersPage() {
           </Card>
         ) : (
           <div className="rounded-2xl border border-border/80 bg-card shadow-card overflow-hidden">
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto w-full">
               <table className="w-full text-xs text-left">
                 <thead className="bg-muted/30 border-b border-border/60 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
                   <tr>
-                    <th className="px-4 py-3.5">Associado</th>
-                    <th className="px-4 py-3.5">Contatos</th>
-                    <th className="px-4 py-3.5">Veículos Vinculados</th>
-                    <th className="px-4 py-3.5">Consultor</th>
-                    <th className="px-4 py-3.5 text-center">Status</th>
-                    <th className="px-4 py-3.5 text-right">Ações</th>
+                    <th className="px-3 py-3 sm:px-3.5">Associado</th>
+                    <th className="px-3 py-3 sm:px-3.5">Contatos</th>
+                    <th className="px-3 py-3 sm:px-3.5">Veículos Vinculados</th>
+                    <th className="px-3 py-3 sm:px-3.5">Consultor</th>
+                    <th className="px-3 py-3 sm:px-3.5 text-center">Status</th>
+                    <th className="px-3 py-3 sm:px-3.5 text-right">Ações</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border/50">
@@ -698,13 +700,13 @@ function MembersPage() {
                         title="Clique em qualquer lugar da linha para editar este associado"
                       >
                         {/* Associado */}
-                        <td className="px-4 py-3.5 align-middle">
-                          <div className="flex items-center gap-2.5 min-w-0">
-                            <div className="size-8 rounded-xl bg-primary/10 text-primary font-bold text-xs flex items-center justify-center shrink-0 group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                        <td className="px-3 py-2.5 sm:px-3.5 sm:py-3 align-middle">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <div className="size-7.5 rounded-xl bg-primary/10 text-primary font-bold text-xs flex items-center justify-center shrink-0 group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
                               {m.name?.charAt(0)?.toUpperCase() || "A"}
                             </div>
                             <div className="min-w-0">
-                              <p className="font-bold text-foreground text-xs leading-tight truncate group-hover:text-primary transition-colors">
+                              <p className="font-bold text-foreground text-xs leading-tight truncate max-w-[130px] sm:max-w-[160px] lg:max-w-[200px] group-hover:text-primary transition-colors">
                                 {m.name}
                               </p>
                               <p className="text-[10px] text-muted-foreground font-mono mt-0.5">
@@ -715,7 +717,7 @@ function MembersPage() {
                         </td>
 
                         {/* Contatos com Ícones (sem emojis) */}
-                        <td className="px-4 py-3.5 align-middle">
+                        <td className="px-3 py-2.5 sm:px-3.5 sm:py-3 align-middle">
                           <div className="space-y-1 min-w-0">
                             {m.phone ? (
                               <div className="flex items-center gap-1.5">
@@ -747,8 +749,8 @@ function MembersPage() {
                         </td>
 
                         {/* Veículos Protegidos */}
-                        <td className="px-4 py-3.5 align-middle">
-                          <div className="space-y-1.5 min-w-[200px]">
+                        <td className="px-3 py-2.5 sm:px-3.5 sm:py-3 align-middle">
+                          <div className="space-y-1.5 min-w-[160px] sm:min-w-[190px]">
                             {vehiclesList.length === 0 ? (
                               <span className="text-[11px] text-muted-foreground italic">Nenhum veículo vinculado</span>
                             ) : (
@@ -774,7 +776,7 @@ function MembersPage() {
                         </td>
 
                         {/* Consultor / Parceiro */}
-                        <td className="px-4 py-3.5 align-middle">
+                        <td className="px-3 py-2.5 sm:px-3.5 sm:py-3 align-middle">
                           {partner?.name ? (
                             <Badge variant="outline" className="text-[10px] border-primary/30 text-primary font-medium">
                               {partner.name}
@@ -785,7 +787,7 @@ function MembersPage() {
                         </td>
 
                         {/* Status */}
-                        <td className="px-4 py-3.5 align-middle text-center">
+                        <td className="px-3 py-2.5 sm:px-3.5 sm:py-3 align-middle text-center">
                           <Badge
                             variant={m.status === "active" ? "default" : "secondary"}
                             className="text-[10px] font-bold rounded-full px-2 py-0.5"
@@ -795,7 +797,7 @@ function MembersPage() {
                         </td>
 
                         {/* Ações */}
-                        <td className="px-4 py-3.5 align-middle text-right">
+                        <td className="px-3 py-2.5 sm:px-3.5 sm:py-3 align-middle text-right">
                           <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
                             <Button
                               variant="ghost"
