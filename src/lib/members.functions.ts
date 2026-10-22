@@ -17,7 +17,9 @@ const memberSchema = z.object({
     brand: z.string().optional().or(z.literal("")),
     model: z.string().optional().or(z.literal("")),
     year: z.number().optional(),
-    category: z.string().optional().or(z.literal(""))
+    category: z.string().optional().or(z.literal("")),
+    monthly_fee: z.number().optional(),
+    fipe_value: z.number().optional(),
   }).optional()
 });
 
@@ -145,16 +147,30 @@ export const upsertMember = createServerFn({ method: "POST" })
         model: data.vehicle.model || "",
         year: data.vehicle.year,
         category: data.vehicle.category || "Leves e utilitários",
+        monthly_fee: data.vehicle.monthly_fee ?? 179.90,
+        fipe_value: data.vehicle.fipe_value || null,
       };
       
       if (data.vehicle.id) {
-        const { error: vError } = await supabaseAdmin.from("vehicles").update(vData).eq("id", data.vehicle.id).eq("company_id", data.companyId);
+        let { error: vError } = await supabaseAdmin.from("vehicles").update(vData).eq("id", data.vehicle.id).eq("company_id", data.companyId);
+        if (vError && (vError.message?.includes("monthly_fee") || (vError as any).code === "42703")) {
+          delete vData.monthly_fee;
+          delete vData.fipe_value;
+          const retry = await supabaseAdmin.from("vehicles").update(vData).eq("id", data.vehicle.id).eq("company_id", data.companyId);
+          vError = retry.error;
+        }
         if (vError && (vError.message?.includes("category") || (vError as any).code === "42703")) {
           delete vData.category;
           await supabaseAdmin.from("vehicles").update(vData).eq("id", data.vehicle.id).eq("company_id", data.companyId);
         }
       } else {
-        const { error: vError } = await supabaseAdmin.from("vehicles").insert(vData);
+        let { error: vError } = await supabaseAdmin.from("vehicles").insert(vData);
+        if (vError && (vError.message?.includes("monthly_fee") || (vError as any).code === "42703")) {
+          delete vData.monthly_fee;
+          delete vData.fipe_value;
+          const retry = await supabaseAdmin.from("vehicles").insert(vData);
+          vError = retry.error;
+        }
         if (vError && (vError.message?.includes("category") || (vError as any).code === "42703")) {
           delete vData.category;
           await supabaseAdmin.from("vehicles").insert(vData);
@@ -194,7 +210,18 @@ export const getVehicles = createServerFn({ method: "GET" })
   });
 
 export const addVehicle = createServerFn({ method: "POST" })
-  .validator((d: { memberId: string; companyId: string; plate: string; brand: string; model: string; year?: number; color?: string; category?: string }) => d)
+  .validator((d: { 
+    memberId: string; 
+    companyId: string; 
+    plate: string; 
+    brand: string; 
+    model: string; 
+    year?: number; 
+    color?: string; 
+    category?: string;
+    monthly_fee?: number;
+    fipe_value?: number;
+  }) => d)
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const vData: any = {
@@ -206,17 +233,22 @@ export const addVehicle = createServerFn({ method: "POST" })
       year: data.year,
       color: data.color || null,
       category: data.category || "Leves e utilitários",
+      monthly_fee: data.monthly_fee ?? 179.90,
+      fipe_value: data.fipe_value || null,
     };
-    const { error } = await supabaseAdmin.from("vehicles").insert(vData);
-    if (error) {
-      if (error.message?.includes("category") || (error as any).code === "42703") {
-        delete vData.category;
-        const { error: retryError } = await supabaseAdmin.from("vehicles").insert(vData);
-        if (retryError) throw new Error(retryError.message);
-      } else {
-        throw new Error(error.message);
-      }
+    let { error } = await supabaseAdmin.from("vehicles").insert(vData);
+    if (error && (error.message?.includes("monthly_fee") || (error as any).code === "42703")) {
+      delete vData.monthly_fee;
+      delete vData.fipe_value;
+      const res = await supabaseAdmin.from("vehicles").insert(vData);
+      error = res.error;
     }
+    if (error && (error.message?.includes("category") || (error as any).code === "42703")) {
+      delete vData.category;
+      const res = await supabaseAdmin.from("vehicles").insert(vData);
+      error = res.error;
+    }
+    if (error) throw new Error(error.message);
     return { ok: true };
   });
 

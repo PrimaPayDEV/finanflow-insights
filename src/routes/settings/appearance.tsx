@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Loader2, Palette, Image as ImageIcon, PaintBucket, Store } from "lucide-react";
 import { translateError } from "@/lib/translateError";
+import { applyCompanyTheme } from "@/lib/theme";
 
 export const Route = createFileRoute("/settings/appearance")({
   head: () => ({
@@ -19,7 +20,7 @@ export const Route = createFileRoute("/settings/appearance")({
 });
 
 function AppearancePage() {
-  const { companyId, logoUrl, primaryColor, role, companyName } = useAuth();
+  const { companyId, logoUrl, primaryColor, role, companyName, appMode, segment } = useAuth();
   const [loading, setLoading] = useState(false);
   const [color, setColor] = useState(primaryColor || "#4f46e5");
   const [name, setName] = useState(companyName || "");
@@ -44,8 +45,7 @@ function AppearancePage() {
 
       if (error) throw error;
       
-      document.documentElement.style.setProperty("--primary", color);
-      document.documentElement.style.setProperty("--sidebar-primary", color);
+      applyCompanyTheme(color, companyName, appMode, segment);
       
       toast.success("Cor atualizada com sucesso!");
     } catch (e: any) {

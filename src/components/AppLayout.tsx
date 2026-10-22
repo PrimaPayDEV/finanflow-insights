@@ -1,9 +1,10 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { notificationsQuery } from "@/lib/db";
 import { supabase } from "@/integrations/supabase/client";
+import { applyCompanyTheme } from "@/lib/theme";
 import {
   LayoutDashboard,
   Store,
@@ -94,9 +95,12 @@ export function AppLayout({
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
-  const { user, companyId, companyName, role, appMode, segment, logoUrl, signOut } = useAuth();
+  const { user, companyId, companyName, role, appMode, segment, logoUrl, primaryColor, signOut } = useAuth();
+  const isPlatformAdmin = companyName === "Prima Hub" || companyName === "PrimaPay" || role === "admin";
   
-  const isPlatformAdmin = user?.email === "contato@primapay.com.br" || user?.email === "financeiro@primapay.com.br";
+  useEffect(() => {
+    applyCompanyTheme(primaryColor, companyName, appMode, segment);
+  }, [primaryColor, companyName, appMode, segment]);
   
   const qc = useQueryClient();
   const navigate = useNavigate();
@@ -464,14 +468,14 @@ export function AppLayout({
                           const isChildActive = pathname.startsWith(child.to);
                           const ChildIcon = child.icon;
                           return (
-                            <DropdownMenuItem key={child.to} asChild className="p-0 focus:bg-transparent">
+                            <DropdownMenuItem key={child.to} asChild className="p-0 focus:bg-transparent data-[highlighted]:bg-transparent">
                               <Link
                                 to={child.to}
                                 className={cn(
-                                  "flex items-start gap-3 p-2.5 rounded-xl transition-all cursor-pointer w-full text-left",
+                                  "flex items-start gap-3 p-2.5 rounded-xl transition-all cursor-pointer w-full text-left group",
                                   isChildActive
                                     ? "bg-primary/10 text-primary font-bold"
-                                    : "text-foreground/90 hover:bg-muted"
+                                    : "text-foreground hover:bg-primary/10 hover:text-primary focus:bg-primary/10 focus:text-primary"
                                 )}
                               >
                                 <span
@@ -479,15 +483,15 @@ export function AppLayout({
                                     "flex size-8 shrink-0 items-center justify-center rounded-lg mt-0.5 transition-colors",
                                     isChildActive
                                       ? "bg-primary text-primary-foreground shadow-xs"
-                                      : "bg-muted text-muted-foreground"
+                                      : "bg-muted text-muted-foreground group-hover:bg-primary/20 group-hover:text-primary"
                                   )}
                                 >
                                   <ChildIcon className="size-4" />
                                 </span>
                                 <div className="flex-1 min-w-0">
-                                  <div className="text-xs font-bold leading-tight truncate">{child.label}</div>
+                                  <div className="text-xs font-bold leading-tight truncate group-hover:text-primary transition-colors">{child.label}</div>
                                   {child.description && (
-                                    <p className="text-[11px] text-muted-foreground font-normal leading-tight mt-0.5 line-clamp-1">
+                                    <p className="text-[11px] text-muted-foreground font-normal leading-tight mt-0.5 line-clamp-1 group-hover:text-primary/80 transition-colors">
                                       {child.description}
                                     </p>
                                   )}

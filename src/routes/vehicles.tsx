@@ -51,7 +51,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/contexts/AuthContext";
 import { getVehicles, getMembers, addVehicle, deleteVehicle } from "@/lib/members.functions";
-import { BRL, formatCpfCnpj, formatPhone } from "@/lib/format";
+import { BRL, formatCpfCnpj, formatPhone, formatCurrencyInput } from "@/lib/format";
 import { VehicleCategorySelector, VehicleCategoryBadge } from "@/components/VehicleCategorySelector";
 
 export const Route = createFileRoute("/vehicles")({
@@ -440,7 +440,7 @@ function VehiclesPage() {
       fipeValue: v.fipe_value || estimateRealisticFipe(v.brand, v.model, v.year),
       status: "ACTIVE" as const,
       coveragePlan: "Plano Ouro 100% FIPE",
-      monthlyFee: 179.90,
+      monthlyFee: Number(v.monthly_fee) || 179.90,
       dueDay: 10,
       fuel: v.year && v.year <= 2002 ? "Gasolina" : "Flex",
       isDemo: false,
@@ -1470,6 +1470,7 @@ function NewVehicleDialog({ members }: { members: any[] }) {
   const [year, setYear] = useState(new Date().getFullYear().toString());
   const [color, setColor] = useState("");
   const [category, setCategory] = useState("Leves e utilitários");
+  const [monthlyFee, setMonthlyFee] = useState("179,90");
 
   const createVeh = useMutation({
     mutationFn: async () => {
@@ -1477,6 +1478,9 @@ function NewVehicleDialog({ members }: { members: any[] }) {
       if (!memberId) throw new Error("Selecione o associado proprietário.");
       if (!plate || plate.trim().length < 7) throw new Error("Informe uma placa válida (7 caracteres).");
       if (!brand || !model) throw new Error("Informe a marca e modelo do veículo.");
+
+      const rawFee = monthlyFee.replace(/\D/g, "");
+      const parsedFee = rawFee ? Number(rawFee) / 100 : 179.90;
 
       await addVehicle({
         data: {
@@ -1488,6 +1492,7 @@ function NewVehicleDialog({ members }: { members: any[] }) {
           year: Number(year) || new Date().getFullYear(),
           color,
           category,
+          monthly_fee: parsedFee,
         },
       });
     },
@@ -1501,6 +1506,7 @@ function NewVehicleDialog({ members }: { members: any[] }) {
       setModel("");
       setColor("");
       setCategory("Leves e utilitários");
+      setMonthlyFee("179,90");
     },
     onError: (err: any) => {
       toast.error(err.message || "Erro ao cadastrar veículo.");
@@ -1599,6 +1605,19 @@ function NewVehicleDialog({ members }: { members: any[] }) {
               onChange={(e) => setModel(e.target.value)}
               className="rounded-xl text-xs h-8.5 bg-background"
             />
+          </div>
+
+          <div className="space-y-1">
+            <Label className="text-xs font-semibold">Valor da Mensalidade de Proteção *</Label>
+            <Input
+              placeholder="R$ 179,90"
+              value={monthlyFee}
+              onChange={(e) => setMonthlyFee(formatCurrencyInput(e.target.value))}
+              className="rounded-xl font-bold text-xs h-8.5 bg-background"
+            />
+            <p className="text-[10px] text-muted-foreground">
+              Valor padrão cobrado mensalmente do associado via boleto Asaas.
+            </p>
           </div>
 
           <div className="pt-0.5">

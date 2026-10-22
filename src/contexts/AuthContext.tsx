@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { applyCompanyTheme } from "@/lib/theme";
 
 interface AuthContextType {
   session: Session | null;
@@ -62,13 +63,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // @ts-ignore
         setPrimaryColor(data.companies?.primary_color ?? null);
 
-        // Apply primary color as a CSS variable if exists
+        // Apply theme color dynamically based on company settings and environment
         // @ts-ignore
-        const color = data.companies?.primary_color;
-        if (color) {
-          document.documentElement.style.setProperty('--primary', color);
-          document.documentElement.style.setProperty('--sidebar-primary', color);
-        }
+        applyCompanyTheme(
+          // @ts-ignore
+          data.companies?.primary_color,
+          // @ts-ignore
+          data.companies?.name,
+          // @ts-ignore
+          data.companies?.app_mode,
+          // @ts-ignore
+          data.companies?.segment
+        );
       }
     } catch (e) {
       console.error("Error fetching company", e);
