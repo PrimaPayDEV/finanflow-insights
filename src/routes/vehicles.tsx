@@ -50,6 +50,7 @@ import {
 } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { getVehicles, getMembers, addVehicle, deleteVehicle } from "@/lib/members.functions";
 import { BRL, formatCpfCnpj, formatPhone, formatCurrencyInput } from "@/lib/format";
 import { VehicleCategorySelector, VehicleCategoryBadge } from "@/components/VehicleCategorySelector";
@@ -502,12 +503,28 @@ function VehiclesPage() {
     setDossierOpen(true);
   };
 
-  const handleUpdateVehicle = (updated: VehicleItem) => {
+  const handleUpdateVehicle = async (updated: VehicleItem) => {
+    const previous = allVehicles.find((v) => v.id === updated.id);
     setOverrides((prev) => ({
       ...prev,
       [updated.id]: updated,
     }));
     setSelectedVehicle(updated);
+
+    // Persiste a mensalidade no banco para que a geração de faturas use o valor configurado
+    if (!updated.isDemo && companyId && previous && previous.monthlyFee !== updated.monthlyFee) {
+      const { error } = await supabase
+        .from("vehicles")
+        .update({ monthly_fee: updated.monthlyFee })
+        .eq("id", updated.id)
+        .eq("company_id", companyId);
+      if (error) {
+        toast.error("Não foi possível salvar a mensalidade: " + error.message);
+        return;
+      }
+      qc.invalidateQueries({ queryKey: ["vehicles", companyId] });
+      qc.invalidateQueries({ queryKey: ["members", companyId] });
+    }
   };
 
   return (

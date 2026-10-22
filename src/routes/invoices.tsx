@@ -82,6 +82,19 @@ function NewInvoiceDialog() {
 
   const selectedMember = members?.find(m => m.id === memberId);
   const partner = Array.isArray(selectedMember?.partners) ? selectedMember.partners[0] : (selectedMember?.partners as any);
+  const memberVehicles: any[] = Array.isArray((selectedMember as any)?.vehicles) ? (selectedMember as any).vehicles : [];
+
+  // Ao selecionar o associado, preenche o valor com a soma das mensalidades dos veículos dele
+  const handleSelectMember = (id: string) => {
+    setMemberId(id);
+    const m: any = members?.find(x => x.id === id);
+    const vehicles: any[] = Array.isArray(m?.vehicles) ? m.vehicles : [];
+    const total = vehicles.reduce((acc, v) => acc + (Number(v.monthly_fee) || 0), 0);
+    if (total > 0) {
+      setAmount(formatCurrencyInput(String(Math.round(total * 100))));
+      if (!description) setDescription("Mensalidade Proteção Veicular");
+    }
+  };
 
   const generate = useMutation({
     mutationFn: async () => {
@@ -133,7 +146,7 @@ function NewInvoiceDialog() {
         <div className="flex-1 overflow-y-auto min-h-0 p-4 sm:p-5 space-y-3.5">
           <div className="space-y-2">
             <Label>Associado</Label>
-            <Select value={memberId} onValueChange={setMemberId}>
+            <Select value={memberId} onValueChange={handleSelectMember}>
               <SelectTrigger>
                 <SelectValue placeholder="Selecione um cliente" />
               </SelectTrigger>
@@ -180,6 +193,11 @@ function NewInvoiceDialog() {
             <div className="space-y-2">
               <Label>Valor (R$)</Label>
               <Input type="text" value={amount} onChange={e => setAmount(formatCurrencyInput(e.target.value))} placeholder="R$ 0,00" />
+              {selectedMember && memberVehicles.length > 0 && (
+                <p className="text-[10px] text-muted-foreground">
+                  Mensalidade de {memberVehicles.length} veículo{memberVehicles.length > 1 ? "s" : ""} do associado
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">
