@@ -23,6 +23,11 @@ import {
 import { motion } from "framer-motion";
 import { translateError } from "@/lib/translateError";
 import { AsaasBaasSeal } from "@/components/AsaasBaasSeal";
+import {
+  detectEnvironmentFromHostname,
+  DEFAULT_PLATFORM_URLS,
+  isLocalEnvironment,
+} from "@/lib/environment";
 
 type EnvironmentKey = "ec" | "veicular" | "imobiliaria";
 
@@ -92,7 +97,8 @@ export const Route = createFileRoute("/login")({
 
 function Login() {
   const search = Route.useSearch();
-  const currentEnvKey = (search.env as EnvironmentKey) || undefined;
+  const detectedEnv = detectEnvironmentFromHostname();
+  const currentEnvKey = ((search.env as EnvironmentKey) || detectedEnv) || undefined;
   const envConfig = currentEnvKey && ENV_META[currentEnvKey] ? ENV_META[currentEnvKey] : null;
 
   const [email, setEmail] = useState("");
@@ -215,10 +221,17 @@ function Login() {
           asChild
           className="rounded-xl text-xs font-semibold gap-1.5 text-muted-foreground hover:text-foreground hover:bg-muted/60"
         >
-          <Link to="/">
-            <ArrowLeft className="size-3.5" />
-            <span>Voltar ao Hub Principal</span>
-          </Link>
+          {!isLocalEnvironment() && typeof window !== "undefined" && window.location.origin !== DEFAULT_PLATFORM_URLS.hub ? (
+            <a href={DEFAULT_PLATFORM_URLS.hub}>
+              <ArrowLeft className="size-3.5" />
+              <span>Voltar ao Hub Principal</span>
+            </a>
+          ) : (
+            <Link to="/">
+              <ArrowLeft className="size-3.5" />
+              <span>Voltar ao Hub Principal</span>
+            </Link>
+          )}
         </Button>
 
         {envConfig && (

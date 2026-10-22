@@ -20,7 +20,9 @@ import {
   Mail,
   ExternalLink,
   FileText,
+  Globe,
 } from "lucide-react";
+import { getAsaasWebhookUrl, getCurrentOrigin, DEFAULT_PLATFORM_URLS } from "@/lib/environment";
 import { toast } from "sonner";
 import { AppLayout } from "@/components/AppLayout";
 import { AsaasFormSeal } from "@/components/AsaasBaasSeal";
@@ -95,6 +97,19 @@ function AsaasSettingsPage() {
   const [webhookToken, setWebhookToken] = useState("");
   const [savingWebhookToken, setSavingWebhookToken] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<any | null>(null);
+  const [currentOrigin, setCurrentOrigin] = useState("");
+  const [originMode, setOriginMode] = useState<"current" | "ec" | "veicular" | "imobiliaria">("current");
+
+  useEffect(() => {
+    setCurrentOrigin(getCurrentOrigin());
+  }, []);
+
+  const activeOrigin = () => {
+    if (originMode === "ec") return DEFAULT_PLATFORM_URLS.ec;
+    if (originMode === "veicular") return DEFAULT_PLATFORM_URLS.veicular;
+    if (originMode === "imobiliaria") return DEFAULT_PLATFORM_URLS.imobiliaria;
+    return currentOrigin || DEFAULT_PLATFORM_URLS.ec;
+  };
 
   useEffect(() => {
     if (settings.data) {
@@ -168,9 +183,7 @@ function AsaasSettingsPage() {
     }
   };
 
-  const webhookUrl = companyId
-    ? `https://primahubec.lovable.app/api/public/asaas-webhook?company_id=${companyId}`
-    : "";
+  const webhookUrl = getAsaasWebhookUrl(companyId, activeOrigin());
 
   return (
     <AppLayout
@@ -272,14 +285,70 @@ function AsaasSettingsPage() {
 
               <CardContent className="p-6 space-y-5 text-sm flex-1 flex flex-col justify-between">
                 <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label className="text-xs font-semibold text-foreground/80">
-                      URL de Destino do Webhook
-                    </Label>
+                  <div className="space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-xs font-semibold text-foreground/80 flex items-center gap-1.5">
+                        <Globe className="size-3.5 text-primary" />
+                        URL de Destino do Webhook
+                      </Label>
+                      <Badge variant="outline" className="text-[10px] px-2 py-0.5 border-primary/30 text-primary font-mono">
+                        {currentOrigin ? currentOrigin.replace(/^https?:\/\//, "") : "Detectando..."}
+                      </Badge>
+                    </div>
+
                     <p className="text-[11px] text-muted-foreground leading-relaxed">
-                      Cadastre esta URL no Asaas em <strong>Integrações → Webhooks de Cobranças</strong> para
-                      atualizar pagamentos, baixas e cancelamentos automaticamente.
+                      Cadastre esta URL no painel do Asaas (<strong>Integrações → Webhooks de Cobranças</strong>) para
+                      sincronizar pagamentos, baixas e cancelamentos deste ambiente em tempo real.
                     </p>
+
+                    {/* Seletor rápido de ambiente para o Webhook */}
+                    <div className="flex flex-wrap items-center gap-1.5 p-1 rounded-xl bg-muted/40 border border-border/50 text-[11px]">
+                      <button
+                        type="button"
+                        onClick={() => setOriginMode("current")}
+                        className={`px-2.5 py-1 rounded-lg font-medium transition-all ${
+                          originMode === "current"
+                            ? "bg-background text-foreground shadow-xs border border-border/60"
+                            : "text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        Ambiente Atual
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setOriginMode("veicular")}
+                        className={`px-2.5 py-1 rounded-lg font-medium transition-all ${
+                          originMode === "veicular"
+                            ? "bg-background text-emerald-600 dark:text-emerald-400 shadow-xs border border-border/60"
+                            : "text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        Proteção Veicular
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setOriginMode("ec")}
+                        className={`px-2.5 py-1 rounded-lg font-medium transition-all ${
+                          originMode === "ec"
+                            ? "bg-background text-purple-600 dark:text-purple-400 shadow-xs border border-border/60"
+                            : "text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        ECs
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setOriginMode("imobiliaria")}
+                        className={`px-2.5 py-1 rounded-lg font-medium transition-all ${
+                          originMode === "imobiliaria"
+                            ? "bg-background text-amber-600 dark:text-amber-400 shadow-xs border border-border/60"
+                            : "text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        Imobiliária
+                      </button>
+                    </div>
+
                     <div className="flex gap-2 items-center">
                       <Input
                         readOnly
@@ -294,7 +363,7 @@ function AsaasSettingsPage() {
                         onClick={() => {
                           if (!webhookUrl) return;
                           navigator.clipboard.writeText(webhookUrl);
-                          toast.success("URL copiada para a área de transferência!");
+                          toast.success("URL do Webhook copiada para a área de transferência!");
                         }}
                       >
                         <Copy className="size-4" />
@@ -438,7 +507,11 @@ function AsaasSettingsPage() {
                       value={form.due_day}
                       onChange={(v) => setForm({ ...form, due_day: Number(v) })}
                       type="number"
-                      hint="Fins de semana e feriados nacionais/bancários prorrogam automaticamente para o próximo dia útil."
+                      hint={
+                        isPlanmais
+                          ? "Data exata configurada no ambiente (ex: dia 20). Boletos vencem impreterivelmente neste dia e não podem ser pagos após o prazo."
+                          : "Fins de semana e feriados nacionais/bancários prorrogam automaticamente para o próximo dia útil."
+                      }
                     />
 
                     <Field

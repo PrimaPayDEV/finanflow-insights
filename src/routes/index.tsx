@@ -6,10 +6,17 @@ import {
   Building2,
   ArrowRight,
   Lock,
+  Globe,
+  ExternalLink,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AsaasBaasSeal } from "@/components/AsaasBaasSeal";
 import { useAuth } from "@/contexts/AuthContext";
+import {
+  resolvePlatformUrl,
+  DEFAULT_PLATFORM_URLS,
+  type PlatformKey,
+} from "@/lib/environment";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -22,7 +29,7 @@ export const Route = createFileRoute("/")({
       },
       { property: "og:title", content: "Prima | Hub de Serviços" },
       {
-        property: "og:description",
+        name: "description",
         content:
           "Plataformas especializadas com liquidação bancária automatizada e tecnologia Asaas BaaS.",
       },
@@ -31,7 +38,21 @@ export const Route = createFileRoute("/")({
   component: HubPage,
 });
 
-const PLATFORMS = [
+interface PlatformConfig {
+  id: PlatformKey;
+  title: string;
+  subtitle: string;
+  icon: typeof Store;
+  gradient: string;
+  glowColor: string;
+  borderHover: string;
+  buttonClass: string;
+  badgeDomain: string;
+  loginPath: string;
+  directPath: string;
+}
+
+const PLATFORMS: PlatformConfig[] = [
   {
     id: "ec",
     title: "Estabelecimentos Comerciais",
@@ -41,8 +62,9 @@ const PLATFORMS = [
     glowColor: "bg-purple-600",
     borderHover: "hover:border-purple-500/60 hover:shadow-purple-500/10",
     buttonClass: "bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500",
-    loginUrl: "/login?env=ec",
-    directUrl: "/dashboard",
+    badgeDomain: "primahubec.lovable.app",
+    loginPath: "/login?env=ec",
+    directPath: "/dashboard",
   },
   {
     id: "veicular",
@@ -53,8 +75,9 @@ const PLATFORMS = [
     glowColor: "bg-emerald-600",
     borderHover: "hover:border-emerald-500/60 hover:shadow-emerald-500/10",
     buttonClass: "bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500",
-    loginUrl: "/login?env=veicular",
-    directUrl: "/vehicles",
+    badgeDomain: "primahubveicular.lovable.app",
+    loginPath: "/login?env=veicular",
+    directPath: "/vehicles",
   },
   {
     id: "imobiliaria",
@@ -65,8 +88,9 @@ const PLATFORMS = [
     glowColor: "bg-amber-600",
     borderHover: "hover:border-amber-500/60 hover:shadow-amber-500/10",
     buttonClass: "bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500",
-    loginUrl: "/login?env=imobiliaria",
-    directUrl: "/real-estate/charges",
+    badgeDomain: "primahubimob.lovable.app",
+    loginPath: "/login?env=imobiliaria",
+    directPath: "/real-estate/charges",
   },
 ];
 
@@ -159,7 +183,10 @@ function HubPage() {
         <section className="grid grid-cols-1 md:grid-cols-3 gap-5 sm:gap-6 max-w-5xl mx-auto w-full">
           {PLATFORMS.map((platform, idx) => {
             const Icon = platform.icon;
-            const targetUrl = user ? platform.directUrl : platform.loginUrl;
+            const targetPath = user ? platform.directPath : platform.loginPath;
+            const targetUrl = resolvePlatformUrl(platform.id, targetPath);
+            const isExternal =
+              targetUrl.startsWith("http://") || targetUrl.startsWith("https://");
 
             return (
               <motion.div
@@ -178,11 +205,17 @@ function HubPage() {
                   />
 
                   <div className="space-y-4">
-                    {/* Ícone */}
-                    <div
-                      className={`size-13 rounded-2xl bg-gradient-to-br ${platform.gradient} text-white flex items-center justify-center shadow-lg transition-transform duration-300 group-hover:scale-108 shrink-0`}
-                    >
-                      <Icon className="size-6.5" />
+                    {/* Topo do Card: Ícone e Domínio dedicado */}
+                    <div className="flex items-center justify-between">
+                      <div
+                        className={`size-12 rounded-2xl bg-gradient-to-br ${platform.gradient} text-white flex items-center justify-center shadow-lg transition-transform duration-300 group-hover:scale-105 shrink-0`}
+                      >
+                        <Icon className="size-6" />
+                      </div>
+                      <span className="inline-flex items-center gap-1 text-[10px] font-mono px-2 py-0.5 rounded-md bg-slate-800/70 border border-slate-700/60 text-slate-400 group-hover:text-slate-200 transition-colors">
+                        <Globe className="size-2.5 text-slate-500" />
+                        {platform.badgeDomain}
+                      </span>
                     </div>
 
                     {/* Nome e Resumo */}
@@ -202,10 +235,17 @@ function HubPage() {
                       asChild
                       className={`w-full h-10 rounded-xl font-bold text-xs gap-2 text-white ${platform.buttonClass} shadow-md group-hover:shadow-lg transition-all duration-300`}
                     >
-                      <Link to={targetUrl}>
-                        <span>Acessar Plataforma</span>
-                        <ArrowRight className="size-3.5 group-hover:translate-x-1 transition-transform" />
-                      </Link>
+                      {isExternal ? (
+                        <a href={targetUrl} rel="noopener noreferrer">
+                          <span>Acessar Plataforma</span>
+                          <ArrowRight className="size-3.5 group-hover:translate-x-1 transition-transform" />
+                        </a>
+                      ) : (
+                        <Link to={targetUrl}>
+                          <span>Acessar Plataforma</span>
+                          <ArrowRight className="size-3.5 group-hover:translate-x-1 transition-transform" />
+                        </Link>
+                      )}
                     </Button>
                   </div>
                 </div>

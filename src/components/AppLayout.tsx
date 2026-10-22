@@ -38,6 +38,7 @@ import {
   ChevronDown,
   Menu,
 } from "lucide-react";
+import { DEFAULT_PLATFORM_URLS, isLocalEnvironment } from "@/lib/environment";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "./ThemeToggle";
@@ -380,16 +381,30 @@ export function AppLayout({
               </DropdownMenuItem>
             )}
             <DropdownMenuItem asChild>
-              <Link to="/" className="w-full cursor-pointer font-medium rounded-lg flex items-center gap-2.5 py-2 px-2.5 text-primary">
-                <LayoutGrid className="size-4 text-primary" />
-                <span>Hub de Ambientes</span>
-              </Link>
+              {!isLocalEnvironment() && typeof window !== "undefined" && window.location.origin !== DEFAULT_PLATFORM_URLS.hub ? (
+                <a
+                  href={DEFAULT_PLATFORM_URLS.hub}
+                  className="w-full cursor-pointer font-medium rounded-lg flex items-center gap-2.5 py-2 px-2.5 text-primary hover:bg-muted"
+                >
+                  <LayoutGrid className="size-4 text-primary" />
+                  <span>Hub de Ambientes</span>
+                </a>
+              ) : (
+                <Link to="/" className="w-full cursor-pointer font-medium rounded-lg flex items-center gap-2.5 py-2 px-2.5 text-primary">
+                  <LayoutGrid className="size-4 text-primary" />
+                  <span>Hub de Ambientes</span>
+                </Link>
+              )}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem 
               onClick={async () => {
                 await signOut();
-                navigate({ to: "/" });
+                if (typeof window !== "undefined" && !isLocalEnvironment() && window.location.origin !== DEFAULT_PLATFORM_URLS.hub) {
+                  window.location.href = DEFAULT_PLATFORM_URLS.hub;
+                } else {
+                  navigate({ to: "/" });
+                }
               }} 
               className="text-destructive focus:text-destructive cursor-pointer font-medium rounded-lg flex items-center gap-2.5 py-2 px-2.5"
             >
