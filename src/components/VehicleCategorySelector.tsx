@@ -42,6 +42,7 @@ interface VehicleCategorySelectorProps {
   onChange: (value: string) => void;
   label?: string;
   required?: boolean;
+  compact?: boolean;
 }
 
 export function VehicleCategorySelector({
@@ -49,7 +50,42 @@ export function VehicleCategorySelector({
   onChange,
   label = "Categoria do Veículo",
   required = true,
+  compact = false,
 }: VehicleCategorySelectorProps) {
+  if (compact) {
+    return (
+      <div className="space-y-1">
+        <Label className="text-[11px] font-semibold text-muted-foreground flex items-center gap-1">
+          <span>{label}</span>
+          {required && <span className="text-destructive">*</span>}
+        </Label>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+          {VEHICLE_CATEGORIES.map((cat) => {
+            const isSelected = value === cat.id;
+            const Icon = cat.icon;
+
+            return (
+              <button
+                key={cat.id}
+                type="button"
+                onClick={() => onChange(cat.id)}
+                className={cn(
+                  "flex items-center gap-1.5 px-2 py-1.5 rounded-xl border text-left transition-all cursor-pointer select-none h-8",
+                  isSelected
+                    ? "border-primary bg-primary/10 text-primary font-bold shadow-xs ring-1 ring-primary/40"
+                    : "border-border/70 bg-card hover:bg-muted/40 text-muted-foreground hover:text-foreground"
+                )}
+              >
+                <Icon className={cn("size-3.5 shrink-0", isSelected ? "text-primary" : "text-muted-foreground")} />
+                <span className="text-[11px] font-medium truncate">{cat.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">

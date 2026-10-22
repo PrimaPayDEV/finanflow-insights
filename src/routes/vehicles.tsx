@@ -668,7 +668,12 @@ function VehiclesPage() {
                 </thead>
                 <tbody className="divide-y divide-border/50">
                   {filteredVehicles.map((vehicle) => (
-                    <tr key={vehicle.id} className="hover:bg-muted/20 transition-colors">
+                    <tr
+                      key={vehicle.id}
+                      onClick={() => openDossier(vehicle)}
+                      className="hover:bg-muted/30 transition-colors cursor-pointer group"
+                      title="Clique em qualquer lugar da linha para abrir o dossiê do veículo"
+                    >
                       {/* Veículo */}
                       <td className="px-4 py-3.5 align-middle">
                         <div className="flex items-center gap-2.5 min-w-0">
@@ -682,7 +687,7 @@ function VehiclesPage() {
                                 • {vehicle.year}
                               </span>
                             </div>
-                            <h4 className="font-semibold text-xs text-foreground leading-tight truncate mt-0.5 max-w-[240px]">
+                            <h4 className="font-semibold text-xs text-foreground leading-tight truncate mt-0.5 max-w-[240px] group-hover:text-primary transition-colors">
                               {vehicle.model}
                             </h4>
                           </div>
@@ -725,6 +730,7 @@ function VehiclesPage() {
                               href={`https://wa.me/55${vehicle.member.phone.replace(/\D/g, "")}`}
                               target="_blank"
                               rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
                               title="Conversar no WhatsApp"
                               className="size-7 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 flex items-center justify-center transition-colors shrink-0"
                             >
@@ -859,10 +865,10 @@ function VehicleDossierDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[96vw] max-w-2xl max-h-[92vh] sm:max-h-[88vh] flex flex-col p-0 gap-0 border-border bg-card shadow-2xl rounded-2xl sm:rounded-3xl overflow-hidden">
+      <DialogContent className="w-[96vw] max-w-4xl flex flex-col p-0 gap-0 border-border bg-card shadow-2xl rounded-2xl sm:rounded-3xl overflow-hidden">
         {/* Cabeçalho Compacto, 100% Responsivo e com espaço livre garantido para o botão Fechar (X) */}
-        <div className="relative bg-gradient-to-r from-primary/15 via-primary/5 to-card pl-4 sm:pl-5 pr-12 sm:pr-14 py-3 sm:py-3.5 border-b border-border/70 shrink-0">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3">
+        <div className="relative bg-gradient-to-r from-primary/15 via-primary/5 to-card pl-4 sm:pl-5 pr-12 sm:pr-14 py-3 border-b border-border/70 shrink-0">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3">
             <div className="flex items-center gap-2.5 min-w-0 flex-1">
               <MercosulPlate plate={vehicle.plate} size="md" />
               <div className="min-w-0 flex-1">
@@ -871,11 +877,6 @@ function VehicleDossierDialog({
                     {vehicle.brand} • {vehicle.year}
                   </span>
                   <VehicleCategoryBadge category={vehicle.category} size="sm" />
-                  {vehicle.isDemo && (
-                    <Badge className="bg-primary/20 text-primary border-primary/30 text-[9px] font-bold px-1.5 py-0 h-4">
-                      DEMO
-                    </Badge>
-                  )}
                 </div>
                 <h2 className="text-sm sm:text-base font-bold text-foreground leading-tight truncate" title={vehicle.model}>
                   {vehicle.model}
@@ -897,174 +898,167 @@ function VehicleDossierDialog({
           </div>
         </div>
 
-        {/* Abas com container rolável verticalmente e SEM rolagem horizontal */}
-        <Tabs defaultValue="overview" className="w-full flex-1 flex flex-col min-h-0 overflow-hidden">
+        {/* Abas perfeitamente organizadas sem rolagem vertical */}
+        <Tabs defaultValue="overview" className="w-full flex-1 flex flex-col min-h-0">
           <div className="border-b border-border/60 px-4 sm:px-5 bg-muted/20 shrink-0">
-            <TabsList className="bg-transparent h-10 p-0 gap-4 sm:gap-6 w-full justify-start overflow-x-auto no-scrollbar">
+            <TabsList className="bg-transparent h-9 p-0 gap-4 sm:gap-6 w-full justify-start overflow-x-auto no-scrollbar">
               <TabsTrigger
                 value="overview"
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary font-bold text-xs px-1 h-10 transition-colors"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary font-bold text-xs px-1 h-9 transition-colors"
               >
                 Ficha Técnica
               </TabsTrigger>
               <TabsTrigger
                 value="coverage"
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary font-bold text-xs px-1 h-10 transition-colors"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary font-bold text-xs px-1 h-9 transition-colors"
               >
                 Coberturas
               </TabsTrigger>
               <TabsTrigger
                 value="financial"
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary font-bold text-xs px-1 h-10 transition-colors"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary font-bold text-xs px-1 h-9 transition-colors"
               >
                 Mensalidades
               </TabsTrigger>
             </TabsList>
           </div>
 
-          <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-5">
+          <div className="p-4 sm:p-5">
             {/* ABA 1: Ficha Técnica */}
-            <TabsContent value="overview" className="space-y-3.5 m-0 p-0">
-              <div>
-                <h3 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5">
-                  <Car className="size-3.5 text-primary" /> Informações do Veículo
-                </h3>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
-                  <div className="p-2.5 rounded-xl bg-muted/35 border border-border/50">
-                    <span className="text-[10px] text-muted-foreground block">Placa</span>
-                    <span className="font-mono font-bold text-xs text-foreground">{formatPlate(vehicle.plate)}</span>
-                  </div>
-                  <div className="p-2.5 rounded-xl bg-muted/35 border border-border/50">
-                    <span className="text-[10px] text-muted-foreground block">Ano / Mod</span>
-                    <span className="font-bold text-xs text-foreground">{vehicle.year}</span>
-                  </div>
-                  <div className="p-2.5 rounded-xl bg-muted/35 border border-border/50">
-                    <span className="text-[10px] text-muted-foreground block">Cor</span>
-                    <span className="font-bold text-xs text-foreground truncate block">{vehicle.color || "Prata"}</span>
-                  </div>
-                  <div className="p-2.5 rounded-xl bg-muted/35 border border-border/50">
-                    <span className="text-[10px] text-muted-foreground block">Combustível</span>
-                    <span className="font-bold text-xs text-foreground truncate block">{vehicle.fuel || "Flex"}</span>
-                  </div>
-                  <div className="p-2.5 rounded-xl bg-muted/35 border border-border/50 col-span-2 sm:col-span-2">
-                    <span className="text-[10px] text-muted-foreground block">Categoria</span>
-                    <div className="mt-1">
+            <TabsContent value="overview" className="m-0 p-0">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Lado Esquerdo: Dados do Veículo */}
+                <div className="space-y-2">
+                  <h3 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                    <Car className="size-3.5 text-primary" /> Informações do Veículo
+                  </h3>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div className="p-2 rounded-xl bg-muted/35 border border-border/50">
+                      <span className="text-[9px] text-muted-foreground block">Placa</span>
+                      <span className="font-mono font-bold text-xs text-foreground">{formatPlate(vehicle.plate)}</span>
+                    </div>
+                    <div className="p-2 rounded-xl bg-muted/35 border border-border/50">
+                      <span className="text-[9px] text-muted-foreground block">Ano / Modelo</span>
+                      <span className="font-bold text-xs text-foreground">{vehicle.year}</span>
+                    </div>
+                    <div className="p-2 rounded-xl bg-muted/35 border border-border/50">
+                      <span className="text-[9px] text-muted-foreground block">Cor</span>
+                      <span className="font-bold text-xs text-foreground truncate block">{vehicle.color || "Prata"}</span>
+                    </div>
+                    <div className="p-2 rounded-xl bg-muted/35 border border-border/50">
+                      <span className="text-[9px] text-muted-foreground block">Combustível</span>
+                      <span className="font-bold text-xs text-foreground truncate block">{vehicle.fuel || "Flex"}</span>
+                    </div>
+                    <div className="p-2 rounded-xl bg-muted/35 border border-border/50 col-span-2">
+                      <span className="text-[9px] text-muted-foreground block mb-0.5">Categoria</span>
                       <VehicleCategoryBadge category={vehicle.category} size="sm" />
                     </div>
-                  </div>
-
-                  <div className="p-2.5 rounded-xl bg-muted/35 border border-border/50 col-span-2 sm:col-span-2">
-                    <span className="text-[10px] text-muted-foreground block">Chassi</span>
-                    <span className="font-mono font-semibold text-xs text-foreground break-all block">
-                      {vehicle.chassi || "9BWCA11108P019283"}
-                    </span>
-                  </div>
-                  <div className="p-2.5 rounded-xl bg-muted/35 border border-border/50 col-span-2 sm:col-span-2">
-                    <span className="text-[10px] text-muted-foreground block">Renavam</span>
-                    <span className="font-mono font-semibold text-xs text-foreground break-all block">
-                      {vehicle.renavam || "00918237461"}
-                    </span>
+                    <div className="p-2 rounded-xl bg-muted/35 border border-border/50">
+                      <span className="text-[9px] text-muted-foreground block">Chassi</span>
+                      <span className="font-mono font-semibold text-[11px] text-foreground truncate block">
+                        {vehicle.chassi || "9BWCA11108P019283"}
+                      </span>
+                    </div>
+                    <div className="p-2 rounded-xl bg-muted/35 border border-border/50">
+                      <span className="text-[9px] text-muted-foreground block">Renavam</span>
+                      <span className="font-mono font-semibold text-[11px] text-foreground truncate block">
+                        {vehicle.renavam || "00918237461"}
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div>
-                <h3 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-1.5">
-                  <User className="size-3.5 text-primary" /> Associado Proprietário
-                </h3>
-                <div className="p-3 sm:p-3.5 rounded-2xl bg-muted/25 border border-border/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="size-9 rounded-xl bg-primary text-primary-foreground flex items-center justify-center font-bold text-xs shadow-xs shrink-0">
-                      {vehicle.member.name.charAt(0)}
+                {/* Lado Direito: Associado Proprietário */}
+                <div className="space-y-2">
+                  <h3 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                    <User className="size-3.5 text-primary" /> Associado Titular
+                  </h3>
+                  <div className="p-3 rounded-2xl bg-muted/25 border border-border/60 space-y-2.5">
+                    <div className="flex items-center gap-2.5">
+                      <div className="size-8 rounded-xl bg-primary text-primary-foreground flex items-center justify-center font-bold text-xs shadow-xs shrink-0">
+                        {vehicle.member.name.charAt(0)}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <h4 className="font-bold text-foreground text-xs leading-tight truncate">{vehicle.member.name}</h4>
+                        <p className="text-[10px] text-muted-foreground font-mono">
+                          CPF: {formatCpfCnpj(vehicle.member.document)}
+                        </p>
+                      </div>
                     </div>
-                    <div className="min-w-0 flex-1">
-                      <h4 className="font-bold text-foreground text-xs sm:text-sm truncate">{vehicle.member.name}</h4>
-                      <p className="text-[11px] text-muted-foreground font-mono">
-                        CPF: {formatCpfCnpj(vehicle.member.document)}
-                      </p>
-                      <p className="text-[10px] text-muted-foreground truncate">
-                        {vehicle.member.city || "São Paulo - SP"} • {vehicle.member.email || "Sem e-mail"}
-                      </p>
+                    <div className="grid grid-cols-2 gap-2 text-xs pt-1 border-t border-border/40">
+                      <div>
+                        <span className="text-[9px] text-muted-foreground block">Cidade / UF</span>
+                        <span className="font-medium text-[11px] text-foreground truncate block">{vehicle.member.city || "São Paulo - SP"}</span>
+                      </div>
+                      <div>
+                        <span className="text-[9px] text-muted-foreground block">E-mail</span>
+                        <span className="font-medium text-[11px] text-foreground truncate block">{vehicle.member.email || "Sem e-mail"}</span>
+                      </div>
                     </div>
-                  </div>
-
-                  {vehicle.member.phone && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      asChild
-                      className="rounded-xl border-emerald-500/40 text-emerald-600 hover:bg-emerald-500/10 gap-1.5 text-xs font-semibold h-8 w-full sm:w-auto shrink-0 justify-center"
-                    >
-                      <a
-                        href={`https://wa.me/55${vehicle.member.phone.replace(/\D/g, "")}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                    {vehicle.member.partnerName && (
+                      <div className="p-1.5 px-2 rounded-xl bg-primary/5 border border-primary/20 flex items-center justify-between text-xs">
+                        <span className="text-muted-foreground text-[10px]">Consultor:</span>
+                        <span className="font-bold text-primary text-[11px] truncate">{vehicle.member.partnerName}</span>
+                      </div>
+                    )}
+                    {vehicle.member.phone && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        asChild
+                        className="w-full rounded-xl border-emerald-500/40 text-emerald-600 hover:bg-emerald-500/10 gap-1.5 text-xs font-semibold h-7.5 justify-center"
                       >
-                        <MessageCircle className="size-3.5" />
-                        <span>{vehicle.member.phone}</span>
-                      </a>
-                    </Button>
-                  )}
+                        <a
+                          href={`https://wa.me/55${vehicle.member.phone.replace(/\D/g, "")}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <MessageCircle className="size-3.5" />
+                          <span>WhatsApp: {formatPhone(vehicle.member.phone)}</span>
+                        </a>
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </div>
-
-              {vehicle.member.partnerName && (
-                <div className="p-2.5 rounded-xl bg-primary/5 border border-primary/20 flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-xs">
-                  <span className="text-muted-foreground text-[11px]">Consultor de Captação:</span>
-                  <span className="font-bold text-primary text-[11px] truncate">{vehicle.member.partnerName}</span>
-                </div>
-              )}
             </TabsContent>
 
             {/* ABA 2: Coberturas (EDITÁVEL) */}
-            <TabsContent value="coverage" className="space-y-3.5 m-0 p-0">
+            <TabsContent value="coverage" className="space-y-3 m-0 p-0">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-                <div className="flex items-center gap-2">
-                  <div className="size-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
-                    <ShieldCheck className="size-4" />
-                  </div>
-                  <div>
-                    <h3 className="text-xs font-bold text-foreground">Coberturas Contratadas</h3>
-                    <p className="text-[10px] text-muted-foreground">
-                      Marque e ajuste o que o associado contratou na adesão deste veículo
-                    </p>
-                  </div>
+                <div className="flex items-center gap-2 flex-1 max-w-md">
+                  <Label className="text-xs font-semibold text-muted-foreground whitespace-nowrap">Plano:</Label>
+                  <Input
+                    value={coveragePlan}
+                    onChange={(e) => setCoveragePlan(e.target.value)}
+                    placeholder="Ex: Plano Ouro 100% FIPE"
+                    className="h-8 rounded-xl text-xs bg-background border-border/80"
+                  />
                 </div>
 
                 <Button
                   size="sm"
                   onClick={handleSaveCoverage}
-                  className="rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground gap-1.5 font-bold text-xs h-8 px-3 shadow-xs w-full sm:w-auto shrink-0 justify-center"
+                  className="rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground gap-1.5 font-bold text-xs h-8 px-3.5 shadow-xs shrink-0"
                 >
                   <Save className="size-3.5" />
                   Salvar Coberturas
                 </Button>
               </div>
 
-              {/* Nome do Plano */}
-              <div className="space-y-1">
-                <Label className="text-[11px] font-semibold text-muted-foreground">Nome do Plano / Categoria</Label>
-                <Input
-                  value={coveragePlan}
-                  onChange={(e) => setCoveragePlan(e.target.value)}
-                  placeholder="Ex: Plano Ouro 100% FIPE"
-                  className="h-8.5 rounded-xl text-xs bg-background border-border/80"
-                />
-              </div>
-
-              {/* Grade de Coberturas Editáveis */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+              {/* Grade de Coberturas Editáveis em 3 Colunas */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 text-xs">
                 {/* Tabela FIPE % */}
-                <div className="p-2.5 rounded-xl bg-muted/35 border border-border/50 flex items-center justify-between gap-2">
+                <div className="p-2 rounded-xl bg-muted/35 border border-border/50 flex items-center justify-between gap-2">
                   <div className="min-w-0 flex-1">
                     <span className="font-bold text-foreground block text-xs truncate">Tabela FIPE</span>
-                    <span className="text-[10px] text-muted-foreground truncate block">Indenização integral</span>
+                    <span className="text-[9px] text-muted-foreground truncate block">Indenização integral</span>
                   </div>
                   <Select
                     value={coverage.fipePercent.toString()}
                     onValueChange={(val) => setCoverage({ ...coverage, fipePercent: parseInt(val, 10) })}
                   >
-                    <SelectTrigger className="w-24 h-7 text-xs rounded-lg bg-background shrink-0">
+                    <SelectTrigger className="w-22 h-6.5 text-[11px] rounded-lg bg-background shrink-0">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="rounded-xl">
@@ -1076,10 +1070,10 @@ function VehicleDossierDialog({
                 </div>
 
                 {/* Roubo e Furto */}
-                <div className="p-2.5 rounded-xl bg-muted/35 border border-border/50 flex items-center justify-between gap-2">
+                <div className="p-2 rounded-xl bg-muted/35 border border-border/50 flex items-center justify-between gap-2">
                   <div className="min-w-0 flex-1">
                     <span className="font-bold text-foreground block text-xs truncate">Roubo e Furto</span>
-                    <span className="text-[10px] text-muted-foreground truncate block">Proteção qualificada</span>
+                    <span className="text-[9px] text-muted-foreground truncate block">Proteção qualificada</span>
                   </div>
                   <Switch
                     checked={coverage.theft}
@@ -1088,10 +1082,10 @@ function VehicleDossierDialog({
                 </div>
 
                 {/* Colisão e Perda Total */}
-                <div className="p-2.5 rounded-xl bg-muted/35 border border-border/50 flex items-center justify-between gap-2">
+                <div className="p-2 rounded-xl bg-muted/35 border border-border/50 flex items-center justify-between gap-2">
                   <div className="min-w-0 flex-1">
                     <span className="font-bold text-foreground block text-xs truncate">Colisão & Perda Total</span>
-                    <span className="text-[10px] text-muted-foreground truncate block">Reparo ou indenização</span>
+                    <span className="text-[9px] text-muted-foreground truncate block">Reparo ou indenização</span>
                   </div>
                   <Switch
                     checked={coverage.collision}
@@ -1100,16 +1094,16 @@ function VehicleDossierDialog({
                 </div>
 
                 {/* Danos Materiais a Terceiros */}
-                <div className="p-2.5 rounded-xl bg-muted/35 border border-border/50 flex items-center justify-between gap-2">
+                <div className="p-2 rounded-xl bg-muted/35 border border-border/50 flex items-center justify-between gap-2">
                   <div className="min-w-0 flex-1">
                     <span className="font-bold text-foreground block text-xs truncate">Danos a Terceiros</span>
-                    <span className="text-[10px] text-muted-foreground truncate block">Limite material</span>
+                    <span className="text-[9px] text-muted-foreground truncate block">Limite material</span>
                   </div>
                   <Select
                     value={coverage.thirdPartyProperty.toString()}
                     onValueChange={(val) => setCoverage({ ...coverage, thirdPartyProperty: parseInt(val, 10) })}
                   >
-                    <SelectTrigger className="w-28 h-7 text-xs rounded-lg bg-background shrink-0">
+                    <SelectTrigger className="w-22 h-6.5 text-[11px] rounded-lg bg-background shrink-0">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="rounded-xl">
@@ -1122,16 +1116,16 @@ function VehicleDossierDialog({
                 </div>
 
                 {/* Guincho / Reboque */}
-                <div className="p-2.5 rounded-xl bg-muted/35 border border-border/50 flex items-center justify-between gap-2">
+                <div className="p-2 rounded-xl bg-muted/35 border border-border/50 flex items-center justify-between gap-2">
                   <div className="min-w-0 flex-1">
-                    <span className="font-bold text-foreground block text-xs truncate">Guincho / Reboque 24h</span>
-                    <span className="text-[10px] text-muted-foreground truncate block">Raio de quilometragem</span>
+                    <span className="font-bold text-foreground block text-xs truncate">Guincho 24h</span>
+                    <span className="text-[9px] text-muted-foreground truncate block">Raio quilometragem</span>
                   </div>
                   <Select
                     value={coverage.towKm.toString()}
                     onValueChange={(val) => setCoverage({ ...coverage, towKm: parseInt(val, 10) })}
                   >
-                    <SelectTrigger className="w-28 h-7 text-xs rounded-lg bg-background shrink-0">
+                    <SelectTrigger className="w-22 h-6.5 text-[11px] rounded-lg bg-background shrink-0">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="rounded-xl">
@@ -1144,16 +1138,16 @@ function VehicleDossierDialog({
                 </div>
 
                 {/* Carro Reserva */}
-                <div className="p-2.5 rounded-xl bg-muted/35 border border-border/50 flex items-center justify-between gap-2">
+                <div className="p-2 rounded-xl bg-muted/35 border border-border/50 flex items-center justify-between gap-2">
                   <div className="min-w-0 flex-1">
                     <span className="font-bold text-foreground block text-xs truncate">Carro Reserva</span>
-                    <span className="text-[10px] text-muted-foreground truncate block">Diárias após sinistro</span>
+                    <span className="text-[9px] text-muted-foreground truncate block">Diárias sinistro</span>
                   </div>
                   <Select
                     value={coverage.reserveCarDays.toString()}
                     onValueChange={(val) => setCoverage({ ...coverage, reserveCarDays: parseInt(val, 10) })}
                   >
-                    <SelectTrigger className="w-28 h-7 text-xs rounded-lg bg-background shrink-0">
+                    <SelectTrigger className="w-22 h-6.5 text-[11px] rounded-lg bg-background shrink-0">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="rounded-xl">
@@ -1166,10 +1160,10 @@ function VehicleDossierDialog({
                 </div>
 
                 {/* Vidros, Faróis e Lanternas */}
-                <div className="p-2.5 rounded-xl bg-muted/35 border border-border/50 flex items-center justify-between gap-2">
+                <div className="p-2 rounded-xl bg-muted/35 border border-border/50 flex items-center justify-between gap-2">
                   <div className="min-w-0 flex-1">
                     <span className="font-bold text-foreground block text-xs truncate">Vidros & Lanternas</span>
-                    <span className="text-[10px] text-muted-foreground truncate block">Franquia reduzida</span>
+                    <span className="text-[9px] text-muted-foreground truncate block">Franquia reduzida</span>
                   </div>
                   <Switch
                     checked={coverage.glassProtection}
@@ -1178,10 +1172,10 @@ function VehicleDossierDialog({
                 </div>
 
                 {/* Assistência 24h */}
-                <div className="p-2.5 rounded-xl bg-muted/35 border border-border/50 flex items-center justify-between gap-2">
+                <div className="p-2 rounded-xl bg-muted/35 border border-border/50 flex items-center justify-between gap-2">
                   <div className="min-w-0 flex-1">
                     <span className="font-bold text-foreground block text-xs truncate">Assistência 24h</span>
-                    <span className="text-[10px] text-muted-foreground truncate block">Chaveiro, pneu, bateria</span>
+                    <span className="text-[9px] text-muted-foreground truncate block">Chaveiro, pneu</span>
                   </div>
                   <Switch
                     checked={coverage.assistance24h}
@@ -1190,10 +1184,10 @@ function VehicleDossierDialog({
                 </div>
 
                 {/* Rastreador / Telemetria */}
-                <div className="p-2.5 rounded-xl bg-muted/35 border border-border/50 flex items-center justify-between gap-2 sm:col-span-2">
+                <div className="p-2 rounded-xl bg-muted/35 border border-border/50 flex items-center justify-between gap-2">
                   <div className="min-w-0 flex-1">
-                    <span className="font-bold text-foreground block text-xs truncate">Rastreador & Bloqueador Veicular</span>
-                    <span className="text-[10px] text-muted-foreground truncate block">Monitoramento 24h via GPS</span>
+                    <span className="font-bold text-foreground block text-xs truncate">Rastreador GPS</span>
+                    <span className="text-[9px] text-muted-foreground truncate block">Monitoramento 24h</span>
                   </div>
                   <Switch
                     checked={coverage.tracker}
@@ -1204,35 +1198,10 @@ function VehicleDossierDialog({
             </TabsContent>
 
             {/* ABA 3: Mensalidades */}
-            <TabsContent value="financial" className="space-y-4 m-0 p-0">
+            <TabsContent value="financial" className="space-y-3 m-0 p-0">
               {/* Bloco de Edição do Valor da Proteção */}
-              <div className="p-3.5 sm:p-4 rounded-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-muted/20 border border-primary/25 space-y-3 shadow-xs">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-                  <div className="flex items-start gap-2.5">
-                    <div className="size-8 rounded-xl bg-primary/15 text-primary flex items-center justify-center shrink-0 mt-0.5">
-                      <Receipt className="size-4" />
-                    </div>
-                    <div>
-                      <h3 className="text-xs font-bold text-foreground flex items-center gap-1.5">
-                        Definição do Valor da Proteção
-                      </h3>
-                      <p className="text-[10px] text-muted-foreground mt-0.5">
-                        Altere o valor da mensalidade recorrente cobrada deste associado
-                      </p>
-                    </div>
-                  </div>
-
-                  <Button
-                    size="sm"
-                    onClick={handleSaveMonthly}
-                    className="rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground gap-1.5 font-bold text-xs h-7.5 px-3.5 shadow-xs w-full sm:w-auto shrink-0 justify-center"
-                  >
-                    <Save className="size-3.5" />
-                    Salvar Valor
-                  </Button>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1">
+              <div className="p-3 rounded-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-muted/20 border border-primary/25 space-y-2 shadow-xs">
+                <div className="grid grid-cols-1 sm:grid-cols-4 gap-2.5 items-end">
                   <div className="space-y-1">
                     <Label className="text-[10px] font-semibold text-muted-foreground">
                       Valor Mensal (R$) *
@@ -1288,15 +1257,24 @@ function VehicleDossierDialog({
                       </SelectContent>
                     </Select>
                   </div>
+
+                  <Button
+                    size="sm"
+                    onClick={handleSaveMonthly}
+                    className="rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground gap-1.5 font-bold text-xs h-8 px-3.5 shadow-xs w-full"
+                  >
+                    <Save className="size-3.5" />
+                    Salvar Valor
+                  </Button>
                 </div>
               </div>
 
               {/* Histórico Recente de Mensalidades em Extrato Unificado */}
-              <div className="space-y-2">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1.5">
                     <History className="size-3.5 text-muted-foreground" />
-                    <h4 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                    <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                       Lançamentos Recentes
                     </h4>
                   </div>
@@ -1313,7 +1291,7 @@ function VehicleDossierDialog({
                         toast.info("Associado não possui telefone cadastrado.");
                       }
                     }}
-                    className="rounded-lg h-7 text-xs font-semibold gap-1 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-500/10 px-2 w-full sm:w-auto justify-center"
+                    className="rounded-lg h-6.5 text-[11px] font-semibold gap-1 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-500/10 px-2"
                   >
                     <Send className="size-3" />
                     Enviar Cobrança WhatsApp
@@ -1329,15 +1307,15 @@ function VehicleDossierDialog({
                   ].map((inv, i) => (
                     <div
                       key={i}
-                      className="p-2.5 sm:px-3.5 flex items-center justify-between hover:bg-background/60 transition-colors gap-2"
+                      className="p-2 sm:px-3 flex items-center justify-between hover:bg-background/60 transition-colors gap-2"
                     >
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <div className="size-6.5 rounded-lg bg-emerald-500/15 text-emerald-600 flex items-center justify-center shrink-0">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <div className="size-6 rounded-lg bg-emerald-500/15 text-emerald-600 flex items-center justify-center shrink-0">
                           <CheckCircle2 className="size-3.5" />
                         </div>
                         <div className="min-w-0">
                           <p className="font-bold text-foreground text-xs leading-none truncate">{inv.month}</p>
-                          <p className="text-[10px] text-muted-foreground mt-0.5 truncate">Vencimento em {inv.due}</p>
+                          <p className="text-[9px] text-muted-foreground mt-0.5 truncate">Vencimento em {inv.due}</p>
                         </div>
                       </div>
 
@@ -1356,7 +1334,7 @@ function VehicleDossierDialog({
         </Tabs>
 
         {/* Rodapé Compacto e 100% Responsivo */}
-        <div className="px-4 sm:px-5 py-3 border-t border-border/60 bg-muted/20 shrink-0 flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-2.5">
+        <div className="px-4 sm:px-5 py-2.5 border-t border-border/60 bg-muted/20 shrink-0 flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-2.5">
           <div className="flex items-center justify-between sm:justify-start gap-2.5 sm:gap-3 w-full sm:w-auto">
             <AsaasFormSeal />
             <Button
@@ -1395,26 +1373,26 @@ function CertificateDialog({
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[96vw] max-w-xl max-h-[90vh] overflow-y-auto overflow-x-hidden rounded-2xl sm:rounded-3xl p-4 sm:p-6 bg-card border-border shadow-2xl">
-        <div className="border-2 border-primary/30 rounded-2xl p-4 sm:p-5 bg-gradient-to-b from-primary/5 via-card to-card relative overflow-hidden">
+      <DialogContent className="w-[96vw] max-w-lg rounded-2xl sm:rounded-3xl p-4 sm:p-5 bg-card border-border shadow-2xl overflow-hidden">
+        <div className="border-2 border-primary/30 rounded-2xl p-4 bg-gradient-to-b from-primary/5 via-card to-card relative overflow-hidden">
           <ShieldCheck className="absolute -right-8 -bottom-8 size-44 text-primary/5 pointer-events-none" />
 
           {/* Cabeçalho */}
-          <div className="text-center pb-3 border-b border-border/60">
-            <div className="size-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center mx-auto mb-1.5 shadow-xs">
-              <ShieldCheck className="size-5" />
+          <div className="text-center pb-2.5 border-b border-border/60">
+            <div className="size-9 rounded-xl bg-primary text-primary-foreground flex items-center justify-center mx-auto mb-1 shadow-xs">
+              <ShieldCheck className="size-4.5" />
             </div>
-            <h2 className="text-sm sm:text-base font-black uppercase tracking-wider text-primary">
+            <h2 className="text-xs sm:text-sm font-black uppercase tracking-wider text-primary">
               Certificado de Proteção Veicular
             </h2>
-            <p className="text-[10px] text-muted-foreground">
+            <p className="text-[9px] text-muted-foreground">
               Planmais Associação de Benefícios Mútuos & Proteção Patrimonial
             </p>
           </div>
 
           {/* Dados */}
-          <div className="py-4 space-y-2.5 text-xs">
-            <div className="p-2.5 rounded-xl bg-muted/40 border border-border/40 flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+          <div className="py-2.5 space-y-2 text-xs">
+            <div className="p-2 rounded-xl bg-muted/40 border border-border/40 flex flex-col sm:flex-row sm:items-center justify-between gap-1">
               <div>
                 <span className="text-[9px] text-muted-foreground block">Associado Titular</span>
                 <span className="font-bold text-foreground text-xs truncate block">{vehicle.member.name}</span>
@@ -1423,38 +1401,38 @@ function CertificateDialog({
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <div className="p-2.5 rounded-xl bg-muted/40 border border-border/40">
+              <div className="p-2 rounded-xl bg-muted/40 border border-border/40">
                 <span className="text-[9px] text-muted-foreground block">Veículo Protegido</span>
                 <span className="font-bold text-foreground text-xs truncate block">{vehicle.brand} {vehicle.model}</span>
               </div>
-              <div className="p-2.5 rounded-xl bg-muted/40 border border-border/40">
+              <div className="p-2 rounded-xl bg-muted/40 border border-border/40">
                 <span className="text-[9px] text-muted-foreground block">Placa</span>
                 <span className="font-mono font-bold text-xs text-foreground">{formatPlate(vehicle.plate)}</span>
               </div>
             </div>
 
-            <div className="p-2.5 rounded-xl bg-muted/40 border border-border/40">
+            <div className="p-2 rounded-xl bg-muted/40 border border-border/40">
               <span className="text-[9px] text-muted-foreground block">Plano Contratado</span>
               <span className="font-bold text-foreground text-xs">{vehicle.coveragePlan}</span>
-              <p className="text-[10px] text-muted-foreground mt-0.5">
+              <p className="text-[9px] text-muted-foreground mt-0.5">
                 Cobertura {vehicle.coverageConfig.fipePercent}% FIPE ({BRL(vehicle.fipeValue || 0)}) com Assistência 24h em todo o Brasil.
               </p>
             </div>
           </div>
 
           {/* Rodapé com QR Code */}
-          <div className="pt-3 border-t border-border/60 flex items-center justify-between text-[10px] text-muted-foreground gap-2">
+          <div className="pt-2.5 border-t border-border/60 flex items-center justify-between text-[10px] text-muted-foreground gap-2">
             <div className="min-w-0">
               <p className="font-semibold text-foreground truncate">Certificado nº PLAN-{formatPlate(vehicle.plate)}-2026</p>
-              <p className="truncate">Autenticação digital verificada pela Planmais</p>
+              <p className="truncate text-[9px]">Autenticação digital verificada pela Planmais</p>
             </div>
-            <div className="size-10 bg-white rounded-lg p-0.5 border border-border flex items-center justify-center shrink-0">
-              <QrCode className="size-9 text-slate-900" />
+            <div className="size-9 bg-white rounded-lg p-0.5 border border-border flex items-center justify-center shrink-0">
+              <QrCode className="size-8 text-slate-900" />
             </div>
           </div>
         </div>
 
-        <DialogFooter className="mt-3 flex flex-col-reverse sm:flex-row sm:justify-between items-center gap-2">
+        <DialogFooter className="mt-2.5 flex flex-col-reverse sm:flex-row sm:justify-between items-center gap-2">
           <Button
             variant="outline"
             size="sm"
@@ -1536,8 +1514,8 @@ function NewVehicleDialog({ members }: { members: any[] }) {
           <span>Cadastrar Veículo</span>
         </Button>
       </DialogTrigger>
-      <DialogContent className="w-[96vw] max-w-lg max-h-[90vh] overflow-y-auto overflow-x-hidden rounded-2xl bg-card border-border p-4 sm:p-6">
-        <DialogHeader>
+      <DialogContent className="w-[96vw] max-w-lg rounded-2xl bg-card border-border p-4 sm:p-5 shadow-2xl overflow-hidden">
+        <DialogHeader className="pb-1.5 border-b border-border/60">
           <DialogTitle className="text-base font-bold flex items-center gap-2">
             <Car className="size-4.5 text-primary" /> Novo Veículo na Frota
           </DialogTitle>
@@ -1551,12 +1529,12 @@ function NewVehicleDialog({ members }: { members: any[] }) {
             e.preventDefault();
             createVeh.mutate();
           }}
-          className="space-y-3 py-1"
+          className="space-y-2.5 py-1"
         >
           <div className="space-y-1">
             <Label className="text-xs font-semibold">Associado Proprietário *</Label>
             <Select value={memberId} onValueChange={setMemberId}>
-              <SelectTrigger className="rounded-xl h-9 text-xs">
+              <SelectTrigger className="rounded-xl h-8.5 text-xs bg-background">
                 <SelectValue placeholder="Selecione o associado" />
               </SelectTrigger>
               <SelectContent className="rounded-xl max-h-56">
@@ -1569,7 +1547,7 @@ function NewVehicleDialog({ members }: { members: any[] }) {
             </Select>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          <div className="grid grid-cols-2 gap-2">
             <div className="space-y-1">
               <Label className="text-xs font-semibold">Placa (Mercosul) *</Label>
               <Input
@@ -1577,7 +1555,7 @@ function NewVehicleDialog({ members }: { members: any[] }) {
                 value={plate}
                 onChange={(e) => setPlate(e.target.value.toUpperCase())}
                 maxLength={8}
-                className="rounded-xl uppercase font-mono font-bold text-xs h-9"
+                className="rounded-xl uppercase font-mono font-bold text-xs h-8.5 bg-background"
               />
             </div>
             <div className="space-y-1">
@@ -1586,19 +1564,19 @@ function NewVehicleDialog({ members }: { members: any[] }) {
                 type="number"
                 value={year}
                 onChange={(e) => setYear(e.target.value)}
-                className="rounded-xl font-medium text-xs h-9"
+                className="rounded-xl font-medium text-xs h-8.5 bg-background"
               />
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          <div className="grid grid-cols-2 gap-2">
             <div className="space-y-1">
               <Label className="text-xs font-semibold">Marca *</Label>
               <Input
                 placeholder="Ex: Toyota, Honda, Jeep"
                 value={brand}
                 onChange={(e) => setBrand(e.target.value)}
-                className="rounded-xl text-xs h-9"
+                className="rounded-xl text-xs h-8.5 bg-background"
               />
             </div>
             <div className="space-y-1">
@@ -1607,7 +1585,7 @@ function NewVehicleDialog({ members }: { members: any[] }) {
                 placeholder="Ex: Branco, Prata, Preto"
                 value={color}
                 onChange={(e) => setColor(e.target.value)}
-                className="rounded-xl text-xs h-9"
+                className="rounded-xl text-xs h-8.5 bg-background"
               />
             </div>
           </div>
@@ -1618,29 +1596,31 @@ function NewVehicleDialog({ members }: { members: any[] }) {
               placeholder="Ex: Corolla Altis 2.0 Flex"
               value={model}
               onChange={(e) => setModel(e.target.value)}
-              className="rounded-xl text-xs h-9"
+              className="rounded-xl text-xs h-8.5 bg-background"
             />
           </div>
 
-          <div className="pt-1">
-            <VehicleCategorySelector value={category} onChange={setCategory} />
+          <div className="pt-0.5">
+            <VehicleCategorySelector value={category} onChange={setCategory} compact />
           </div>
 
-          <DialogFooter className="pt-2 flex flex-col-reverse sm:flex-row items-center sm:justify-between gap-3">
+          <DialogFooter className="pt-2.5 flex flex-col-reverse sm:flex-row items-center sm:justify-between gap-3 border-t border-border/60">
             <AsaasFormSeal />
-            <div className="flex flex-col-reverse sm:flex-row items-center gap-2 w-full sm:w-auto justify-end">
+            <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
               <Button
                 type="button"
                 variant="outline"
+                size="sm"
                 onClick={() => setOpen(false)}
-                className="rounded-xl text-xs h-8 w-full sm:w-auto"
+                className="rounded-xl text-xs h-8"
               >
                 Cancelar
               </Button>
               <Button
                 type="submit"
+                size="sm"
                 disabled={createVeh.isPending}
-                className="rounded-xl bg-primary text-primary-foreground font-bold text-xs gap-1.5 shadow-xs h-8 w-full sm:w-auto"
+                className="rounded-xl bg-primary text-primary-foreground font-semibold text-xs gap-1.5 shadow-xs h-8 px-4"
               >
                 {createVeh.isPending ? "Cadastrando..." : "Salvar Veículo"}
               </Button>

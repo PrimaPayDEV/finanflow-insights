@@ -38,10 +38,21 @@ export const Route = createFileRoute("/members")({
   component: MembersPage,
 });
 
-function MemberDialog({ member }: { member?: any }) {
+function MemberDialog({
+  member,
+  open: controlledOpen,
+  onOpenChange: controlledOnOpenChange,
+}: {
+  member?: any;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+}) {
   const qc = useQueryClient();
   const { companyId } = useAuth();
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isControlled = controlledOpen !== undefined;
+  const open = isControlled ? controlledOpen : internalOpen;
+  const setOpen = isControlled ? (controlledOnOpenChange || (() => {})) : setInternalOpen;
   
   // Associado state
   const [name, setName] = useState(member?.name || "");
@@ -76,6 +87,36 @@ function MemberDialog({ member }: { member?: any }) {
     },
     staleTime: Infinity,
   });
+
+  useEffect(() => {
+    if (member) {
+      setName(member.name || "");
+      setDocument(member.document || "");
+      setEmail(member.email || "");
+      setPhone(member.phone || "");
+      setPartnerId(member.partner_id || "");
+      const fv = member.vehicles?.[0];
+      setVehicleId(fv?.id || "");
+      setPlate(fv?.plate || "");
+      setBrandName(fv?.brand || "");
+      setModelName(fv?.model || "");
+      setYear(fv?.year?.toString() || "");
+      setCategory(fv?.category || "Leves e utilitários");
+    } else {
+      setName("");
+      setDocument("");
+      setEmail("");
+      setPhone("");
+      setPartnerId("");
+      setVehicleId("");
+      setPlate("");
+      setBrandName("");
+      setModelName("");
+      setYear("");
+      setBrandCode("");
+      setCategory("Leves e utilitários");
+    }
+  }, [member, open]);
 
   useEffect(() => {
     if (fipeBrands && brandName && !brandCode) {
@@ -122,11 +163,6 @@ function MemberDialog({ member }: { member?: any }) {
     onSuccess: () => {
       toast.success(member ? "Associado atualizado!" : "Associado cadastrado com sucesso e sincronizado com Asaas!");
       setOpen(false);
-      if (!member) {
-        setName(""); setDocument(""); setEmail(""); setPhone(""); setPartnerId("");
-        setVehicleId(""); setPlate(""); setBrandName(""); setModelName(""); setYear(""); setBrandCode("");
-        setCategory("Leves e utilitários");
-      }
       qc.invalidateQueries({ queryKey: ["members"] });
     },
     onError: (e) => toast.error(translateError(e.message)),
@@ -134,123 +170,169 @@ function MemberDialog({ member }: { member?: any }) {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {member ? (
-          <Button variant="ghost" size="icon">
-            <Pencil className="size-4" />
-          </Button>
-        ) : (
-          <Button className="gap-2">
-            <Plus className="size-4" /> Novo Associado
-          </Button>
-        )}
-      </DialogTrigger>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>{member ? "Editar Associado" : "Cadastrar Associado e Veículo"}</DialogTitle>
-          <DialogDescription>O associado será automaticamente criado no Asaas para emissão de faturas.</DialogDescription>
+      <DialogContent className="w-[96vw] max-w-4xl p-4 sm:p-5 border-border bg-card shadow-2xl rounded-2xl overflow-hidden">
+        <DialogHeader className="pb-2 border-b border-border/60">
+          <DialogTitle className="text-base font-bold flex items-center gap-2">
+            <User className="size-4 text-primary" />
+            {member ? "Editar Associado" : "Cadastrar Associado e Veículo"}
+          </DialogTitle>
+          <DialogDescription className="text-xs">
+            Dados cadastrais do associado e veículo sincronizados com a cobrança Asaas.
+          </DialogDescription>
         </DialogHeader>
         
-        <div className="grid md:grid-cols-2 gap-8 py-4">
+        <div className="grid md:grid-cols-2 gap-4 py-2.5">
           {/* Lado Esquerdo: Associado */}
-          <div className="space-y-4">
-            <h3 className="font-semibold text-lg border-b pb-2">Informações do Associado</h3>
+          <div className="space-y-2.5">
+            <h3 className="font-bold text-xs uppercase tracking-wider text-primary border-b border-border/50 pb-1 flex items-center gap-1.5">
+              <User className="size-3.5" /> Informações do Associado
+            </h3>
             
-            <div className="space-y-2">
-              <Label>Nome Completo</Label>
-              <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="João da Silva" />
+            <div className="space-y-1">
+              <Label className="text-xs font-semibold">Nome Completo *</Label>
+              <Input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Nome do associado"
+                className="h-8.5 rounded-xl text-xs bg-background"
+              />
             </div>
-            <div className="space-y-2">
-              <Label>CPF / CNPJ</Label>
-              <Input value={document} onChange={(e) => setDocument(formatCpfCnpj(e.target.value))} placeholder="000.000.000-00" maxLength={18} />
+
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-1">
+                <Label className="text-xs font-semibold">CPF / CNPJ *</Label>
+                <Input
+                  value={document}
+                  onChange={(e) => setDocument(formatCpfCnpj(e.target.value))}
+                  placeholder="000.000.000-00"
+                  maxLength={18}
+                  className="h-8.5 rounded-xl text-xs font-mono bg-background"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs font-semibold">Celular / WhatsApp</Label>
+                <Input
+                  value={phone}
+                  onChange={(e) => setPhone(formatPhone(e.target.value))}
+                  placeholder="(00) 00000-0000"
+                  maxLength={15}
+                  className="h-8.5 rounded-xl text-xs font-mono bg-background"
+                />
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label>E-mail</Label>
-              <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="joao@email.com" />
-            </div>
-            <div className="space-y-2">
-              <Label>Celular</Label>
-              <Input value={phone} onChange={(e) => setPhone(formatPhone(e.target.value))} placeholder="(00) 00000-0000" maxLength={15} />
-            </div>
-            <div className="space-y-2">
-              <Label>Parceiro / Consultor</Label>
-              <Select value={partnerId} onValueChange={setPartnerId}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione um parceiro (opcional)" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Nenhum</SelectItem>
-                  {partners?.map((p: any) => (
-                    <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-1">
+                <Label className="text-xs font-semibold">E-mail</Label>
+                <Input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="email@exemplo.com"
+                  className="h-8.5 rounded-xl text-xs bg-background"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs font-semibold">Consultor / Parceiro</Label>
+                <Select value={partnerId} onValueChange={setPartnerId}>
+                  <SelectTrigger className="h-8.5 rounded-xl text-xs bg-background">
+                    <SelectValue placeholder="Nenhum (Direto)" />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl">
+                    <SelectItem value="none">Nenhum (Direto)</SelectItem>
+                    {partners?.map((p: any) => (
+                      <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
 
           {/* Lado Direito: Veículo Principal */}
-          <div className="space-y-4">
-            <h3 className="font-semibold text-lg border-b pb-2">Informações do Veículo</h3>
+          <div className="space-y-2.5">
+            <h3 className="font-bold text-xs uppercase tracking-wider text-primary border-b border-border/50 pb-1 flex items-center gap-1.5">
+              <Car className="size-3.5" /> Veículo Principal
+            </h3>
             
-            <div className="space-y-2">
-              <Label>Placa</Label>
-              <Input value={plate} onChange={(e) => setPlate(e.target.value.replace(/[^a-zA-Z0-9]/g, "").toUpperCase())} placeholder="ABC1234" maxLength={7} />
-            </div>
-            <div className="space-y-2">
-              <Label>Marca</Label>
-              <Select 
-                value={brandCode} 
-                onValueChange={(val) => {
-                  setBrandCode(val);
-                  const b = fipeBrands?.find(x => x.codigo === val);
-                  setBrandName(b?.nome || "");
-                  setModelName(""); // reseta modelo ao trocar marca
-                }}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione a marca" />
-                </SelectTrigger>
-                <SelectContent>
-                  {fipeBrands?.map((b) => (
-                    <SelectItem key={b.codigo} value={b.codigo}>{b.nome}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Modelo</Label>
-              <Select 
-                value={modelName} 
-                onValueChange={setModelName} 
-                disabled={!brandCode || !fipeModels}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={!brandCode ? "Selecione a marca primeiro" : "Selecione o modelo"} />
-                </SelectTrigger>
-                <SelectContent>
-                  {fipeModels?.map((m) => (
-                    <SelectItem key={m.codigo} value={m.nome}>{m.nome}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Ano de Fabricação</Label>
-              <Input value={year} onChange={(e) => setYear(e.target.value)} placeholder="2020" type="number" />
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-1">
+                <Label className="text-xs font-semibold">Placa (Mercosul)</Label>
+                <Input
+                  value={plate}
+                  onChange={(e) => setPlate(e.target.value.replace(/[^a-zA-Z0-9]/g, "").toUpperCase())}
+                  placeholder="ABC1234"
+                  maxLength={7}
+                  className="h-8.5 rounded-xl text-xs font-mono font-bold uppercase bg-background"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs font-semibold">Ano de Fabricação</Label>
+                <Input
+                  value={year}
+                  onChange={(e) => setYear(e.target.value)}
+                  placeholder="2022"
+                  type="number"
+                  className="h-8.5 rounded-xl text-xs bg-background"
+                />
+              </div>
             </div>
 
-            <div className="pt-1">
-              <VehicleCategorySelector value={category} onChange={setCategory} />
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-1">
+                <Label className="text-xs font-semibold">Marca</Label>
+                <Select 
+                  value={brandCode} 
+                  onValueChange={(val) => {
+                    setBrandCode(val);
+                    const b = fipeBrands?.find(x => x.codigo === val);
+                    setBrandName(b?.nome || "");
+                    setModelName("");
+                  }}
+                >
+                  <SelectTrigger className="h-8.5 rounded-xl text-xs bg-background">
+                    <SelectValue placeholder="Selecione a marca" />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl max-h-56">
+                    {fipeBrands?.map((b) => (
+                      <SelectItem key={b.codigo} value={b.codigo}>{b.nome}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs font-semibold">Modelo</Label>
+                <Select 
+                  value={modelName} 
+                  onValueChange={setModelName} 
+                  disabled={!brandCode || !fipeModels}
+                >
+                  <SelectTrigger className="h-8.5 rounded-xl text-xs bg-background">
+                    <SelectValue placeholder={!brandCode ? "Selecione a marca" : "Selecione o modelo"} />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl max-h-56">
+                    {fipeModels?.map((m) => (
+                      <SelectItem key={m.codigo} value={m.nome}>{m.nome}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="pt-0.5">
+              <VehicleCategorySelector value={category} onChange={setCategory} compact />
             </div>
           </div>
         </div>
 
-        <div className="flex flex-col-reverse sm:flex-row items-center sm:justify-between gap-3 border-t pt-4">
+        <div className="flex flex-col-reverse sm:flex-row items-center sm:justify-between gap-3 border-t border-border/60 pt-3">
           <AsaasFormSeal />
           <div className="flex justify-end gap-2 w-full sm:w-auto">
-            <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
-            <Button onClick={() => submit.mutate()} disabled={submit.isPending}>
-              {submit.isPending ? "Salvando..." : "Salvar"}
+            <Button variant="outline" size="sm" onClick={() => setOpen(false)} className="rounded-xl h-8 text-xs font-medium">
+              Cancelar
+            </Button>
+            <Button size="sm" onClick={() => submit.mutate()} disabled={submit.isPending} className="rounded-xl h-8 text-xs font-semibold px-4 bg-primary text-primary-foreground shadow-xs">
+              {submit.isPending ? "Salvando..." : "Salvar Dados"}
             </Button>
           </div>
         </div>
@@ -292,44 +374,75 @@ function VehicleDialog({ memberId, memberName }: { memberId: string; memberName:
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-2">
-          <Car className="size-4" /> Adicionar Veículo
+        <Button variant="outline" size="sm" className="gap-1.5 h-6.5 text-[11px] rounded-lg border-border/80 text-foreground">
+          <Car className="size-3 text-primary" /> Adicionar Veículo
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle>Veículo - {memberName}</DialogTitle>
+      <DialogContent className="w-[96vw] max-w-lg p-4 sm:p-5 border-border bg-card shadow-2xl rounded-2xl overflow-hidden">
+        <DialogHeader className="pb-2 border-b border-border/60">
+          <DialogTitle className="text-base font-bold flex items-center gap-2">
+            <Car className="size-4.5 text-primary" />
+            Vincular Veículo - {memberName}
+          </DialogTitle>
         </DialogHeader>
-        <div className="grid gap-3.5 py-3">
-          <div className="space-y-1.5">
-            <Label>Placa</Label>
-            <Input value={plate} onChange={(e) => setPlate(e.target.value.replace(/[^a-zA-Z0-9]/g, "").toUpperCase())} placeholder="ABC1234" maxLength={7} />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label>Marca</Label>
-              <Input value={brand} onChange={(e) => setBrand(e.target.value)} placeholder="Chevrolet" />
+        <div className="space-y-2.5 py-2">
+          <div className="grid grid-cols-2 gap-2.5">
+            <div className="space-y-1">
+              <Label className="text-xs font-semibold">Placa (Mercosul) *</Label>
+              <Input
+                value={plate}
+                onChange={(e) => setPlate(e.target.value.replace(/[^a-zA-Z0-9]/g, "").toUpperCase())}
+                placeholder="ABC1234"
+                maxLength={7}
+                className="h-8.5 rounded-xl text-xs font-mono font-bold uppercase bg-background"
+              />
             </div>
-            <div className="space-y-1.5">
-              <Label>Modelo</Label>
-              <Input value={model} onChange={(e) => setModel(e.target.value)} placeholder="Onix" />
+            <div className="space-y-1">
+              <Label className="text-xs font-semibold">Ano de Fabricação</Label>
+              <Input
+                value={year}
+                onChange={(e) => setYear(e.target.value)}
+                placeholder="2022"
+                type="number"
+                className="h-8.5 rounded-xl text-xs bg-background"
+              />
             </div>
-          </div>
-          <div className="space-y-1.5">
-            <Label>Ano</Label>
-            <Input value={year} onChange={(e) => setYear(e.target.value)} placeholder="2020" type="number" />
           </div>
 
-          <div className="pt-1">
-            <VehicleCategorySelector value={category} onChange={setCategory} />
+          <div className="grid grid-cols-2 gap-2.5">
+            <div className="space-y-1">
+              <Label className="text-xs font-semibold">Marca *</Label>
+              <Input
+                value={brand}
+                onChange={(e) => setBrand(e.target.value)}
+                placeholder="Ex: Chevrolet"
+                className="h-8.5 rounded-xl text-xs bg-background"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs font-semibold">Modelo *</Label>
+              <Input
+                value={model}
+                onChange={(e) => setModel(e.target.value)}
+                placeholder="Ex: Onix 1.0"
+                className="h-8.5 rounded-xl text-xs bg-background"
+              />
+            </div>
+          </div>
+
+          <div className="pt-0.5">
+            <VehicleCategorySelector value={category} onChange={setCategory} compact />
           </div>
         </div>
-        <div className="flex flex-col-reverse sm:flex-row items-center sm:justify-between gap-3 border-t pt-3">
+
+        <div className="flex flex-col-reverse sm:flex-row items-center sm:justify-between gap-3 border-t border-border/60 pt-3">
           <AsaasFormSeal />
           <div className="flex justify-end gap-2 w-full sm:w-auto">
-            <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
-            <Button onClick={() => submit.mutate()} disabled={submit.isPending}>
-              {submit.isPending ? "Salvando..." : "Salvar"}
+            <Button variant="outline" size="sm" onClick={() => setOpen(false)} className="rounded-xl h-8 text-xs font-medium">
+              Cancelar
+            </Button>
+            <Button size="sm" onClick={() => submit.mutate()} disabled={submit.isPending} className="rounded-xl h-8 text-xs font-semibold px-4 bg-primary text-primary-foreground shadow-xs">
+              {submit.isPending ? "Salvando..." : "Salvar Veículo"}
             </Button>
           </div>
         </div>
@@ -387,6 +500,8 @@ function MembersPage() {
   const { companyId } = useAuth();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
+  const [editingMember, setEditingMember] = useState<any | null>(null);
+  const [newMemberOpen, setNewMemberOpen] = useState(false);
 
   const fetchMembers = useServerFn(getMembers);
   const { data: members, isLoading } = useQuery({
@@ -428,7 +543,14 @@ function MembersPage() {
     <AppLayout
       title="Gestão de Associados"
       subtitle="Cadastre seus clientes e veículos protegidos na Planmais"
-      actions={<MemberDialog />}
+      actions={
+        <Button
+          onClick={() => setNewMemberOpen(true)}
+          className="rounded-xl bg-primary text-primary-foreground gap-2 font-bold shadow-xs text-xs h-9"
+        >
+          <Plus className="size-4" /> Novo Associado
+        </Button>
+      }
     >
       <div className="space-y-4">
         {/* KPIs Resumidos */}
@@ -524,7 +646,12 @@ function MembersPage() {
               </p>
             </div>
             <div className="flex items-center gap-2.5 flex-wrap justify-center pt-1">
-              <MemberDialog />
+              <Button
+                onClick={() => setNewMemberOpen(true)}
+                className="rounded-xl bg-primary text-primary-foreground gap-2 font-bold shadow-xs text-xs h-9"
+              >
+                <Plus className="size-4" /> Cadastrar Associado
+              </Button>
             </div>
           </div>
         ) : filteredMembers.length === 0 ? (
@@ -564,15 +691,22 @@ function MembersPage() {
                     const vehiclesList = m.vehicles || [];
 
                     return (
-                      <tr key={m.id} className="hover:bg-muted/20 transition-colors">
+                      <tr
+                        key={m.id}
+                        onClick={() => setEditingMember(m)}
+                        className="hover:bg-muted/30 transition-colors cursor-pointer group"
+                        title="Clique em qualquer lugar da linha para editar este associado"
+                      >
                         {/* Associado */}
                         <td className="px-4 py-3.5 align-middle">
                           <div className="flex items-center gap-2.5 min-w-0">
-                            <div className="size-8 rounded-xl bg-primary/10 text-primary font-bold text-xs flex items-center justify-center shrink-0">
+                            <div className="size-8 rounded-xl bg-primary/10 text-primary font-bold text-xs flex items-center justify-center shrink-0 group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
                               {m.name?.charAt(0)?.toUpperCase() || "A"}
                             </div>
                             <div className="min-w-0">
-                              <p className="font-bold text-foreground text-xs leading-tight truncate">{m.name}</p>
+                              <p className="font-bold text-foreground text-xs leading-tight truncate group-hover:text-primary transition-colors">
+                                {m.name}
+                              </p>
                               <p className="text-[10px] text-muted-foreground font-mono mt-0.5">
                                 CPF: {formatCpfCnpj(m.document)}
                               </p>
@@ -593,6 +727,7 @@ function MembersPage() {
                                   href={`https://wa.me/55${m.phone.replace(/\D/g, "")}`}
                                   target="_blank"
                                   rel="noopener noreferrer"
+                                  onClick={(e) => e.stopPropagation()}
                                   title="WhatsApp"
                                   className="size-5 rounded-md bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 flex items-center justify-center transition-colors"
                                 >
@@ -632,7 +767,7 @@ function MembersPage() {
                                 ))}
                               </div>
                             )}
-                            <div>
+                            <div onClick={(e) => e.stopPropagation()}>
                               <VehicleDialog memberId={m.id} memberName={m.name} />
                             </div>
                           </div>
@@ -661,8 +796,16 @@ function MembersPage() {
 
                         {/* Ações */}
                         <td className="px-4 py-3.5 align-middle text-right">
-                          <div className="flex items-center justify-end gap-1">
-                            <MemberDialog member={m} />
+                          <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="size-8 rounded-lg hover:bg-primary/10 text-muted-foreground hover:text-primary"
+                              onClick={() => setEditingMember(m)}
+                              title="Editar Associado"
+                            >
+                              <Pencil className="size-4" />
+                            </Button>
                             <DeleteMemberButton memberId={m.id} />
                           </div>
                         </td>
@@ -673,6 +816,19 @@ function MembersPage() {
               </table>
             </div>
           </div>
+        )}
+
+        {/* Modais de Cadastro e Edição de Associado */}
+        <MemberDialog
+          open={newMemberOpen}
+          onOpenChange={setNewMemberOpen}
+        />
+        {editingMember && (
+          <MemberDialog
+            open={!!editingMember}
+            onOpenChange={(op) => !op && setEditingMember(null)}
+            member={editingMember}
+          />
         )}
       </div>
     </AppLayout>
