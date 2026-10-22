@@ -20,7 +20,13 @@ interface AuthContextType {
   signOut: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+// Keep one context instance across hot reloads: when this file is reloaded,
+// a fresh createContext() would no longer match the Provider already on screen,
+// making useAuth throw "must be used within an AuthProvider".
+type AuthCtx = ReturnType<typeof createContext<AuthContextType | undefined>>;
+const ctxStore = globalThis as typeof globalThis & { __primaAuthContext?: AuthCtx };
+const AuthContext: AuthCtx =
+  ctxStore.__primaAuthContext ?? (ctxStore.__primaAuthContext = createContext<AuthContextType | undefined>(undefined));
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
