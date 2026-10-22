@@ -1531,9 +1531,11 @@ export type Database = {
           color: string | null
           company_id: string
           created_at: string
+          fipe_value: number | null
           id: string
           member_id: string
           model: string
+          monthly_fee: number | null
           plate: string
           year: number | null
         }
@@ -1543,9 +1545,11 @@ export type Database = {
           color?: string | null
           company_id: string
           created_at?: string
+          fipe_value?: number | null
           id?: string
           member_id: string
           model: string
+          monthly_fee?: number | null
           plate: string
           year?: number | null
         }
@@ -1555,9 +1559,11 @@ export type Database = {
           color?: string | null
           company_id?: string
           created_at?: string
+          fipe_value?: number | null
           id?: string
           member_id?: string
           model?: string
+          monthly_fee?: number | null
           plate?: string
           year?: number | null
         }

@@ -50,6 +50,13 @@
       "when": 1792594002061,
       "tag": "0006_add_vehicle_category",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1792694103205,
+      "tag": "0007_add_vehicles_monthly_fee",
+      "breakpoints": true
     }
   ]
 }
