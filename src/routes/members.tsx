@@ -682,7 +682,7 @@ function MembersPage() {
                     <th className="px-3 py-3 sm:px-3.5">Associado</th>
                     <th className="px-3 py-3 sm:px-3.5">Contatos</th>
                     <th className="px-3 py-3 sm:px-3.5">Veículos Vinculados</th>
-                    <th className="px-3 py-3 sm:px-3.5">Consultor</th>
+                    <th className="px-3 py-3 sm:px-3.5 whitespace-nowrap">Consultor</th>
                     <th className="px-3 py-3 sm:px-3.5 text-center">Status</th>
                     <th className="px-3 py-3 sm:px-3.5 text-right">Ações</th>
                   </tr>
@@ -776,18 +776,21 @@ function MembersPage() {
                         </td>
 
                         {/* Consultor / Parceiro */}
-                        <td className="px-3 py-2.5 sm:px-3.5 sm:py-3 align-middle">
+                        <td className="px-3 py-2.5 sm:px-3.5 sm:py-3 align-middle whitespace-nowrap">
                           {partner?.name ? (
-                            <Badge variant="outline" className="text-[10px] border-primary/30 text-primary font-medium">
+                            <Badge
+                              variant="outline"
+                              className="text-[9.5px] sm:text-[10px] border-primary/30 text-primary font-semibold whitespace-nowrap px-2.5 py-0.5 rounded-full inline-flex items-center leading-none"
+                            >
                               {partner.name}
                             </Badge>
                           ) : (
-                            <span className="text-[11px] text-muted-foreground">Direto</span>
+                            <span className="text-[11px] text-muted-foreground whitespace-nowrap">Direto</span>
                           )}
                         </td>
 
                         {/* Status */}
-                        <td className="px-3 py-2.5 sm:px-3.5 sm:py-3 align-middle text-center">
+                        <td className="px-3 py-2.5 sm:px-3.5 sm:py-3 align-middle text-center whitespace-nowrap">
                           <Badge
                             variant={m.status === "active" ? "default" : "secondary"}
                             className="text-[10px] font-bold rounded-full px-2 py-0.5"
