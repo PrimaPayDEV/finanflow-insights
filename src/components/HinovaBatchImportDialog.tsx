@@ -10,6 +10,8 @@ import {
   Sparkles,
   ArrowRight,
   Info,
+  Phone,
+  Mail,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -300,9 +302,19 @@ export function HinovaBatchImportDialog({
                     </Badge>
                   </div>
 
-                  <div className="flex items-center gap-2 text-muted-foreground text-[11px] flex-wrap">
-                    {item.phone && <span>📞 {item.phone}</span>}
-                    {item.email && <span>✉️ {item.email}</span>}
+                  <div className="flex items-center gap-3 text-muted-foreground text-[11px] flex-wrap">
+                    {item.phone && (
+                      <span className="inline-flex items-center gap-1 font-mono">
+                        <Phone className="size-3 text-primary shrink-0" />
+                        {item.phone}
+                      </span>
+                    )}
+                    {item.email && (
+                      <span className="inline-flex items-center gap-1">
+                        <Mail className="size-3 text-primary shrink-0" />
+                        {item.email}
+                      </span>
+                    )}
                   </div>
 
                   <div className="pt-1 flex items-center gap-2 flex-wrap">

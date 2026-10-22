@@ -626,7 +626,7 @@ export function BillingReports() {
     const cleanPhone = inv.customerPhone.replace(/\D/g, "");
     const dateFormatted = inv.dueDate ? format(new Date(inv.dueDate + "T00:00:00"), "dd/MM/yyyy") : "breve";
     const msg = encodeURIComponent(
-      `Olá ${inv.customerName}, tudo bem? Aqui é da Planmais Proteção Veicular!\n\nPassando para lembrar da mensalidade referente ao seu veículo ${inv.vehicleModel} (Placa ${formatPlate(inv.vehiclePlate)}).\n\n📌 Valor: ${BRL(inv.value)}\n📅 Vencimento: ${dateFormatted}\n\n⚠️ Importante: Para garantir que seu veículo continue com cobertura ativa para assistência e socorro, o pagamento deve ser realizado impreterivelmente até a data de vencimento. Boletos vencidos não são aceitos pelo banco.\n\nQualquer dúvida estamos à disposição!`
+      `Olá ${inv.customerName}, tudo bem? Aqui é da Planmais Proteção Veicular!\n\nPassando para lembrar da mensalidade referente ao seu veículo ${inv.vehicleModel} (Placa ${formatPlate(inv.vehiclePlate)}).\n\nValor: ${BRL(inv.value)}\nVencimento: ${dateFormatted}\n\nImportante: Para garantir que seu veículo continue com cobertura ativa para assistência e socorro, o pagamento deve ser realizado impreterivelmente até a data de vencimento. Boletos vencidos não são aceitos pelo banco.\n\nQualquer dúvida estamos à disposição!`
     );
     window.open(`https://wa.me/55${cleanPhone}?text=${msg}`, "_blank");
   };

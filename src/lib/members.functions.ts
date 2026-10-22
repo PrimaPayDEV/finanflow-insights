@@ -274,11 +274,29 @@ export const generateInvoice = createServerFn({ method: "POST" })
         }
     }
 
-    const targetDate = data.dueDate ? parseISO(data.dueDate) : addDays(new Date(), 5);
-    const dueDate = format(getNextBusinessDay(targetDate), "yyyy-MM-dd");
-
     // Identificar ambiente Planmais / Proteção Veicular
     const isPlanmais = company?.app_mode === "billing" || company?.segment === "veicular" || (company?.name || "").toLowerCase().includes("planmais");
+    const configuredDueDay = Number(settings?.due_day ?? 20);
+
+    let dueDate: string;
+    if (data.dueDate && data.dueDate.trim()) {
+      // Se o vencimento foi especificado diretamente, respeita a data exata
+      dueDate = data.dueDate.split("T")[0];
+    } else {
+      // Vencimento exatamente no dia configurado nas preferências (ex: dia 20), sem prazo adicional de 5 dias
+      const now = new Date();
+      let targetYear = now.getFullYear();
+      let targetMonth = now.getMonth();
+      if (now.getDate() > configuredDueDay) {
+        targetMonth += 1;
+        if (targetMonth > 11) {
+          targetMonth = 0;
+          targetYear += 1;
+        }
+      }
+      const targetDate = new Date(targetYear, targetMonth, configuredDueDay);
+      dueDate = format(targetDate, "yyyy-MM-dd");
+    }
     
     let partner = Array.isArray(member.partners) ? member.partners[0] : (member.partners as any);
     if (!partner && member.partner_id) {

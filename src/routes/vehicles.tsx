@@ -211,7 +211,7 @@ const DEMO_VEHICLES: VehicleItem[] = [
     monthlyFee: 189.90,
     dueDay: 10,
     fuel: "Flex (Álcool/Gasolina)",
-    isDemo: true,
+    isDemo: false,
     coverageConfig: { ...DEFAULT_COVERAGE, towKm: 1000, reserveCarDays: 15 },
     member: {
       id: "mem-1",
@@ -239,7 +239,7 @@ const DEMO_VEHICLES: VehicleItem[] = [
     monthlyFee: 198.50,
     dueDay: 15,
     fuel: "Flex (Álcool/Gasolina)",
-    isDemo: true,
+    isDemo: false,
     coverageConfig: { ...DEFAULT_COVERAGE, thirdPartyProperty: 100000, reserveCarDays: 15 },
     member: {
       id: "mem-2",
@@ -267,7 +267,7 @@ const DEMO_VEHICLES: VehicleItem[] = [
     monthlyFee: 219.00,
     dueDay: 10,
     fuel: "Diesel",
-    isDemo: true,
+    isDemo: false,
     coverageConfig: { ...DEFAULT_COVERAGE, tracker: true, towKm: 1000 },
     member: {
       id: "mem-3",
@@ -295,7 +295,7 @@ const DEMO_VEHICLES: VehicleItem[] = [
     monthlyFee: 175.00,
     dueDay: 5,
     fuel: "Gasolina",
-    isDemo: true,
+    isDemo: false,
     coverageConfig: { ...DEFAULT_COVERAGE, reserveCarDays: 7 },
     member: {
       id: "mem-4",
@@ -323,7 +323,7 @@ const DEMO_VEHICLES: VehicleItem[] = [
     monthlyFee: 149.90,
     dueDay: 20,
     fuel: "Flex (Álcool/Gasolina)",
-    isDemo: true,
+    isDemo: false,
     coverageConfig: { ...DEFAULT_COVERAGE, thirdPartyProperty: 50000, towKm: 500 },
     member: {
       id: "mem-5",
@@ -351,7 +351,7 @@ const DEMO_VEHICLES: VehicleItem[] = [
     monthlyFee: 310.00,
     dueDay: 10,
     fuel: "Flex (Álcool/Gasolina)",
-    isDemo: true,
+    isDemo: false,
     coverageConfig: { ...DEFAULT_COVERAGE, tracker: true, towKm: 9999, reserveCarDays: 30, thirdPartyProperty: 200000 },
     member: {
       id: "mem-6",
@@ -407,7 +407,6 @@ function VehiclesPage() {
   const [selectedVehicle, setSelectedVehicle] = useState<VehicleItem | null>(null);
   const [dossierOpen, setDossierOpen] = useState(false);
   const [certificateOpen, setCertificateOpen] = useState(false);
-  const [showDemo, setShowDemo] = useState(true);
 
   // Estado local para persistir edições de coberturas e mensalidades do usuário durante a sessão
   const [overrides, setOverrides] = useState<Record<string, Partial<VehicleItem>>>({});
@@ -461,9 +460,7 @@ function VehiclesPage() {
 
   // Lista unificada aplicando os overrides
   const allVehicles = useMemo(() => {
-    const baseList = (!showDemo && mappedDbVehicles.length > 0)
-      ? mappedDbVehicles
-      : [...mappedDbVehicles, ...DEMO_VEHICLES];
+    const baseList = mappedDbVehicles.length > 0 ? mappedDbVehicles : DEMO_VEHICLES;
 
     return baseList.map((v) => {
       const ov = overrides[v.id];
@@ -477,7 +474,7 @@ function VehiclesPage() {
         },
       };
     });
-  }, [mappedDbVehicles, showDemo, overrides]);
+  }, [mappedDbVehicles, overrides]);
 
   // Filtros de busca
   const filteredVehicles = useMemo(() => {
@@ -506,12 +503,6 @@ function VehiclesPage() {
     setDossierOpen(true);
   };
 
-  const openFirstDemo = () => {
-    const demo = allVehicles[0] || DEMO_VEHICLES[0];
-    setSelectedVehicle(demo);
-    setDossierOpen(true);
-  };
-
   const handleUpdateVehicle = (updated: VehicleItem) => {
     setOverrides((prev) => ({
       ...prev,
@@ -527,67 +518,11 @@ function VehiclesPage() {
       actions={
         <div className="flex items-center gap-2 flex-wrap">
           <HinovaBatchImportDialog />
-
-          <Button
-            onClick={openFirstDemo}
-            variant="outline"
-            className="rounded-xl border-primary/40 text-primary hover:bg-primary/10 gap-2 font-semibold shadow-xs text-xs h-9"
-          >
-            <Sparkles className="size-3.5 text-primary animate-pulse" />
-            <span className="hidden sm:inline">Ver Demonstração do Veículo</span>
-            <span className="sm:hidden">Demonstração</span>
-          </Button>
-
           <NewVehicleDialog members={members} />
         </div>
       }
     >
       <div className="space-y-5">
-        {/* Banner Informativo de Demonstração */}
-        {showDemo && (
-          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-primary/15 via-primary/5 to-transparent border border-primary/20 p-3.5 sm:p-4">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <div className="size-9 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shrink-0 shadow-xs">
-                  <Car className="size-4.5" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-xs sm:text-sm font-bold text-foreground">
-                      Ambiente de Proteção Veicular Planmais
-                    </h3>
-                    <Badge className="bg-primary/20 text-primary border-primary/30 text-[9px] font-bold">
-                      DEMONSTRAÇÃO ATIVA
-                    </Badge>
-                  </div>
-                  <p className="text-[11px] text-muted-foreground mt-0.5 max-w-2xl">
-                    Este menu centraliza os veículos vinculados aos associados.
-                    Clique em <strong>Ver Dossiê</strong> para consultar a Ficha Técnica, personalizar as Coberturas e gerenciar o Valor da Mensalidade.
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setShowDemo(!showDemo)}
-                  className="rounded-xl text-xs h-8"
-                >
-                  {showDemo ? "Ocultar Exemplo" : "Exibir Demonstração"}
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={openFirstDemo}
-                  className="rounded-xl text-xs h-8 bg-primary text-primary-foreground gap-1.5 shadow-xs font-semibold"
-                >
-                  <Eye className="size-3.5" />
-                  Abrir Dossiê
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* KPIs Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
@@ -700,7 +635,7 @@ function VehiclesPage() {
           </CardContent>
         </Card>
 
-        {/* Grid de Veículos */}
+        {/* Listagem de Veículos em Tabela/Lista */}
         {filteredVehicles.length === 0 ? (
           <Card className="rounded-2xl border border-dashed border-border p-10 text-center bg-card">
             <div className="size-12 rounded-2xl bg-muted/80 text-muted-foreground flex items-center justify-center mx-auto mb-3">
@@ -723,111 +658,119 @@ function VehiclesPage() {
             </Button>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3.5">
-            {filteredVehicles.map((vehicle) => (
-              <Card
-                key={vehicle.id}
-                className="rounded-2xl border border-border/80 shadow-card hover:shadow-md transition-all duration-200 bg-card flex flex-col justify-between overflow-hidden group hover:border-primary/40"
-              >
-                <div>
-                  {/* Topo do Card com Placa Mercosul e Status */}
-                  <div className="p-3.5 sm:p-4 border-b border-border/50 bg-gradient-to-b from-muted/30 to-transparent flex items-start justify-between gap-2.5">
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <MercosulPlate plate={vehicle.plate} size="md" />
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <span className="text-[11px] font-bold text-primary uppercase tracking-wide">
-                            {vehicle.brand}
-                          </span>
-                          <VehicleCategoryBadge category={vehicle.category} size="sm" />
-                          {vehicle.isDemo && (
-                            <Badge variant="outline" className="text-[9px] px-1 py-0 h-3.5 border-primary/30 text-primary">
-                              Demo
-                            </Badge>
-                          )}
+          <div className="rounded-2xl border border-border/80 bg-card shadow-card overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs text-left">
+                <thead className="bg-muted/30 border-b border-border/60 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                  <tr>
+                    <th className="px-4 py-3.5">Veículo</th>
+                    <th className="px-4 py-3.5">Categoria / Cor</th>
+                    <th className="px-4 py-3.5">Tabela FIPE</th>
+                    <th className="px-4 py-3.5">Associado</th>
+                    <th className="px-4 py-3.5">Mensalidade</th>
+                    <th className="px-4 py-3.5 text-center">Status</th>
+                    <th className="px-4 py-3.5 text-right">Ações</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/50">
+                  {filteredVehicles.map((vehicle) => (
+                    <tr key={vehicle.id} className="hover:bg-muted/20 transition-colors">
+                      {/* Veículo */}
+                      <td className="px-4 py-3.5 align-middle">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <MercosulPlate plate={vehicle.plate} size="sm" />
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="text-[11px] font-bold text-primary uppercase tracking-wide">
+                                {vehicle.brand}
+                              </span>
+                              <span className="text-[10px] text-muted-foreground">
+                                • {vehicle.year}
+                              </span>
+                            </div>
+                            <h4 className="font-semibold text-xs text-foreground leading-tight truncate mt-0.5 max-w-[240px]">
+                              {vehicle.model}
+                            </h4>
+                          </div>
                         </div>
-                        <h4 className="font-bold text-xs sm:text-sm text-foreground leading-tight line-clamp-1 mt-0.5">
-                          {vehicle.model}
-                        </h4>
-                      </div>
-                    </div>
+                      </td>
 
-                    <div>{getStatusBadge(vehicle.status)}</div>
-                  </div>
+                      {/* Categoria / Cor */}
+                      <td className="px-4 py-3.5 align-middle">
+                        <div className="space-y-1">
+                          <VehicleCategoryBadge category={vehicle.category} size="sm" />
+                          <div className="text-[11px] text-muted-foreground truncate max-w-[140px]">
+                            {vehicle.color || "Prata"} {vehicle.fuel ? `• ${vehicle.fuel}` : ""}
+                          </div>
+                        </div>
+                      </td>
 
-                  {/* Informações Centrais do Veículo */}
-                  <div className="p-3.5 sm:p-4 space-y-3">
-                    <div className="grid grid-cols-3 gap-2 py-2 px-2.5 rounded-xl bg-muted/40 border border-border/40 text-xs">
-                      <div>
-                        <span className="text-[10px] text-muted-foreground block">Ano / Mod.</span>
-                        <span className="font-semibold text-foreground text-xs">{vehicle.year}</span>
-                      </div>
-                      <div>
-                        <span className="text-[10px] text-muted-foreground block">Cor</span>
-                        <span className="font-semibold text-foreground truncate block text-xs">{vehicle.color || "Prata"}</span>
-                      </div>
-                      <div>
-                        <span className="text-[10px] text-muted-foreground block">Tabela FIPE</span>
-                        <span className="font-bold text-emerald-600 dark:text-emerald-400 truncate block text-xs">
+                      {/* FIPE */}
+                      <td className="px-4 py-3.5 align-middle">
+                        <span className="font-bold text-emerald-600 dark:text-emerald-400 font-mono text-xs block">
                           {BRL(vehicle.fipeValue || 0)}
                         </span>
-                      </div>
-                    </div>
+                        <span className="text-[10px] text-muted-foreground block">
+                          FIPE 100%
+                        </span>
+                      </td>
 
-                    {/* Dados do Associado */}
-                    <div>
-                      <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1">
-                        Associado Responsável
-                      </span>
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-2 overflow-hidden">
-                          <div className="size-7 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-[11px] shrink-0">
-                            {vehicle.member.name.charAt(0)}
-                          </div>
+                      {/* Associado */}
+                      <td className="px-4 py-3.5 align-middle">
+                        <div className="flex items-center justify-between gap-2 max-w-[220px]">
                           <div className="overflow-hidden">
-                            <p className="text-xs font-semibold text-foreground truncate">{vehicle.member.name}</p>
+                            <p className="text-xs font-semibold text-foreground truncate">
+                              {vehicle.member.name}
+                            </p>
                             <p className="text-[10px] text-muted-foreground font-mono">
                               {formatCpfCnpj(vehicle.member.document)}
                             </p>
                           </div>
+                          {vehicle.member.phone && (
+                            <a
+                              href={`https://wa.me/55${vehicle.member.phone.replace(/\D/g, "")}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              title="Conversar no WhatsApp"
+                              className="size-7 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 flex items-center justify-center transition-colors shrink-0"
+                            >
+                              <MessageCircle className="size-3.5" />
+                            </a>
+                          )}
                         </div>
+                      </td>
 
-                        {vehicle.member.phone && (
-                          <a
-                            href={`https://wa.me/55${vehicle.member.phone.replace(/\D/g, "")}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            title="Conversar no WhatsApp"
-                            className="size-7 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 flex items-center justify-center transition-colors shrink-0"
-                          >
-                            <MessageCircle className="size-3.5" />
-                          </a>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                      {/* Mensalidade */}
+                      <td className="px-4 py-3.5 align-middle">
+                        <span className="font-bold text-foreground text-xs block">
+                          {BRL(vehicle.monthlyFee || 179.9)}
+                        </span>
+                        <span className="text-[10px] text-muted-foreground">
+                          Venc. dia {vehicle.dueDay}
+                        </span>
+                      </td>
 
-                {/* Rodapé com Ações */}
-                <CardFooter className="p-3 sm:p-3.5 pt-0 border-t border-border/40 bg-muted/20 flex items-center justify-between gap-2">
-                  <div className="text-xs">
-                    <span className="text-[10px] text-muted-foreground block">Proteção Mensal</span>
-                    <span className="font-bold text-foreground text-xs sm:text-sm">{BRL(vehicle.monthlyFee || 179.9)}</span>
-                  </div>
+                      {/* Status */}
+                      <td className="px-4 py-3.5 align-middle text-center whitespace-nowrap">
+                        {getStatusBadge(vehicle.status)}
+                      </td>
 
-                  <div className="flex items-center gap-1.5">
-                    <Button
-                      size="sm"
-                      onClick={() => openDossier(vehicle)}
-                      className="rounded-xl h-7.5 px-3 text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground gap-1.5 shadow-xs"
-                    >
-                      <Eye className="size-3.5" />
-                      Ver Dossiê
-                    </Button>
-                  </div>
-                </CardFooter>
-              </Card>
-            ))}
+                      {/* Ações */}
+                      <td className="px-4 py-3.5 align-middle text-right whitespace-nowrap">
+                        <Button
+                          size="sm"
+                          onClick={() => openDossier(vehicle)}
+                          className="rounded-xl h-8 px-3 text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground gap-1.5 shadow-xs"
+                        >
+                          <Eye className="size-3.5" />
+                          <span>Ver Dossiê</span>
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
 
@@ -1369,7 +1312,7 @@ function VehicleDossierDialog({
                     onClick={() => {
                       if (vehicle.member.phone) {
                         const msg = encodeURIComponent(
-                          `Olá ${vehicle.member.name}, segue o lembrete de pagamento da proteção veicular Planmais (Veículo placa ${formatPlate(vehicle.plate)}). Valor: ${BRL(vehicle.monthlyFee)}. Vencimento dia ${vehicle.dueDay}.\n\n⚠️ Atenção: Por regras de proteção veicular, o pagamento deve ser feito impreterivelmente até o vencimento para garantir a cobertura e socorro do seu veículo. Boletos vencidos não são aceitos pelo banco.`
+                          `Olá ${vehicle.member.name}, segue o lembrete de pagamento da proteção veicular Planmais (Veículo placa ${formatPlate(vehicle.plate)}). Valor: ${BRL(vehicle.monthlyFee)}. Vencimento dia ${vehicle.dueDay}.\n\nAtenção: Por regras de proteção veicular, o pagamento deve ser feito impreterivelmente até o vencimento para garantir a cobertura e socorro do seu veículo. Boletos vencidos não são aceitos pelo banco.`
                         );
                         window.open(`https://wa.me/55${vehicle.member.phone.replace(/\D/g, "")}?text=${msg}`, "_blank");
                       } else {

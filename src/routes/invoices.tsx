@@ -51,10 +51,27 @@ function NewInvoiceDialog() {
   const qc = useQueryClient();
   const { companyId, appMode, companyName } = useAuth();
   const isPlanmais = appMode === "billing" || companyName?.toLowerCase().includes("planmais");
+  const getDefaultDueDate = () => {
+    const now = new Date();
+    let year = now.getFullYear();
+    let month = now.getMonth();
+    // Preferência de vencimento padrão dia 20
+    if (now.getDate() > 20) {
+      month += 1;
+      if (month > 11) {
+        month = 0;
+        year += 1;
+      }
+    }
+    const pad = (n: number) => String(n).padStart(2, "0");
+    return `${year}-${pad(month + 1)}-20`;
+  };
+
   const [open, setOpen] = useState(false);
   const [memberId, setMemberId] = useState("");
   const [amount, setAmount] = useState("");
   const [description, setDescription] = useState("");
+  const [dueDate, setDueDate] = useState(getDefaultDueDate());
 
   const fetchMembers = useServerFn(getMembers);
   const { data: members } = useQuery({
@@ -81,7 +98,8 @@ function NewInvoiceDialog() {
           companyId,
           memberId,
           amount: numAmount,
-          description: description || "Cobrança de Proteção Veicular"
+          description: description || "Cobrança de Proteção Veicular",
+          dueDate: dueDate || undefined,
         }
       });
       
@@ -93,6 +111,7 @@ function NewInvoiceDialog() {
       setMemberId("");
       setAmount("");
       setDescription("");
+      setDueDate(getDefaultDueDate());
       qc.invalidateQueries({ queryKey: ["billing_metrics"] });
       qc.invalidateQueries({ queryKey: ["billingReports"] });
     },
@@ -157,10 +176,26 @@ function NewInvoiceDialog() {
             </div>
           )}
 
-          <div className="space-y-2">
-            <Label>Valor (R$)</Label>
-            <Input type="text" value={amount} onChange={e => setAmount(formatCurrencyInput(e.target.value))} placeholder="R$ 0,00" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label>Valor (R$)</Label>
+              <Input type="text" value={amount} onChange={e => setAmount(formatCurrencyInput(e.target.value))} placeholder="R$ 0,00" />
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label>Data de Vencimento</Label>
+                <Badge variant="outline" className="text-[10px] font-mono px-1.5 py-0">Dia 20 Padrão</Badge>
+              </div>
+              <Input
+                type="date"
+                value={dueDate}
+                onChange={e => setDueDate(e.target.value)}
+                className="font-medium text-xs"
+              />
+            </div>
           </div>
+
           <div className="space-y-2">
             <Label>Descrição / Referência</Label>
             <Input value={description} onChange={e => setDescription(e.target.value)} placeholder="Mensalidade Proteção Veicular" />
@@ -355,7 +390,7 @@ function InvoicesPage() {
     const dateFormatted = p.dueDate ? p.dueDate.split('-').reverse().join('/') : "";
     const clientName = p.customerName || p.customer || "Associado";
     const planmaisNotice = isPlanmais
-      ? `\n\n⚠️ Importante: Para garantir que seu veículo continue com cobertura ativa para assistência e socorro, o pagamento deve ser realizado impreterivelmente até a data de vencimento. Boletos vencidos não são aceitos pelo banco.`
+      ? `\n\nImportante: Para garantir que seu veículo continue com cobertura ativa para assistência e socorro, o pagamento deve ser realizado impreterivelmente até a data de vencimento. Boletos vencidos não são aceitos pelo banco.`
       : "";
     const text = encodeURIComponent(
       `Olá ${clientName}! Aqui está sua fatura no valor de ${BRL(p.value)} (Vencimento: ${dateFormatted}).\n\nVocê pode acessar e pagar através do link seguro abaixo:\n${url}${planmaisNotice}\n\nQualquer dúvida, estamos à disposição!`

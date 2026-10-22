@@ -67,6 +67,23 @@ function nextDueDate(dueDay: number) {
   return formatNextBusinessDueDate(new Date(), dueDay);
 }
 
+function getExactDueDate(dueDay: number) {
+  const day = Math.min(Math.max(dueDay, 1), 31);
+  const now = new Date();
+  let targetYear = now.getFullYear();
+  let targetMonth = now.getMonth();
+  if (now.getDate() > day) {
+    targetMonth += 1;
+    if (targetMonth > 11) {
+      targetMonth = 0;
+      targetYear += 1;
+    }
+  }
+  const dateObj = new Date(targetYear, targetMonth, day);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${dateObj.getFullYear()}-${pad(dateObj.getMonth() + 1)}-${pad(dateObj.getDate())}`;
+}
+
 export const createAsaasCharge = createServerFn({ method: "POST" })
   .validator((d: unknown) => schema.parse(d))
   .handler(async ({ data }) => {
@@ -154,7 +171,7 @@ export const createAsaasCharge = createServerFn({ method: "POST" })
         customer: customerId,
         billingType: "BOLETO",
         value: Number(data.value.toFixed(2)),
-        dueDate: nextDueDate(Number(settings?.due_day ?? 10)),
+        dueDate: isPlanmais ? getExactDueDate(Number(settings?.due_day ?? 20)) : nextDueDate(Number(settings?.due_day ?? 10)),
         description: finalDescription,
         ...(isPlanmais
           ? {

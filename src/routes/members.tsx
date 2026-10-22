@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
-import { Plus, Car, Trash2, ShieldCheck, User, Pencil } from "lucide-react";
+import { Plus, Car, Trash2, ShieldCheck, User, Pencil, Phone, Mail, MessageCircle, Search, Filter, Users } from "lucide-react";
 import { toast } from "sonner";
 import { AppLayout } from "@/components/AppLayout";
 import { AsaasFormSeal } from "@/components/AsaasBaasSeal";
@@ -386,6 +386,9 @@ function DeleteMemberButton({ memberId }: { memberId: string }) {
 
 function MembersPage() {
   const { companyId } = useAuth();
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("ALL");
+
   const fetchMembers = useServerFn(getMembers);
   const { data: members, isLoading } = useQuery({
     queryKey: ["members", companyId],
@@ -393,92 +396,292 @@ function MembersPage() {
     enabled: !!companyId,
   });
 
+  const memberList = members || [];
+
+  const filteredMembers = memberList.filter((m: any) => {
+    const q = search.toLowerCase().trim();
+    const matchesSearch =
+      !q ||
+      m.name?.toLowerCase().includes(q) ||
+      m.document?.includes(q) ||
+      m.email?.toLowerCase().includes(q) ||
+      m.phone?.includes(q) ||
+      m.vehicles?.some(
+        (v: any) =>
+          v.plate?.toLowerCase().includes(q) ||
+          v.model?.toLowerCase().includes(q) ||
+          v.brand?.toLowerCase().includes(q)
+      );
+
+    const matchesStatus =
+      statusFilter === "ALL" ||
+      (statusFilter === "ACTIVE" && m.status === "active") ||
+      (statusFilter === "INACTIVE" && m.status !== "active");
+
+    return matchesSearch && matchesStatus;
+  });
+
+  const totalMembers = memberList.length;
+  const activeMembers = memberList.filter((m: any) => m.status === "active").length;
+  const totalVehicles = memberList.reduce((acc: number, m: any) => acc + (m.vehicles?.length || 0), 0);
+
   return (
-    <AppLayout 
-      title="Gestão de Associados" 
-      subtitle="Cadastre seus clientes e veículos protegidos"
+    <AppLayout
+      title="Gestão de Associados"
+      subtitle="Cadastre seus clientes e veículos protegidos na Planmais"
       actions={
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <HinovaBatchImportDialog />
           <MemberDialog />
         </div>
       }
     >
-      {isLoading ? (
-        <div className="flex justify-center p-8">Carregando associados...</div>
-      ) : members?.length === 0 ? (
-        <div className="flex flex-col items-center justify-center p-12 text-center space-y-4 rounded-2xl border border-dashed border-border/80 bg-card">
-          <div className="size-12 rounded-2xl bg-muted/60 flex items-center justify-center text-muted-foreground">
-            <User className="size-6" />
-          </div>
-          <div>
-            <p className="text-base font-semibold text-foreground">Nenhum associado cadastrado</p>
-            <p className="text-sm text-muted-foreground max-w-sm mt-1">
-              Comece cadastrando seu primeiro cliente ou importe o lote de associados do relatório Planmais (SGA Hinova).
-            </p>
-          </div>
-          <div className="flex items-center gap-2.5 flex-wrap justify-center pt-1">
-            <HinovaBatchImportDialog />
-            <MemberDialog />
-          </div>
-        </div>
-      ) : (
-        <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-          {members?.map((m: any) => (
-            <Card key={m.id} className="rounded-2xl border border-border/80 shadow-card bg-card overflow-hidden hover:border-primary/40 transition-all flex flex-col justify-between">
+      <div className="space-y-4">
+        {/* KPIs Resumidos */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <Card className="rounded-2xl border border-border/80 shadow-xs bg-card p-4">
+            <div className="flex items-center justify-between">
               <div>
-                <CardHeader className="p-5 pb-3 border-b border-border/60">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2.5 truncate">
-                      <div className="size-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
-                        <User className="size-4" />
-                      </div>
-                      <div className="truncate">
-                        <CardTitle className="text-base font-semibold truncate">{m.name}</CardTitle>
-                        <CardDescription className="text-xs">Doc: {m.document}</CardDescription>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      <Badge variant={m.status === 'active' ? 'default' : 'secondary'} className="rounded-full text-xs font-semibold px-2.5">
-                        {m.status === 'active' ? 'Ativo' : m.status}
-                      </Badge>
-                      <MemberDialog member={m} />
-                      <DeleteMemberButton memberId={m.id} />
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="p-5 space-y-4">
-                  <div className="text-sm space-y-1.5 text-muted-foreground bg-muted/20 p-3 rounded-xl border border-border/40">
-                    {m.phone && <p className="flex items-center gap-2">📞 <span className="font-mono text-xs text-foreground">{m.phone}</span></p>}
-                    {m.email && <p className="flex items-center gap-2 truncate">✉️ <span className="text-foreground truncate">{m.email}</span></p>}
-                  </div>
-
-                  <div className="space-y-2.5 pt-2">
-                    <div className="flex items-center justify-between">
-                      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Veículos ({m.vehicles?.length || 0})</p>
-                    </div>
-                    {m.vehicles?.map((v: any) => (
-                      <div key={v.id} className="flex justify-between items-center bg-muted/40 p-2.5 rounded-xl border border-border/40 text-sm gap-2">
-                        <div className="space-y-0.5 min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <p className="font-mono font-bold text-xs text-foreground tracking-wide">{v.plate}</p>
-                            <VehicleCategoryBadge category={v.category} size="sm" />
-                          </div>
-                          <p className="text-xs text-muted-foreground truncate">{v.brand} {v.model}</p>
-                        </div>
-                        <ShieldCheck className="size-4 text-emerald-600 shrink-0" />
-                      </div>
-                    ))}
-                    <div className="pt-1">
-                      <VehicleDialog memberId={m.id} memberName={m.name} />
-                    </div>
-                  </div>
-                </CardContent>
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  Total de Associados
+                </span>
+                <p className="text-2xl font-extrabold text-foreground mt-0.5">{totalMembers}</p>
               </div>
-            </Card>
-          ))}
+              <div className="size-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+                <Users className="size-4.5" />
+              </div>
+            </div>
+          </Card>
+
+          <Card className="rounded-2xl border border-border/80 shadow-xs bg-card p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  Associados Ativos
+                </span>
+                <p className="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400 mt-0.5">
+                  {activeMembers}
+                </p>
+              </div>
+              <div className="size-9 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center">
+                <ShieldCheck className="size-4.5" />
+              </div>
+            </div>
+          </Card>
+
+          <Card className="rounded-2xl border border-border/80 shadow-xs bg-card p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  Veículos Vinculados
+                </span>
+                <p className="text-2xl font-extrabold text-foreground mt-0.5">{totalVehicles}</p>
+              </div>
+              <div className="size-9 rounded-xl bg-blue-500/10 text-blue-600 flex items-center justify-center">
+                <Car className="size-4.5" />
+              </div>
+            </div>
+          </Card>
         </div>
-      )}
+
+        {/* Barra de Filtros e Busca */}
+        <Card className="rounded-2xl border border-border/80 shadow-xs bg-card">
+          <CardContent className="p-3.5">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                <Input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Buscar associado por nome, CPF, telefone ou placa..."
+                  className="pl-9 h-9 rounded-xl bg-background border-border/80 text-xs"
+                />
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0">
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="h-9 w-[160px] rounded-xl bg-background border-border/80 text-xs font-medium">
+                    <Filter className="size-3 mr-1 text-muted-foreground" />
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl">
+                    <SelectItem value="ALL">Todos os Status</SelectItem>
+                    <SelectItem value="ACTIVE">Ativos</SelectItem>
+                    <SelectItem value="INACTIVE">Inativos</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Listagem de Associados em Tabela/Lista */}
+        {isLoading ? (
+          <div className="flex justify-center p-8 text-xs text-muted-foreground">Carregando associados...</div>
+        ) : memberList.length === 0 ? (
+          <div className="flex flex-col items-center justify-center p-12 text-center space-y-4 rounded-2xl border border-dashed border-border/80 bg-card">
+            <div className="size-12 rounded-2xl bg-muted/60 flex items-center justify-center text-muted-foreground">
+              <User className="size-6" />
+            </div>
+            <div>
+              <p className="text-base font-semibold text-foreground">Nenhum associado cadastrado</p>
+              <p className="text-sm text-muted-foreground max-w-sm mt-1">
+                Comece cadastrando seu primeiro cliente ou importe o lote de associados do relatório Planmais (SGA Hinova).
+              </p>
+            </div>
+            <div className="flex items-center gap-2.5 flex-wrap justify-center pt-1">
+              <HinovaBatchImportDialog />
+              <MemberDialog />
+            </div>
+          </div>
+        ) : filteredMembers.length === 0 ? (
+          <Card className="rounded-2xl border border-dashed border-border p-10 text-center bg-card">
+            <User className="size-8 text-muted-foreground mx-auto mb-2" />
+            <p className="text-sm font-bold text-foreground">Nenhum associado encontrado</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Tente alterar os termos de busca ou filtros.</p>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setSearch("");
+                setStatusFilter("ALL");
+              }}
+              className="mt-3 rounded-xl text-xs h-8"
+            >
+              Limpar Filtros
+            </Button>
+          </Card>
+        ) : (
+          <div className="rounded-2xl border border-border/80 bg-card shadow-card overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs text-left">
+                <thead className="bg-muted/30 border-b border-border/60 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
+                  <tr>
+                    <th className="px-4 py-3.5">Associado</th>
+                    <th className="px-4 py-3.5">Contatos</th>
+                    <th className="px-4 py-3.5">Veículos Vinculados</th>
+                    <th className="px-4 py-3.5">Consultor</th>
+                    <th className="px-4 py-3.5 text-center">Status</th>
+                    <th className="px-4 py-3.5 text-right">Ações</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/50">
+                  {filteredMembers.map((m: any) => {
+                    const partner = Array.isArray(m.partners) ? m.partners[0] : m.partners;
+                    const vehiclesList = m.vehicles || [];
+
+                    return (
+                      <tr key={m.id} className="hover:bg-muted/20 transition-colors">
+                        {/* Associado */}
+                        <td className="px-4 py-3.5 align-middle">
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <div className="size-8 rounded-xl bg-primary/10 text-primary font-bold text-xs flex items-center justify-center shrink-0">
+                              {m.name?.charAt(0)?.toUpperCase() || "A"}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="font-bold text-foreground text-xs leading-tight truncate">{m.name}</p>
+                              <p className="text-[10px] text-muted-foreground font-mono mt-0.5">
+                                CPF: {formatCpfCnpj(m.document)}
+                              </p>
+                            </div>
+                          </div>
+                        </td>
+
+                        {/* Contatos com Ícones (sem emojis) */}
+                        <td className="px-4 py-3.5 align-middle">
+                          <div className="space-y-1 min-w-0">
+                            {m.phone ? (
+                              <div className="flex items-center gap-1.5">
+                                <span className="inline-flex items-center gap-1 font-mono text-[11px] text-foreground">
+                                  <Phone className="size-3 text-primary shrink-0" />
+                                  {formatPhone(m.phone)}
+                                </span>
+                                <a
+                                  href={`https://wa.me/55${m.phone.replace(/\D/g, "")}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  title="WhatsApp"
+                                  className="size-5 rounded-md bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 flex items-center justify-center transition-colors"
+                                >
+                                  <MessageCircle className="size-3" />
+                                </a>
+                              </div>
+                            ) : (
+                              <span className="text-[11px] text-muted-foreground">—</span>
+                            )}
+                            {m.email && (
+                              <div className="flex items-center gap-1 text-[11px] text-muted-foreground truncate max-w-[200px]">
+                                <Mail className="size-3 text-muted-foreground shrink-0" />
+                                <span className="truncate">{m.email}</span>
+                              </div>
+                            )}
+                          </div>
+                        </td>
+
+                        {/* Veículos Protegidos */}
+                        <td className="px-4 py-3.5 align-middle">
+                          <div className="space-y-1.5 min-w-[200px]">
+                            {vehiclesList.length === 0 ? (
+                              <span className="text-[11px] text-muted-foreground italic">Nenhum veículo vinculado</span>
+                            ) : (
+                              <div className="flex flex-wrap gap-1.5">
+                                {vehiclesList.map((v: any) => (
+                                  <div
+                                    key={v.id}
+                                    className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-muted/60 border border-border/60 text-[11px]"
+                                  >
+                                    <span className="font-mono font-bold text-foreground">{v.plate}</span>
+                                    <span className="text-muted-foreground truncate max-w-[120px]">
+                                      {v.brand} {v.model}
+                                    </span>
+                                    <VehicleCategoryBadge category={v.category} size="sm" />
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                            <div>
+                              <VehicleDialog memberId={m.id} memberName={m.name} />
+                            </div>
+                          </div>
+                        </td>
+
+                        {/* Consultor / Parceiro */}
+                        <td className="px-4 py-3.5 align-middle">
+                          {partner?.name ? (
+                            <Badge variant="outline" className="text-[10px] border-primary/30 text-primary font-medium">
+                              {partner.name}
+                            </Badge>
+                          ) : (
+                            <span className="text-[11px] text-muted-foreground">Direto</span>
+                          )}
+                        </td>
+
+                        {/* Status */}
+                        <td className="px-4 py-3.5 align-middle text-center">
+                          <Badge
+                            variant={m.status === "active" ? "default" : "secondary"}
+                            className="text-[10px] font-bold rounded-full px-2 py-0.5"
+                          >
+                            {m.status === "active" ? "Ativo" : m.status || "Inativo"}
+                          </Badge>
+                        </td>
+
+                        {/* Ações */}
+                        <td className="px-4 py-3.5 align-middle text-right">
+                          <div className="flex items-center justify-end gap-1">
+                            <MemberDialog member={m} />
+                            <DeleteMemberButton memberId={m.id} />
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+      </div>
     </AppLayout>
   );
 }
