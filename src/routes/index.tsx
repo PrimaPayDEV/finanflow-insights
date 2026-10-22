@@ -5,7 +5,6 @@ import {
   ShieldCheck,
   Building2,
   ArrowRight,
-  Sparkles,
   Lock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -154,36 +153,7 @@ function HubPage() {
 
       {/* Conteúdo Principal do Hub */}
       <main className="relative z-10 flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-8 sm:py-12 flex flex-col justify-center space-y-8 sm:space-y-10">
-        {/* Cabeçalho Resumido (Sem "Escolha o ambiente da sua operação") */}
-        <section className="text-center max-w-xl mx-auto space-y-2">
-          <motion.div
-            initial={{ opacity: 0, y: -6 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
-            className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-purple-500/30 bg-purple-500/10 text-purple-300 text-xs font-semibold tracking-wide"
-          >
-            <Sparkles className="size-3.5 text-purple-400" />
-            <span>Ecossistema Integrado Prima</span>
-          </motion.div>
 
-          <motion.h1
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.05 }}
-            className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight text-white"
-          >
-            Hub de Serviços
-          </motion.h1>
-
-          <motion.p
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.1 }}
-            className="text-xs sm:text-sm text-slate-400 max-w-md mx-auto leading-relaxed"
-          >
-            Selecione a plataforma desejada para acessar o ambiente operacional
-          </motion.p>
-        </section>
 
         {/* Grade dos 3 Cards Resumidos (Foco em Nomes e Ícones) */}
         <section className="grid grid-cols-1 md:grid-cols-3 gap-5 sm:gap-6 max-w-5xl mx-auto w-full">
