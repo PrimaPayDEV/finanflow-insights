@@ -43,10 +43,10 @@ const ENV_META: Record<
   }
 > = {
   ec: {
-    title: "Estabelecimentos Comerciais (ECs)",
-    appName: "PrimaHub • ECs",
+    title: "Estabelecimentos Comerciais",
+    appName: "Estabelecimentos Comerciais",
     shortTitle: "Ambiente ECs",
-    subtitle: "Gestão financeira, auditoria de taxas CPAG59/CPAG56 e conciliação de recebíveis POS",
+    subtitle: "Gestão financeira",
     badgeLabel: "Ambiente Estabelecimentos Comerciais",
     icon: Store,
     gradientClass: "from-purple-600 via-indigo-600 to-indigo-700",
@@ -57,22 +57,22 @@ const ENV_META: Record<
   },
   veicular: {
     title: "Proteção Veicular",
-    appName: "Planmais • Proteção Veicular",
-    shortTitle: "Planmais Veicular",
-    subtitle: "Central de frotas protegidas, associados, vistorias Hinova SGA e emissão de certificados",
-    badgeLabel: "Ambiente Proteção Veicular Planmais",
+    appName: "Proteção Veicular",
+    shortTitle: "Proteção Veicular",
+    subtitle: "Central de frotas protegidas, associados e emissão de certificados",
+    badgeLabel: "Ambiente Proteção Veicular",
     icon: Car,
     gradientClass: "from-emerald-600 via-teal-600 to-cyan-700",
     borderHighlight: "border-emerald-500/30 shadow-emerald-500/10",
     badgeColor: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30",
     redirectPath: "/vehicles",
-    placeholderEmail: "gestao@planmais.com.br",
+    placeholderEmail: "gestao@protecaoveicular.com.br",
   },
   imobiliaria: {
     title: "Gestão Imobiliária",
-    appName: "Prima Imóveis • Gestão Imobiliária",
+    appName: "Gestão Imobiliária",
     shortTitle: "Imobiliária",
-    subtitle: "Controle de contratos, emissão de aluguéis, split Asaas e repasses a proprietários",
+    subtitle: "Controle de contratos, emissão de aluguéis e repasses a proprietários",
     badgeLabel: "Ambiente Gestão Imobiliária",
     icon: Building2,
     gradientClass: "from-amber-600 via-orange-600 to-amber-700",
@@ -246,7 +246,7 @@ function Login() {
 
           <div>
             <h1 className="text-2xl font-extrabold tracking-tight text-foreground">
-              {envConfig ? envConfig.appName : "PrimaHub"}
+              {envConfig ? envConfig.appName : "Prima"}
             </h1>
             <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto leading-relaxed">
               {envConfig ? envConfig.subtitle : "Acesse o ecossistema com suas credenciais de usuário"}

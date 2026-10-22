@@ -134,7 +134,7 @@ function AuthGuard({ children }: { children: ReactNode }) {
     if (!isLoading) {
       const isPublicRoute = pathname === "/" || pathname === "/login" || pathname.startsWith("/public") || pathname.startsWith("/api/public");
       if (!user && !isPublicRoute) {
-        navigate({ to: "/login" });
+        navigate({ to: "/" });
       } else if (user && pathname === "/login") {
         if (role === 'merchant') {
           navigate({ to: "/recebiveis/dashboard" });

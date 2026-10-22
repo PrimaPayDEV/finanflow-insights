@@ -446,7 +446,13 @@ export function AppLayout({
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={signOut} className="text-destructive focus:text-destructive cursor-pointer font-medium rounded-lg flex items-center gap-2.5 py-2 px-2.5">
+                    <DropdownMenuItem 
+                      onClick={async () => {
+                        await signOut();
+                        navigate({ to: "/" });
+                      }} 
+                      className="text-destructive focus:text-destructive cursor-pointer font-medium rounded-lg flex items-center gap-2.5 py-2 px-2.5"
+                    >
                       <LogOut className="size-4" />
                       <span>Sair</span>
                     </DropdownMenuItem>
