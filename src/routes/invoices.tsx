@@ -144,12 +144,12 @@ function NewInvoiceDialog() {
           <Plus className="size-4" /> Gerar Fatura
         </Button>
       </DialogTrigger>
-      <DialogContent className="w-[95vw] max-w-lg max-h-[90vh] sm:max-h-[86vh] flex flex-col p-0 gap-0 rounded-2xl bg-card border-border shadow-2xl overflow-hidden">
+      <DialogContent className="w-[95vw] max-w-lg max-h-[94vh] flex flex-col p-0 gap-0 rounded-2xl bg-card border-border shadow-2xl overflow-hidden">
         <DialogHeader className="p-4 sm:p-5 pb-2.5 border-b border-border/60 shrink-0">
           <DialogTitle>Nova Fatura / Boleto</DialogTitle>
           <DialogDescription>Gere uma nova cobrança híbrida (Pix/Boleto) para um associado.</DialogDescription>
         </DialogHeader>
-        <div className="flex-1 overflow-y-auto min-h-0 p-4 sm:p-5 space-y-3.5">
+        <div className="flex-1 overflow-y-auto min-h-0 px-4 sm:px-5 py-3 space-y-3">
           <div className="space-y-2">
             <Label>Associado</Label>
             <Select value={memberId} onValueChange={handleSelectMember}>
