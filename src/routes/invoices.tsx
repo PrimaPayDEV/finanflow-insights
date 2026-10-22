@@ -193,6 +193,11 @@ function NewInvoiceDialog() {
             <div className="space-y-2">
               <Label>Valor (R$)</Label>
               <Input type="text" value={amount} onChange={e => setAmount(formatCurrencyInput(e.target.value))} placeholder="R$ 0,00" />
+              {selectedMember && memberVehicles.length > 0 && (
+                <p className="text-[10px] text-muted-foreground">
+                  Mensalidade de {memberVehicles.length} veículo{memberVehicles.length > 1 ? "s" : ""} do associado
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">
