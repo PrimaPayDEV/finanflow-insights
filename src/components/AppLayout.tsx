@@ -440,9 +440,9 @@ export function AppLayout({
       <div className="flex min-h-screen w-full flex-col bg-slate-50/50 dark:bg-slate-950 relative print:overflow-visible print:h-auto">
         {/* Barra Superior de Navegação (Navbar no Topo) */}
         <header className="print:hidden sticky top-0 z-30 border-b border-border/70 bg-background/90 backdrop-blur-md">
-          <div className="flex h-16 items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+          <div className="flex h-16 items-center justify-between gap-3 px-4 sm:px-6 2xl:px-8">
             {/* Logo / Marca */}
-            <div className="flex items-center gap-3 shrink-0">
+            <div className="flex min-w-0 items-center gap-3 shrink-0">
               <Link to="/dashboard" className="flex items-center gap-2.5 transition-opacity hover:opacity-90">
                 {logoUrl ? (
                   <img src={logoUrl} alt={companyName || "Logo"} className="h-8 w-auto max-w-[140px] object-contain" />
@@ -459,13 +459,13 @@ export function AppLayout({
                   </>
                 )}
               </Link>
-              <span className="hidden xl:inline-flex items-center text-[10px] font-bold uppercase tracking-wider text-muted-foreground bg-muted/60 border border-border/60 px-2 py-0.5 rounded-full">
+              <span className="hidden min-[1700px]:inline-flex items-center text-[10px] font-bold uppercase tracking-wider text-muted-foreground bg-muted/60 border border-border/60 px-2 py-0.5 rounded-full">
                 Proteção Veicular
               </span>
             </div>
 
             {/* Menu no Topo no Desktop (Com estrutura para Sub-menus sem separação por seção) */}
-            <nav className="hidden lg:flex items-center gap-1.5 flex-1 max-w-3xl ml-4">
+            <nav className="hidden xl:flex min-w-0 flex-1 items-center justify-center gap-0.5 2xl:gap-1">
               {veicularNavItems.map((item) => {
                 const active = isTopItemActive(item);
                 const hasChildren = item.children && item.children.length > 0;
@@ -479,13 +479,13 @@ export function AppLayout({
                           variant="ghost"
                           size="sm"
                           className={cn(
-                            "h-9 px-3 rounded-xl font-semibold text-xs gap-1.5 transition-all duration-150 group cursor-pointer",
+                            "h-9 px-2.5 2xl:px-3 rounded-xl font-semibold text-xs gap-1.5 whitespace-nowrap transition-all duration-150 group cursor-pointer",
                             active
                               ? "bg-primary text-primary-foreground font-bold shadow-xs hover:bg-primary/90 hover:text-primary-foreground"
                               : "text-muted-foreground hover:text-foreground hover:bg-muted/70"
                           )}
                         >
-                          <Icon className="size-4 shrink-0" />
+                          <Icon className="hidden 2xl:block size-4 shrink-0" />
                           <span>{item.label}</span>
                           <ChevronDown className="size-3.5 opacity-60 transition-transform duration-200 group-data-[state=open]:rotate-180" />
                         </Button>
@@ -547,14 +547,14 @@ export function AppLayout({
                     size="sm"
                     asChild
                     className={cn(
-                      "h-9 px-3 rounded-xl font-semibold text-xs gap-1.5 transition-all duration-150",
+                      "h-9 px-2.5 2xl:px-3 rounded-xl font-semibold text-xs gap-1.5 whitespace-nowrap transition-all duration-150",
                       active
                         ? "bg-primary text-primary-foreground font-bold shadow-xs hover:bg-primary/90 hover:text-primary-foreground"
                         : "text-muted-foreground hover:text-foreground hover:bg-muted/70"
                     )}
                   >
                     <Link to={item.to!}>
-                      <Icon className="size-4 shrink-0" />
+                      <Icon className="hidden 2xl:block size-4 shrink-0" />
                       <span>{item.label}</span>
                     </Link>
                   </Button>
@@ -563,13 +563,13 @@ export function AppLayout({
             </nav>
 
             {/* Ações da direita e Gatilho Mobile */}
-            <div className="flex items-center gap-2">
+            <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
               <RightActions />
 
               {/* Botão do Menu Mobile (lg:hidden) */}
               <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
                 <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon" className="lg:hidden shrink-0 rounded-xl">
+                  <Button variant="ghost" size="icon" className="xl:hidden shrink-0 rounded-xl">
                     <Menu className="size-5" />
                     <span className="sr-only">Abrir menu</span>
                   </Button>
@@ -655,18 +655,18 @@ export function AppLayout({
 
           {/* Sub-barra de Título da Página e Ações (Linha 2) */}
           {(title || actions) && (
-            <div className="border-t border-border/50 bg-background/50 px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between gap-4 flex-wrap">
+            <div className="border-t border-border/50 bg-background/50 px-4 sm:px-6 2xl:px-8 py-3.5 flex items-center justify-between gap-4 flex-wrap">
               <div className="truncate min-w-0">
                 <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground truncate">{title}</h1>
-                {subtitle && <p className="text-xs sm:text-sm text-muted-foreground truncate mt-0.5">{subtitle}</p>}
+                {subtitle && <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2 sm:truncate mt-0.5">{subtitle}</p>}
               </div>
-              {actions && <div className="flex items-center gap-2 shrink-0">{actions}</div>}
+              {actions && <div className="flex flex-wrap items-center gap-2 shrink-0">{actions}</div>}
             </div>
           )}
         </header>
 
         {/* Conteúdo Principal Full-Width */}
-        <main className="flex-1 overflow-x-hidden px-4 py-5 sm:px-6 sm:py-6 lg:px-8 print:p-0 print:overflow-visible flex flex-col justify-between">
+        <main className="flex-1 overflow-x-hidden px-4 py-5 sm:px-6 sm:py-6 2xl:px-8 print:p-0 print:overflow-visible flex flex-col justify-between">
           <AnimatePresence mode="wait">
             <motion.div
               key={pathname}
