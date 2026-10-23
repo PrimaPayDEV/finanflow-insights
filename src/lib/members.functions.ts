@@ -306,7 +306,8 @@ export const linkVehicleToMember = createServerFn({ method: "POST" })
           })
           .select("id")
           .single();
-        targetMemberId = createdPl?.id;
+        if (!createdPl?.id) throw new Error("Não foi possível criar o associado avulso.");
+        targetMemberId = createdPl.id;
       }
     }
 

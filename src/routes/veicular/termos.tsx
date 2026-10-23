@@ -289,7 +289,7 @@ function TermosPage() {
             <div className="text-right">
               <span className="text-[10px] font-mono text-slate-500 block uppercase">Documento Oficial</span>
               <span className="text-xs font-mono font-bold text-slate-900 block">
-                REF: {termoType}-{selectedVehicle?.plate || "GERAL"}-{now.getFullYear()}
+                REF: {termoType}-{selectedVehicle?.plate || "GERAL"}-{new Date().getFullYear()}
               </span>
             </div>
           </div>
