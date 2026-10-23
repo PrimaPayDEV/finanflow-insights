@@ -658,15 +658,15 @@ export function AppLayout({
             <div className="border-t border-border/50 bg-background/50 px-4 sm:px-6 2xl:px-8 py-3.5 flex items-center justify-between gap-4 flex-wrap">
               <div className="truncate min-w-0">
                 <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground truncate">{title}</h1>
-                {subtitle && <p className="text-xs sm:text-sm text-muted-foreground truncate mt-0.5">{subtitle}</p>}
+                {subtitle && <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2 sm:truncate mt-0.5">{subtitle}</p>}
               </div>
-              {actions && <div className="flex items-center gap-2 shrink-0">{actions}</div>}
+              {actions && <div className="flex flex-wrap items-center gap-2 shrink-0">{actions}</div>}
             </div>
           )}
         </header>
 
         {/* Conteúdo Principal Full-Width */}
-        <main className="flex-1 overflow-x-hidden px-4 py-5 sm:px-6 sm:py-6 lg:px-8 print:p-0 print:overflow-visible flex flex-col justify-between">
+        <main className="flex-1 overflow-x-hidden px-4 py-5 sm:px-6 sm:py-6 2xl:px-8 print:p-0 print:overflow-visible flex flex-col justify-between">
           <AnimatePresence mode="wait">
             <motion.div
               key={pathname}
