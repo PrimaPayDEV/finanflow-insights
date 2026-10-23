@@ -7,14 +7,14 @@ import {
   ArrowRight,
   Lock,
   Globe,
-  ExternalLink,
+  Copy,
 } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { AsaasBaasSeal } from "@/components/AsaasBaasSeal";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   resolvePlatformUrl,
-  DEFAULT_PLATFORM_URLS,
   type PlatformKey,
 } from "@/lib/environment";
 
@@ -62,7 +62,7 @@ const PLATFORMS: PlatformConfig[] = [
     glowColor: "bg-purple-600",
     borderHover: "hover:border-purple-500/60 hover:shadow-purple-500/10",
     buttonClass: "bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500",
-    badgeDomain: "primahubec.lovable.app",
+    badgeDomain: "/login?env=ec",
     loginPath: "/login?env=ec",
     directPath: "/dashboard",
   },
@@ -75,7 +75,7 @@ const PLATFORMS: PlatformConfig[] = [
     glowColor: "bg-emerald-600",
     borderHover: "hover:border-emerald-500/60 hover:shadow-emerald-500/10",
     buttonClass: "bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500",
-    badgeDomain: "primahubveicular.lovable.app",
+    badgeDomain: "/login?env=veicular",
     loginPath: "/login?env=veicular",
     directPath: "/vehicles",
   },
@@ -88,7 +88,7 @@ const PLATFORMS: PlatformConfig[] = [
     glowColor: "bg-amber-600",
     borderHover: "hover:border-amber-500/60 hover:shadow-amber-500/10",
     buttonClass: "bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500",
-    badgeDomain: "primahubimob.lovable.app",
+    badgeDomain: "/login?env=imobiliaria",
     loginPath: "/login?env=imobiliaria",
     directPath: "/real-estate/charges",
   },
@@ -103,6 +103,17 @@ function HubPage() {
     if (appMode === "billing") return "/vehicles";
     if (role === "merchant") return "/recebiveis/dashboard";
     return "/dashboard";
+  };
+
+  const copyShareableLink = (e: React.MouseEvent, _platformId: PlatformKey, path: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const origin = typeof window !== "undefined" && window.location?.origin ? window.location.origin : "https://primahubserv.lovable.app";
+    const fullUrl = `${origin}${path}`;
+    navigator.clipboard.writeText(fullUrl);
+    toast.success("Link copiado para a área de transferência!", {
+      description: fullUrl,
+    });
   };
 
   const handleSignOut = async () => {
@@ -178,7 +189,6 @@ function HubPage() {
       {/* Conteúdo Principal do Hub */}
       <main className="relative z-10 flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-8 sm:py-12 flex flex-col justify-center space-y-8 sm:space-y-10">
 
-
         {/* Grade dos 3 Cards Resumidos (Foco em Nomes e Ícones) */}
         <section className="grid grid-cols-1 md:grid-cols-3 gap-5 sm:gap-6 max-w-5xl mx-auto w-full">
           {PLATFORMS.map((platform, idx) => {
@@ -205,17 +215,23 @@ function HubPage() {
                   />
 
                   <div className="space-y-4">
-                    {/* Topo do Card: Ícone e Domínio dedicado */}
+                    {/* Topo do Card: Ícone e Botão/Badge de Link direto */}
                     <div className="flex items-center justify-between">
                       <div
                         className={`size-12 rounded-2xl bg-gradient-to-br ${platform.gradient} text-white flex items-center justify-center shadow-lg transition-transform duration-300 group-hover:scale-105 shrink-0`}
                       >
                         <Icon className="size-6" />
                       </div>
-                      <span className="inline-flex items-center gap-1 text-[10px] font-mono px-2 py-0.5 rounded-md bg-slate-800/70 border border-slate-700/60 text-slate-400 group-hover:text-slate-200 transition-colors">
-                        <Globe className="size-2.5 text-slate-500" />
-                        {platform.badgeDomain}
-                      </span>
+                      <button
+                        type="button"
+                        onClick={(e) => copyShareableLink(e, platform.id, platform.loginPath)}
+                        title="Clique para copiar o link direto de acesso deste ambiente"
+                        className="inline-flex items-center gap-1.5 text-[10px] font-mono px-2.5 py-1 rounded-lg bg-slate-800/80 border border-slate-700/60 text-slate-300 hover:text-white hover:border-slate-500 hover:bg-slate-700/60 transition-all cursor-pointer group/badge"
+                      >
+                        <Globe className="size-3 text-slate-400 group-hover/badge:text-purple-400" />
+                        <span>{platform.badgeDomain}</span>
+                        <Copy className="size-2.5 text-slate-400 group-hover/badge:text-purple-300 ml-0.5 opacity-70 group-hover/badge:opacity-100" />
+                      </button>
                     </div>
 
                     {/* Nome e Resumo */}

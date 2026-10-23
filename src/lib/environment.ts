@@ -8,9 +8,9 @@ export const HUB_URL = "https://primahubserv.lovable.app";
 
 export const DEFAULT_PLATFORM_URLS = {
   hub: HUB_URL,
-  ec: "https://primahubec.lovable.app",
-  veicular: "https://primahubveicular.lovable.app",
-  imobiliaria: "https://primahubimob.lovable.app",
+  ec: "",
+  veicular: "",
+  imobiliaria: "",
 } as const;
 
 export type PlatformKey = keyof typeof DEFAULT_PLATFORM_URLS;
@@ -34,7 +34,7 @@ export function getCurrentOrigin(): string {
   if (typeof window !== "undefined" && window.location?.origin) {
     return window.location.origin;
   }
-  return "";
+  return HUB_URL;
 }
 
 /**
@@ -47,7 +47,7 @@ export function isLocalEnvironment(): boolean {
 }
 
 /**
- * Retorna a URL base de um determinado ambiente
+ * Retorna a URL base de um determinado ambiente (apenas se houver configuração externa explícita)
  */
 export function getPlatformBaseUrl(platform: PlatformKey): string {
   // 1. Verificação de override salvo no navegador
@@ -61,22 +61,39 @@ export function getPlatformBaseUrl(platform: PlatformKey): string {
   if (platform === "veicular" && import.meta.env.VITE_VEICULAR_URL) return import.meta.env.VITE_VEICULAR_URL;
   if (platform === "imobiliaria" && import.meta.env.VITE_IMOBILIARIA_URL) return import.meta.env.VITE_IMOBILIARIA_URL;
 
-  // 3. URLs padrão separadas por ambiente
-  return DEFAULT_PLATFORM_URLS[platform];
+  // 3. Padrão: mesma aplicação unificada
+  return "";
 }
 
 /**
- * Resolve o link completo de acesso para um ambiente (login ou rota direta)
+ * Retorna o link absoluto compartilhável para a plataforma
+ */
+export function getPlatformShareableUrl(platform: PlatformKey, path: string = ""): string {
+  const customBase = getPlatformBaseUrl(platform);
+  const normalizedPath = path ? (path.startsWith("/") ? path : `/${path}`) : "";
+  if (customBase) {
+    return `${customBase}${normalizedPath}`;
+  }
+  const origin = getCurrentOrigin();
+  return `${origin}${normalizedPath}`;
+}
+
+/**
+ * Resolve o link completo de acesso para um ambiente (login ou rota direta).
+ * Como todas as plataformas rodam integradas no mesmo projeto Lovable,
+ * a navegação padrão é interna (SPA), evitando erros 404 de subdomínios não criados.
  */
 export function resolvePlatformUrl(platform: PlatformKey, path: string): string {
-  // Em localhost mantemos a navegação local interna para permitir testes
-  if (isLocalEnvironment()) {
-    return path;
+  const customBase = getPlatformBaseUrl(platform);
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+
+  // Se houver domínio externo explicitamente configurado que não seja os subdomínios antigos não criados
+  if (customBase && !customBase.includes("primahubec") && !customBase.includes("primahubveicular") && !customBase.includes("primahubimob")) {
+    return `${customBase}${normalizedPath}`;
   }
 
-  const base = getPlatformBaseUrl(platform);
-  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
-  return `${base}${normalizedPath}`;
+  // Retorna caminho relativo para navegação interna limpa
+  return normalizedPath;
 }
 
 /**
@@ -90,8 +107,7 @@ export function getAsaasWebhookUrl(companyId?: string | null, customBaseUrl?: st
   if (customBaseUrl?.trim()) {
     base = customBaseUrl.trim().replace(/\/$/, "");
   } else {
-    const origin = getCurrentOrigin();
-    base = origin || DEFAULT_PLATFORM_URLS.ec;
+    base = getCurrentOrigin();
   }
 
   return `${base}/api/public/asaas-webhook?company_id=${companyId}`;
