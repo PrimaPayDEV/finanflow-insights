@@ -20,7 +20,8 @@ import {
   Loader2,
   Link2,
   CheckCircle2,
-  Sparkles
+  Sparkles,
+  UserX
 } from "lucide-react";
 import { toast } from "sonner";
 import { AppLayout } from "@/components/AppLayout";
@@ -29,6 +30,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
@@ -44,7 +46,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useAuth } from "@/contexts/AuthContext";
-import { getMembers, upsertMember, addVehicle, deleteMember, getVehicles, linkVehicleToMember } from "@/lib/members.functions";
+import { getMembers, upsertMember, addVehicle, deleteMember, getVehicles, linkVehicleToMember, updateMemberStatus } from "@/lib/members.functions";
 import { getPartners } from "@/lib/partner.functions";
 import { translateError } from "@/lib/translateError";
 import { formatCpfCnpj, formatPhone } from "@/lib/format";
@@ -82,6 +84,7 @@ function MemberDialog({
   const [phone, setPhone] = useState(member?.phone || "");
   const [partnerId, setPartnerId] = useState(member?.partner_id || "");
   const [dueDay, setDueDay] = useState<number>(20);
+  const [status, setStatus] = useState<"active" | "inactive">("active");
 
   // Endereço state (com preenchimento automático por CEP e manual)
   const [cep, setCep] = useState("");
@@ -138,6 +141,7 @@ function MemberDialog({
       setEmail(member.email || "");
       setPhone(member.phone || "");
       setPartnerId(member.partner_id || "");
+      setStatus(member.status === "inactive" ? "inactive" : "active");
 
       const savedDue = getMemberDueDay(companyId || "default", member.id, Number((member as any).due_day || 20));
       setDueDay(savedDue);
@@ -186,6 +190,7 @@ function MemberDialog({
       setPhone("");
       setPartnerId("");
       setDueDay(20);
+      setStatus("active");
       setCep("");
       setAddress("");
       setNumber("");
@@ -261,6 +266,7 @@ function MemberDialog({
           email, 
           phone, 
           partner_id: (partnerId && partnerId !== "none") ? partnerId : undefined,
+          status,
           vehicle: vehicleMode === "new" && (plate || brandName || modelName) ? {
             id: vehicleId || undefined,
             plate: plate ? plate.toUpperCase() : undefined,
@@ -324,9 +330,21 @@ function MemberDialog({
           <div className="grid md:grid-cols-2 gap-5">
             {/* Lado Esquerdo: Dados do Associado & Endereço */}
             <div className="space-y-3.5">
-              <h3 className="font-bold text-xs uppercase tracking-wider text-primary border-b border-border/50 pb-1 flex items-center gap-1.5">
-                <User className="size-3.5" /> Informações Pessoais
-              </h3>
+              <div className="flex items-center justify-between pb-1 border-b border-border/50">
+                <h3 className="font-bold text-xs uppercase tracking-wider text-primary flex items-center gap-1.5">
+                  <User className="size-3.5" /> Informações Pessoais
+                </h3>
+                <div className="flex items-center gap-2">
+                  <span className={`text-[10px] font-bold ${status === "active" ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground"}`}>
+                    {status === "active" ? "Ativo" : "Inativo"}
+                  </span>
+                  <Switch
+                    checked={status === "active"}
+                    onCheckedChange={(c) => setStatus(c ? "active" : "inactive")}
+                    className="scale-75 data-[state=checked]:bg-emerald-600"
+                  />
+                </div>
+              </div>
               
               <div className="space-y-1">
                 <Label className="text-xs font-semibold">Nome Completo *</Label>
@@ -882,12 +900,26 @@ function MembersPage() {
 
   const totalMembers = memberList.length;
   const activeMembers = memberList.filter((m: any) => m.status === "active").length;
+  const inactiveMembers = memberList.filter((m: any) => m.status !== "active").length;
   const totalVehicles = memberList.reduce((acc: number, m: any) => acc + (m.vehicles?.length || 0), 0);
+
+  const toggleStatusMutation = useMutation({
+    mutationFn: useServerFn(updateMemberStatus),
+    onSuccess: (_, vars) => {
+      toast.success(
+        vars.data.status === "active"
+          ? "Associado ativado com sucesso! Ele participará dos próximos lotes de fechamento."
+          : "Associado desativado. Ele foi desconsiderado dos lotes de fechamento."
+      );
+      qc.invalidateQueries({ queryKey: ["members"] });
+    },
+    onError: (err: any) => toast.error("Erro ao alterar status: " + err.message),
+  });
 
   return (
     <AppLayout
       title="Gestão de Associados"
-      subtitle="Cadastre seus clientes, defina vencimentos de boletos e gerencie veículos protegidos"
+      subtitle="Cadastre seus clientes, ative/desative para lotes de fechamento e gerencie veículos protegidos"
       actions={
         <Button
           onClick={() => setNewMemberOpen(true)}
@@ -899,7 +931,7 @@ function MembersPage() {
     >
       <div className="space-y-4">
         {/* KPIs Resumidos */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           <Card className="rounded-2xl border border-border/80 shadow-xs bg-card p-4">
             <div className="flex items-center justify-between">
               <div>
@@ -926,6 +958,22 @@ function MembersPage() {
               </div>
               <div className="size-9 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center">
                 <ShieldCheck className="size-4.5" />
+              </div>
+            </div>
+          </Card>
+
+          <Card className="rounded-2xl border border-border/80 shadow-xs bg-card p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  Desativados / Inativos
+                </span>
+                <p className="text-2xl font-extrabold text-amber-600 dark:text-amber-400 mt-0.5">
+                  {inactiveMembers}
+                </p>
+              </div>
+              <div className="size-9 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center">
+                <UserX className="size-4.5" />
               </div>
             </div>
           </Card>
@@ -1163,14 +1211,38 @@ function MembersPage() {
                           )}
                         </td>
 
-                        {/* Status */}
-                        <td className="px-3 py-2.5 sm:px-3.5 sm:py-3 align-middle text-center whitespace-nowrap">
-                          <Badge
-                            variant={m.status === "active" ? "default" : "secondary"}
-                            className="text-[10px] font-bold rounded-full px-2 py-0.5"
-                          >
-                            {m.status === "active" ? "Ativo" : m.status || "Inativo"}
-                          </Badge>
+                        {/* Status com Toggle Interativo (Ativar / Desativar) */}
+                        <td
+                          className="px-3 py-2.5 sm:px-3.5 sm:py-3 align-middle text-center whitespace-nowrap"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <div className="inline-flex items-center gap-1.5 bg-muted/40 hover:bg-muted/60 transition-colors px-2 py-1 rounded-xl border border-border/60">
+                            <Switch
+                              checked={m.status === "active"}
+                              onCheckedChange={(checked) => {
+                                const newStatus = checked ? "active" : "inactive";
+                                toggleStatusMutation.mutate({
+                                  data: {
+                                    id: m.id,
+                                    companyId: companyId!,
+                                    status: newStatus,
+                                  },
+                                });
+                              }}
+                              disabled={toggleStatusMutation.isPending && (toggleStatusMutation.variables as any)?.data?.id === m.id}
+                              className="scale-75 data-[state=checked]:bg-emerald-600"
+                              title={m.status === "active" ? "Clique para desativar (não entrará em lotes)" : "Clique para ativar (habilitar para lotes)"}
+                            />
+                            <span
+                              className={`text-[10px] font-bold ${
+                                m.status === "active"
+                                  ? "text-emerald-700 dark:text-emerald-400"
+                                  : "text-muted-foreground"
+                              }`}
+                            >
+                              {m.status === "active" ? "Ativo" : "Inativo"}
+                            </span>
+                          </div>
                         </td>
 
                         {/* Ações */}

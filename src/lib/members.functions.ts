@@ -11,6 +11,7 @@ const memberSchema = z.object({
   email: z.string().email("E-mail inválido").optional().or(z.literal("")),
   phone: z.string().optional().or(z.literal("")),
   partner_id: z.string().uuid().optional().or(z.literal("")),
+  status: z.string().optional(),
   vehicle: z.object({
     id: z.string().uuid().optional(),
     plate: z.string().max(7).optional().or(z.literal("")),
@@ -97,7 +98,7 @@ export const upsertMember = createServerFn({ method: "POST" })
       }
     }
 
-    const upsertData = {
+    const upsertData: any = {
       company_id: data.companyId,
       name: data.name,
       document: data.document,
@@ -106,6 +107,9 @@ export const upsertMember = createServerFn({ method: "POST" })
       asaas_customer_id: asaasCustomerId || null,
       partner_id: data.partner_id || null,
     };
+    if (data.status) {
+      upsertData.status = data.status;
+    }
 
     let error;
     if (data.id) {
@@ -193,6 +197,20 @@ export const deleteMember = createServerFn({ method: "POST" })
     
     if (error) throw new Error(error.message);
     return { ok: true };
+  });
+
+export const updateMemberStatus = createServerFn({ method: "POST" })
+  .validator((d: { id: string; companyId: string; status: "active" | "inactive" }) => d)
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin
+      .from("members")
+      .update({ status: data.status })
+      .eq("id", data.id)
+      .eq("company_id", data.companyId);
+
+    if (error) throw new Error(error.message);
+    return { ok: true, status: data.status };
   });
 
 export const getVehicles = createServerFn({ method: "GET" })

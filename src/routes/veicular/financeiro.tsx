@@ -134,10 +134,17 @@ function FinanceiroPage() {
   const handleGerarListaFechamento = () => {
     const selectedDueDayNum = dueDayFilter === "todos" ? null : Number(dueDayFilter);
 
-    // Mapear associados ativos
+    // Mapear apenas associados ativos
     const items: LoteItem[] = [];
+    let inactiveSkipped = 0;
 
     for (const m of members) {
+      // Ignorar associados desativados / inativos
+      if (m.status !== "active") {
+        inactiveSkipped++;
+        continue;
+      }
+
       // Pega dia de vencimento preferido do associado ou o padrão (20)
       const memberDueDay = getMemberDueDay(companyId || "default", m.id, Number((m as any).due_day || (m as any).preferred_due_day || 20));
 
@@ -189,7 +196,9 @@ function FinanceiroPage() {
 
     setLoteItems(items);
     setLoteGenerated(true);
-    toast.success(`Lista de fechamento gerada com ${items.length} associados para conferência.`);
+    toast.success(`Lista gerada com ${items.length} associados ativos.`, {
+      description: inactiveSkipped > 0 ? `${inactiveSkipped} associado(s) inativo(s) foram desconsiderados.` : undefined,
+    });
   };
 
   const handleToggleSelectAll = (checked: boolean) => {
