@@ -581,10 +581,12 @@ function MemberDialog({
                         <Label className="text-xs font-semibold">Ano Fabricação</Label>
                         <Input
                           value={year}
-                          onChange={(e) => setYear(e.target.value)}
+                          onChange={(e) => setYear(e.target.value.replace(/\D/g, "").slice(0, 4))}
                           placeholder="2022"
-                          type="number"
-                          className="h-8 rounded-xl text-xs bg-background"
+                          type="text"
+                          inputMode="numeric"
+                          maxLength={4}
+                          className="h-8 rounded-xl text-xs bg-background font-mono"
                         />
                       </div>
                     </div>
@@ -761,10 +763,12 @@ function VehicleDialog({ memberId, memberName }: { memberId: string; memberName:
               <Label className="text-xs font-semibold">Ano de Fabricação</Label>
               <Input
                 value={year}
-                onChange={(e) => setYear(e.target.value)}
+                onChange={(e) => setYear(e.target.value.replace(/\D/g, "").slice(0, 4))}
                 placeholder="2022"
-                type="number"
-                className="h-8.5 rounded-xl text-xs bg-background"
+                type="text"
+                inputMode="numeric"
+                maxLength={4}
+                className="h-8.5 rounded-xl text-xs bg-background font-mono"
               />
             </div>
           </div>

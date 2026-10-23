@@ -1701,10 +1701,13 @@ function NewVehicleDialog({ members, partners = [] }: { members: any[]; partners
                   <div className="space-y-1">
                     <Label className="text-xs font-semibold">Ano Fabricação / Mod.</Label>
                     <Input
-                      type="number"
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="Ex: 2023"
                       value={year}
-                      onChange={(e) => setYear(e.target.value)}
-                      className="rounded-xl font-medium text-xs h-8.5 bg-background"
+                      onChange={(e) => setYear(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                      maxLength={4}
+                      className="rounded-xl font-medium text-xs h-8.5 bg-background font-mono"
                     />
                   </div>
                 </div>
