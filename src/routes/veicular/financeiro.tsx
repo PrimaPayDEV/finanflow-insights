@@ -938,14 +938,14 @@ function FinanceiroPage() {
 
         {/* MODAL: BAIXA MANUAL */}
         <Dialog open={baixaModalOpen} onOpenChange={setBaixaModalOpen}>
-          <DialogContent className="w-[95vw] sm:max-w-md rounded-2xl border-border bg-card p-0 gap-0 overflow-hidden shadow-2xl">
+          <DialogContent className="w-[95vw] sm:max-w-md sm:h-[390px] max-h-[90vh] flex flex-col justify-between rounded-2xl border-border bg-card p-0 gap-0 overflow-hidden shadow-2xl">
             <DialogHeader className="p-4 sm:p-5 pb-3 border-b border-border/60 bg-muted/10 shrink-0">
               <DialogTitle className="text-base font-bold">Registrar Baixa Manual</DialogTitle>
               <DialogDescription className="text-xs">
                 Informe o pagamento recebido para liquidar a cobrança no Asaas
               </DialogDescription>
             </DialogHeader>
-            <div className="p-4 sm:p-5 space-y-3 text-xs">
+            <div className="p-4 sm:p-5 space-y-3 text-xs flex-1 flex flex-col justify-between overflow-y-auto min-h-0">
               <div className="p-3 rounded-xl bg-muted/40 border border-border/60 space-y-1">
                 <span className="text-muted-foreground block text-[10px] uppercase font-bold">Associado:</span>
                 <span className="font-bold text-foreground text-sm block">
@@ -1007,14 +1007,14 @@ function FinanceiroPage() {
 
         {/* MODAL: ALTERAR DATA DE PAGAMENTO / VENCIMENTO */}
         <Dialog open={vencimentoModalOpen} onOpenChange={setVencimentoModalOpen}>
-          <DialogContent className="w-[95vw] sm:max-w-md rounded-2xl border-border bg-card p-0 gap-0 overflow-hidden shadow-2xl">
+          <DialogContent className="w-[95vw] sm:max-w-md sm:h-[350px] max-h-[90vh] flex flex-col justify-between rounded-2xl border-border bg-card p-0 gap-0 overflow-hidden shadow-2xl">
             <DialogHeader className="p-4 sm:p-5 pb-3 border-b border-border/60 bg-muted/10 shrink-0">
               <DialogTitle className="text-base font-bold">Alterar Data do Boleto</DialogTitle>
               <DialogDescription className="text-xs">
                 Atualize o vencimento da cobrança diretamente no gateway Asaas
               </DialogDescription>
             </DialogHeader>
-            <div className="p-4 sm:p-5 space-y-3 text-xs">
+            <div className="p-4 sm:p-5 space-y-3 text-xs flex-1 flex flex-col justify-between overflow-y-auto min-h-0">
               <div className="p-3 rounded-xl bg-muted/40 border border-border/60 space-y-1">
                 <span className="text-muted-foreground block text-[10px] uppercase font-bold">Associado:</span>
                 <span className="font-bold text-foreground text-sm block">

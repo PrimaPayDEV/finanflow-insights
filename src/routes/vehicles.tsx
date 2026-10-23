@@ -863,7 +863,7 @@ function VehiclesPage() {
 
         {/* Modal de Vinculação Rápida de Veículo a Associado */}
         <Dialog open={linkModalOpen} onOpenChange={setLinkModalOpen}>
-          <DialogContent className="w-[95vw] sm:max-w-md rounded-2xl border-border bg-card p-0 gap-0 overflow-hidden shadow-2xl">
+          <DialogContent className="w-[95vw] sm:max-w-md sm:h-[310px] max-h-[90vh] flex flex-col justify-between rounded-2xl border-border bg-card p-0 gap-0 overflow-hidden shadow-2xl">
             <DialogHeader className="p-4 sm:p-5 pb-3 border-b border-border/60 bg-muted/10 shrink-0">
               <DialogTitle className="text-base font-bold flex items-center gap-2">
                 <User className="size-4 text-primary" /> Vincular Veículo a Associado
@@ -872,7 +872,7 @@ function VehiclesPage() {
                 Selecione o associado proprietário para a placa {vehicleToLink?.plate}
               </DialogDescription>
             </DialogHeader>
-            <div className="p-4 sm:p-5 space-y-3 text-xs">
+            <div className="p-4 sm:p-5 space-y-3 text-xs flex-1 flex flex-col justify-center">
               <div className="p-3 rounded-xl bg-muted/40 border border-border/60 space-y-1">
                 <span className="text-muted-foreground block text-[10px] uppercase font-bold">Veículo Selecionado:</span>
                 <span className="font-extrabold text-foreground text-sm block font-mono">
@@ -992,7 +992,7 @@ function VehicleDossierDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[95vw] max-w-4xl max-h-[90vh] sm:max-h-[86vh] flex flex-col p-0 gap-0 border-border bg-card shadow-2xl rounded-2xl sm:rounded-3xl overflow-hidden">
+      <DialogContent className="w-[95vw] sm:w-[880px] sm:max-w-4xl sm:h-[530px] max-h-[92vh] flex flex-col p-0 gap-0 border-border bg-card shadow-2xl rounded-2xl sm:rounded-3xl overflow-hidden">
         {/* Cabeçalho Compacto, 100% Responsivo e com espaço livre garantido para o botão Fechar (X) */}
         <div className="relative bg-gradient-to-r from-primary/15 via-primary/5 to-card pl-4 sm:pl-5 pr-12 sm:pr-14 py-3 border-b border-border/70 shrink-0">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3">
@@ -1025,7 +1025,7 @@ function VehicleDossierDialog({
           </div>
         </div>
 
-        {/* Abas perfeitamente organizadas sem rolagem vertical */}
+        {/* Abas com tamanho estático e navegação suave sem pulos */}
         <Tabs defaultValue="overview" className="w-full flex-1 flex flex-col min-h-0">
           <div className="border-b border-border/60 px-4 sm:px-5 bg-muted/20 shrink-0">
             <TabsList className="bg-transparent h-9 p-0 gap-4 sm:gap-6 w-full justify-start overflow-x-auto no-scrollbar">
@@ -1050,9 +1050,9 @@ function VehicleDossierDialog({
             </TabsList>
           </div>
 
-          <div className="flex-1 overflow-y-auto min-h-0 p-3.5 sm:p-5">
+          <div className="flex-1 overflow-y-auto min-h-0 p-4 sm:p-5 flex flex-col justify-start">
             {/* ABA 1: Ficha Técnica */}
-            <TabsContent value="overview" className="m-0 p-0">
+            <TabsContent value="overview" className="m-0 p-0 flex-1 flex flex-col justify-between">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Lado Esquerdo: Dados do Veículo */}
                 <div className="space-y-2">
@@ -1151,7 +1151,7 @@ function VehicleDossierDialog({
             </TabsContent>
 
             {/* ABA 2: Coberturas (EDITÁVEL) */}
-            <TabsContent value="coverage" className="space-y-3 m-0 p-0">
+            <TabsContent value="coverage" className="space-y-3 m-0 p-0 flex-1 flex flex-col justify-start">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
                 <div className="flex items-center gap-2 flex-1 max-w-md">
                   <Label className="text-xs font-semibold text-muted-foreground whitespace-nowrap">Plano:</Label>
@@ -1325,7 +1325,7 @@ function VehicleDossierDialog({
             </TabsContent>
 
             {/* ABA 3: Mensalidades */}
-            <TabsContent value="financial" className="space-y-3 m-0 p-0">
+            <TabsContent value="financial" className="space-y-3 m-0 p-0 flex-1 flex flex-col justify-start">
               {/* Bloco de Edição do Valor da Proteção */}
               <div className="p-3 rounded-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-muted/20 border border-primary/25 space-y-2 shadow-xs">
                 <div className="grid grid-cols-1 sm:grid-cols-4 gap-2.5 items-end">
@@ -1500,8 +1500,8 @@ function CertificateDialog({
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[95vw] max-w-lg rounded-2xl sm:rounded-3xl p-3.5 sm:p-5 bg-card border-border shadow-2xl overflow-hidden">
-        <div className="border-2 border-primary/30 rounded-2xl p-4 bg-gradient-to-b from-primary/5 via-card to-card relative overflow-hidden">
+      <DialogContent className="w-[95vw] sm:max-w-lg sm:h-[490px] max-h-[92vh] flex flex-col justify-between rounded-2xl sm:rounded-3xl p-4 bg-card border-border shadow-2xl overflow-hidden">
+        <div className="border-2 border-primary/30 rounded-2xl p-4 bg-gradient-to-b from-primary/5 via-card to-card relative overflow-hidden flex-1 flex flex-col justify-between">
           <ShieldCheck className="absolute -right-8 -bottom-8 size-44 text-primary/5 pointer-events-none" />
 
           {/* Cabeçalho */}
@@ -1647,7 +1647,7 @@ function NewVehicleDialog({ members, partners = [] }: { members: any[]; partners
           <span>Cadastrar Veículo</span>
         </Button>
       </DialogTrigger>
-      <DialogContent className="w-[95vw] max-w-lg max-h-[92vh] flex flex-col rounded-2xl bg-card border-border p-0 gap-0 shadow-2xl overflow-hidden">
+      <DialogContent className="w-[95vw] sm:max-w-2xl sm:h-[530px] max-h-[92vh] flex flex-col rounded-2xl bg-card border-border p-0 gap-0 shadow-2xl overflow-hidden">
         <DialogHeader className="p-4 sm:p-5 pb-3 border-b border-border/60 bg-muted/10 shrink-0">
           <DialogTitle className="text-base font-bold flex items-center gap-2">
             <Car className="size-4.5 text-primary" /> Novo Veículo na Frota
@@ -1662,117 +1662,134 @@ function NewVehicleDialog({ members, partners = [] }: { members: any[]; partners
             e.preventDefault();
             createVeh.mutate();
           }}
-          className="overflow-y-auto p-4 sm:p-5 space-y-2.5"
+          className="flex-1 flex flex-col justify-between overflow-hidden min-h-0"
         >
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            <div className="space-y-1">
-              <Label className="text-xs font-semibold">Associado Proprietário</Label>
-              <Select value={memberId} onValueChange={setMemberId}>
-                <SelectTrigger className="rounded-xl h-8.5 text-xs bg-background font-medium">
-                  <SelectValue placeholder="Selecione o associado" />
-                </SelectTrigger>
-                <SelectContent className="rounded-xl max-h-56">
-                  <SelectItem value="avulso" className="text-amber-600 font-semibold">
-                    ⚡ Cadastrar de forma avulsa (Vincular depois)
-                  </SelectItem>
-                  {members.map((m) => (
-                    <SelectItem key={m.id} value={m.id}>
-                      {m.name} ({formatCpfCnpj(m.document)})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+          <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-3 min-h-0">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 items-start">
+              {/* Coluna 1: Dados do Proprietário e Veículo */}
+              <div className="space-y-2.5">
+                <div className="space-y-1">
+                  <Label className="text-xs font-semibold">Associado Proprietário</Label>
+                  <Select value={memberId} onValueChange={setMemberId}>
+                    <SelectTrigger className="rounded-xl h-8.5 text-xs bg-background font-medium">
+                      <SelectValue placeholder="Selecione o associado" />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-xl max-h-56">
+                      <SelectItem value="avulso" className="text-amber-600 font-semibold">
+                        ⚡ Cadastrar de forma avulsa (Vincular depois)
+                      </SelectItem>
+                      {members.map((m) => (
+                        <SelectItem key={m.id} value={m.id}>
+                          {m.name} ({formatCpfCnpj(m.document)})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-            <div className="space-y-1">
-              <Label className="text-xs font-semibold">Vincular a Consultor</Label>
-              <Select value={consultantId} onValueChange={setConsultantId}>
-                <SelectTrigger className="rounded-xl h-8.5 text-xs bg-background">
-                  <SelectValue placeholder="Nenhum (Venda Direta)" />
-                </SelectTrigger>
-                <SelectContent className="rounded-xl">
-                  <SelectItem value="none">Nenhum (Venda Direta)</SelectItem>
-                  {partners.map((p: any) => (
-                    <SelectItem key={p.id} value={p.id}>
-                      {p.name} {p.split_percent ? `(${p.split_percent}%)` : ""}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="space-y-1">
+                    <Label className="text-xs font-semibold">Placa (Mercosul) *</Label>
+                    <Input
+                      placeholder="Ex: BRA2E19"
+                      value={plate}
+                      onChange={(e) => setPlate(e.target.value.toUpperCase())}
+                      maxLength={8}
+                      className="rounded-xl uppercase font-mono font-bold text-xs h-8.5 bg-background"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs font-semibold">Ano Fabricação / Mod.</Label>
+                    <Input
+                      type="number"
+                      value={year}
+                      onChange={(e) => setYear(e.target.value)}
+                      className="rounded-xl font-medium text-xs h-8.5 bg-background"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="space-y-1">
+                    <Label className="text-xs font-semibold">Marca *</Label>
+                    <Input
+                      placeholder="Ex: Toyota, Honda"
+                      value={brand}
+                      onChange={(e) => setBrand(e.target.value)}
+                      className="rounded-xl text-xs h-8.5 bg-background"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs font-semibold">Cor</Label>
+                    <Input
+                      placeholder="Ex: Branco, Preto"
+                      value={color}
+                      onChange={(e) => setColor(e.target.value)}
+                      className="rounded-xl text-xs h-8.5 bg-background"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <Label className="text-xs font-semibold">Modelo do Veículo *</Label>
+                  <Input
+                    placeholder="Ex: Corolla Altis 2.0 Flex"
+                    value={model}
+                    onChange={(e) => setModel(e.target.value)}
+                    className="rounded-xl text-xs h-8.5 bg-background"
+                  />
+                </div>
+              </div>
+
+              {/* Coluna 2: Consultor, Cobrança e Categoria */}
+              <div className="space-y-2.5">
+                <div className="space-y-1">
+                  <Label className="text-xs font-semibold">Vincular a Consultor</Label>
+                  <Select value={consultantId} onValueChange={setConsultantId}>
+                    <SelectTrigger className="rounded-xl h-8.5 text-xs bg-background">
+                      <SelectValue placeholder="Nenhum (Venda Direta)" />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-xl">
+                      <SelectItem value="none">Nenhum (Venda Direta)</SelectItem>
+                      {partners.map((p: any) => (
+                        <SelectItem key={p.id} value={p.id}>
+                          {p.name} {p.split_percent ? `(${p.split_percent}%)` : ""}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-1">
+                  <Label className="text-xs font-semibold">Mensalidade de Proteção *</Label>
+                  <Input
+                    placeholder="R$ 179,90"
+                    value={monthlyFee}
+                    onChange={(e) => setMonthlyFee(formatCurrencyInput(e.target.value))}
+                    className="rounded-xl font-bold text-xs h-8.5 bg-background font-mono"
+                  />
+                </div>
+
+                <div className="pt-0.5">
+                  <VehicleCategorySelector value={category} onChange={setCategory} compact />
+                </div>
+
+                <div className="p-2.5 rounded-xl border border-primary/25 bg-primary/5 flex items-center gap-2.5">
+                  <div className="size-7 rounded-lg bg-primary/15 text-primary flex items-center justify-center shrink-0">
+                    <ShieldCheck className="size-3.5" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs font-bold text-foreground leading-none">Proteção & Asaas Ativo</p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5 leading-tight">
+                      Boletos gerados e rateio de comissão calculado automaticamente.
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-2">
-            <div className="space-y-1">
-              <Label className="text-xs font-semibold">Placa (Mercosul) *</Label>
-              <Input
-                placeholder="Ex: BRA2E19"
-                value={plate}
-                onChange={(e) => setPlate(e.target.value.toUpperCase())}
-                maxLength={8}
-                className="rounded-xl uppercase font-mono font-bold text-xs h-8.5 bg-background"
-              />
-            </div>
-            <div className="space-y-1">
-              <Label className="text-xs font-semibold">Ano Fabricação / Mod.</Label>
-              <Input
-                type="number"
-                value={year}
-                onChange={(e) => setYear(e.target.value)}
-                className="rounded-xl font-medium text-xs h-8.5 bg-background"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-2">
-            <div className="space-y-1">
-              <Label className="text-xs font-semibold">Marca *</Label>
-              <Input
-                placeholder="Ex: Toyota, Honda, Jeep"
-                value={brand}
-                onChange={(e) => setBrand(e.target.value)}
-                className="rounded-xl text-xs h-8.5 bg-background"
-              />
-            </div>
-            <div className="space-y-1">
-              <Label className="text-xs font-semibold">Cor</Label>
-              <Input
-                placeholder="Ex: Branco, Prata, Preto"
-                value={color}
-                onChange={(e) => setColor(e.target.value)}
-                className="rounded-xl text-xs h-8.5 bg-background"
-              />
-            </div>
-          </div>
-
-          <div className="space-y-1">
-            <Label className="text-xs font-semibold">Modelo do Veículo *</Label>
-            <Input
-              placeholder="Ex: Corolla Altis 2.0 Flex"
-              value={model}
-              onChange={(e) => setModel(e.target.value)}
-              className="rounded-xl text-xs h-8.5 bg-background"
-            />
-          </div>
-
-          <div className="space-y-1">
-            <Label className="text-xs font-semibold">Valor da Mensalidade de Proteção *</Label>
-            <Input
-              placeholder="R$ 179,90"
-              value={monthlyFee}
-              onChange={(e) => setMonthlyFee(formatCurrencyInput(e.target.value))}
-              className="rounded-xl font-bold text-xs h-8.5 bg-background"
-            />
-            <p className="text-[10px] text-muted-foreground">
-              Valor padrão cobrado mensalmente do associado via boleto Asaas.
-            </p>
-          </div>
-
-          <div className="pt-0.5">
-            <VehicleCategorySelector value={category} onChange={setCategory} compact />
-          </div>
-
-          <DialogFooter className="p-3.5 sm:p-4 border-t border-border/60 bg-muted/20 -mx-4 sm:-mx-5 -mb-4 sm:-mb-5 mt-3 shrink-0 flex flex-col-reverse sm:flex-row items-center sm:justify-between gap-3">
+          <DialogFooter className="p-3.5 sm:p-4 border-t border-border/60 bg-muted/20 shrink-0 flex flex-col-reverse sm:flex-row items-center sm:justify-between gap-3">
             <AsaasFormSeal />
             <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
               <Button
@@ -1780,7 +1797,7 @@ function NewVehicleDialog({ members, partners = [] }: { members: any[]; partners
                 variant="outline"
                 size="sm"
                 onClick={() => setOpen(false)}
-                className="rounded-xl text-xs h-8"
+                className="rounded-xl text-xs h-8 font-medium"
               >
                 Cancelar
               </Button>

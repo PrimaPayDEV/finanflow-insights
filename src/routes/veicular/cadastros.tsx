@@ -664,7 +664,7 @@ function CadastrosPage() {
 
         {/* MODAL: CADASTRAR/EDITAR CONSULTOR */}
         <Dialog open={partnerModalOpen} onOpenChange={setPartnerModalOpen}>
-          <DialogContent className="w-[95vw] sm:max-w-md rounded-2xl border-border bg-card p-0 gap-0 overflow-hidden shadow-2xl">
+          <DialogContent className="w-[95vw] sm:max-w-md sm:h-[460px] max-h-[92vh] flex flex-col justify-between rounded-2xl border-border bg-card p-0 gap-0 overflow-hidden shadow-2xl">
             <DialogHeader className="p-4 sm:p-5 pb-3 border-b border-border/60 bg-muted/10 shrink-0">
               <DialogTitle className="text-base font-bold">
                 {editingPartner ? "Editar Consultor" : "Novo Consultor"}
@@ -673,7 +673,7 @@ function CadastrosPage() {
                 Configure os dados do consultor e a comissão de split Asaas
               </DialogDescription>
             </DialogHeader>
-            <div className="p-4 sm:p-5 space-y-3">
+            <div className="p-4 sm:p-5 space-y-3 flex-1 flex flex-col justify-between overflow-y-auto min-h-0">
               <div className="space-y-1">
                 <Label className="text-xs font-semibold">Nome Completo *</Label>
                 <Input
@@ -760,7 +760,7 @@ function CadastrosPage() {
 
         {/* MODAL: COTA DE PARTICIPAÇÃO */}
         <Dialog open={cotaModalOpen} onOpenChange={setCotaModalOpen}>
-          <DialogContent className="w-[95vw] sm:max-w-md rounded-2xl border-border bg-card p-0 gap-0 overflow-hidden shadow-2xl">
+          <DialogContent className="w-[95vw] sm:max-w-md sm:h-[500px] max-h-[92vh] flex flex-col justify-between rounded-2xl border-border bg-card p-0 gap-0 overflow-hidden shadow-2xl">
             <DialogHeader className="p-4 sm:p-5 pb-3 border-b border-border/60 bg-muted/10 shrink-0">
               <DialogTitle className="text-base font-bold">
                 {editingCota ? "Editar Faixa de Cota" : "Nova Faixa de Cota de Participação"}
@@ -769,7 +769,7 @@ function CadastrosPage() {
                 Defina os limites de avaliação FIPE e o valor mínimo de franquia
               </DialogDescription>
             </DialogHeader>
-            <div className="p-4 sm:p-5 space-y-3">
+            <div className="p-4 sm:p-5 space-y-3 flex-1 flex flex-col justify-between overflow-y-auto min-h-0">
               <div className="space-y-1">
                 <Label className="text-xs font-semibold">Tipo do Veículo</Label>
                 <Select value={cotaType} onValueChange={(v: any) => setCotaType(v)}>
@@ -848,7 +848,7 @@ function CadastrosPage() {
 
         {/* MODAL: PRODUTO / COBERTURA */}
         <Dialog open={prodModalOpen} onOpenChange={setProdModalOpen}>
-          <DialogContent className="w-[95vw] sm:max-w-md rounded-2xl border-border bg-card p-0 gap-0 overflow-hidden shadow-2xl">
+          <DialogContent className="w-[95vw] sm:max-w-md sm:h-[530px] max-h-[92vh] flex flex-col justify-between rounded-2xl border-border bg-card p-0 gap-0 overflow-hidden shadow-2xl">
             <DialogHeader className="p-4 sm:p-5 pb-3 border-b border-border/60 bg-muted/10 shrink-0">
               <DialogTitle className="text-base font-bold">
                 {editingProd ? "Editar Produto" : "Novo Produto / Cobertura"}
@@ -857,7 +857,7 @@ function CadastrosPage() {
                 Cadastre coberturas e serviços adicionais para a cotação
               </DialogDescription>
             </DialogHeader>
-            <div className="p-4 sm:p-5 space-y-3">
+            <div className="p-4 sm:p-5 space-y-3 flex-1 flex flex-col justify-between overflow-y-auto min-h-0">
               <div className="space-y-1">
                 <Label className="text-xs font-semibold">Nome do Produto *</Label>
                 <Input

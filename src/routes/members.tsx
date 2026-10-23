@@ -315,7 +315,7 @@ function MemberDialog({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="w-[95vw] max-w-4xl max-h-[92vh] flex flex-col p-0 gap-0 border-border bg-card shadow-2xl rounded-2xl sm:rounded-3xl overflow-hidden">
+      <DialogContent className="w-[95vw] sm:w-[920px] sm:max-w-4xl sm:h-[620px] max-h-[92vh] flex flex-col p-0 gap-0 border-border bg-card shadow-2xl rounded-2xl sm:rounded-3xl overflow-hidden">
         <DialogHeader className="p-4 sm:p-5 pb-3 border-b border-border/60 bg-muted/10 shrink-0">
           <DialogTitle className="text-base font-bold flex items-center gap-2">
             <User className="size-4.5 text-primary" />
@@ -326,7 +326,7 @@ function MemberDialog({
           </DialogDescription>
         </DialogHeader>
         
-        <div className="overflow-y-auto p-4 sm:p-5 space-y-4">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4 min-h-0">
           <div className="grid md:grid-cols-2 gap-4 sm:gap-5 items-start">
             {/* Lado Esquerdo: Identificação & Cobrança */}
             <div className="space-y-3">
@@ -735,7 +735,7 @@ function VehicleDialog({ memberId, memberName }: { memberId: string; memberName:
           <Car className="size-3 text-primary" /> Adicionar Veículo
         </Button>
       </DialogTrigger>
-      <DialogContent className="w-[95vw] sm:max-w-md rounded-2xl border-border bg-card shadow-2xl p-0 gap-0 overflow-hidden">
+      <DialogContent className="w-[95vw] sm:max-w-md sm:h-[430px] max-h-[92vh] flex flex-col justify-between rounded-2xl border-border bg-card shadow-2xl p-0 gap-0 overflow-hidden">
         <DialogHeader className="p-4 sm:p-5 pb-3 border-b border-border/60 bg-muted/10 shrink-0">
           <DialogTitle className="text-base font-bold flex items-center gap-2">
             <Car className="size-4.5 text-primary" />
@@ -745,7 +745,7 @@ function VehicleDialog({ memberId, memberName }: { memberId: string; memberName:
             Preencha os dados do veículo para vinculá-lo imediatamente a este associado
           </DialogDescription>
         </DialogHeader>
-        <div className="p-4 sm:p-5 space-y-3">
+        <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between overflow-y-auto min-h-0 space-y-3">
           <div className="grid grid-cols-2 gap-2.5">
             <div className="space-y-1">
               <Label className="text-xs font-semibold">Placa (Mercosul) *</Label>

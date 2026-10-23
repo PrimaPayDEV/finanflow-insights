@@ -455,7 +455,7 @@ function EventosPage() {
 
         {/* MODAL: NOVO / EDITAR EVENTO */}
         <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-          <DialogContent className="w-[95vw] sm:max-w-lg rounded-2xl border-border bg-card p-0 gap-0 overflow-hidden shadow-2xl">
+          <DialogContent className="w-[95vw] sm:max-w-lg sm:h-[480px] max-h-[92vh] flex flex-col justify-between rounded-2xl border-border bg-card p-0 gap-0 overflow-hidden shadow-2xl">
             <DialogHeader className="p-4 sm:p-5 pb-3 border-b border-border/60 bg-muted/10 shrink-0">
               <DialogTitle className="text-base font-bold">
                 {editingEvent ? "Editar Evento / Sinistro" : "Lançar Novo Evento de Sinistro"}
@@ -465,7 +465,7 @@ function EventosPage() {
               </DialogDescription>
             </DialogHeader>
 
-            <div className="p-4 sm:p-5 space-y-3">
+            <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between overflow-y-auto min-h-0 space-y-3">
               <div className="grid grid-cols-2 gap-2.5">
                 <div className="space-y-1">
                   <Label className="text-xs font-semibold">Data do Evento *</Label>
