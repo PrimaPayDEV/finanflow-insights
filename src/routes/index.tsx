@@ -77,7 +77,7 @@ const PLATFORMS: PlatformConfig[] = [
     buttonClass: "bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500",
     badgeDomain: "/login?env=veicular",
     loginPath: "/login?env=veicular",
-    directPath: "/vehicles",
+    directPath: "/dashboard",
   },
   {
     id: "imobiliaria",
