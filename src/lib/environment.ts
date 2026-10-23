@@ -6,11 +6,14 @@
 
 export const HUB_URL = "https://primahubserv.lovable.app";
 
+// Todos os ambientes são servidos pelo mesmo app publicado; o ambiente é
+// definido pelo parâmetro ?env= no login e pelo segmento da empresa do usuário.
+// Para usar domínios separados, conecte domínios próprios e sobrescreva via VITE_*_URL.
 export const DEFAULT_PLATFORM_URLS = {
   hub: HUB_URL,
-  ec: "https://primahubec.lovable.app",
-  veicular: "https://primahubveicular.lovable.app",
-  imobiliaria: "https://primahubimob.lovable.app",
+  ec: HUB_URL,
+  veicular: HUB_URL,
+  imobiliaria: HUB_URL,
 } as const;
 
 export type PlatformKey = keyof typeof DEFAULT_PLATFORM_URLS;
@@ -76,6 +79,8 @@ export function resolvePlatformUrl(platform: PlatformKey, path: string): string 
 
   const base = getPlatformBaseUrl(platform);
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  // Mesmo domínio do site atual: navegação interna
+  if (base === getCurrentOrigin()) return normalizedPath;
   return `${base}${normalizedPath}`;
 }
 
