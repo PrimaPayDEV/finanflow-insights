@@ -446,3 +446,123 @@ export const getAsaasDashboardMetrics = createServerFn({ method: "POST" })
       return { ok: false as const, error: error.message };
     }
   });
+
+export const cancelAsaasPayment = createServerFn({ method: "POST" })
+  .validator((d: { companyId: string; paymentId: string }) => d)
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: company } = await supabaseAdmin.from("companies").select("asaas_api_key, name").eq("id", data.companyId).single();
+    const { data: settings } = await supabaseAdmin.from("asaas_settings").select("*").eq("company_id", data.companyId).limit(1).maybeSingle();
+    const sandbox = settings?.sandbox ?? false;
+    const isPrimaPay = company?.name === "Prima Hub" || company?.name === "PrimaPay";
+    const apiKey = company?.asaas_api_key || (isPrimaPay ? (sandbox ? process.env.ASAAS_API_TESTE : process.env.ASAAS_API_KEY) : null);
+    if (!apiKey) throw new Error("Chave Asaas não configurada.");
+
+    const base = sandbox ? "https://sandbox.asaas.com/api/v3" : "https://api.asaas.com/v3";
+    const res = await fetch(`${base}/payments/${data.paymentId}`, {
+      method: "DELETE",
+      headers: { access_token: apiKey, "User-Agent": "PrimaHub" },
+    });
+    const json = await res.json();
+    if (json.deleted || json.status === "DELETED") {
+      return { ok: true };
+    }
+    throw new Error(json.errors?.[0]?.description || "Falha ao cancelar cobrança no Asaas.");
+  });
+
+export const receiveInCashAsaasPayment = createServerFn({ method: "POST" })
+  .validator((d: { companyId: string; paymentId: string; paymentDate: string; value?: number }) => d)
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: company } = await supabaseAdmin.from("companies").select("asaas_api_key, name").eq("id", data.companyId).single();
+    const { data: settings } = await supabaseAdmin.from("asaas_settings").select("*").eq("company_id", data.companyId).limit(1).maybeSingle();
+    const sandbox = settings?.sandbox ?? false;
+    const isPrimaPay = company?.name === "Prima Hub" || company?.name === "PrimaPay";
+    const apiKey = company?.asaas_api_key || (isPrimaPay ? (sandbox ? process.env.ASAAS_API_TESTE : process.env.ASAAS_API_KEY) : null);
+    if (!apiKey) throw new Error("Chave Asaas não configurada.");
+
+    const base = sandbox ? "https://sandbox.asaas.com/api/v3" : "https://api.asaas.com/v3";
+    const bodyPayload: any = {
+      paymentDate: data.paymentDate,
+    };
+    if (data.value && data.value > 0) {
+      bodyPayload.value = Number(data.value.toFixed(2));
+    }
+
+    const res = await fetch(`${base}/payments/${data.paymentId}/receiveInCash`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", access_token: apiKey, "User-Agent": "PrimaHub" },
+      body: JSON.stringify(bodyPayload),
+    });
+    const json = await res.json();
+    if (json.id && (json.status === "RECEIVED_IN_CASH" || json.status === "RECEIVED" || json.status === "CONFIRMED")) {
+      return { ok: true, payment: json };
+    }
+    throw new Error(json.errors?.[0]?.description || "Falha ao registrar baixa manual no Asaas.");
+  });
+
+export const updateAsaasPaymentDueDate = createServerFn({ method: "POST" })
+  .validator((d: { companyId: string; paymentId: string; dueDate: string }) => d)
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: company } = await supabaseAdmin.from("companies").select("asaas_api_key, name").eq("id", data.companyId).single();
+    const { data: settings } = await supabaseAdmin.from("asaas_settings").select("*").eq("company_id", data.companyId).limit(1).maybeSingle();
+    const sandbox = settings?.sandbox ?? false;
+    const isPrimaPay = company?.name === "Prima Hub" || company?.name === "PrimaPay";
+    const apiKey = company?.asaas_api_key || (isPrimaPay ? (sandbox ? process.env.ASAAS_API_TESTE : process.env.ASAAS_API_KEY) : null);
+    if (!apiKey) throw new Error("Chave Asaas não configurada.");
+
+    const base = sandbox ? "https://sandbox.asaas.com/api/v3" : "https://api.asaas.com/v3";
+    const res = await fetch(`${base}/payments/${data.paymentId}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", access_token: apiKey, "User-Agent": "PrimaHub" },
+      body: JSON.stringify({ dueDate: data.dueDate }),
+    });
+    const json = await res.json();
+    if (json.id) {
+      return { ok: true, payment: json };
+    }
+    throw new Error(json.errors?.[0]?.description || "Falha ao atualizar vencimento no Asaas.");
+  });
+
+export const generateBatchInvoices = createServerFn({ method: "POST" })
+  .validator((d: { 
+    companyId: string; 
+    items: Array<{ 
+      memberId: string; 
+      amount: number; 
+      description: string; 
+      dueDate: string;
+      vehiclePlate?: string;
+    }> 
+  }) => d)
+  .handler(async ({ data }) => {
+    const { generateInvoice } = await import("./members.functions");
+    const results: Array<{ memberId: string; ok: boolean; invoiceId?: string; error?: string }> = [];
+
+    for (const item of data.items) {
+      try {
+        const res = await generateInvoice({
+          data: {
+            companyId: data.companyId,
+            memberId: item.memberId,
+            amount: item.amount,
+            description: item.description,
+            dueDate: item.dueDate,
+          }
+        });
+        results.push({ memberId: item.memberId, ok: true, invoiceId: (res as any)?.invoiceId });
+      } catch (err: any) {
+        results.push({ memberId: item.memberId, ok: false, error: err.message || "Erro desconhecido" });
+      }
+    }
+
+    const successCount = results.filter((r) => r.ok).length;
+    return {
+      ok: true,
+      successCount,
+      totalCount: data.items.length,
+      results,
+    };
+  });
+

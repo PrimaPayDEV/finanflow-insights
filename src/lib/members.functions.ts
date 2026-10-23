@@ -178,7 +178,7 @@ export const upsertMember = createServerFn({ method: "POST" })
       }
     }
 
-    return { ok: true };
+    return { ok: true, id: data.id };
   });
 
 export const deleteMember = createServerFn({ method: "POST" })
@@ -211,7 +211,7 @@ export const getVehicles = createServerFn({ method: "GET" })
 
 export const addVehicle = createServerFn({ method: "POST" })
   .validator((d: { 
-    memberId: string; 
+    memberId?: string | null; 
     companyId: string; 
     plate: string; 
     brand: string; 
@@ -221,11 +221,39 @@ export const addVehicle = createServerFn({ method: "POST" })
     category?: string;
     monthly_fee?: number;
     fipe_value?: number;
+    partner_id?: string | null;
   }) => d)
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    let targetMemberId = data.memberId;
+    if (!targetMemberId || targetMemberId === "avulso") {
+      // Procurar ou criar membro placeholder para veículos avulsos
+      const { data: placeholder } = await supabaseAdmin
+        .from("members")
+        .select("id")
+        .eq("company_id", data.companyId)
+        .eq("document", "00000000000")
+        .maybeSingle();
+
+      if (placeholder?.id) {
+        targetMemberId = placeholder.id;
+      } else {
+        const { data: createdPl } = await supabaseAdmin
+          .from("members")
+          .insert({
+            company_id: data.companyId,
+            name: "Veículo Avulso (Não Vinculado)",
+            document: "00000000000",
+          })
+          .select("id")
+          .single();
+        targetMemberId = createdPl?.id;
+      }
+    }
+
     const vData: any = {
-      member_id: data.memberId,
+      member_id: targetMemberId,
       company_id: data.companyId,
       plate: data.plate.toUpperCase().trim(),
       brand: data.brand,
@@ -248,6 +276,46 @@ export const addVehicle = createServerFn({ method: "POST" })
       const res = await supabaseAdmin.from("vehicles").insert(vData);
       error = res.error;
     }
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const linkVehicleToMember = createServerFn({ method: "POST" })
+  .validator((d: { vehicleId: string; memberId: string; companyId: string }) => d)
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    let targetMemberId = data.memberId;
+    if (!targetMemberId || targetMemberId === "avulso") {
+      const { data: placeholder } = await supabaseAdmin
+        .from("members")
+        .select("id")
+        .eq("company_id", data.companyId)
+        .eq("document", "00000000000")
+        .maybeSingle();
+
+      if (placeholder?.id) {
+        targetMemberId = placeholder.id;
+      } else {
+        const { data: createdPl } = await supabaseAdmin
+          .from("members")
+          .insert({
+            company_id: data.companyId,
+            name: "Veículo Avulso (Não Vinculado)",
+            document: "00000000000",
+          })
+          .select("id")
+          .single();
+        targetMemberId = createdPl?.id;
+      }
+    }
+
+    const { error } = await supabaseAdmin
+      .from("vehicles")
+      .update({ member_id: targetMemberId })
+      .eq("id", data.vehicleId)
+      .eq("company_id", data.companyId);
+
     if (error) throw new Error(error.message);
     return { ok: true };
   });

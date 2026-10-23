@@ -44,6 +44,12 @@ import { Route as RecebiveisPosRouteImport } from './routes/recebiveis.pos'
 import { Route as RecebiveisVendasRouteImport } from './routes/recebiveis.vendas'
 import { Route as SettingsAppearanceRouteImport } from './routes/settings/appearance'
 import { Route as SettingsAsaasRouteImport } from './routes/settings.asaas'
+import { Route as VeicularCadastrosRouteImport } from './routes/veicular/cadastros'
+import { Route as VeicularCotacaoRouteImport } from './routes/veicular/cotacao'
+import { Route as VeicularEventosRouteImport } from './routes/veicular/eventos'
+import { Route as VeicularFinanceiroRouteImport } from './routes/veicular/financeiro'
+import { Route as VeicularRelatoriosRouteImport } from './routes/veicular/relatorios'
+import { Route as VeicularTermosRouteImport } from './routes/veicular/termos'
 import { Route as AdminRecebiveisImportRouteImport } from './routes/admin.recebiveis.import'
 import { Route as ApiPublicAsaasWebhookRouteImport } from './routes/api/public/asaas-webhook'
 import { Route as PublicReportClosureIdRouteImport } from './routes/public.report.$closureId'
@@ -223,6 +229,36 @@ const SettingsAsaasRoute = SettingsAsaasRouteImport.update({
   path: '/settings/asaas',
   getParentRoute: () => rootRouteImport,
 } as any)
+const VeicularCadastrosRoute = VeicularCadastrosRouteImport.update({
+  id: '/veicular/cadastros',
+  path: '/veicular/cadastros',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VeicularCotacaoRoute = VeicularCotacaoRouteImport.update({
+  id: '/veicular/cotacao',
+  path: '/veicular/cotacao',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VeicularEventosRoute = VeicularEventosRouteImport.update({
+  id: '/veicular/eventos',
+  path: '/veicular/eventos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VeicularFinanceiroRoute = VeicularFinanceiroRouteImport.update({
+  id: '/veicular/financeiro',
+  path: '/veicular/financeiro',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VeicularRelatoriosRoute = VeicularRelatoriosRouteImport.update({
+  id: '/veicular/relatorios',
+  path: '/veicular/relatorios',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VeicularTermosRoute = VeicularTermosRouteImport.update({
+  id: '/veicular/termos',
+  path: '/veicular/termos',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminRecebiveisImportRoute = AdminRecebiveisImportRouteImport.update({
   id: '/admin/recebiveis/import',
   path: '/admin/recebiveis/import',
@@ -275,6 +311,12 @@ export interface FileRoutesByFullPath {
   '/recebiveis/vendas': typeof RecebiveisVendasRoute
   '/settings/appearance': typeof SettingsAppearanceRoute
   '/settings/asaas': typeof SettingsAsaasRoute
+  '/veicular/cadastros': typeof VeicularCadastrosRoute
+  '/veicular/cotacao': typeof VeicularCotacaoRoute
+  '/veicular/eventos': typeof VeicularEventosRoute
+  '/veicular/financeiro': typeof VeicularFinanceiroRoute
+  '/veicular/relatorios': typeof VeicularRelatoriosRoute
+  '/veicular/termos': typeof VeicularTermosRoute
   '/admin/recebiveis/import': typeof AdminRecebiveisImportRoute
   '/api/public/asaas-webhook': typeof ApiPublicAsaasWebhookRoute
   '/public/report/$closureId': typeof PublicReportClosureIdRoute
@@ -315,6 +357,12 @@ export interface FileRoutesByTo {
   '/recebiveis/vendas': typeof RecebiveisVendasRoute
   '/settings/appearance': typeof SettingsAppearanceRoute
   '/settings/asaas': typeof SettingsAsaasRoute
+  '/veicular/cadastros': typeof VeicularCadastrosRoute
+  '/veicular/cotacao': typeof VeicularCotacaoRoute
+  '/veicular/eventos': typeof VeicularEventosRoute
+  '/veicular/financeiro': typeof VeicularFinanceiroRoute
+  '/veicular/relatorios': typeof VeicularRelatoriosRoute
+  '/veicular/termos': typeof VeicularTermosRoute
   '/admin/recebiveis/import': typeof AdminRecebiveisImportRoute
   '/api/public/asaas-webhook': typeof ApiPublicAsaasWebhookRoute
   '/public/report/$closureId': typeof PublicReportClosureIdRoute
@@ -356,6 +404,12 @@ export interface FileRoutesById {
   '/recebiveis/vendas': typeof RecebiveisVendasRoute
   '/settings/appearance': typeof SettingsAppearanceRoute
   '/settings/asaas': typeof SettingsAsaasRoute
+  '/veicular/cadastros': typeof VeicularCadastrosRoute
+  '/veicular/cotacao': typeof VeicularCotacaoRoute
+  '/veicular/eventos': typeof VeicularEventosRoute
+  '/veicular/financeiro': typeof VeicularFinanceiroRoute
+  '/veicular/relatorios': typeof VeicularRelatoriosRoute
+  '/veicular/termos': typeof VeicularTermosRoute
   '/admin/recebiveis/import': typeof AdminRecebiveisImportRoute
   '/api/public/asaas-webhook': typeof ApiPublicAsaasWebhookRoute
   '/public/report/$closureId': typeof PublicReportClosureIdRoute
@@ -398,6 +452,12 @@ export interface FileRouteTypes {
     | '/recebiveis/vendas'
     | '/settings/appearance'
     | '/settings/asaas'
+    | '/veicular/cadastros'
+    | '/veicular/cotacao'
+    | '/veicular/eventos'
+    | '/veicular/financeiro'
+    | '/veicular/relatorios'
+    | '/veicular/termos'
     | '/admin/recebiveis/import'
     | '/api/public/asaas-webhook'
     | '/public/report/$closureId'
@@ -438,6 +498,12 @@ export interface FileRouteTypes {
     | '/recebiveis/vendas'
     | '/settings/appearance'
     | '/settings/asaas'
+    | '/veicular/cadastros'
+    | '/veicular/cotacao'
+    | '/veicular/eventos'
+    | '/veicular/financeiro'
+    | '/veicular/relatorios'
+    | '/veicular/termos'
     | '/admin/recebiveis/import'
     | '/api/public/asaas-webhook'
     | '/public/report/$closureId'
@@ -478,6 +544,12 @@ export interface FileRouteTypes {
     | '/recebiveis/vendas'
     | '/settings/appearance'
     | '/settings/asaas'
+    | '/veicular/cadastros'
+    | '/veicular/cotacao'
+    | '/veicular/eventos'
+    | '/veicular/financeiro'
+    | '/veicular/relatorios'
+    | '/veicular/termos'
     | '/admin/recebiveis/import'
     | '/api/public/asaas-webhook'
     | '/public/report/$closureId'
@@ -519,6 +591,12 @@ export interface RootRouteChildren {
   RecebiveisVendasRoute: typeof RecebiveisVendasRoute
   SettingsAppearanceRoute: typeof SettingsAppearanceRoute
   SettingsAsaasRoute: typeof SettingsAsaasRoute
+  VeicularCadastrosRoute: typeof VeicularCadastrosRoute
+  VeicularCotacaoRoute: typeof VeicularCotacaoRoute
+  VeicularEventosRoute: typeof VeicularEventosRoute
+  VeicularFinanceiroRoute: typeof VeicularFinanceiroRoute
+  VeicularRelatoriosRoute: typeof VeicularRelatoriosRoute
+  VeicularTermosRoute: typeof VeicularTermosRoute
   AdminRecebiveisImportRoute: typeof AdminRecebiveisImportRoute
   ApiPublicAsaasWebhookRoute: typeof ApiPublicAsaasWebhookRoute
   PublicReportClosureIdRoute: typeof PublicReportClosureIdRoute
@@ -771,6 +849,48 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SettingsAsaasRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/veicular/cadastros': {
+      id: '/veicular/cadastros'
+      path: '/veicular/cadastros'
+      fullPath: '/veicular/cadastros'
+      preLoaderRoute: typeof VeicularCadastrosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/veicular/cotacao': {
+      id: '/veicular/cotacao'
+      path: '/veicular/cotacao'
+      fullPath: '/veicular/cotacao'
+      preLoaderRoute: typeof VeicularCotacaoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/veicular/eventos': {
+      id: '/veicular/eventos'
+      path: '/veicular/eventos'
+      fullPath: '/veicular/eventos'
+      preLoaderRoute: typeof VeicularEventosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/veicular/financeiro': {
+      id: '/veicular/financeiro'
+      path: '/veicular/financeiro'
+      fullPath: '/veicular/financeiro'
+      preLoaderRoute: typeof VeicularFinanceiroRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/veicular/relatorios': {
+      id: '/veicular/relatorios'
+      path: '/veicular/relatorios'
+      fullPath: '/veicular/relatorios'
+      preLoaderRoute: typeof VeicularRelatoriosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/veicular/termos': {
+      id: '/veicular/termos'
+      path: '/veicular/termos'
+      fullPath: '/veicular/termos'
+      preLoaderRoute: typeof VeicularTermosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/recebiveis/import': {
       id: '/admin/recebiveis/import'
       path: '/admin/recebiveis/import'
@@ -831,6 +951,12 @@ const rootRouteChildren: RootRouteChildren = {
   RecebiveisVendasRoute: RecebiveisVendasRoute,
   SettingsAppearanceRoute: SettingsAppearanceRoute,
   SettingsAsaasRoute: SettingsAsaasRoute,
+  VeicularCadastrosRoute: VeicularCadastrosRoute,
+  VeicularCotacaoRoute: VeicularCotacaoRoute,
+  VeicularEventosRoute: VeicularEventosRoute,
+  VeicularFinanceiroRoute: VeicularFinanceiroRoute,
+  VeicularRelatoriosRoute: VeicularRelatoriosRoute,
+  VeicularTermosRoute: VeicularTermosRoute,
   AdminRecebiveisImportRoute: AdminRecebiveisImportRoute,
   ApiPublicAsaasWebhookRoute: ApiPublicAsaasWebhookRoute,
   PublicReportClosureIdRoute: PublicReportClosureIdRoute,

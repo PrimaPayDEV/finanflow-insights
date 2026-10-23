@@ -37,6 +37,11 @@ import {
   LayoutGrid,
   ChevronDown,
   Menu,
+  Sparkles,
+  Calculator,
+  Settings2,
+  Award,
+  AlertTriangle,
 } from "lucide-react";
 import { DEFAULT_PLATFORM_URLS, isLocalEnvironment } from "@/lib/environment";
 import type { ReactNode } from "react";
@@ -129,30 +134,47 @@ export function AppLayout({
     appMode === "billing" ||
     segment === "PROTECAO_VEICULAR" ||
     pathname.startsWith("/vehicles") ||
-    pathname.startsWith("/members");
+    pathname.startsWith("/members") ||
+    pathname.startsWith("/veicular");
 
-  // Estrutura de menus no topo com suporte a sub-menus para Proteção Veicular (sem separação por seção)
+  // Estrutura de menus no topo para Proteção Veicular conforme especificação completa
   const veicularNavItems: TopNavItem[] = [
     {
-      to: "/dashboard",
-      label: "Dashboard",
-      icon: LayoutDashboard,
+      to: "/veicular/cotacao",
+      label: "Iniciar Cotação",
+      icon: Sparkles,
     },
     {
-      label: "Cadastros",
+      to: "/members",
+      label: "Associado",
       icon: Users,
+    },
+    {
+      to: "/vehicles",
+      label: "Veículo",
+      icon: Car,
+    },
+    {
+      label: "Cadastro",
+      icon: Settings2,
       children: [
         {
-          to: "/members",
-          label: "Associados",
-          icon: Users,
-          description: "Base e cadastro de associados",
+          to: "/veicular/cadastros?tab=consultores",
+          label: "Consultores",
+          icon: UserCheck,
+          description: "Cadastro de consultores e comissões",
         },
         {
-          to: "/vehicles",
-          label: "Veículos",
-          icon: Car,
-          description: "Frota protegida, placas e vistorias",
+          to: "/veicular/cadastros?tab=cotas",
+          label: "Cota de Participação",
+          icon: ShieldCheck,
+          description: "Planilha de franquia por tipo de veículo",
+        },
+        {
+          to: "/veicular/cadastros?tab=produtos",
+          label: "Produtos por Veículo",
+          icon: Award,
+          description: "Planilha com produtos para cada categoria",
         },
       ],
     },
@@ -161,65 +183,52 @@ export function AppLayout({
       icon: Receipt,
       children: [
         {
-          to: "/invoices",
-          label: "Faturas & Boletos",
-          icon: Receipt,
-          description: "Emissão de boletos bancários Asaas",
+          to: "/veicular/financeiro?tab=lotes",
+          label: "Lotes & Fechamento",
+          icon: FileCheck2,
+          description: "Parametrização por vencimento e conferência",
         },
         {
-          to: "/reports",
-          label: "Relatórios Financeiros",
-          icon: FileBarChart2,
-          description: "Arrecadação e comissões",
+          to: "/veicular/financeiro?tab=boletos",
+          label: "Gerenciar Boletos",
+          icon: CircleDollarSign,
+          description: "Baixa manual, cancelamento e emissão",
+        },
+        {
+          to: "/veicular/financeiro?tab=rateio",
+          label: "Rateio de Sinistros",
+          icon: PiggyBank,
+          description: "Acréscimo percentual na mensalidade",
         },
       ],
     },
     {
-      to: "/partners",
-      label: "Parceiros",
-      icon: Users,
+      to: "/veicular/eventos",
+      label: "Evento",
+      icon: AlertTriangle,
     },
     {
-      label: "Configurações",
-      icon: Settings,
-      children: [
-        {
-          to: "/settings/asaas",
-          label: "Configuração Asaas",
-          icon: Settings,
-          description: "Integração BaaS e chaves de API",
-        },
-        {
-          to: "/settings/appearance",
-          label: "Personalizar Ambiente",
-          icon: Palette,
-          description: "Identidade visual e logotipo",
-        },
-        ...(isPlatformAdmin
-          ? [
-              {
-                to: "/admin/companies",
-                label: "Painel de Administração",
-                icon: ShieldCheck,
-                description: "Gestão multi-empresas",
-              },
-            ]
-          : []),
-      ],
+      to: "/veicular/relatorios",
+      label: "Relatório",
+      icon: FileBarChart2,
     },
     {
-      to: "/",
-      label: "Hub de Ambientes",
-      icon: LayoutGrid,
+      to: "/veicular/termos",
+      label: "Usuário/Termos",
+      icon: FileText,
     },
   ];
 
   const isTopItemActive = (item: TopNavItem) => {
     if (item.to) {
-      return item.to === "/" ? pathname === "/" : pathname.startsWith(item.to);
+      const cleanTo = item.to.split("?")[0];
+      return cleanTo === "/" ? pathname === "/" : pathname.startsWith(cleanTo);
     }
     if (item.children) {
-      return item.children.some((child) => pathname.startsWith(child.to));
+      return item.children.some((child) => {
+        const cleanChild = child.to.split("?")[0];
+        return pathname.startsWith(cleanChild);
+      });
     }
     return false;
   };
@@ -480,7 +489,12 @@ export function AppLayout({
                         className="w-64 p-1.5 rounded-2xl border border-border/80 shadow-xl bg-popover/95 backdrop-blur-md"
                       >
                         {item.children!.map((child) => {
-                          const isChildActive = pathname.startsWith(child.to);
+                          const cleanChildPath = child.to.split("?")[0];
+                          const hasQuery = child.to.includes("?");
+                          const queryParam = hasQuery ? child.to.split("?")[1] : "";
+                          const isChildActive = hasQuery
+                            ? pathname === cleanChildPath && typeof window !== "undefined" && window.location.search.includes(queryParam)
+                            : pathname.startsWith(cleanChildPath);
                           const ChildIcon = child.icon;
                           return (
                             <DropdownMenuItem key={child.to} asChild className="p-0 focus:bg-transparent data-[highlighted]:bg-transparent">

@@ -51,7 +51,8 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { getVehicles, getMembers, addVehicle, deleteVehicle } from "@/lib/members.functions";
+import { getVehicles, getMembers, addVehicle, deleteVehicle, linkVehicleToMember } from "@/lib/members.functions";
+import { getPartners } from "@/lib/partner.functions";
 import { BRL, formatCpfCnpj, formatPhone, formatCurrencyInput } from "@/lib/format";
 import { VehicleCategorySelector, VehicleCategoryBadge } from "@/components/VehicleCategorySelector";
 
@@ -426,6 +427,28 @@ function VehiclesPage() {
     enabled: !!companyId,
   });
 
+  const fetchPartners = useServerFn(getPartners);
+  const { data: partners = [] } = useQuery({
+    queryKey: ["partners", companyId],
+    queryFn: () => fetchPartners({ data: { companyId: companyId! } }),
+    enabled: !!companyId,
+  });
+
+  const [linkModalOpen, setLinkModalOpen] = useState(false);
+  const [vehicleToLink, setVehicleToLink] = useState<VehicleItem | null>(null);
+  const [targetMemberId, setTargetMemberId] = useState("");
+
+  const linkMutation = useMutation({
+    mutationFn: useServerFn(linkVehicleToMember),
+    onSuccess: () => {
+      toast.success("Veículo vinculado ao associado com sucesso!");
+      qc.invalidateQueries({ queryKey: ["vehicles", companyId] });
+      qc.invalidateQueries({ queryKey: ["members", companyId] });
+      setLinkModalOpen(false);
+    },
+    onError: (err: any) => toast.error("Erro ao vincular veículo: " + err.message),
+  });
+
   // Mapeia veículos do banco
   const mappedDbVehicles: VehicleItem[] = useMemo(() => {
     return (dbVehicles || []).map((v: any) => ({
@@ -447,9 +470,9 @@ function VehiclesPage() {
       isDemo: false,
       coverageConfig: { ...DEFAULT_COVERAGE },
       member: {
-        id: v.members?.id || "",
-        name: v.members?.name || "Associado não identificado",
-        document: v.members?.document || "",
+        id: (v.members?.document === "00000000000" || v.members?.name?.includes("Avulso")) ? "" : (v.members?.id || ""),
+        name: (v.members?.document === "00000000000" || v.members?.name?.includes("Avulso")) ? "Veículo Avulso (Não Vinculado)" : (v.members?.name || "Associado não identificado"),
+        document: (v.members?.document === "00000000000" || v.members?.name?.includes("Avulso")) ? "" : (v.members?.document || ""),
         phone: v.members?.phone,
         email: v.members?.email,
         city: "São Paulo - SP",
@@ -530,8 +553,8 @@ function VehiclesPage() {
   return (
     <AppLayout
       title="Central de Veículos"
-      subtitle="Gestão da frota protegida, coberturas contratadas e mensalidades da Planmais"
-      actions={<NewVehicleDialog members={members} />}
+      subtitle="Gestão da frota protegida, cadastros avulsos ou vinculados e consultores"
+      actions={<NewVehicleDialog members={members} partners={partners} />}
     >
       <div className="space-y-5">
 
@@ -731,30 +754,62 @@ function VehiclesPage() {
                         </span>
                       </td>
 
-                      {/* Associado */}
+                      {/* Associado / Vínculo */}
                       <td className="px-3 py-2.5 sm:px-3.5 sm:py-3 align-middle">
-                        <div className="flex items-center justify-between gap-1.5 max-w-[180px] sm:max-w-[200px]">
-                          <div className="overflow-hidden min-w-0">
-                            <p className="text-xs font-semibold text-foreground truncate max-w-[120px] sm:max-w-[150px] lg:max-w-[180px]">
-                              {vehicle.member.name}
-                            </p>
-                            <p className="text-[10px] text-muted-foreground font-mono">
-                              {formatCpfCnpj(vehicle.member.document)}
-                            </p>
-                          </div>
-                          {vehicle.member.phone && (
-                            <a
-                              href={`https://wa.me/55${vehicle.member.phone.replace(/\D/g, "")}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              onClick={(e) => e.stopPropagation()}
-                              title="Conversar no WhatsApp"
-                              className="size-6.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 flex items-center justify-center transition-colors shrink-0"
+                        {vehicle.member.name.includes("Avulso") || !vehicle.member.id ? (
+                          <div className="space-y-1">
+                            <Badge variant="outline" className="text-amber-600 bg-amber-500/10 border-amber-500/30 text-[10px] font-bold">
+                              Avulso (Sem Associado)
+                            </Badge>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setVehicleToLink(vehicle);
+                                setTargetMemberId("");
+                                setLinkModalOpen(true);
+                              }}
+                              className="text-[10px] font-bold text-primary hover:underline block text-left"
                             >
-                              <MessageCircle className="size-3" />
-                            </a>
-                          )}
-                        </div>
+                              + Vincular a Associado
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-between gap-1.5 max-w-[180px] sm:max-w-[200px]">
+                            <div className="overflow-hidden min-w-0">
+                              <p className="text-xs font-semibold text-foreground truncate max-w-[120px] sm:max-w-[150px] lg:max-w-[180px]">
+                                {vehicle.member.name}
+                              </p>
+                              <p className="text-[10px] text-muted-foreground font-mono">
+                                {formatCpfCnpj(vehicle.member.document)}
+                              </p>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setVehicleToLink(vehicle);
+                                  setTargetMemberId(vehicle.member.id);
+                                  setLinkModalOpen(true);
+                                }}
+                                className="text-[9px] text-muted-foreground hover:text-primary hover:underline block mt-0.5 text-left"
+                              >
+                                Alterar Vínculo
+                              </button>
+                            </div>
+                            {vehicle.member.phone && (
+                              <a
+                                href={`https://wa.me/55${vehicle.member.phone.replace(/\D/g, "")}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={(e) => e.stopPropagation()}
+                                title="Conversar no WhatsApp"
+                                className="size-6.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 flex items-center justify-center transition-colors shrink-0"
+                              >
+                                <MessageCircle className="size-3" />
+                              </a>
+                            )}
+                          </div>
+                        )}
                       </td>
 
                       {/* Mensalidade */}
@@ -806,14 +861,68 @@ function VehiclesPage() {
           />
         )}
 
-        {/* Modal do Certificado Digital de Proteção Veicular */}
-        {selectedVehicle && (
-          <CertificateDialog
-            open={certificateOpen}
-            onOpenChange={setCertificateOpen}
-            vehicle={selectedVehicle}
-          />
-        )}
+        {/* Modal de Vinculação Rápida de Veículo a Associado */}
+        <Dialog open={linkModalOpen} onOpenChange={setLinkModalOpen}>
+          <DialogContent className="sm:max-w-md rounded-2xl">
+            <DialogHeader>
+              <DialogTitle className="text-base font-bold flex items-center gap-2">
+                <User className="size-4 text-primary" /> Vincular Veículo a Associado
+              </DialogTitle>
+              <DialogDescription className="text-xs">
+                Selecione o associado proprietário para a placa {vehicleToLink?.plate}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-3 py-2 text-xs">
+              <div className="p-3 rounded-xl bg-muted/40 border border-border/60">
+                <span className="text-muted-foreground block text-[10px] uppercase font-bold">Veículo Selecionado:</span>
+                <span className="font-extrabold text-foreground text-sm block font-mono">
+                  {vehicleToLink?.plate} • {vehicleToLink?.brand} {vehicleToLink?.model}
+                </span>
+              </div>
+
+              <div className="space-y-1">
+                <Label className="text-xs font-semibold">Associado Proprietário *</Label>
+                <Select value={targetMemberId} onValueChange={setTargetMemberId}>
+                  <SelectTrigger className="rounded-xl text-xs h-9 bg-background">
+                    <SelectValue placeholder="Selecione o associado..." />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl max-h-56">
+                    <SelectItem value="avulso" className="text-amber-600 font-semibold">
+                      ⚡ Desvincular (Manter como Veículo Avulso)
+                    </SelectItem>
+                    {members.map((m: any) => (
+                      <SelectItem key={m.id} value={m.id}>
+                        {m.name} ({formatCpfCnpj(m.document)})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <DialogFooter className="gap-2">
+              <Button variant="outline" size="sm" onClick={() => setLinkModalOpen(false)} className="rounded-xl text-xs">
+                Cancelar
+              </Button>
+              <Button
+                size="sm"
+                onClick={() => {
+                  if (!vehicleToLink) return;
+                  linkMutation.mutate({
+                    data: {
+                      companyId: companyId!,
+                      vehicleId: vehicleToLink.id,
+                      memberId: targetMemberId,
+                    },
+                  });
+                }}
+                disabled={linkMutation.isPending}
+                className="rounded-xl text-xs font-bold bg-primary text-primary-foreground"
+              >
+                {linkMutation.isPending ? "Salvando..." : "Confirmar Vínculo"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </AppLayout>
   );
@@ -1474,13 +1583,13 @@ function CertificateDialog({
   );
 }
 
-// Diálogo de Cadastro de Novo Veículo
-function NewVehicleDialog({ members }: { members: any[] }) {
+function NewVehicleDialog({ members, partners = [] }: { members: any[]; partners?: any[] }) {
   const qc = useQueryClient();
   const { companyId } = useAuth();
   const [open, setOpen] = useState(false);
 
-  const [memberId, setMemberId] = useState("");
+  const [memberId, setMemberId] = useState("avulso");
+  const [consultantId, setConsultantId] = useState("");
   const [plate, setPlate] = useState("");
   const [brand, setBrand] = useState("");
   const [model, setModel] = useState("");
@@ -1492,7 +1601,6 @@ function NewVehicleDialog({ members }: { members: any[] }) {
   const createVeh = useMutation({
     mutationFn: async () => {
       if (!companyId) throw new Error("Empresa não identificada.");
-      if (!memberId) throw new Error("Selecione o associado proprietário.");
       if (!plate || plate.trim().length < 7) throw new Error("Informe uma placa válida (7 caracteres).");
       if (!brand || !model) throw new Error("Informe a marca e modelo do veículo.");
 
@@ -1502,7 +1610,7 @@ function NewVehicleDialog({ members }: { members: any[] }) {
       await addVehicle({
         data: {
           companyId,
-          memberId,
+          memberId: memberId === "avulso" ? null : memberId,
           plate: plate.toUpperCase().trim(),
           brand,
           model,
@@ -1510,6 +1618,7 @@ function NewVehicleDialog({ members }: { members: any[] }) {
           color,
           category,
           monthly_fee: parsedFee,
+          partner_id: consultantId === "none" ? null : consultantId || null,
         },
       });
     },
@@ -1555,20 +1664,42 @@ function NewVehicleDialog({ members }: { members: any[] }) {
           }}
           className="flex-1 overflow-y-auto min-h-0 p-4 sm:p-5 space-y-2.5"
         >
-          <div className="space-y-1">
-            <Label className="text-xs font-semibold">Associado Proprietário *</Label>
-            <Select value={memberId} onValueChange={setMemberId}>
-              <SelectTrigger className="rounded-xl h-8.5 text-xs bg-background">
-                <SelectValue placeholder="Selecione o associado" />
-              </SelectTrigger>
-              <SelectContent className="rounded-xl max-h-56">
-                {members.map((m) => (
-                  <SelectItem key={m.id} value={m.id}>
-                    {m.name} ({formatCpfCnpj(m.document)})
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div className="space-y-1">
+              <Label className="text-xs font-semibold">Associado Proprietário</Label>
+              <Select value={memberId} onValueChange={setMemberId}>
+                <SelectTrigger className="rounded-xl h-8.5 text-xs bg-background font-medium">
+                  <SelectValue placeholder="Selecione o associado" />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl max-h-56">
+                  <SelectItem value="avulso" className="text-amber-600 font-semibold">
+                    ⚡ Cadastrar de forma avulsa (Vincular depois)
                   </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+                  {members.map((m) => (
+                    <SelectItem key={m.id} value={m.id}>
+                      {m.name} ({formatCpfCnpj(m.document)})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-1">
+              <Label className="text-xs font-semibold">Vincular a Consultor</Label>
+              <Select value={consultantId} onValueChange={setConsultantId}>
+                <SelectTrigger className="rounded-xl h-8.5 text-xs bg-background">
+                  <SelectValue placeholder="Nenhum (Venda Direta)" />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl">
+                  <SelectItem value="none">Nenhum (Venda Direta)</SelectItem>
+                  {partners.map((p: any) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.name} {p.split_percent ? `(${p.split_percent}%)` : ""}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-2">
