@@ -77,7 +77,7 @@ const PLATFORMS: PlatformConfig[] = [
     buttonClass: "bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500",
     badgeDomain: "/login?env=veicular",
     loginPath: "/login?env=veicular",
-    directPath: "/vehicles",
+    directPath: "/dashboard",
   },
   {
     id: "imobiliaria",
@@ -100,7 +100,7 @@ function HubPage() {
 
   const activeDashboardUrl = () => {
     if (segment === "IMOBILIARIA") return "/real-estate/charges";
-    if (appMode === "billing") return "/vehicles";
+    if (appMode === "billing") return "/dashboard";
     if (role === "merchant") return "/recebiveis/dashboard";
     return "/dashboard";
   };
