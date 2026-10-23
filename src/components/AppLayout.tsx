@@ -133,12 +133,18 @@ export function AppLayout({
   const isVeicular =
     appMode === "billing" ||
     segment === "PROTECAO_VEICULAR" ||
+    (pathname.startsWith("/dashboard") && segment === "PROTECAO_VEICULAR") ||
     pathname.startsWith("/vehicles") ||
     pathname.startsWith("/members") ||
     pathname.startsWith("/veicular");
 
   // Estrutura de menus no topo para Proteção Veicular conforme especificação completa
   const veicularNavItems: TopNavItem[] = [
+    {
+      to: "/dashboard",
+      label: "Dashboard",
+      icon: LayoutDashboard,
+    },
     {
       to: "/veicular/cotacao",
       label: "Iniciar Cotação",

@@ -100,7 +100,7 @@ function HubPage() {
 
   const activeDashboardUrl = () => {
     if (segment === "IMOBILIARIA") return "/real-estate/charges";
-    if (appMode === "billing") return "/vehicles";
+    if (appMode === "billing") return "/dashboard";
     if (role === "merchant") return "/recebiveis/dashboard";
     return "/dashboard";
   };

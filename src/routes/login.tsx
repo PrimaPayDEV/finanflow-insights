@@ -70,7 +70,7 @@ const ENV_META: Record<
     gradientClass: "from-emerald-600 via-teal-600 to-cyan-700",
     borderHighlight: "border-emerald-500/30 shadow-emerald-500/10",
     badgeColor: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30",
-    redirectPath: "/vehicles",
+    redirectPath: "/dashboard",
     placeholderEmail: "gestao@protecaoveicular.com.br",
   },
   imobiliaria: {
@@ -112,7 +112,7 @@ function Login() {
   // Se já estiver logado, redireciona para a rota correta do ambiente
   if (user) {
     if (currentEnvKey === "veicular") {
-      navigate({ to: "/vehicles" });
+      navigate({ to: "/dashboard" });
       return null;
     }
     if (currentEnvKey === "imobiliaria" || segment === "IMOBILIARIA") {
@@ -131,7 +131,7 @@ function Login() {
     if (envConfig) return envConfig.redirectPath;
     if (role === "merchant") return "/recebiveis/dashboard";
     if (segment === "IMOBILIARIA") return "/real-estate/charges";
-    if (appMode === "billing") return "/vehicles";
+    if (appMode === "billing") return "/dashboard";
     return "/dashboard";
   };
 

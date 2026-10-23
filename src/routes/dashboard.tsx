@@ -742,7 +742,7 @@ function Dashboard() {
     return <Navigate to="/real-estate/charges" />;
   }
 
-  if (appMode === "billing" && companyId) {
+  if ((appMode === "billing" || segment === "PROTECAO_VEICULAR") && companyId) {
     return <BillingDashboard companyId={companyId} />;
   }
 
