@@ -144,19 +144,19 @@ function NewInvoiceDialog() {
           <Plus className="size-4" /> Gerar Fatura
         </Button>
       </DialogTrigger>
-      <DialogContent className="w-[95vw] max-w-lg max-h-[94vh] flex flex-col p-0 gap-0 rounded-2xl bg-card border-border shadow-2xl overflow-hidden">
-        <DialogHeader className="p-4 sm:p-5 pb-2.5 border-b border-border/60 shrink-0">
+      <DialogContent className="w-[95vw] max-w-lg max-h-[92vh] flex flex-col p-0 gap-0 rounded-2xl bg-card border-border shadow-2xl overflow-hidden">
+        <DialogHeader className="p-4 sm:p-5 pb-3 border-b border-border/60 bg-muted/10 shrink-0">
           <DialogTitle>Nova Fatura / Boleto</DialogTitle>
           <DialogDescription>Gere uma nova cobrança híbrida (Pix/Boleto) para um associado.</DialogDescription>
         </DialogHeader>
-        <div className="flex-1 overflow-y-auto min-h-0 px-4 sm:px-5 py-3 space-y-3">
-          <div className="space-y-2">
-            <Label>Associado</Label>
+        <div className="overflow-y-auto px-4 sm:px-5 py-3.5 space-y-3">
+          <div className="space-y-1.5">
+            <Label className="text-xs font-semibold">Associado</Label>
             <Select value={memberId} onValueChange={handleSelectMember}>
-              <SelectTrigger>
+              <SelectTrigger className="rounded-xl text-xs h-8.5 bg-background">
                 <SelectValue placeholder="Selecione um cliente" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="rounded-xl">
                 {members?.map(m => (
                   <SelectItem key={m.id} value={m.id}>{m.name}</SelectItem>
                 ))}
@@ -195,26 +195,26 @@ function NewInvoiceDialog() {
             </div>
           )}
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <Label>Valor (R$)</Label>
-              <Input type="text" value={amount} onChange={e => setAmount(formatCurrencyInput(e.target.value))} placeholder="R$ 0,00" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <div className="space-y-1">
+              <Label className="text-xs font-semibold">Valor (R$)</Label>
+              <Input type="text" value={amount} onChange={e => setAmount(formatCurrencyInput(e.target.value))} placeholder="R$ 0,00" className="rounded-xl text-xs font-mono font-bold h-8.5 bg-background" />
               {selectedMember && memberVehicles.length > 0 && (
-                <p className="text-[10px] text-muted-foreground">
+                <p className="text-[10px] text-muted-foreground leading-tight">
                   Mensalidade de {memberVehicles.length} veículo{memberVehicles.length > 1 ? "s" : ""} do associado
                 </p>
               )}
             </div>
 
-            <div className="space-y-2">
-              <Label>Data de Vencimento</Label>
+            <div className="space-y-1">
+              <Label className="text-xs font-semibold">Data de Vencimento</Label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
-                    className={cn("w-full justify-start text-left font-normal", !dueDate && "text-muted-foreground")}
+                    className={cn("w-full justify-start text-left font-normal rounded-xl text-xs h-8.5 bg-background", !dueDate && "text-muted-foreground")}
                   >
-                    <CalendarIcon className="size-4" />
+                    <CalendarIcon className="size-3.5 mr-1.5" />
                     {dueDate ? format(parseISO(dueDate), "dd/MM/yyyy") : <span>Escolha a data</span>}
                   </Button>
                 </PopoverTrigger>
@@ -232,16 +232,16 @@ function NewInvoiceDialog() {
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label>Descrição / Referência</Label>
-            <Input value={description} onChange={e => setDescription(e.target.value)} placeholder="Mensalidade Proteção Veicular" />
+          <div className="space-y-1">
+            <Label className="text-xs font-semibold">Descrição / Referência</Label>
+            <Input value={description} onChange={e => setDescription(e.target.value)} placeholder="Mensalidade Proteção Veicular" className="rounded-xl text-xs h-8.5 bg-background" />
           </div>
         </div>
         <div className="p-3.5 sm:p-4 border-t border-border/60 bg-muted/20 shrink-0 flex flex-col-reverse sm:flex-row items-center sm:justify-between gap-3">
           <AsaasFormSeal />
           <div className="flex justify-end gap-2 w-full sm:w-auto">
-            <Button variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
-            <Button onClick={() => generate.mutate()} disabled={generate.isPending}>
+            <Button variant="outline" size="sm" onClick={() => setOpen(false)} className="rounded-xl text-xs h-8">Cancelar</Button>
+            <Button size="sm" onClick={() => generate.mutate()} disabled={generate.isPending} className="rounded-xl text-xs font-bold h-8 px-4">
               {generate.isPending ? "Gerando..." : "Gerar"}
             </Button>
           </div>
@@ -267,10 +267,10 @@ function BoletoDetailDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[95vw] max-w-md max-h-[90vh] sm:max-h-[86vh] flex flex-col p-4 sm:p-5 rounded-2xl bg-card border-border shadow-2xl overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="w-[95vw] max-w-md max-h-[92vh] flex flex-col p-0 gap-0 rounded-2xl bg-card border-border shadow-2xl overflow-hidden">
+        <DialogHeader className="p-4 sm:p-5 pb-3 border-b border-border/60 bg-muted/10 shrink-0">
           <DialogTitle className="text-base font-bold flex items-center gap-2 text-foreground">
-            <Receipt className="size-5 text-primary" />
+            <Receipt className="size-4.5 text-primary" />
             Detalhes da Cobrança / Boleto
           </DialogTitle>
           <DialogDescription className="text-xs">
@@ -278,19 +278,19 @@ function BoletoDetailDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-3 py-3 text-xs">
-          <div className="p-3 rounded-xl bg-muted/40 border border-border/50 flex justify-between items-center">
+        <div className="p-4 sm:p-5 space-y-2.5 text-xs overflow-y-auto">
+          <div className="p-2.5 rounded-xl bg-muted/40 border border-border/50 flex justify-between items-center">
             <span className="text-muted-foreground font-semibold">Cliente / Associado:</span>
             <span className="font-bold text-foreground">{invoice.customerName || invoice.customer}</span>
           </div>
 
-          <div className="p-3 rounded-xl bg-muted/40 border border-border/50 flex justify-between items-center">
+          <div className="p-2.5 rounded-xl bg-muted/40 border border-border/50 flex justify-between items-center">
             <span className="text-muted-foreground font-semibold">Descrição:</span>
             <span className="font-medium text-foreground">{invoice.description || "Mensalidade"}</span>
           </div>
 
           <div className="grid grid-cols-2 gap-2">
-            <div className="p-3 rounded-xl bg-muted/40 border border-border/50">
+            <div className="p-2.5 rounded-xl bg-muted/40 border border-border/50">
               <span className="text-[10px] text-muted-foreground block">Vencimento</span>
               <span className="font-bold text-foreground">
                 {invoice.dueDate ? invoice.dueDate.split("-").reverse().join("/") : "—"}
@@ -301,7 +301,7 @@ function BoletoDetailDialog({
                 </span>
               )}
             </div>
-            <div className="p-3 rounded-xl bg-muted/40 border border-border/50">
+            <div className="p-2.5 rounded-xl bg-muted/40 border border-border/50">
               <span className="text-[10px] text-muted-foreground block">Valor</span>
               <span className="font-extrabold text-foreground">{BRL(invoice.value)}</span>
             </div>
@@ -309,7 +309,7 @@ function BoletoDetailDialog({
 
           {/* Seção de Split de Parceiro */}
           {invoice.hasSplit && (
-            <div className="p-3.5 rounded-xl bg-primary/10 border border-primary/25 space-y-1.5">
+            <div className="p-3 rounded-xl bg-primary/10 border border-primary/25 space-y-1.5">
               <div className="flex justify-between items-center text-xs">
                 <span className="text-primary font-bold flex items-center gap-1.5">
                   <Percent className="size-3.5" /> Split de Parceiro Configurado:
@@ -334,13 +334,13 @@ function BoletoDetailDialog({
             </div>
           )}
 
-          <div className="p-3 rounded-xl bg-muted/40 border border-border/50 flex justify-between items-center">
+          <div className="p-2.5 rounded-xl bg-muted/40 border border-border/50 flex justify-between items-center">
             <span className="text-muted-foreground font-semibold">Status:</span>
             {getStatusBadge(invoice.status)}
           </div>
 
           {url ? (
-            <div className="p-3 rounded-xl bg-primary/5 border border-primary/20 space-y-2">
+            <div className="p-2.5 rounded-xl bg-primary/5 border border-primary/20 space-y-1">
               <span className="text-[11px] font-semibold text-primary block">Link Seguro da Fatura:</span>
               <a
                 href={url}
@@ -352,16 +352,16 @@ function BoletoDetailDialog({
               </a>
             </div>
           ) : (
-            <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-700 text-xs">
+            <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-700 text-xs">
               O link direto desta cobrança não foi retornado pelo gateway ou está sendo processado.
             </div>
           )}
         </div>
 
-        <div className="flex flex-col-reverse sm:flex-row items-center sm:justify-between gap-3 pt-3 border-t border-border/60">
+        <div className="p-3.5 sm:p-4 border-t border-border/60 bg-muted/20 shrink-0 flex flex-col-reverse sm:flex-row items-center sm:justify-between gap-3">
           <AsaasFormSeal />
           <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-            <Button variant="outline" size="sm" onClick={() => onOpenChange(false)} className="rounded-xl text-xs">
+            <Button variant="outline" size="sm" onClick={() => onOpenChange(false)} className="rounded-xl text-xs h-8">
               Fechar
             </Button>
 
@@ -369,7 +369,7 @@ function BoletoDetailDialog({
               <Button
                 size="sm"
                 asChild
-                className="rounded-xl text-xs font-bold bg-primary hover:bg-primary/90 text-primary-foreground gap-1.5"
+                className="rounded-xl text-xs font-bold bg-primary hover:bg-primary/90 text-primary-foreground gap-1.5 h-8 px-4"
               >
                 <a href={url} target="_blank" rel="noopener noreferrer">
                   <ExternalLink className="size-3.5" />

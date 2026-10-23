@@ -315,21 +315,21 @@ function MemberDialog({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="w-[95vw] max-w-4xl max-h-[92vh] sm:max-h-[88vh] flex flex-col p-0 gap-0 border-border bg-card shadow-2xl rounded-2xl sm:rounded-3xl overflow-hidden">
-        <DialogHeader className="p-4 sm:p-5 pb-3 border-b border-border/60 shrink-0">
+      <DialogContent className="w-[95vw] max-w-4xl max-h-[92vh] flex flex-col p-0 gap-0 border-border bg-card shadow-2xl rounded-2xl sm:rounded-3xl overflow-hidden">
+        <DialogHeader className="p-4 sm:p-5 pb-3 border-b border-border/60 bg-muted/10 shrink-0">
           <DialogTitle className="text-base font-bold flex items-center gap-2">
             <User className="size-4.5 text-primary" />
             {member ? "Editar Associado" : "Cadastrar Associado & Veículo"}
           </DialogTitle>
           <DialogDescription className="text-xs">
-            Preencha os dados do associado, data preferida de vencimento do boleto e vincule ou cadastre o veículo.
+            Preencha os dados cadastrais do associado, vencimento da proteção e informações do veículo.
           </DialogDescription>
         </DialogHeader>
         
-        <div className="flex-1 overflow-y-auto min-h-0 p-4 sm:p-5 space-y-4">
-          <div className="grid md:grid-cols-2 gap-5">
-            {/* Lado Esquerdo: Dados do Associado & Endereço */}
-            <div className="space-y-3.5">
+        <div className="overflow-y-auto p-4 sm:p-5 space-y-4">
+          <div className="grid md:grid-cols-2 gap-4 sm:gap-5 items-start">
+            {/* Lado Esquerdo: Identificação & Cobrança */}
+            <div className="space-y-3">
               <div className="flex items-center justify-between pb-1 border-b border-border/50">
                 <h3 className="font-bold text-xs uppercase tracking-wider text-primary flex items-center gap-1.5">
                   <User className="size-3.5" /> Informações Pessoais
@@ -407,12 +407,12 @@ function MemberDialog({
               </div>
 
               {/* Parâmetro de Cobrança: Vencimento do Boleto */}
-              <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 space-y-1">
+              <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/25 space-y-1.5">
                 <div className="flex items-center justify-between">
                   <Label className="text-xs font-bold text-amber-900 dark:text-amber-200 flex items-center gap-1.5">
-                    <Calendar className="size-3.5 text-amber-600" /> Vencimento Preferencial do Boleto *
+                    <Calendar className="size-3.5 text-amber-600" /> Vencimento do Boleto no Lote *
                   </Label>
-                  <Badge variant="outline" className="border-amber-500/40 text-amber-700 dark:text-amber-300 text-[10px]">
+                  <Badge variant="outline" className="border-amber-500/40 text-amber-700 dark:text-amber-300 text-[9px] font-bold">
                     Lote Financeiro
                   </Badge>
                 </div>
@@ -428,18 +428,21 @@ function MemberDialog({
                     <SelectItem value="25">Dia 25 de cada mês</SelectItem>
                   </SelectContent>
                 </Select>
-                <p className="text-[10px] text-muted-foreground">
-                  Usado no menu Financeiro para geração de cobranças em lote agrupadas por dia.
+                <p className="text-[10px] text-muted-foreground leading-tight">
+                  Agrupamento automático na geração de cobranças em lote pelo menu Financeiro.
                 </p>
               </div>
+            </div>
 
+            {/* Lado Direito: Endereço & Veículo perfeitamente balanceados */}
+            <div className="space-y-3">
               {/* Endereço com Busca por CEP e Edição Manual */}
-              <div className="space-y-2 pt-1 border-t border-border/50">
-                <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
-                    <MapPin className="size-3 text-primary" /> Endereço Residencial
+              <div className="space-y-2">
+                <div className="flex items-center justify-between pb-1 border-b border-border/50">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-primary flex items-center gap-1.5">
+                    <MapPin className="size-3.5" /> Endereço Residencial
                   </span>
-                  <span className="text-[10px] text-muted-foreground">Preenchimento automático por CEP</span>
+                  <span className="text-[10px] text-muted-foreground">Autocompletar por CEP</span>
                 </div>
 
                 <div className="grid grid-cols-3 gap-2">
@@ -451,7 +454,7 @@ function MemberDialog({
                         onChange={(e) => setCep(e.target.value.replace(/\D/g, "").slice(0, 8))}
                         onBlur={(e) => handleCepSearch(e.target.value)}
                         placeholder="00000-000"
-                        className="h-8 rounded-xl text-xs font-mono bg-background pr-6"
+                        className="h-8.5 rounded-xl text-xs font-mono bg-background pr-6"
                       />
                       {isSearchingCep && (
                         <Loader2 className="size-3 animate-spin absolute right-2 top-2.5 text-muted-foreground" />
@@ -464,7 +467,7 @@ function MemberDialog({
                       value={address}
                       onChange={(e) => setAddress(e.target.value)}
                       placeholder="Rua, Avenida, Alameda..."
-                      className="h-8 rounded-xl text-xs bg-background"
+                      className="h-8.5 rounded-xl text-xs bg-background"
                     />
                   </div>
                 </div>
@@ -476,7 +479,7 @@ function MemberDialog({
                       value={number}
                       onChange={(e) => setNumber(e.target.value)}
                       placeholder="Nº ou S/N"
-                      className="h-8 rounded-xl text-xs bg-background"
+                      className="h-8.5 rounded-xl text-xs bg-background"
                     />
                   </div>
                   <div className="space-y-1 col-span-2">
@@ -486,13 +489,13 @@ function MemberDialog({
                         value={complement}
                         onChange={(e) => setComplement(e.target.value)}
                         placeholder="Apto / Bloco"
-                        className="h-8 rounded-xl text-xs bg-background"
+                        className="h-8.5 rounded-xl text-xs bg-background"
                       />
                       <Input
                         value={neighborhood}
                         onChange={(e) => setNeighborhood(e.target.value)}
                         placeholder="Bairro"
-                        className="h-8 rounded-xl text-xs bg-background"
+                        className="h-8.5 rounded-xl text-xs bg-background"
                       />
                     </div>
                   </div>
@@ -505,7 +508,7 @@ function MemberDialog({
                       value={city}
                       onChange={(e) => setCity(e.target.value)}
                       placeholder="Cidade"
-                      className="h-8 rounded-xl text-xs bg-background"
+                      className="h-8.5 rounded-xl text-xs bg-background"
                     />
                   </div>
                   <div className="space-y-1 col-span-1">
@@ -515,166 +518,166 @@ function MemberDialog({
                       onChange={(e) => setState(e.target.value.toUpperCase().slice(0, 2))}
                       placeholder="UF"
                       maxLength={2}
-                      className="h-8 rounded-xl text-xs font-mono uppercase bg-background"
+                      className="h-8.5 rounded-xl text-xs font-mono uppercase bg-background"
                     />
                   </div>
                 </div>
               </div>
-            </div>
 
-            {/* Lado Direito: Opções de Veículo */}
-            <div className="space-y-3.5">
-              <div className="border-b border-border/50 pb-1 flex items-center justify-between">
-                <h3 className="font-bold text-xs uppercase tracking-wider text-primary flex items-center gap-1.5">
-                  <Car className="size-3.5" /> Veículo do Associado
-                </h3>
+              {/* Opções de Veículo */}
+              <div className="space-y-2 pt-1 border-t border-border/50">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-bold text-xs uppercase tracking-wider text-primary flex items-center gap-1.5">
+                    <Car className="size-3.5" /> Veículo do Associado
+                  </h3>
+                </div>
+
+                {/* Seletor de Modo de Veículo */}
+                <div className="grid grid-cols-3 gap-1 p-1 rounded-xl bg-muted/40 border border-border/60">
+                  <Button
+                    type="button"
+                    variant={vehicleMode === "new" ? "default" : "ghost"}
+                    size="sm"
+                    onClick={() => setVehicleMode("new")}
+                    className="rounded-lg h-7 text-[11px] font-bold"
+                  >
+                    Novo Veículo
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={vehicleMode === "existing" ? "default" : "ghost"}
+                    size="sm"
+                    onClick={() => setVehicleMode("existing")}
+                    className="rounded-lg h-7 text-[11px] font-bold"
+                  >
+                    Vincular Frota
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={vehicleMode === "none" ? "default" : "ghost"}
+                    size="sm"
+                    onClick={() => setVehicleMode("none")}
+                    className="rounded-lg h-7 text-[11px] font-bold"
+                  >
+                    Sem Veículo
+                  </Button>
+                </div>
+
+                {/* MODO 1: Cadastrar Novo Veículo */}
+                {vehicleMode === "new" && (
+                  <div className="space-y-2 p-2.5 rounded-xl border border-border/60 bg-muted/10">
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="space-y-1">
+                        <Label className="text-xs font-semibold">Placa (Mercosul)</Label>
+                        <Input
+                          value={plate}
+                          onChange={(e) => setPlate(e.target.value.replace(/[^a-zA-Z0-9]/g, "").toUpperCase())}
+                          placeholder="ABC1234"
+                          maxLength={7}
+                          className="h-8 rounded-xl text-xs font-mono font-bold uppercase bg-background"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs font-semibold">Ano Fabricação</Label>
+                        <Input
+                          value={year}
+                          onChange={(e) => setYear(e.target.value)}
+                          placeholder="2022"
+                          type="number"
+                          className="h-8 rounded-xl text-xs bg-background"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="space-y-1">
+                        <Label className="text-xs font-semibold">Marca</Label>
+                        <Select 
+                          value={brandCode} 
+                          onValueChange={(val) => {
+                            setBrandCode(val);
+                            const b = fipeBrands?.find(x => x.codigo === val);
+                            setBrandName(b?.nome || "");
+                            setModelName("");
+                          }}
+                        >
+                          <SelectTrigger className="h-8 rounded-xl text-xs bg-background">
+                            <SelectValue placeholder="Selecione a marca" />
+                          </SelectTrigger>
+                          <SelectContent className="rounded-xl max-h-56">
+                            {fipeBrands?.map((b) => (
+                              <SelectItem key={b.codigo} value={b.codigo}>{b.nome}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs font-semibold">Modelo</Label>
+                        <Select 
+                          value={modelName} 
+                          onValueChange={setModelName} 
+                          disabled={!brandCode || !fipeModels}
+                        >
+                          <SelectTrigger className="h-8 rounded-xl text-xs bg-background">
+                            <SelectValue placeholder={!brandCode ? "Selecione a marca" : "Selecione o modelo"} />
+                          </SelectTrigger>
+                          <SelectContent className="rounded-xl max-h-56">
+                            {fipeModels?.map((m) => (
+                              <SelectItem key={m.codigo} value={m.nome}>{m.nome}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    <div className="pt-0.5">
+                      <VehicleCategorySelector value={category} onChange={setCategory} compact />
+                    </div>
+                  </div>
+                )}
+
+                {/* MODO 2: Vincular Veículo Existente da Base / Avulso */}
+                {vehicleMode === "existing" && (
+                  <div className="p-2.5 rounded-xl border border-primary/30 bg-primary/5 space-y-1.5">
+                    <div className="flex items-center gap-1.5">
+                      <Link2 className="size-3.5 text-primary" />
+                      <Label className="text-xs font-bold text-foreground">Selecionar Veículo da Frota</Label>
+                    </div>
+                    <Select value={selectedExistingVehicleId} onValueChange={setSelectedExistingVehicleId}>
+                      <SelectTrigger className="h-8.5 rounded-xl text-xs bg-background font-semibold">
+                        <SelectValue placeholder="Escolha um veículo cadastrado..." />
+                      </SelectTrigger>
+                      <SelectContent className="rounded-xl max-h-60">
+                        {fleetVehicles.map((v: any) => {
+                          const isAvulso = !v.members || v.members.document === "00000000000" || v.members.name?.includes("Avulso");
+                          return (
+                            <SelectItem key={v.id} value={v.id}>
+                              <span className="font-mono font-bold">{v.plate}</span> — {v.brand} {v.model} ({v.year || "S/A"})
+                              {isAvulso ? " [AVULSO DISPONÍVEL]" : ` [Atual: ${v.members?.name}]`}
+                            </SelectItem>
+                          );
+                        })}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-[10px] text-muted-foreground leading-tight">
+                      Ao salvar, o veículo selecionado será transferido e vinculado a este associado.
+                    </p>
+                  </div>
+                )}
+
+                {/* MODO 3: Associado Sem Veículo no Momento */}
+                {vehicleMode === "none" && (
+                  <div className="p-3.5 rounded-xl border border-dashed border-border/80 bg-muted/20 text-center space-y-1">
+                    <div className="size-7 rounded-lg bg-muted/60 text-muted-foreground flex items-center justify-center mx-auto">
+                      <Car className="size-3.5" />
+                    </div>
+                    <h4 className="text-xs font-bold text-foreground">Associado Avulso (Sem Veículo)</h4>
+                    <p className="text-[10px] text-muted-foreground max-w-xs mx-auto leading-tight">
+                      O associado será cadastrado avulso. Você poderá vincular um veículo a qualquer momento pelo menu Veículos.
+                    </p>
+                  </div>
+                )}
               </div>
-
-              {/* Seletor de Modo de Veículo */}
-              <div className="grid grid-cols-3 gap-1.5 p-1 rounded-xl bg-muted/40 border border-border/60">
-                <Button
-                  type="button"
-                  variant={vehicleMode === "new" ? "default" : "ghost"}
-                  size="sm"
-                  onClick={() => setVehicleMode("new")}
-                  className="rounded-lg h-7 text-[11px] font-bold"
-                >
-                  Novo Veículo
-                </Button>
-                <Button
-                  type="button"
-                  variant={vehicleMode === "existing" ? "default" : "ghost"}
-                  size="sm"
-                  onClick={() => setVehicleMode("existing")}
-                  className="rounded-lg h-7 text-[11px] font-bold"
-                >
-                  Vincular Existente
-                </Button>
-                <Button
-                  type="button"
-                  variant={vehicleMode === "none" ? "default" : "ghost"}
-                  size="sm"
-                  onClick={() => setVehicleMode("none")}
-                  className="rounded-lg h-7 text-[11px] font-bold"
-                >
-                  Sem Veículo
-                </Button>
-              </div>
-
-              {/* MODO 1: Cadastrar Novo Veículo */}
-              {vehicleMode === "new" && (
-                <div className="space-y-2.5 p-3 rounded-2xl border border-border/60 bg-muted/10">
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="space-y-1">
-                      <Label className="text-xs font-semibold">Placa (Mercosul)</Label>
-                      <Input
-                        value={plate}
-                        onChange={(e) => setPlate(e.target.value.replace(/[^a-zA-Z0-9]/g, "").toUpperCase())}
-                        placeholder="ABC1234"
-                        maxLength={7}
-                        className="h-8.5 rounded-xl text-xs font-mono font-bold uppercase bg-background"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs font-semibold">Ano de Fabricação</Label>
-                      <Input
-                        value={year}
-                        onChange={(e) => setYear(e.target.value)}
-                        placeholder="2022"
-                        type="number"
-                        className="h-8.5 rounded-xl text-xs bg-background"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="space-y-1">
-                      <Label className="text-xs font-semibold">Marca</Label>
-                      <Select 
-                        value={brandCode} 
-                        onValueChange={(val) => {
-                          setBrandCode(val);
-                          const b = fipeBrands?.find(x => x.codigo === val);
-                          setBrandName(b?.nome || "");
-                          setModelName("");
-                        }}
-                      >
-                        <SelectTrigger className="h-8.5 rounded-xl text-xs bg-background">
-                          <SelectValue placeholder="Selecione a marca" />
-                        </SelectTrigger>
-                        <SelectContent className="rounded-xl max-h-56">
-                          {fipeBrands?.map((b) => (
-                            <SelectItem key={b.codigo} value={b.codigo}>{b.nome}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs font-semibold">Modelo</Label>
-                      <Select 
-                        value={modelName} 
-                        onValueChange={setModelName} 
-                        disabled={!brandCode || !fipeModels}
-                      >
-                        <SelectTrigger className="h-8.5 rounded-xl text-xs bg-background">
-                          <SelectValue placeholder={!brandCode ? "Selecione a marca" : "Selecione o modelo"} />
-                        </SelectTrigger>
-                        <SelectContent className="rounded-xl max-h-56">
-                          {fipeModels?.map((m) => (
-                            <SelectItem key={m.codigo} value={m.nome}>{m.nome}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
-                  <div className="pt-0.5">
-                    <VehicleCategorySelector value={category} onChange={setCategory} compact />
-                  </div>
-                </div>
-              )}
-
-              {/* MODO 2: Vincular Veículo Existente da Base / Avulso */}
-              {vehicleMode === "existing" && (
-                <div className="p-3.5 rounded-2xl border border-primary/30 bg-primary/5 space-y-2.5">
-                  <div className="flex items-center gap-1.5">
-                    <Link2 className="size-4 text-primary" />
-                    <Label className="text-xs font-bold text-foreground">Selecionar Veículo da Frota</Label>
-                  </div>
-                  <Select value={selectedExistingVehicleId} onValueChange={setSelectedExistingVehicleId}>
-                    <SelectTrigger className="h-9 rounded-xl text-xs bg-background font-semibold">
-                      <SelectValue placeholder="Escolha um veículo cadastrado..." />
-                    </SelectTrigger>
-                    <SelectContent className="rounded-xl max-h-60">
-                      {fleetVehicles.map((v: any) => {
-                        const isAvulso = !v.members || v.members.document === "00000000000" || v.members.name?.includes("Avulso");
-                        return (
-                          <SelectItem key={v.id} value={v.id}>
-                            <span className="font-mono font-bold">{v.plate}</span> — {v.brand} {v.model} ({v.year || "S/A"})
-                            {isAvulso ? " [AVULSO DISPONÍVEL]" : ` [Atual: ${v.members?.name}]`}
-                          </SelectItem>
-                        );
-                      })}
-                    </SelectContent>
-                  </Select>
-                  <p className="text-[11px] text-muted-foreground">
-                    Ao salvar, o veículo selecionado será transferido e formalmente vinculado a este associado.
-                  </p>
-                </div>
-              )}
-
-              {/* MODO 3: Associado Sem Veículo no Momento */}
-              {vehicleMode === "none" && (
-                <div className="p-6 rounded-2xl border border-dashed border-border/80 bg-muted/20 text-center space-y-2">
-                  <div className="size-10 rounded-xl bg-muted/60 text-muted-foreground flex items-center justify-center mx-auto">
-                    <Car className="size-5" />
-                  </div>
-                  <h4 className="text-xs font-bold text-foreground">Associado Avulso (Sem Veículo)</h4>
-                  <p className="text-[11px] text-muted-foreground max-w-xs mx-auto">
-                    O cadastro do associado será salvo de forma avulsa. Você poderá vincular um veículo novo ou existente a qualquer momento pelo menu Veículos.
-                  </p>
-                </div>
-              )}
             </div>
           </div>
         </div>
@@ -732,14 +735,17 @@ function VehicleDialog({ memberId, memberName }: { memberId: string; memberName:
           <Car className="size-3 text-primary" /> Adicionar Veículo
         </Button>
       </DialogTrigger>
-      <DialogContent className="w-[95vw] max-w-lg max-h-[90vh] sm:max-h-[86vh] flex flex-col p-0 gap-0 border-border bg-card shadow-2xl rounded-2xl overflow-hidden">
-        <DialogHeader className="p-4 sm:p-5 pb-2.5 border-b border-border/60 shrink-0">
+      <DialogContent className="w-[95vw] sm:max-w-md rounded-2xl border-border bg-card shadow-2xl p-0 gap-0 overflow-hidden">
+        <DialogHeader className="p-4 sm:p-5 pb-3 border-b border-border/60 bg-muted/10 shrink-0">
           <DialogTitle className="text-base font-bold flex items-center gap-2">
             <Car className="size-4.5 text-primary" />
             Vincular Veículo - {memberName}
           </DialogTitle>
+          <DialogDescription className="text-xs">
+            Preencha os dados do veículo para vinculá-lo imediatamente a este associado
+          </DialogDescription>
         </DialogHeader>
-        <div className="flex-1 overflow-y-auto min-h-0 p-4 sm:p-5 space-y-2.5">
+        <div className="p-4 sm:p-5 space-y-3">
           <div className="grid grid-cols-2 gap-2.5">
             <div className="space-y-1">
               <Label className="text-xs font-semibold">Placa (Mercosul) *</Label>

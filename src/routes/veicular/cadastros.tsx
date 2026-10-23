@@ -664,8 +664,8 @@ function CadastrosPage() {
 
         {/* MODAL: CADASTRAR/EDITAR CONSULTOR */}
         <Dialog open={partnerModalOpen} onOpenChange={setPartnerModalOpen}>
-          <DialogContent className="sm:max-w-md rounded-2xl">
-            <DialogHeader>
+          <DialogContent className="w-[95vw] sm:max-w-md rounded-2xl border-border bg-card p-0 gap-0 overflow-hidden shadow-2xl">
+            <DialogHeader className="p-4 sm:p-5 pb-3 border-b border-border/60 bg-muted/10 shrink-0">
               <DialogTitle className="text-base font-bold">
                 {editingPartner ? "Editar Consultor" : "Novo Consultor"}
               </DialogTitle>
@@ -673,24 +673,24 @@ function CadastrosPage() {
                 Configure os dados do consultor e a comissão de split Asaas
               </DialogDescription>
             </DialogHeader>
-            <div className="space-y-3.5 py-2">
+            <div className="p-4 sm:p-5 space-y-3">
               <div className="space-y-1">
                 <Label className="text-xs font-semibold">Nome Completo *</Label>
                 <Input
                   value={partnerName}
                   onChange={(e) => setPartnerName(e.target.value)}
                   placeholder="Nome do consultor"
-                  className="rounded-xl text-xs"
+                  className="rounded-xl text-xs h-8.5 bg-background"
                 />
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-2.5">
                 <div className="space-y-1">
                   <Label className="text-xs font-semibold">Telefone / WhatsApp</Label>
                   <Input
                     value={partnerPhone}
                     onChange={(e) => setPartnerPhone(formatPhone(e.target.value))}
                     placeholder="(00) 00000-0000"
-                    className="rounded-xl text-xs font-mono"
+                    className="rounded-xl text-xs font-mono h-8.5 bg-background"
                   />
                 </div>
                 <div className="space-y-1">
@@ -700,7 +700,7 @@ function CadastrosPage() {
                     value={partnerSplit}
                     onChange={(e) => setPartnerSplit(e.target.value)}
                     placeholder="Ex: 10"
-                    className="rounded-xl text-xs font-mono font-bold"
+                    className="rounded-xl text-xs font-mono font-bold h-8.5 bg-background"
                   />
                 </div>
               </div>
@@ -711,7 +711,7 @@ function CadastrosPage() {
                   value={partnerEmail}
                   onChange={(e) => setPartnerEmail(e.target.value)}
                   placeholder="consultor@email.com"
-                  className="rounded-xl text-xs"
+                  className="rounded-xl text-xs h-8.5 bg-background"
                 />
               </div>
               <div className="space-y-1">
@@ -720,15 +720,15 @@ function CadastrosPage() {
                   value={partnerWalletId}
                   onChange={(e) => setPartnerWalletId(e.target.value)}
                   placeholder="wal_..."
-                  className="rounded-xl text-xs font-mono"
+                  className="rounded-xl text-xs font-mono h-8.5 bg-background"
                 />
-                <p className="text-[10px] text-muted-foreground">
+                <p className="text-[10px] text-muted-foreground leading-tight">
                   Se preenchida, o split percentual será repassado diretamente a esta carteira pelo Asaas.
                 </p>
               </div>
             </div>
-            <DialogFooter className="gap-2">
-              <Button variant="outline" size="sm" onClick={() => setPartnerModalOpen(false)} className="rounded-xl text-xs">
+            <DialogFooter className="p-3.5 sm:p-4 border-t border-border/60 bg-muted/20 shrink-0 flex items-center justify-end gap-2">
+              <Button variant="outline" size="sm" onClick={() => setPartnerModalOpen(false)} className="rounded-xl text-xs h-8">
                 Cancelar
               </Button>
               <Button
@@ -750,7 +750,7 @@ function CadastrosPage() {
                   });
                 }}
                 disabled={savePartnerMutation.isPending}
-                className="rounded-xl text-xs font-bold"
+                className="rounded-xl text-xs font-bold h-8 px-4"
               >
                 {savePartnerMutation.isPending ? "Salvando..." : "Salvar Consultor"}
               </Button>
@@ -760,8 +760,8 @@ function CadastrosPage() {
 
         {/* MODAL: COTA DE PARTICIPAÇÃO */}
         <Dialog open={cotaModalOpen} onOpenChange={setCotaModalOpen}>
-          <DialogContent className="sm:max-w-md rounded-2xl">
-            <DialogHeader>
+          <DialogContent className="w-[95vw] sm:max-w-md rounded-2xl border-border bg-card p-0 gap-0 overflow-hidden shadow-2xl">
+            <DialogHeader className="p-4 sm:p-5 pb-3 border-b border-border/60 bg-muted/10 shrink-0">
               <DialogTitle className="text-base font-bold">
                 {editingCota ? "Editar Faixa de Cota" : "Nova Faixa de Cota de Participação"}
               </DialogTitle>
@@ -769,11 +769,11 @@ function CadastrosPage() {
                 Defina os limites de avaliação FIPE e o valor mínimo de franquia
               </DialogDescription>
             </DialogHeader>
-            <div className="space-y-3.5 py-2">
+            <div className="p-4 sm:p-5 space-y-3">
               <div className="space-y-1">
                 <Label className="text-xs font-semibold">Tipo do Veículo</Label>
                 <Select value={cotaType} onValueChange={(v: any) => setCotaType(v)}>
-                  <SelectTrigger className="rounded-xl text-xs">
+                  <SelectTrigger className="rounded-xl text-xs h-8.5 bg-background">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl">
@@ -784,14 +784,14 @@ function CadastrosPage() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-2.5">
                 <div className="space-y-1">
                   <Label className="text-xs font-semibold">FIPE Mínima (R$)</Label>
                   <Input
                     type="number"
                     value={cotaMinFipe}
                     onChange={(e) => setCotaMinFipe(e.target.value)}
-                    className="rounded-xl text-xs font-mono"
+                    className="rounded-xl text-xs font-mono h-8.5 bg-background"
                   />
                 </div>
                 <div className="space-y-1">
@@ -800,11 +800,11 @@ function CadastrosPage() {
                     type="number"
                     value={cotaMaxFipe}
                     onChange={(e) => setCotaMaxFipe(e.target.value)}
-                    className="rounded-xl text-xs font-mono"
+                    className="rounded-xl text-xs font-mono h-8.5 bg-background"
                   />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-2.5">
                 <div className="space-y-1">
                   <Label className="text-xs font-semibold">Percentual Cota (%)</Label>
                   <Input
@@ -812,7 +812,7 @@ function CadastrosPage() {
                     step="0.5"
                     value={cotaPercent}
                     onChange={(e) => setCotaPercent(e.target.value)}
-                    className="rounded-xl text-xs font-mono font-bold"
+                    className="rounded-xl text-xs font-mono font-bold h-8.5 bg-background"
                   />
                 </div>
                 <div className="space-y-1">
@@ -821,7 +821,7 @@ function CadastrosPage() {
                     type="number"
                     value={cotaMinAmount}
                     onChange={(e) => setCotaMinAmount(e.target.value)}
-                    className="rounded-xl text-xs font-mono font-bold"
+                    className="rounded-xl text-xs font-mono font-bold h-8.5 bg-background"
                   />
                 </div>
               </div>
@@ -831,15 +831,15 @@ function CadastrosPage() {
                   value={cotaDesc}
                   onChange={(e) => setCotaDesc(e.target.value)}
                   placeholder="Ex: Veículos até R$ 50.000"
-                  className="rounded-xl text-xs"
+                  className="rounded-xl text-xs h-8.5 bg-background"
                 />
               </div>
             </div>
-            <DialogFooter className="gap-2">
-              <Button variant="outline" size="sm" onClick={() => setCotaModalOpen(false)} className="rounded-xl text-xs">
+            <DialogFooter className="p-3.5 sm:p-4 border-t border-border/60 bg-muted/20 shrink-0 flex items-center justify-end gap-2">
+              <Button variant="outline" size="sm" onClick={() => setCotaModalOpen(false)} className="rounded-xl text-xs h-8">
                 Cancelar
               </Button>
-              <Button size="sm" onClick={handleSaveCota} className="rounded-xl text-xs font-bold">
+              <Button size="sm" onClick={handleSaveCota} className="rounded-xl text-xs font-bold h-8 px-4">
                 Salvar Faixa
               </Button>
             </DialogFooter>
@@ -848,8 +848,8 @@ function CadastrosPage() {
 
         {/* MODAL: PRODUTO / COBERTURA */}
         <Dialog open={prodModalOpen} onOpenChange={setProdModalOpen}>
-          <DialogContent className="sm:max-w-md rounded-2xl">
-            <DialogHeader>
+          <DialogContent className="w-[95vw] sm:max-w-md rounded-2xl border-border bg-card p-0 gap-0 overflow-hidden shadow-2xl">
+            <DialogHeader className="p-4 sm:p-5 pb-3 border-b border-border/60 bg-muted/10 shrink-0">
               <DialogTitle className="text-base font-bold">
                 {editingProd ? "Editar Produto" : "Novo Produto / Cobertura"}
               </DialogTitle>
@@ -857,21 +857,21 @@ function CadastrosPage() {
                 Cadastre coberturas e serviços adicionais para a cotação
               </DialogDescription>
             </DialogHeader>
-            <div className="space-y-3.5 py-2">
+            <div className="p-4 sm:p-5 space-y-3">
               <div className="space-y-1">
                 <Label className="text-xs font-semibold">Nome do Produto *</Label>
                 <Input
                   value={prodName}
                   onChange={(e) => setProdName(e.target.value)}
                   placeholder="Ex: Guincho 1.000 km, Carro Reserva 15 Dias"
-                  className="rounded-xl text-xs"
+                  className="rounded-xl text-xs h-8.5 bg-background"
                 />
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-2.5">
                 <div className="space-y-1">
                   <Label className="text-xs font-semibold">Tipo Aplicável</Label>
                   <Select value={prodVehicleType} onValueChange={(v: any) => setProdVehicleType(v)}>
-                    <SelectTrigger className="rounded-xl text-xs">
+                    <SelectTrigger className="rounded-xl text-xs h-8.5 bg-background">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="rounded-xl">
@@ -886,7 +886,7 @@ function CadastrosPage() {
                 <div className="space-y-1">
                   <Label className="text-xs font-semibold">Categoria</Label>
                   <Select value={prodCategory} onValueChange={(v: any) => setProdCategory(v)}>
-                    <SelectTrigger className="rounded-xl text-xs">
+                    <SelectTrigger className="rounded-xl text-xs h-8.5 bg-background">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="rounded-xl">
@@ -898,7 +898,7 @@ function CadastrosPage() {
                   </Select>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-2.5">
                 <div className="space-y-1">
                   <Label className="text-xs font-semibold">Valor Mensal (R$)</Label>
                   <Input
@@ -906,7 +906,7 @@ function CadastrosPage() {
                     step="0.10"
                     value={prodFee}
                     onChange={(e) => setProdFee(e.target.value)}
-                    className="rounded-xl text-xs font-mono font-bold"
+                    className="rounded-xl text-xs font-mono font-bold h-8.5 bg-background"
                   />
                 </div>
                 <div className="space-y-1">
@@ -915,7 +915,7 @@ function CadastrosPage() {
                     value={prodLimit}
                     onChange={(e) => setProdLimit(e.target.value)}
                     placeholder="Ex: R$ 50.000 ou 1.000 km"
-                    className="rounded-xl text-xs"
+                    className="rounded-xl text-xs h-8.5 bg-background"
                   />
                 </div>
               </div>
@@ -925,7 +925,7 @@ function CadastrosPage() {
                   value={prodDesc}
                   onChange={(e) => setProdDesc(e.target.value)}
                   placeholder="Detalhes para a proposta do associado"
-                  className="rounded-xl text-xs"
+                  className="rounded-xl text-xs h-8.5 bg-background"
                 />
               </div>
               <div className="flex items-center justify-between p-3 rounded-xl bg-muted/40 border border-border/60">
@@ -938,11 +938,11 @@ function CadastrosPage() {
                 <Switch checked={prodRequired} onCheckedChange={setProdRequired} />
               </div>
             </div>
-            <DialogFooter className="gap-2">
-              <Button variant="outline" size="sm" onClick={() => setProdModalOpen(false)} className="rounded-xl text-xs">
+            <DialogFooter className="p-3.5 sm:p-4 border-t border-border/60 bg-muted/20 shrink-0 flex items-center justify-end gap-2">
+              <Button variant="outline" size="sm" onClick={() => setProdModalOpen(false)} className="rounded-xl text-xs h-8">
                 Cancelar
               </Button>
-              <Button size="sm" onClick={handleSaveProd} className="rounded-xl text-xs font-bold">
+              <Button size="sm" onClick={handleSaveProd} className="rounded-xl text-xs font-bold h-8 px-4">
                 Salvar Produto
               </Button>
             </DialogFooter>

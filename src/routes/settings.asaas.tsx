@@ -738,8 +738,8 @@ function AsaasSettingsPage() {
       {/* Modal de Detalhes do Evento do Webhook */}
       {selectedEvent && (
         <Dialog open={!!selectedEvent} onOpenChange={(open) => !open && setSelectedEvent(null)}>
-          <DialogContent className="w-[95vw] sm:max-w-xl max-h-[90vh] overflow-y-auto rounded-2xl p-6 bg-card border-border shadow-2xl space-y-4">
-            <DialogHeader className="space-y-1">
+          <DialogContent className="w-[95vw] sm:max-w-xl max-h-[92vh] flex flex-col rounded-2xl p-0 gap-0 bg-card border-border shadow-2xl overflow-hidden">
+            <DialogHeader className="p-4 sm:p-5 pb-3 border-b border-border/60 bg-muted/10 shrink-0">
               <div className="flex items-center gap-2">
                 <div className="size-8 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
                   <Activity className="size-4" />
@@ -753,15 +753,15 @@ function AsaasSettingsPage() {
               </DialogDescription>
             </DialogHeader>
 
-            <div className="space-y-3 text-xs">
-              <div className="p-3 rounded-xl bg-muted/30 border border-border/50 flex justify-between items-center flex-wrap gap-2">
+            <div className="p-4 sm:p-5 space-y-2.5 text-xs overflow-y-auto">
+              <div className="p-2.5 rounded-xl bg-muted/30 border border-border/50 flex justify-between items-center flex-wrap gap-2">
                 <span className="text-muted-foreground font-semibold">Evento:</span>
                 <Badge variant="outline" className="font-mono text-xs font-bold text-primary">
                   {selectedEvent.event}
                 </Badge>
               </div>
 
-              <div className="p-3 rounded-xl bg-muted/30 border border-border/50 flex justify-between items-center flex-wrap gap-2">
+              <div className="p-2.5 rounded-xl bg-muted/30 border border-border/50 flex justify-between items-center flex-wrap gap-2">
                 <span className="text-muted-foreground font-semibold">Horário de Recepção:</span>
                 <span className="font-mono text-foreground">
                   {new Date(selectedEvent.created_at).toLocaleString("pt-BR")}
@@ -769,7 +769,7 @@ function AsaasSettingsPage() {
               </div>
 
               {selectedEvent.asaas_payment_id && (
-                <div className="p-3 rounded-xl bg-muted/30 border border-border/50 flex justify-between items-center flex-wrap gap-2">
+                <div className="p-2.5 rounded-xl bg-muted/30 border border-border/50 flex justify-between items-center flex-wrap gap-2">
                   <span className="text-muted-foreground font-semibold">ID do Pagamento:</span>
                   <span className="font-mono text-foreground font-bold">
                     {selectedEvent.asaas_payment_id}
@@ -777,7 +777,7 @@ function AsaasSettingsPage() {
                 </div>
               )}
 
-              <div className="space-y-1.5 pt-2">
+              <div className="space-y-1 pt-1">
                 <div className="flex items-center justify-between">
                   <Label className="text-xs font-semibold text-muted-foreground">
                     Payload Completo (JSON)
@@ -786,7 +786,7 @@ function AsaasSettingsPage() {
                     type="button"
                     variant="ghost"
                     size="sm"
-                    className="h-7 px-2 text-xs gap-1 text-primary hover:text-primary"
+                    className="h-6.5 px-2 text-xs gap-1 text-primary hover:text-primary"
                     onClick={() => {
                       navigator.clipboard.writeText(JSON.stringify(selectedEvent.payload, null, 2));
                       toast.success("JSON copiado para a área de transferência!");
@@ -796,15 +796,15 @@ function AsaasSettingsPage() {
                     <span>Copiar JSON</span>
                   </Button>
                 </div>
-                <pre className="max-h-60 overflow-auto rounded-xl p-3 bg-muted/40 border border-border/60 text-[11px] font-mono text-foreground leading-relaxed whitespace-pre-wrap break-all">
+                <pre className="max-h-56 overflow-auto rounded-xl p-3 bg-muted/40 border border-border/60 text-[11px] font-mono text-foreground leading-relaxed whitespace-pre-wrap break-all">
                   {JSON.stringify(selectedEvent.payload, null, 2)}
                 </pre>
               </div>
             </div>
 
-            <div className="flex items-center justify-between pt-2 border-t border-border/40">
+            <div className="p-3.5 sm:p-4 border-t border-border/60 bg-muted/20 shrink-0 flex items-center justify-between">
               <AsaasFormSeal />
-              <Button variant="outline" onClick={() => setSelectedEvent(null)} className="rounded-xl px-5">
+              <Button variant="outline" size="sm" onClick={() => setSelectedEvent(null)} className="rounded-xl px-5 text-xs h-8">
                 Fechar
               </Button>
             </div>

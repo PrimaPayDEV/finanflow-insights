@@ -863,8 +863,8 @@ function VehiclesPage() {
 
         {/* Modal de Vinculação Rápida de Veículo a Associado */}
         <Dialog open={linkModalOpen} onOpenChange={setLinkModalOpen}>
-          <DialogContent className="sm:max-w-md rounded-2xl">
-            <DialogHeader>
+          <DialogContent className="w-[95vw] sm:max-w-md rounded-2xl border-border bg-card p-0 gap-0 overflow-hidden shadow-2xl">
+            <DialogHeader className="p-4 sm:p-5 pb-3 border-b border-border/60 bg-muted/10 shrink-0">
               <DialogTitle className="text-base font-bold flex items-center gap-2">
                 <User className="size-4 text-primary" /> Vincular Veículo a Associado
               </DialogTitle>
@@ -872,8 +872,8 @@ function VehiclesPage() {
                 Selecione o associado proprietário para a placa {vehicleToLink?.plate}
               </DialogDescription>
             </DialogHeader>
-            <div className="space-y-3 py-2 text-xs">
-              <div className="p-3 rounded-xl bg-muted/40 border border-border/60">
+            <div className="p-4 sm:p-5 space-y-3 text-xs">
+              <div className="p-3 rounded-xl bg-muted/40 border border-border/60 space-y-1">
                 <span className="text-muted-foreground block text-[10px] uppercase font-bold">Veículo Selecionado:</span>
                 <span className="font-extrabold text-foreground text-sm block font-mono">
                   {vehicleToLink?.plate} • {vehicleToLink?.brand} {vehicleToLink?.model}
@@ -883,7 +883,7 @@ function VehiclesPage() {
               <div className="space-y-1">
                 <Label className="text-xs font-semibold">Associado Proprietário *</Label>
                 <Select value={targetMemberId} onValueChange={setTargetMemberId}>
-                  <SelectTrigger className="rounded-xl text-xs h-9 bg-background">
+                  <SelectTrigger className="rounded-xl text-xs h-8.5 bg-background">
                     <SelectValue placeholder="Selecione o associado..." />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl max-h-56">
@@ -899,8 +899,8 @@ function VehiclesPage() {
                 </Select>
               </div>
             </div>
-            <DialogFooter className="gap-2">
-              <Button variant="outline" size="sm" onClick={() => setLinkModalOpen(false)} className="rounded-xl text-xs">
+            <DialogFooter className="p-3.5 sm:p-4 border-t border-border/60 bg-muted/20 shrink-0 flex items-center justify-end gap-2">
+              <Button variant="outline" size="sm" onClick={() => setLinkModalOpen(false)} className="rounded-xl text-xs h-8">
                 Cancelar
               </Button>
               <Button
@@ -916,7 +916,7 @@ function VehiclesPage() {
                   });
                 }}
                 disabled={linkMutation.isPending}
-                className="rounded-xl text-xs font-bold bg-primary text-primary-foreground"
+                className="rounded-xl text-xs font-bold bg-primary text-primary-foreground h-8 px-4"
               >
                 {linkMutation.isPending ? "Salvando..." : "Confirmar Vínculo"}
               </Button>
@@ -1500,8 +1500,8 @@ function CertificateDialog({
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[95vw] max-w-lg max-h-[90vh] sm:max-h-[86vh] flex flex-col rounded-2xl sm:rounded-3xl p-3.5 sm:p-5 bg-card border-border shadow-2xl overflow-hidden">
-        <div className="flex-1 overflow-y-auto min-h-0 border-2 border-primary/30 rounded-2xl p-4 bg-gradient-to-b from-primary/5 via-card to-card relative overflow-hidden">
+      <DialogContent className="w-[95vw] max-w-lg rounded-2xl sm:rounded-3xl p-3.5 sm:p-5 bg-card border-border shadow-2xl overflow-hidden">
+        <div className="border-2 border-primary/30 rounded-2xl p-4 bg-gradient-to-b from-primary/5 via-card to-card relative overflow-hidden">
           <ShieldCheck className="absolute -right-8 -bottom-8 size-44 text-primary/5 pointer-events-none" />
 
           {/* Cabeçalho */}
@@ -1647,8 +1647,8 @@ function NewVehicleDialog({ members, partners = [] }: { members: any[]; partners
           <span>Cadastrar Veículo</span>
         </Button>
       </DialogTrigger>
-      <DialogContent className="w-[95vw] max-w-lg max-h-[90vh] sm:max-h-[86vh] flex flex-col rounded-2xl bg-card border-border p-0 gap-0 shadow-2xl overflow-hidden">
-        <DialogHeader className="p-4 sm:p-5 pb-2.5 border-b border-border/60 shrink-0">
+      <DialogContent className="w-[95vw] max-w-lg max-h-[92vh] flex flex-col rounded-2xl bg-card border-border p-0 gap-0 shadow-2xl overflow-hidden">
+        <DialogHeader className="p-4 sm:p-5 pb-3 border-b border-border/60 bg-muted/10 shrink-0">
           <DialogTitle className="text-base font-bold flex items-center gap-2">
             <Car className="size-4.5 text-primary" /> Novo Veículo na Frota
           </DialogTitle>
@@ -1662,7 +1662,7 @@ function NewVehicleDialog({ members, partners = [] }: { members: any[]; partners
             e.preventDefault();
             createVeh.mutate();
           }}
-          className="flex-1 overflow-y-auto min-h-0 p-4 sm:p-5 space-y-2.5"
+          className="overflow-y-auto p-4 sm:p-5 space-y-2.5"
         >
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <div className="space-y-1">
@@ -1772,7 +1772,7 @@ function NewVehicleDialog({ members, partners = [] }: { members: any[]; partners
             <VehicleCategorySelector value={category} onChange={setCategory} compact />
           </div>
 
-          <DialogFooter className="pt-2.5 flex flex-col-reverse sm:flex-row items-center sm:justify-between gap-3 border-t border-border/60">
+          <DialogFooter className="p-3.5 sm:p-4 border-t border-border/60 bg-muted/20 -mx-4 sm:-mx-5 -mb-4 sm:-mb-5 mt-3 shrink-0 flex flex-col-reverse sm:flex-row items-center sm:justify-between gap-3">
             <AsaasFormSeal />
             <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
               <Button

@@ -455,8 +455,8 @@ function EventosPage() {
 
         {/* MODAL: NOVO / EDITAR EVENTO */}
         <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-          <DialogContent className="sm:max-w-lg rounded-2xl">
-            <DialogHeader>
+          <DialogContent className="w-[95vw] sm:max-w-lg rounded-2xl border-border bg-card p-0 gap-0 overflow-hidden shadow-2xl">
+            <DialogHeader className="p-4 sm:p-5 pb-3 border-b border-border/60 bg-muted/10 shrink-0">
               <DialogTitle className="text-base font-bold">
                 {editingEvent ? "Editar Evento / Sinistro" : "Lançar Novo Evento de Sinistro"}
               </DialogTitle>
@@ -464,21 +464,22 @@ function EventosPage() {
                 Registre despesas de colisão, reboque, peças ou gastos gerais para compor o rateio
               </DialogDescription>
             </DialogHeader>
-            <div className="space-y-3.5 py-2">
-              <div className="grid grid-cols-2 gap-3">
+
+            <div className="p-4 sm:p-5 space-y-3">
+              <div className="grid grid-cols-2 gap-2.5">
                 <div className="space-y-1">
                   <Label className="text-xs font-semibold">Data do Evento *</Label>
                   <Input
                     type="date"
                     value={date}
                     onChange={(e) => setDate(e.target.value)}
-                    className="rounded-xl text-xs font-mono"
+                    className="rounded-xl text-xs font-mono h-8.5 bg-background"
                   />
                 </div>
                 <div className="space-y-1">
                   <Label className="text-xs font-semibold">Categoria do Evento</Label>
                   <Select value={category} onValueChange={(v: any) => setCategory(v)}>
-                    <SelectTrigger className="rounded-xl text-xs">
+                    <SelectTrigger className="rounded-xl text-xs h-8.5 bg-background">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="rounded-xl">
@@ -494,11 +495,11 @@ function EventosPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-2.5">
                 <div className="space-y-1">
                   <Label className="text-xs font-semibold">Associado Envolvido</Label>
                   <Select value={memberId} onValueChange={setMemberId}>
-                    <SelectTrigger className="rounded-xl text-xs">
+                    <SelectTrigger className="rounded-xl text-xs h-8.5 bg-background">
                       <SelectValue placeholder="Selecione o associado..." />
                     </SelectTrigger>
                     <SelectContent className="rounded-xl max-h-56">
@@ -516,7 +517,7 @@ function EventosPage() {
                   <Label className="text-xs font-semibold">Placa do Veículo</Label>
                   {selectedMemberVehicles.length > 0 ? (
                     <Select value={vehiclePlate} onValueChange={setVehiclePlate}>
-                      <SelectTrigger className="rounded-xl text-xs font-mono font-bold">
+                      <SelectTrigger className="rounded-xl text-xs font-mono font-bold h-8.5 bg-background">
                         <SelectValue placeholder="Selecione o veículo..." />
                       </SelectTrigger>
                       <SelectContent className="rounded-xl">
@@ -532,65 +533,68 @@ function EventosPage() {
                       value={vehiclePlate}
                       onChange={(e) => setVehiclePlate(e.target.value.toUpperCase())}
                       placeholder="Ex: ABC-1234"
-                      className="rounded-xl text-xs font-mono uppercase"
+                      className="rounded-xl text-xs font-mono uppercase h-8.5 bg-background"
                     />
                   )}
                 </div>
               </div>
 
-              <div className="space-y-1">
-                <Label className="text-xs font-semibold">Descrição do Ocorrido / Sinistro *</Label>
-                <Input
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Detalhes do reparo, danos causados, peças trocadas..."
-                  className="rounded-xl text-xs"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-2.5">
                 <div className="space-y-1">
                   <Label className="text-xs font-semibold">Oficina / Fornecedor</Label>
                   <Input
                     value={workshopProvider}
                     onChange={(e) => setWorkshopProvider(e.target.value)}
                     placeholder="Nome da oficina mecânica"
-                    className="rounded-xl text-xs"
+                    className="rounded-xl text-xs h-8.5 bg-background"
                   />
                 </div>
 
                 <div className="space-y-1">
-                  <Label className="text-xs font-semibold">Valor do Sinistro (R$) *</Label>
+                  <Label className="text-xs font-semibold">Status do Sinistro</Label>
+                  <Select value={status} onValueChange={(v: any) => setStatus(v)}>
+                    <SelectTrigger className="rounded-xl text-xs h-8.5 bg-background">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-xl">
+                      <SelectItem value="ANALISE">Em Análise Técnica</SelectItem>
+                      <SelectItem value="APROVADO">Aprovado para Reparo</SelectItem>
+                      <SelectItem value="EM_REPARO">Em Reparo na Oficina</SelectItem>
+                      <SelectItem value="CONCLUIDO">Concluído</SelectItem>
+                      <SelectItem value="PAGO">Pago / Liquidado</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2.5">
+                <div className="space-y-1 col-span-1">
+                  <Label className="text-xs font-semibold">Valor Sinistro *</Label>
                   <Input
                     value={amountStr}
                     onChange={(e) => setAmountStr(formatCurrencyInput(e.target.value))}
                     placeholder="R$ 0,00"
-                    className="rounded-xl text-xs font-mono font-bold text-foreground"
+                    className="rounded-xl text-xs font-mono font-bold text-foreground h-8.5 bg-background"
+                  />
+                </div>
+
+                <div className="space-y-1 col-span-2">
+                  <Label className="text-xs font-semibold">Descrição do Ocorrido / Sinistro *</Label>
+                  <Input
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder="Detalhes do reparo, peças, franquia..."
+                    className="rounded-xl text-xs h-8.5 bg-background"
                   />
                 </div>
               </div>
-
-              <div className="space-y-1">
-                <Label className="text-xs font-semibold">Status do Sinistro</Label>
-                <Select value={status} onValueChange={(v: any) => setStatus(v)}>
-                  <SelectTrigger className="rounded-xl text-xs">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="rounded-xl">
-                    <SelectItem value="ANALISE">Em Análise Técnica</SelectItem>
-                    <SelectItem value="APROVADO">Aprovado para Reparo</SelectItem>
-                    <SelectItem value="EM_REPARO">Em Reparo na Oficina</SelectItem>
-                    <SelectItem value="CONCLUIDO">Concluído</SelectItem>
-                    <SelectItem value="PAGO">Pago / Liquidado</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
             </div>
-            <DialogFooter className="gap-2">
-              <Button variant="outline" size="sm" onClick={() => setModalOpen(false)} className="rounded-xl text-xs">
+
+            <DialogFooter className="p-3.5 sm:p-4 border-t border-border/60 bg-muted/20 shrink-0 flex items-center justify-end gap-2">
+              <Button variant="outline" size="sm" onClick={() => setModalOpen(false)} className="rounded-xl text-xs h-8">
                 Cancelar
               </Button>
-              <Button size="sm" onClick={handleSaveEvent} className="rounded-xl text-xs font-bold">
+              <Button size="sm" onClick={handleSaveEvent} className="rounded-xl text-xs font-bold h-8 px-4">
                 Salvar Lançamento
               </Button>
             </DialogFooter>

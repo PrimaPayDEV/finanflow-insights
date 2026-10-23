@@ -938,23 +938,25 @@ function FinanceiroPage() {
 
         {/* MODAL: BAIXA MANUAL */}
         <Dialog open={baixaModalOpen} onOpenChange={setBaixaModalOpen}>
-          <DialogContent className="sm:max-w-md rounded-2xl">
-            <DialogHeader>
+          <DialogContent className="w-[95vw] sm:max-w-md rounded-2xl border-border bg-card p-0 gap-0 overflow-hidden shadow-2xl">
+            <DialogHeader className="p-4 sm:p-5 pb-3 border-b border-border/60 bg-muted/10 shrink-0">
               <DialogTitle className="text-base font-bold">Registrar Baixa Manual</DialogTitle>
               <DialogDescription className="text-xs">
                 Informe o pagamento recebido para liquidar a cobrança no Asaas
               </DialogDescription>
             </DialogHeader>
-            <div className="space-y-3 py-2 text-xs">
-              <div className="p-3 rounded-xl bg-muted/40 border border-border/60">
-                <span className="text-muted-foreground block">Associado:</span>
+            <div className="p-4 sm:p-5 space-y-3 text-xs">
+              <div className="p-3 rounded-xl bg-muted/40 border border-border/60 space-y-1">
+                <span className="text-muted-foreground block text-[10px] uppercase font-bold">Associado:</span>
                 <span className="font-bold text-foreground text-sm block">
                   {selectedBoletoForBaixa?.customerName}
                 </span>
-                <span className="text-muted-foreground block mt-1">Valor Original:</span>
-                <span className="font-extrabold text-foreground font-mono">
-                  {BRL(selectedBoletoForBaixa?.value || 0)}
-                </span>
+                <div className="flex items-center justify-between pt-1 border-t border-border/40">
+                  <span className="text-muted-foreground text-[11px]">Valor Original:</span>
+                  <span className="font-extrabold text-foreground font-mono text-xs">
+                    {BRL(selectedBoletoForBaixa?.value || 0)}
+                  </span>
+                </div>
               </div>
 
               <div className="space-y-1">
@@ -963,7 +965,7 @@ function FinanceiroPage() {
                   type="date"
                   value={baixaDate}
                   onChange={(e) => setBaixaDate(e.target.value)}
-                  className="rounded-xl text-xs font-mono"
+                  className="rounded-xl text-xs font-mono h-8.5 bg-background"
                 />
               </div>
 
@@ -974,12 +976,12 @@ function FinanceiroPage() {
                   step="0.01"
                   value={baixaValue}
                   onChange={(e) => setBaixaValue(e.target.value)}
-                  className="rounded-xl text-xs font-mono font-bold"
+                  className="rounded-xl text-xs font-mono font-bold h-8.5 bg-background"
                 />
               </div>
             </div>
-            <DialogFooter className="gap-2">
-              <Button variant="outline" size="sm" onClick={() => setBaixaModalOpen(false)} className="rounded-xl text-xs">
+            <DialogFooter className="p-3.5 sm:p-4 border-t border-border/60 bg-muted/20 shrink-0 flex items-center justify-end gap-2">
+              <Button variant="outline" size="sm" onClick={() => setBaixaModalOpen(false)} className="rounded-xl text-xs h-8">
                 Cancelar
               </Button>
               <Button
@@ -995,7 +997,7 @@ function FinanceiroPage() {
                   });
                 }}
                 disabled={baixaManualMutation.isPending}
-                className="rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white"
+                className="rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white h-8 px-4"
               >
                 {baixaManualMutation.isPending ? "Confirmando..." : "Confirmar Baixa Manual"}
               </Button>
@@ -1005,23 +1007,25 @@ function FinanceiroPage() {
 
         {/* MODAL: ALTERAR DATA DE PAGAMENTO / VENCIMENTO */}
         <Dialog open={vencimentoModalOpen} onOpenChange={setVencimentoModalOpen}>
-          <DialogContent className="sm:max-w-md rounded-2xl">
-            <DialogHeader>
+          <DialogContent className="w-[95vw] sm:max-w-md rounded-2xl border-border bg-card p-0 gap-0 overflow-hidden shadow-2xl">
+            <DialogHeader className="p-4 sm:p-5 pb-3 border-b border-border/60 bg-muted/10 shrink-0">
               <DialogTitle className="text-base font-bold">Alterar Data do Boleto</DialogTitle>
               <DialogDescription className="text-xs">
                 Atualize o vencimento da cobrança diretamente no gateway Asaas
               </DialogDescription>
             </DialogHeader>
-            <div className="space-y-3 py-2 text-xs">
-              <div className="p-3 rounded-xl bg-muted/40 border border-border/60">
-                <span className="text-muted-foreground block">Associado:</span>
+            <div className="p-4 sm:p-5 space-y-3 text-xs">
+              <div className="p-3 rounded-xl bg-muted/40 border border-border/60 space-y-1">
+                <span className="text-muted-foreground block text-[10px] uppercase font-bold">Associado:</span>
                 <span className="font-bold text-foreground text-sm block">
                   {selectedBoletoForVenc?.customerName}
                 </span>
-                <span className="text-muted-foreground block mt-1">Vencimento Atual:</span>
-                <span className="font-mono text-foreground">
-                  {selectedBoletoForVenc?.dueDate?.split("-").reverse().join("/")}
-                </span>
+                <div className="flex items-center justify-between pt-1 border-t border-border/40">
+                  <span className="text-muted-foreground text-[11px]">Vencimento Atual:</span>
+                  <span className="font-mono font-bold text-foreground text-xs">
+                    {selectedBoletoForVenc?.dueDate?.split("-").reverse().join("/")}
+                  </span>
+                </div>
               </div>
 
               <div className="space-y-1">
@@ -1030,12 +1034,12 @@ function FinanceiroPage() {
                   type="date"
                   value={newDueDate}
                   onChange={(e) => setNewDueDate(e.target.value)}
-                  className="rounded-xl text-xs font-mono font-bold"
+                  className="rounded-xl text-xs font-mono font-bold h-8.5 bg-background"
                 />
               </div>
             </div>
-            <DialogFooter className="gap-2">
-              <Button variant="outline" size="sm" onClick={() => setVencimentoModalOpen(false)} className="rounded-xl text-xs">
+            <DialogFooter className="p-3.5 sm:p-4 border-t border-border/60 bg-muted/20 shrink-0 flex items-center justify-end gap-2">
+              <Button variant="outline" size="sm" onClick={() => setVencimentoModalOpen(false)} className="rounded-xl text-xs h-8">
                 Cancelar
               </Button>
               <Button
@@ -1051,7 +1055,7 @@ function FinanceiroPage() {
                   });
                 }}
                 disabled={updateDueDateMutation.isPending}
-                className="rounded-xl text-xs font-bold"
+                className="rounded-xl text-xs font-bold h-8 px-4"
               >
                 {updateDueDateMutation.isPending ? "Atualizando..." : "Salvar Nova Data"}
               </Button>

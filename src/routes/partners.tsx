@@ -140,32 +140,35 @@ function PartnerDialog({ partner }: { partner?: any }) {
           {partner ? "Configurar" : "Novo Parceiro"}
         </Button>
       </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{partner ? `Configurar ${partner.name}` : "Cadastrar Novo Parceiro"}</DialogTitle>
+      <DialogContent className="w-[95vw] sm:max-w-md rounded-2xl border-border bg-card p-0 gap-0 overflow-hidden shadow-2xl">
+        <DialogHeader className="p-4 sm:p-5 pb-3 border-b border-border/60 bg-muted/10 shrink-0">
+          <DialogTitle className="text-base font-bold">{partner ? `Configurar ${partner.name}` : "Cadastrar Novo Parceiro"}</DialogTitle>
+          <DialogDescription className="text-xs">Configure os dados do parceiro e carteira Asaas para split</DialogDescription>
         </DialogHeader>
-        <form onSubmit={(e) => { e.preventDefault(); save.mutate(new FormData(e.currentTarget)); }} className="space-y-4">
-          <div className="space-y-2">
-            <Label>Nome do Parceiro</Label>
-            <Input name="name" defaultValue={partner?.name} required />
-          </div>
-          <div className="space-y-2">
-            <Label>E-mail (Opcional)</Label>
-            <Input name="email" type="email" defaultValue={partner?.email} />
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Wallet ID do Asaas</Label>
-              <Input name="asaas_wallet_id" defaultValue={partner?.asaas_wallet_id} required />
+        <form onSubmit={(e) => { e.preventDefault(); save.mutate(new FormData(e.currentTarget)); }}>
+          <div className="p-4 sm:p-5 space-y-3">
+            <div className="space-y-1">
+              <Label className="text-xs font-semibold">Nome do Parceiro *</Label>
+              <Input name="name" defaultValue={partner?.name} required className="rounded-xl text-xs h-8.5 bg-background" />
             </div>
-            <div className="space-y-2">
-              <Label>Repasse (%)</Label>
-              <Input name="split_percent" type="number" step="0.01" defaultValue={partner?.split_percent} placeholder="Ex: 10" />
+            <div className="space-y-1">
+              <Label className="text-xs font-semibold">E-mail (Opcional)</Label>
+              <Input name="email" type="email" defaultValue={partner?.email} className="rounded-xl text-xs h-8.5 bg-background" />
+            </div>
+            <div className="grid grid-cols-2 gap-2.5">
+              <div className="space-y-1">
+                <Label className="text-xs font-semibold">Wallet ID Asaas *</Label>
+                <Input name="asaas_wallet_id" defaultValue={partner?.asaas_wallet_id} required className="rounded-xl text-xs font-mono h-8.5 bg-background" />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs font-semibold">Repasse (%)</Label>
+                <Input name="split_percent" type="number" step="0.01" defaultValue={partner?.split_percent} placeholder="Ex: 10" className="rounded-xl text-xs font-mono font-bold h-8.5 bg-background" />
+              </div>
             </div>
           </div>
-          <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-border/50">
+          <div className="p-3.5 sm:p-4 border-t border-border/60 bg-muted/20 shrink-0 flex flex-col-reverse sm:flex-row items-center sm:justify-between gap-3">
             <AsaasFormSeal />
-            <Button type="submit" disabled={save.isPending} className="w-full sm:w-auto px-6">
+            <Button type="submit" disabled={save.isPending} size="sm" className="rounded-xl text-xs font-bold h-8 px-4 w-full sm:w-auto">
               Salvar Parceiro
             </Button>
           </div>
@@ -206,22 +209,30 @@ function PartnerUserDialog({ partner }: { partner: any }) {
           <UserPlus className="size-4 mr-1" /> Acesso (Login)
         </Button>
       </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Criar Acesso para {partner.name}</DialogTitle>
+      <DialogContent className="w-[95vw] sm:max-w-md rounded-2xl border-border bg-card p-0 gap-0 overflow-hidden shadow-2xl">
+        <DialogHeader className="p-4 sm:p-5 pb-3 border-b border-border/60 bg-muted/10 shrink-0">
+          <DialogTitle className="text-base font-bold">Criar Acesso para {partner.name}</DialogTitle>
+          <DialogDescription className="text-xs">Defina o login e senha de acesso ao portal do parceiro</DialogDescription>
         </DialogHeader>
-        <form onSubmit={(e) => { e.preventDefault(); create.mutate(new FormData(e.currentTarget)); }} className="space-y-4">
-          <div className="space-y-2">
-            <Label>E-mail (Login)</Label>
-            <Input name="email" type="email" required placeholder="parceiro@email.com" defaultValue={partner.email} />
+        <form onSubmit={(e) => { e.preventDefault(); create.mutate(new FormData(e.currentTarget)); }}>
+          <div className="p-4 sm:p-5 space-y-3">
+            <div className="space-y-1">
+              <Label className="text-xs font-semibold">E-mail (Login) *</Label>
+              <Input name="email" type="email" required placeholder="parceiro@email.com" defaultValue={partner.email} className="rounded-xl text-xs h-8.5 bg-background" />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs font-semibold">Senha Temporária *</Label>
+              <Input name="password" required placeholder="Mínimo 6 caracteres" minLength={6} className="rounded-xl text-xs h-8.5 bg-background" />
+            </div>
           </div>
-          <div className="space-y-2">
-            <Label>Senha Temporária</Label>
-            <Input name="password" required placeholder="Mínimo 6 caracteres" minLength={6} />
+          <div className="p-3.5 sm:p-4 border-t border-border/60 bg-muted/20 shrink-0 flex items-center justify-end gap-2">
+            <Button variant="outline" size="sm" onClick={() => setOpen(false)} className="rounded-xl text-xs h-8">
+              Cancelar
+            </Button>
+            <Button type="submit" disabled={create.isPending} size="sm" className="rounded-xl text-xs font-bold h-8 px-4">
+              Criar Usuário
+            </Button>
           </div>
-          <Button type="submit" disabled={create.isPending} className="w-full">
-            Criar Usuário
-          </Button>
         </form>
       </DialogContent>
     </Dialog>
