@@ -62,8 +62,8 @@ const PLATFORMS: PlatformConfig[] = [
     glowColor: "bg-purple-600",
     borderHover: "hover:border-purple-500/60 hover:shadow-purple-500/10",
     buttonClass: "bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500",
-    badgeDomain: "/login?env=ec",
-    loginPath: "/login?env=ec",
+    badgeDomain: "/ec",
+    loginPath: "/ec",
     directPath: "/dashboard",
   },
   {
@@ -75,8 +75,8 @@ const PLATFORMS: PlatformConfig[] = [
     glowColor: "bg-emerald-600",
     borderHover: "hover:border-emerald-500/60 hover:shadow-emerald-500/10",
     buttonClass: "bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500",
-    badgeDomain: "/login?env=veicular",
-    loginPath: "/login?env=veicular",
+    badgeDomain: "/veicular",
+    loginPath: "/veicular",
     directPath: "/dashboard",
   },
   {
@@ -88,8 +88,8 @@ const PLATFORMS: PlatformConfig[] = [
     glowColor: "bg-amber-600",
     borderHover: "hover:border-amber-500/60 hover:shadow-amber-500/10",
     buttonClass: "bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500",
-    badgeDomain: "/login?env=imobiliaria",
-    loginPath: "/login?env=imobiliaria",
+    badgeDomain: "/imobiliaria",
+    loginPath: "/imobiliaria",
     directPath: "/real-estate/charges",
   },
 ];
@@ -193,12 +193,10 @@ function HubPage() {
         <section className="grid grid-cols-1 md:grid-cols-3 gap-5 sm:gap-6 max-w-5xl mx-auto w-full">
           {PLATFORMS.map((platform, idx) => {
             const Icon = platform.icon;
-            // Ambientes com endereço próprio têm login separado: abre sempre o login de lá.
-            const ownBaseUrl = resolvePlatformUrl(platform.id, "/");
-            const hasOwnAddress = ownBaseUrl.startsWith("http://") || ownBaseUrl.startsWith("https://");
-            const targetPath = user && !hasOwnAddress ? platform.directPath : platform.loginPath;
-            const targetUrl = resolvePlatformUrl(platform.id, targetPath);
-            const isExternal = hasOwnAddress;
+            // Cada ambiente tem login próprio: o sub-link fixa o ambiente da aba e abre o login dele
+            // (ou o painel, se esta aba já estiver logada nesse ambiente).
+            const targetUrl = resolvePlatformUrl(platform.id, platform.loginPath);
+            const isExternal = true;
 
             return (
               <motion.div
