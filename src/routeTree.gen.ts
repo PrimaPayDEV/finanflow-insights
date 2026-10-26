@@ -12,7 +12,9 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ClosuresRouteImport } from './routes/closures'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as EcRouteImport } from './routes/ec'
 import { Route as ExpensesRouteImport } from './routes/expenses'
+import { Route as ImobiliariaRouteImport } from './routes/imobiliaria'
 import { Route as ImportRouteImport } from './routes/import'
 import { Route as InvoicesRouteImport } from './routes/invoices'
 import { Route as LoginRouteImport } from './routes/login'
@@ -44,6 +46,7 @@ import { Route as RecebiveisPosRouteImport } from './routes/recebiveis.pos'
 import { Route as RecebiveisVendasRouteImport } from './routes/recebiveis.vendas'
 import { Route as SettingsAppearanceRouteImport } from './routes/settings/appearance'
 import { Route as SettingsAsaasRouteImport } from './routes/settings.asaas'
+import { Route as VeicularIndexRouteImport } from './routes/veicular/index'
 import { Route as VeicularCadastrosRouteImport } from './routes/veicular/cadastros'
 import { Route as VeicularCotacaoRouteImport } from './routes/veicular/cotacao'
 import { Route as VeicularEventosRouteImport } from './routes/veicular/eventos'
@@ -69,9 +72,19 @@ const DashboardRoute = DashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
+const EcRoute = EcRouteImport.update({
+  id: '/ec',
+  path: '/ec',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ExpensesRoute = ExpensesRouteImport.update({
   id: '/expenses',
   path: '/expenses',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ImobiliariaRoute = ImobiliariaRouteImport.update({
+  id: '/imobiliaria',
+  path: '/imobiliaria',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ImportRoute = ImportRouteImport.update({
@@ -229,6 +242,11 @@ const SettingsAsaasRoute = SettingsAsaasRouteImport.update({
   path: '/settings/asaas',
   getParentRoute: () => rootRouteImport,
 } as any)
+const VeicularIndexRoute = VeicularIndexRouteImport.update({
+  id: '/veicular/',
+  path: '/veicular/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const VeicularCadastrosRoute = VeicularCadastrosRouteImport.update({
   id: '/veicular/cadastros',
   path: '/veicular/cadastros',
@@ -279,7 +297,9 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/closures': typeof ClosuresRoute
   '/dashboard': typeof DashboardRoute
+  '/ec': typeof EcRoute
   '/expenses': typeof ExpensesRoute
+  '/imobiliaria': typeof ImobiliariaRoute
   '/import': typeof ImportRoute
   '/invoices': typeof InvoicesRoute
   '/login': typeof LoginRoute
@@ -317,6 +337,7 @@ export interface FileRoutesByFullPath {
   '/veicular/financeiro': typeof VeicularFinanceiroRoute
   '/veicular/relatorios': typeof VeicularRelatoriosRoute
   '/veicular/termos': typeof VeicularTermosRoute
+  '/veicular/': typeof VeicularIndexRoute
   '/admin/recebiveis/import': typeof AdminRecebiveisImportRoute
   '/api/public/asaas-webhook': typeof ApiPublicAsaasWebhookRoute
   '/public/report/$closureId': typeof PublicReportClosureIdRoute
@@ -325,7 +346,9 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/closures': typeof ClosuresRoute
   '/dashboard': typeof DashboardRoute
+  '/ec': typeof EcRoute
   '/expenses': typeof ExpensesRoute
+  '/imobiliaria': typeof ImobiliariaRoute
   '/import': typeof ImportRoute
   '/invoices': typeof InvoicesRoute
   '/login': typeof LoginRoute
@@ -363,6 +386,7 @@ export interface FileRoutesByTo {
   '/veicular/financeiro': typeof VeicularFinanceiroRoute
   '/veicular/relatorios': typeof VeicularRelatoriosRoute
   '/veicular/termos': typeof VeicularTermosRoute
+  '/veicular': typeof VeicularIndexRoute
   '/admin/recebiveis/import': typeof AdminRecebiveisImportRoute
   '/api/public/asaas-webhook': typeof ApiPublicAsaasWebhookRoute
   '/public/report/$closureId': typeof PublicReportClosureIdRoute
@@ -372,7 +396,9 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/closures': typeof ClosuresRoute
   '/dashboard': typeof DashboardRoute
+  '/ec': typeof EcRoute
   '/expenses': typeof ExpensesRoute
+  '/imobiliaria': typeof ImobiliariaRoute
   '/import': typeof ImportRoute
   '/invoices': typeof InvoicesRoute
   '/login': typeof LoginRoute
@@ -410,6 +436,7 @@ export interface FileRoutesById {
   '/veicular/financeiro': typeof VeicularFinanceiroRoute
   '/veicular/relatorios': typeof VeicularRelatoriosRoute
   '/veicular/termos': typeof VeicularTermosRoute
+  '/veicular/': typeof VeicularIndexRoute
   '/admin/recebiveis/import': typeof AdminRecebiveisImportRoute
   '/api/public/asaas-webhook': typeof ApiPublicAsaasWebhookRoute
   '/public/report/$closureId': typeof PublicReportClosureIdRoute
@@ -420,7 +447,9 @@ export interface FileRouteTypes {
     | '/'
     | '/closures'
     | '/dashboard'
+    | '/ec'
     | '/expenses'
+    | '/imobiliaria'
     | '/import'
     | '/invoices'
     | '/login'
@@ -458,6 +487,7 @@ export interface FileRouteTypes {
     | '/veicular/financeiro'
     | '/veicular/relatorios'
     | '/veicular/termos'
+    | '/veicular/'
     | '/admin/recebiveis/import'
     | '/api/public/asaas-webhook'
     | '/public/report/$closureId'
@@ -466,7 +496,9 @@ export interface FileRouteTypes {
     | '/'
     | '/closures'
     | '/dashboard'
+    | '/ec'
     | '/expenses'
+    | '/imobiliaria'
     | '/import'
     | '/invoices'
     | '/login'
@@ -504,6 +536,7 @@ export interface FileRouteTypes {
     | '/veicular/financeiro'
     | '/veicular/relatorios'
     | '/veicular/termos'
+    | '/veicular'
     | '/admin/recebiveis/import'
     | '/api/public/asaas-webhook'
     | '/public/report/$closureId'
@@ -512,7 +545,9 @@ export interface FileRouteTypes {
     | '/'
     | '/closures'
     | '/dashboard'
+    | '/ec'
     | '/expenses'
+    | '/imobiliaria'
     | '/import'
     | '/invoices'
     | '/login'
@@ -550,6 +585,7 @@ export interface FileRouteTypes {
     | '/veicular/financeiro'
     | '/veicular/relatorios'
     | '/veicular/termos'
+    | '/veicular/'
     | '/admin/recebiveis/import'
     | '/api/public/asaas-webhook'
     | '/public/report/$closureId'
@@ -559,7 +595,9 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ClosuresRoute: typeof ClosuresRoute
   DashboardRoute: typeof DashboardRoute
+  EcRoute: typeof EcRoute
   ExpensesRoute: typeof ExpensesRoute
+  ImobiliariaRoute: typeof ImobiliariaRoute
   ImportRoute: typeof ImportRoute
   InvoicesRoute: typeof InvoicesRoute
   LoginRoute: typeof LoginRoute
@@ -597,6 +635,7 @@ export interface RootRouteChildren {
   VeicularFinanceiroRoute: typeof VeicularFinanceiroRoute
   VeicularRelatoriosRoute: typeof VeicularRelatoriosRoute
   VeicularTermosRoute: typeof VeicularTermosRoute
+  VeicularIndexRoute: typeof VeicularIndexRoute
   AdminRecebiveisImportRoute: typeof AdminRecebiveisImportRoute
   ApiPublicAsaasWebhookRoute: typeof ApiPublicAsaasWebhookRoute
   PublicReportClosureIdRoute: typeof PublicReportClosureIdRoute
@@ -625,11 +664,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/ec': {
+      id: '/ec'
+      path: '/ec'
+      fullPath: '/ec'
+      preLoaderRoute: typeof EcRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/expenses': {
       id: '/expenses'
       path: '/expenses'
       fullPath: '/expenses'
       preLoaderRoute: typeof ExpensesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/imobiliaria': {
+      id: '/imobiliaria'
+      path: '/imobiliaria'
+      fullPath: '/imobiliaria'
+      preLoaderRoute: typeof ImobiliariaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/import': {
@@ -849,6 +902,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SettingsAsaasRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/veicular/': {
+      id: '/veicular/'
+      path: '/veicular'
+      fullPath: '/veicular/'
+      preLoaderRoute: typeof VeicularIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/veicular/cadastros': {
       id: '/veicular/cadastros'
       path: '/veicular/cadastros'
@@ -919,7 +979,9 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ClosuresRoute: ClosuresRoute,
   DashboardRoute: DashboardRoute,
+  EcRoute: EcRoute,
   ExpensesRoute: ExpensesRoute,
+  ImobiliariaRoute: ImobiliariaRoute,
   ImportRoute: ImportRoute,
   InvoicesRoute: InvoicesRoute,
   LoginRoute: LoginRoute,
@@ -957,6 +1019,7 @@ const rootRouteChildren: RootRouteChildren = {
   VeicularFinanceiroRoute: VeicularFinanceiroRoute,
   VeicularRelatoriosRoute: VeicularRelatoriosRoute,
   VeicularTermosRoute: VeicularTermosRoute,
+  VeicularIndexRoute: VeicularIndexRoute,
   AdminRecebiveisImportRoute: AdminRecebiveisImportRoute,
   ApiPublicAsaasWebhookRoute: ApiPublicAsaasWebhookRoute,
   PublicReportClosureIdRoute: PublicReportClosureIdRoute,

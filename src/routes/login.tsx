@@ -29,6 +29,7 @@ import {
   isLocalEnvironment,
   resolvePlatformUrl,
 } from "@/lib/environment";
+import { ENTRY_PATHS } from "@/lib/tab-session";
 
 /** Link para o login de um ambiente: abre o endereço próprio dele quando existir. */
 function EnvLoginLink({
@@ -40,18 +41,12 @@ function EnvLoginLink({
   className: string;
   children: React.ReactNode;
 }) {
-  const url = resolvePlatformUrl(env, `/login?env=${env}`);
-  if (url.startsWith("http")) {
-    return (
-      <a href={url} className={className}>
-        {children}
-      </a>
-    );
-  }
+  // Link completo (não interno) para trocar o login desta aba para o ambiente escolhido.
+  const url = resolvePlatformUrl(env, ENTRY_PATHS[env]);
   return (
-    <Link to="/login" search={{ env }} className={className}>
+    <a href={url} className={className}>
       {children}
-    </Link>
+    </a>
   );
 }
 
