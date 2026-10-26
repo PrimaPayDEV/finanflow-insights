@@ -27,7 +27,33 @@ import {
   detectEnvironmentFromHostname,
   DEFAULT_PLATFORM_URLS,
   isLocalEnvironment,
+  resolvePlatformUrl,
 } from "@/lib/environment";
+
+/** Link para o login de um ambiente: abre o endereço próprio dele quando existir. */
+function EnvLoginLink({
+  env,
+  className,
+  children,
+}: {
+  env: "ec" | "veicular" | "imobiliaria";
+  className: string;
+  children: React.ReactNode;
+}) {
+  const url = resolvePlatformUrl(env, `/login?env=${env}`);
+  if (url.startsWith("http")) {
+    return (
+      <a href={url} className={className}>
+        {children}
+      </a>
+    );
+  }
+  return (
+    <Link to="/login" search={{ env }} className={className}>
+      {children}
+    </Link>
+  );
+}
 
 type EnvironmentKey = "ec" | "veicular" | "imobiliaria";
 

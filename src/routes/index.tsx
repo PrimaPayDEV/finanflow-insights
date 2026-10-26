@@ -193,10 +193,12 @@ function HubPage() {
         <section className="grid grid-cols-1 md:grid-cols-3 gap-5 sm:gap-6 max-w-5xl mx-auto w-full">
           {PLATFORMS.map((platform, idx) => {
             const Icon = platform.icon;
-            const targetPath = user ? platform.directPath : platform.loginPath;
+            // Ambientes com endereço próprio têm login separado: abre sempre o login de lá.
+            const ownBaseUrl = resolvePlatformUrl(platform.id, "/");
+            const hasOwnAddress = ownBaseUrl.startsWith("http://") || ownBaseUrl.startsWith("https://");
+            const targetPath = user && !hasOwnAddress ? platform.directPath : platform.loginPath;
             const targetUrl = resolvePlatformUrl(platform.id, targetPath);
-            const isExternal =
-              targetUrl.startsWith("http://") || targetUrl.startsWith("https://");
+            const isExternal = hasOwnAddress;
 
             return (
               <motion.div
