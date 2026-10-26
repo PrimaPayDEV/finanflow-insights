@@ -47,6 +47,7 @@ import {
   YAxis,
 } from "recharts";
 import { AppLayout } from "@/components/AppLayout";
+import { getTabScope } from "@/lib/tab-session";
 import { KpiCard } from "@/components/KpiCard";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -737,12 +738,13 @@ function BillingDashboard({ companyId }: { companyId: string }) {
 
 function Dashboard() {
   const { appMode, companyId, segment } = useAuth();
+  const tabScope = getTabScope();
 
-  if (segment === "IMOBILIARIA") {
+  if (tabScope === "imobiliaria" || segment === "IMOBILIARIA") {
     return <Navigate to="/real-estate/charges" />;
   }
 
-  if ((appMode === "billing" || segment === "PROTECAO_VEICULAR") && companyId) {
+  if ((tabScope === "veicular" || appMode === "billing" || segment === "PROTECAO_VEICULAR") && companyId) {
     return <BillingDashboard companyId={companyId} />;
   }
 

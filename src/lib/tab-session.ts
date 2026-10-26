@@ -21,7 +21,7 @@ export const ENTRY_PATHS: Record<SessionScope, string> = {
 
 const TAB_KEY = "prima_tab_env";
 const LAST_KEY = "prima_last_env";
-const AUTH_KEY_RE = /^sb-[a-z0-9]+-auth-token(-code-verifier)?$/i;
+const AUTH_KEY_RE = /^sb-[a-z0-9_-]+-auth-token(-code-verifier)?$/i;
 
 function isScope(value: unknown): value is SessionScope {
   return typeof value === "string" && (SESSION_SCOPES as string[]).includes(value);
@@ -32,9 +32,13 @@ export function scopeFromLocation(pathname: string, search: string): SessionScop
   const path = pathname.replace(/\/+$/, "") || "/";
   const entry = SESSION_SCOPES.find((s) => ENTRY_PATHS[s] === path);
   if (entry) return entry;
-  if (path === "/login") {
-    const env = new URLSearchParams(search).get("env");
-    if (isScope(env)) return env;
+  if (search) {
+    try {
+      const env = new URLSearchParams(search).get("env");
+      if (isScope(env)) return env;
+    } catch {
+      /* ignore */
+    }
   }
   return null;
 }

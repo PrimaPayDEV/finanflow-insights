@@ -5,6 +5,7 @@ import {
   ShieldCheck,
   Building2,
   ArrowRight,
+  ExternalLink,
   Lock,
   Globe,
   Copy,
@@ -15,6 +16,7 @@ import { AsaasBaasSeal } from "@/components/AsaasBaasSeal";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   resolvePlatformUrl,
+  getPlatformShareableUrl,
   type PlatformKey,
 } from "@/lib/environment";
 
@@ -105,11 +107,10 @@ function HubPage() {
     return "/dashboard";
   };
 
-  const copyShareableLink = (e: React.MouseEvent, _platformId: PlatformKey, path: string) => {
+  const copyShareableLink = (e: React.MouseEvent, platformId: PlatformKey, path: string) => {
     e.preventDefault();
     e.stopPropagation();
-    const origin = typeof window !== "undefined" && window.location?.origin ? window.location.origin : "https://primahubserv.lovable.app";
-    const fullUrl = `${origin}${path}`;
+    const fullUrl = getPlatformShareableUrl(platformId, path);
     navigator.clipboard.writeText(fullUrl);
     toast.success("Link copiado para a área de transferência!", {
       description: fullUrl,
@@ -245,24 +246,43 @@ function HubPage() {
                     </div>
                   </div>
 
-                  {/* Botão de Acesso */}
-                  <div className="pt-6 mt-4 border-t border-slate-800/70">
+                  {/* Botões de Acesso e Abertura em Nova Aba */}
+                  <div className="pt-5 mt-4 border-t border-slate-800/70 space-y-2">
                     <Button
                       asChild
                       className={`w-full h-10 rounded-xl font-bold text-xs gap-2 text-white ${platform.buttonClass} shadow-md group-hover:shadow-lg transition-all duration-300`}
                     >
-                      {isExternal ? (
-                        <a href={targetUrl} rel="noopener noreferrer">
-                          <span>Acessar Plataforma</span>
-                          <ArrowRight className="size-3.5 group-hover:translate-x-1 transition-transform" />
-                        </a>
-                      ) : (
-                        <Link to={targetUrl}>
-                          <span>Acessar Plataforma</span>
-                          <ArrowRight className="size-3.5 group-hover:translate-x-1 transition-transform" />
-                        </Link>
-                      )}
+                      <a href={targetUrl}>
+                        <span>Acessar Plataforma</span>
+                        <ArrowRight className="size-3.5 group-hover:translate-x-1 transition-transform" />
+                      </a>
                     </Button>
+
+                    <div className="flex items-center gap-2 pt-0.5">
+                      <a
+                        href={targetUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex-1 flex items-center justify-center gap-1.5 h-8 rounded-lg bg-slate-800/70 hover:bg-slate-700/80 border border-slate-700/60 text-slate-300 hover:text-white text-[11px] font-semibold transition-all"
+                        title="Abrir este ambiente em uma nova aba para usar simultaneamente"
+                      >
+                        <span>Abrir em nova aba</span>
+                        <ExternalLink className="size-3" />
+                      </a>
+
+                      <button
+                        type="button"
+                        onClick={(e) => copyShareableLink(e, platform.id, platform.loginPath)}
+                        className="flex items-center justify-center size-8 rounded-lg bg-slate-800/70 hover:bg-slate-700/80 border border-slate-700/60 text-slate-300 hover:text-white transition-all shrink-0 cursor-pointer"
+                        title="Copiar link direto"
+                      >
+                        <Copy className="size-3" />
+                      </button>
+                    </div>
+
+                    <p className="text-[10px] text-center text-slate-400 font-medium">
+                      Login independente nesta aba
+                    </p>
                   </div>
                 </div>
               </motion.div>

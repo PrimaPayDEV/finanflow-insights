@@ -29,7 +29,7 @@ import {
   isLocalEnvironment,
   resolvePlatformUrl,
 } from "@/lib/environment";
-import { ENTRY_PATHS } from "@/lib/tab-session";
+import { ENTRY_PATHS, getTabScope } from "@/lib/tab-session";
 
 /** Link para o login de um ambiente: abre o endereço próprio dele quando existir. */
 function EnvLoginLink({
@@ -119,7 +119,8 @@ export const Route = createFileRoute("/login")({
 function Login() {
   const search = Route.useSearch();
   const detectedEnv = detectEnvironmentFromHostname();
-  const currentEnvKey = ((search.env as EnvironmentKey) || detectedEnv) || undefined;
+  const tabScope = getTabScope();
+  const currentEnvKey = ((search.env as EnvironmentKey) || detectedEnv || (tabScope as EnvironmentKey)) || undefined;
   const envConfig = currentEnvKey && ENV_META[currentEnvKey] ? ENV_META[currentEnvKey] : null;
 
   const [email, setEmail] = useState("");
@@ -150,8 +151,9 @@ function Login() {
 
   const resolveRedirectPath = () => {
     if (envConfig) return envConfig.redirectPath;
+    if (currentEnvKey === "veicular" || tabScope === "veicular") return "/dashboard";
+    if (currentEnvKey === "imobiliaria" || tabScope === "imobiliaria" || segment === "IMOBILIARIA") return "/real-estate/charges";
     if (role === "merchant") return "/recebiveis/dashboard";
-    if (segment === "IMOBILIARIA") return "/real-estate/charges";
     if (appMode === "billing") return "/dashboard";
     return "/dashboard";
   };

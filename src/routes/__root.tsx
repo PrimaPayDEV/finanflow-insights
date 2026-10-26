@@ -125,6 +125,19 @@ function RootShell({ children }: { children: ReactNode }) {
   );
 }
 
+function isPublicRoute(pathname: string): boolean {
+  const clean = pathname.replace(/\/+$/, "") || "/";
+  return (
+    clean === "/" ||
+    clean === "/login" ||
+    clean === "/ec" ||
+    clean === "/veicular" ||
+    clean === "/imobiliaria" ||
+    clean.startsWith("/public") ||
+    clean.startsWith("/api/public")
+  );
+}
+
 function AuthGuard({ children }: { children: ReactNode }) {
   const { user, isLoading, isActive, companyName, role } = useAuth();
   const navigate = useNavigate();
@@ -132,8 +145,8 @@ function AuthGuard({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!isLoading) {
-      const isPublicRoute = pathname === "/" || pathname === "/login" || pathname.startsWith("/public") || pathname.startsWith("/api/public");
-      if (!user && !isPublicRoute) {
+      const isPublic = isPublicRoute(pathname);
+      if (!user && !isPublic) {
         navigate({ to: "/" });
       } else if (user && pathname === "/login") {
         if (role === 'merchant') {
@@ -141,7 +154,7 @@ function AuthGuard({ children }: { children: ReactNode }) {
         } else {
           navigate({ to: "/dashboard" });
         }
-      } else if (user && role === 'merchant' && !pathname.startsWith("/recebiveis") && !isPublicRoute) {
+      } else if (user && role === 'merchant' && !pathname.startsWith("/recebiveis") && !isPublic) {
         // Protect merchants from seeing admin routes
         navigate({ to: "/recebiveis/dashboard" });
       }
@@ -156,8 +169,8 @@ function AuthGuard({ children }: { children: ReactNode }) {
     );
   }
 
-  const isPublicRoute = pathname === "/" || pathname === "/login" || pathname.startsWith("/public") || pathname.startsWith("/api/public");
-  if (!user && !isPublicRoute) return null;
+  const isPublic = isPublicRoute(pathname);
+  if (!user && !isPublic) return null;
 
   if (user && !isActive && companyName !== "Prima Hub" && companyName !== "PrimaPay") {
     return (

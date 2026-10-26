@@ -44,9 +44,11 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { DEFAULT_PLATFORM_URLS, isLocalEnvironment } from "@/lib/environment";
+import { getTabScope } from "@/lib/tab-session";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "./ThemeToggle";
+import { EnvironmentSwitcher } from "./EnvironmentSwitcher";
 import { AsaasBaasSeal, AsaasBaasFooterDisclosure } from "./AsaasBaasSeal";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "./ui/button";
@@ -129,11 +131,13 @@ export function AppLayout({
     onSuccess: () => qc.invalidateQueries({ queryKey: ["notifications"] })
   });
 
+  const tabScope = getTabScope();
+
   // Identificação do ambiente de Proteção Veicular
   const isVeicular =
+    tabScope === "veicular" ||
     appMode === "billing" ||
     segment === "PROTECAO_VEICULAR" ||
-    (pathname.startsWith("/dashboard") && segment === "PROTECAO_VEICULAR") ||
     pathname.startsWith("/vehicles") ||
     pathname.startsWith("/members") ||
     pathname.startsWith("/veicular");
@@ -285,6 +289,8 @@ export function AppLayout({
       <div className="hidden sm:block">
         <AsaasBaasSeal variant="auto" size="xs" />
       </div>
+
+      <EnvironmentSwitcher />
 
       <div className="flex items-center gap-2 pl-2 sm:pl-3 border-l border-border/70">
         <ThemeToggle />

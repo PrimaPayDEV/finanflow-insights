@@ -9,7 +9,9 @@ describe("sub-links de ambiente", () => {
 
   it("/ec e /imobiliaria fixam os outros ambientes", () => {
     expect(scopeFromLocation("/ec", "")).toBe("ec");
+    expect(scopeFromLocation("/ec/", "")).toBe("ec");
     expect(scopeFromLocation("/imobiliaria", "")).toBe("imobiliaria");
+    expect(scopeFromLocation("/imobiliaria/", "")).toBe("imobiliaria");
   });
 
   it("páginas internas não trocam o ambiente da aba", () => {
@@ -17,8 +19,10 @@ describe("sub-links de ambiente", () => {
     expect(scopeFromLocation("/dashboard", "")).toBeNull();
   });
 
-  it("/login?env=ec também fixa o ambiente", () => {
+  it("parâmetro ?env= fixa o ambiente em qualquer rota", () => {
     expect(scopeFromLocation("/login", "?env=ec")).toBe("ec");
+    expect(scopeFromLocation("/login", "?env=veicular")).toBe("veicular");
+    expect(scopeFromLocation("/dashboard", "?env=imobiliaria")).toBe("imobiliaria");
     expect(scopeFromLocation("/login", "")).toBeNull();
   });
 });
