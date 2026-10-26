@@ -913,8 +913,11 @@ function MembersPage() {
   const inactiveMembers = memberList.filter((m: any) => m.status !== "active").length;
   const totalVehicles = memberList.reduce((acc: number, m: any) => acc + (m.vehicles?.length || 0), 0);
 
+  const qc = useQueryClient();
+  const updateStatusFn = useServerFn(updateMemberStatus);
   const toggleStatusMutation = useMutation({
-    mutationFn: useServerFn(updateMemberStatus),
+    mutationFn: (vars: { data: { id: string; companyId: string; status: "active" | "inactive" } }) =>
+      updateStatusFn(vars),
     onSuccess: (_, vars) => {
       toast.success(
         vars.data.status === "active"
