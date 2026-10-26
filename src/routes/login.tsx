@@ -299,32 +299,29 @@ function Login() {
                 Selecione o Ambiente de Acesso:
               </p>
               <div className="grid grid-cols-3 gap-1.5">
-                <Link
-                  to="/login"
-                  search={{ env: "ec" }}
+                <EnvLoginLink
+                  env="ec"
                   className="p-2 rounded-xl border border-border/80 bg-card hover:border-purple-500/50 hover:bg-purple-500/5 transition-all text-center flex flex-col items-center gap-1"
                 >
                   <Store className="size-4 text-purple-600" />
                   <span className="text-[10px] font-bold text-foreground">ECs</span>
-                </Link>
+                </EnvLoginLink>
 
-                <Link
-                  to="/login"
-                  search={{ env: "veicular" }}
+                <EnvLoginLink
+                  env="veicular"
                   className="p-2 rounded-xl border border-border/80 bg-card hover:border-emerald-500/50 hover:bg-emerald-500/5 transition-all text-center flex flex-col items-center gap-1"
                 >
                   <Car className="size-4 text-emerald-600" />
                   <span className="text-[10px] font-bold text-foreground">Planmais</span>
-                </Link>
+                </EnvLoginLink>
 
-                <Link
-                  to="/login"
-                  search={{ env: "imobiliaria" }}
+                <EnvLoginLink
+                  env="imobiliaria"
                   className="p-2 rounded-xl border border-border/80 bg-card hover:border-amber-500/50 hover:bg-amber-500/5 transition-all text-center flex flex-col items-center gap-1"
                 >
                   <Building2 className="size-4 text-amber-600" />
                   <span className="text-[10px] font-bold text-foreground">Imobiliária</span>
-                </Link>
+                </EnvLoginLink>
               </div>
             </div>
           )}
