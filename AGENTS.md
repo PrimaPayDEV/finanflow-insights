@@ -8,4 +8,4 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
-- All platform environments (EC, Veicular, Imobiliária) are served by the single published app; `src/lib/environment.ts` points every environment to the hub URL unless a VITE_*_URL override is set. Why: per-environment *.lovable.app subdomains do not exist and return "No Lovable project found".
+- Each environment (EC, Veicular, Imobiliária) can run on its own subdomain of the brand domain so each keeps a separate browser login; `src/lib/environment.ts` detects the environment from the first hostname label and only links to own subdomains when `OWN_DOMAINS_ACTIVE` is true or the app is already on the brand domain. Why: sessions are stored per origin, and unconnected subdomains return "No Lovable project found".

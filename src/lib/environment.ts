@@ -1,38 +1,64 @@
 /**
- * Configuração e resolução de links independentes por ambiente
- * Permite que Hub, ECs, Proteção Veicular e Imobiliárias operem com links separados
- * e detecta dinamicamente a origem (window.location.origin) para sincronização Asaas.
+ * Configuração e resolução de links independentes por ambiente.
+ *
+ * Cada ambiente (ECs, Proteção Veicular, Imobiliária) pode ter o próprio endereço
+ * (ex.: veicular.primapay.com.br). Como o navegador guarda um login por endereço,
+ * endereços próprios permitem ficar logado em dois ambientes ao mesmo tempo.
  */
 
 export const HUB_URL = "https://primahubserv.lovable.app";
 
-// Todos os ambientes são servidos pelo mesmo app publicado; o ambiente é
-// definido pelo parâmetro ?env= no login e pelo segmento da empresa do usuário.
-// Para usar domínios separados, conecte domínios próprios e sobrescreva via VITE_*_URL.
-export const DEFAULT_PLATFORM_URLS = {
-  hub: HUB_URL,
-  ec: HUB_URL,
-  veicular: HUB_URL,
-  imobiliaria: HUB_URL,
+/** Domínio próprio da marca e o subdomínio de cada ambiente. */
+export const BRAND_DOMAIN = "primapay.com.br";
+export const PLATFORM_SUBDOMAINS = {
+  ec: "ec",
+  veicular: "veicular",
+  imobiliaria: "imob",
 } as const;
 
-export type PlatformKey = keyof typeof DEFAULT_PLATFORM_URLS;
-
 /**
- * Detecta o ambiente a partir do subdomínio ou hostname atual
+ * Ligue (true) somente quando os três endereços próprios estiverem com status
+ * "Active" em Configurações → Domínios. Enquanto estiver false, todos os ambientes
+ * abrem no endereço principal (subdomínios inexistentes mostram "No Lovable project found").
  */
-export function detectEnvironmentFromHostname(): "ec" | "veicular" | "imobiliaria" | null {
-  if (typeof window === "undefined") return null;
+export const OWN_DOMAINS_ACTIVE = false;
+
+export type PlatformKey = "hub" | "ec" | "veicular" | "imobiliaria";
+type EnvKey = Exclude<PlatformKey, "hub">;
+
+function ownDomainUrl(platform: EnvKey): string {
+  return `https://${PLATFORM_SUBDOMAINS[platform]}.${BRAND_DOMAIN}`;
+}
+
+/** Endereços padrão de cada ambiente (usados em links e webhooks). */
+export const DEFAULT_PLATFORM_URLS: Record<PlatformKey, string> = {
+  hub: HUB_URL,
+  ec: OWN_DOMAINS_ACTIVE ? ownDomainUrl("ec") : HUB_URL,
+  veicular: OWN_DOMAINS_ACTIVE ? ownDomainUrl("veicular") : HUB_URL,
+  imobiliaria: OWN_DOMAINS_ACTIVE ? ownDomainUrl("imobiliaria") : HUB_URL,
+};
+
+/** True quando o app está aberto em um endereço do domínio próprio. */
+function isOnBrandDomain(): boolean {
+  if (typeof window === "undefined") return false;
   const host = window.location.hostname.toLowerCase();
-  if (host.includes("veicular")) return "veicular";
-  if (host.includes("imob")) return "imobiliaria";
-  if (host.includes("ec")) return "ec";
-  return null;
+  return host === BRAND_DOMAIN || host.endsWith(`.${BRAND_DOMAIN}`);
 }
 
 /**
- * Retorna a origem atual no navegador de forma segura
+ * Detecta o ambiente pelo primeiro trecho do endereço (ex.: "veicular" em
+ * veicular.primapay.com.br). Endereços sem esse trecho retornam null.
  */
+export function detectEnvironmentFromHostname(): EnvKey | null {
+  if (typeof window === "undefined") return null;
+  const label = window.location.hostname.toLowerCase().split(".")[0];
+  const match = (Object.keys(PLATFORM_SUBDOMAINS) as EnvKey[]).find(
+    (key) => PLATFORM_SUBDOMAINS[key] === label,
+  );
+  return match ?? null;
+}
+
+/** Retorna a origem atual no navegador de forma segura. */
 export function getCurrentOrigin(): string {
   if (typeof window !== "undefined" && window.location?.origin) {
     return window.location.origin;
@@ -40,9 +66,7 @@ export function getCurrentOrigin(): string {
   return HUB_URL;
 }
 
-/**
- * Verifica se a execução está em ambiente local de desenvolvimento
- */
+/** Verifica se a execução está em ambiente local de desenvolvimento. */
 export function isLocalEnvironment(): boolean {
   if (typeof window === "undefined") return false;
   const hostname = window.location.hostname;
@@ -50,56 +74,50 @@ export function isLocalEnvironment(): boolean {
 }
 
 /**
- * Retorna a URL base de um determinado ambiente (apenas se houver configuração externa explícita)
+ * Retorna a URL base de um ambiente quando ele tem endereço próprio; "" quando
+ * o ambiente roda no mesmo endereço atual (navegação interna).
  */
 export function getPlatformBaseUrl(platform: PlatformKey): string {
-  // 1. Verificação de override salvo no navegador
   if (typeof window !== "undefined") {
     const custom = localStorage.getItem(`prima_env_url_${platform}`);
     if (custom?.trim()) return custom.trim().replace(/\/$/, "");
   }
 
-  // 2. Variáveis de ambiente Vite
   if (platform === "ec" && import.meta.env.VITE_EC_URL) return import.meta.env.VITE_EC_URL;
   if (platform === "veicular" && import.meta.env.VITE_VEICULAR_URL) return import.meta.env.VITE_VEICULAR_URL;
   if (platform === "imobiliaria" && import.meta.env.VITE_IMOBILIARIA_URL) return import.meta.env.VITE_IMOBILIARIA_URL;
 
-  // 3. Padrão: mesma aplicação unificada
+  if (platform !== "hub" && (OWN_DOMAINS_ACTIVE || isOnBrandDomain())) {
+    return ownDomainUrl(platform);
+  }
+
   return "";
 }
 
-/**
- * Retorna o link absoluto compartilhável para a plataforma
- */
+/** Retorna o link absoluto compartilhável para a plataforma. */
 export function getPlatformShareableUrl(platform: PlatformKey, path: string = ""): string {
   const customBase = getPlatformBaseUrl(platform);
   const normalizedPath = path ? (path.startsWith("/") ? path : `/${path}`) : "";
-  if (customBase) {
-    return `${customBase}${normalizedPath}`;
-  }
-  const origin = getCurrentOrigin();
-  return `${origin}${normalizedPath}`;
+  return `${customBase || getCurrentOrigin()}${normalizedPath}`;
 }
 
 /**
- * Resolve o link completo de acesso para um ambiente (login ou rota direta).
- * Como todas as plataformas rodam integradas no mesmo projeto Lovable,
- * a navegação padrão é interna (SPA), evitando erros 404 de subdomínios não criados.
+ * Resolve o link de acesso para um ambiente. Retorna um endereço completo quando
+ * o ambiente tem endereço próprio diferente do atual; caso contrário, caminho interno.
  */
 export function resolvePlatformUrl(platform: PlatformKey, path: string): string {
   const customBase = getPlatformBaseUrl(platform);
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
 
-  // Se houver domínio externo explicitamente configurado que não seja os subdomínios antigos não criados
-  if (customBase && !customBase.includes("primahubec") && !customBase.includes("primahubveicular") && !customBase.includes("primahubimob")) {
+  const isLegacyMissing =
+    customBase.includes("primahubec") ||
+    customBase.includes("primahubveicular") ||
+    customBase.includes("primahubimob");
+
+  if (customBase && !isLegacyMissing && customBase !== getCurrentOrigin()) {
     return `${customBase}${normalizedPath}`;
   }
 
-  if (customBase && customBase === getCurrentOrigin()) {
-    return normalizedPath;
-  }
-
-  // Retorna caminho relativo para navegação interna limpa
   return normalizedPath;
 }
 
@@ -110,12 +128,9 @@ export function resolvePlatformUrl(platform: PlatformKey, path: string): string 
 export function getAsaasWebhookUrl(companyId?: string | null, customBaseUrl?: string): string {
   if (!companyId) return "";
 
-  let base = "";
-  if (customBaseUrl?.trim()) {
-    base = customBaseUrl.trim().replace(/\/$/, "");
-  } else {
-    base = getCurrentOrigin();
-  }
+  const base = customBaseUrl?.trim()
+    ? customBaseUrl.trim().replace(/\/$/, "")
+    : getCurrentOrigin();
 
   return `${base}/api/public/asaas-webhook?company_id=${companyId}`;
 }
