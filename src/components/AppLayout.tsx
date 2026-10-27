@@ -232,7 +232,10 @@ export function AppLayout({
   const isTopItemActive = (item: TopNavItem) => {
     if (item.to) {
       const cleanTo = item.to.split("?")[0];
-      return cleanTo === "/" ? pathname === "/" : pathname.startsWith(cleanTo);
+      if (cleanTo === "/" || cleanTo === "/dashboard") {
+        return pathname === cleanTo;
+      }
+      return pathname.startsWith(cleanTo);
     }
     if (item.children) {
       return item.children.some((child) => {
@@ -284,11 +287,13 @@ export function AppLayout({
   currentNav.push({ to: "/", label: "Hub de Ambientes", icon: LayoutGrid, section: "Ecossistema" });
 
   // Componente reutilizável para a área de perfil e notificações da direita
-  const RightActions = () => (
+  const RightActions = ({ showSeal = true }: { showSeal?: boolean } = {}) => (
     <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-      <div className="hidden sm:block">
-        <AsaasBaasSeal variant="auto" size="xs" />
-      </div>
+      {showSeal && (
+        <div className="hidden sm:block">
+          <AsaasBaasSeal variant="auto" size="xs" />
+        </div>
+      )}
 
       <EnvironmentSwitcher />
 
@@ -444,138 +449,49 @@ export function AppLayout({
   if (isVeicular) {
     return (
       <div className="flex min-h-screen w-full flex-col bg-slate-50/50 dark:bg-slate-950 relative print:overflow-visible print:h-auto">
-        {/* Barra Superior de Navegação (Navbar no Topo) */}
-        <header className="print:hidden sticky top-0 z-30 border-b border-border/70 bg-background/90 backdrop-blur-md">
-          <div className="flex h-16 items-center justify-between gap-3 px-4 sm:px-6 2xl:px-8">
-            {/* Logo / Marca */}
-            <div className="flex min-w-0 items-center gap-3 shrink-0">
+        {/* Barra Superior de Navegação em 2 Linhas */}
+        <header className="print:hidden sticky top-0 z-30 bg-background/95 backdrop-blur-md">
+          {/* Linha 1: Topo com Logo Planmais, Selo Asaas e Ações Rápidas (Ambiente, Tema, Notificação, Usuário) */}
+          <div className="flex h-16 items-center justify-between gap-4 px-4 sm:px-6 2xl:px-8 border-b border-border/60">
+            {/* Logo / Marca + Selo Asaas */}
+            <div className="flex min-w-0 items-center gap-3 sm:gap-4 shrink-0">
               <Link to="/dashboard" className="flex items-center gap-2.5 transition-opacity hover:opacity-90">
                 {logoUrl ? (
-                  <img src={logoUrl} alt={companyName || "Logo"} className="h-8 w-auto max-w-[140px] object-contain" />
+                  <img src={logoUrl} alt={companyName || "Logo"} className="h-8 w-auto max-w-[150px] object-contain" />
                 ) : (
-                  <>
+                  <div className="flex items-center gap-2.5">
                     <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
                       <ShieldCheck className="size-5" />
                     </span>
                     <div className="leading-tight">
-                      <p className="text-base font-extrabold tracking-tight line-clamp-1" style={{ fontFamily: '"Montserrat Arabic", Montserrat, sans-serif' }}>
+                      <p className="text-base font-extrabold tracking-tight" style={{ fontFamily: '"Montserrat Arabic", Montserrat, sans-serif' }}>
                         {companyName === 'PrimaPay' ? 'Planmais' : (companyName || 'Proteção Veicular')}
                       </p>
+                      <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider block">
+                        Proteção Veicular
+                      </span>
                     </div>
-                  </>
+                  </div>
                 )}
               </Link>
-              <span className="hidden min-[1700px]:inline-flex items-center text-[10px] font-bold uppercase tracking-wider text-muted-foreground bg-muted/60 border border-border/60 px-2 py-0.5 rounded-full">
-                Proteção Veicular
-              </span>
+
+              {/* Divisor vertical discreto */}
+              <div className="hidden sm:block h-6 w-px bg-border/70" />
+
+              {/* Selo Asaas no Topo junto à logo */}
+              <div className="hidden sm:flex items-center shrink-0">
+                <AsaasBaasSeal variant="auto" size="xs" />
+              </div>
             </div>
 
-            {/* Menu no Topo no Desktop (Com estrutura para Sub-menus sem separação por seção) */}
-            <nav className="hidden xl:flex min-w-0 flex-1 items-center justify-center gap-0.5 2xl:gap-1">
-              {veicularNavItems.map((item) => {
-                const active = isTopItemActive(item);
-                const hasChildren = item.children && item.children.length > 0;
-                const Icon = item.icon;
-
-                if (hasChildren) {
-                  return (
-                    <DropdownMenu key={item.label}>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className={cn(
-                            "h-9 px-2.5 2xl:px-3 rounded-xl font-semibold text-xs gap-1.5 whitespace-nowrap transition-all duration-150 group cursor-pointer",
-                            active
-                              ? "bg-primary text-primary-foreground font-bold shadow-xs hover:bg-primary/90 hover:text-primary-foreground"
-                              : "text-muted-foreground hover:text-foreground hover:bg-muted/70"
-                          )}
-                        >
-                          <Icon className="hidden 2xl:block size-4 shrink-0" />
-                          <span>{item.label}</span>
-                          <ChevronDown className="size-3.5 opacity-60 transition-transform duration-200 group-data-[state=open]:rotate-180" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent
-                        align="start"
-                        className="w-64 p-1.5 rounded-2xl border border-border/80 shadow-xl bg-popover/95 backdrop-blur-md"
-                      >
-                        {item.children!.map((child) => {
-                          const cleanChildPath = child.to.split("?")[0];
-                          const hasQuery = child.to.includes("?");
-                          const queryParam = hasQuery ? child.to.split("?")[1] : "";
-                          const isChildActive = hasQuery
-                            ? pathname === cleanChildPath && typeof window !== "undefined" && window.location.search.includes(queryParam)
-                            : pathname.startsWith(cleanChildPath);
-                          const ChildIcon = child.icon;
-                          return (
-                            <DropdownMenuItem key={child.to} asChild className="p-0 focus:bg-transparent data-[highlighted]:bg-transparent">
-                              <Link
-                                to={child.to}
-                                className={cn(
-                                  "flex items-start gap-3 p-2.5 rounded-xl transition-all cursor-pointer w-full text-left group",
-                                  isChildActive
-                                    ? "bg-primary/10 text-primary font-bold"
-                                    : "text-foreground hover:bg-primary/10 hover:text-primary focus:bg-primary/10 focus:text-primary"
-                                )}
-                              >
-                                <span
-                                  className={cn(
-                                    "flex size-8 shrink-0 items-center justify-center rounded-lg mt-0.5 transition-colors",
-                                    isChildActive
-                                      ? "bg-primary text-primary-foreground shadow-xs"
-                                      : "bg-muted text-muted-foreground group-hover:bg-primary/20 group-hover:text-primary"
-                                  )}
-                                >
-                                  <ChildIcon className="size-4" />
-                                </span>
-                                <div className="flex-1 min-w-0">
-                                  <div className="text-xs font-bold leading-tight truncate group-hover:text-primary transition-colors">{child.label}</div>
-                                  {child.description && (
-                                    <p className="text-[11px] text-muted-foreground font-normal leading-tight mt-0.5 line-clamp-1 group-hover:text-primary/80 transition-colors">
-                                      {child.description}
-                                    </p>
-                                  )}
-                                </div>
-                              </Link>
-                            </DropdownMenuItem>
-                          );
-                        })}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  );
-                }
-
-                return (
-                  <Button
-                    key={item.label}
-                    variant="ghost"
-                    size="sm"
-                    asChild
-                    className={cn(
-                      "h-9 px-2.5 2xl:px-3 rounded-xl font-semibold text-xs gap-1.5 whitespace-nowrap transition-all duration-150",
-                      active
-                        ? "bg-primary text-primary-foreground font-bold shadow-xs hover:bg-primary/90 hover:text-primary-foreground"
-                        : "text-muted-foreground hover:text-foreground hover:bg-muted/70"
-                    )}
-                  >
-                    <Link to={item.to!}>
-                      <Icon className="hidden 2xl:block size-4 shrink-0" />
-                      <span>{item.label}</span>
-                    </Link>
-                  </Button>
-                );
-              })}
-            </nav>
-
-            {/* Ações da direita e Gatilho Mobile */}
+            {/* Ações da direita: Ambiente, Tema, Notificação, Usuário e Gatilho Mobile */}
             <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
-              <RightActions />
+              <RightActions showSeal={false} />
 
               {/* Botão do Menu Mobile (lg:hidden) */}
               <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
                 <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon" className="xl:hidden shrink-0 rounded-xl">
+                  <Button variant="ghost" size="icon" className="lg:hidden shrink-0 rounded-xl">
                     <Menu className="size-5" />
                     <span className="sr-only">Abrir menu</span>
                   </Button>
@@ -589,7 +505,7 @@ export function AppLayout({
                       </SheetTitle>
                     </SheetHeader>
 
-                    {/* Lista de menus mobile sem separação por seção */}
+                    {/* Lista de menus mobile */}
                     <nav className="flex flex-col gap-1 p-3 overflow-y-auto max-h-[calc(100vh-140px)]">
                       {veicularNavItems.map((item) => {
                         const active = isTopItemActive(item);
@@ -659,9 +575,109 @@ export function AppLayout({
             </div>
           </div>
 
-          {/* Sub-barra de Título da Página e Ações (Linha 2) */}
+          {/* Linha 2: Menus de Navegação (Dashboard até Usuário/Termos) */}
+          <div className="border-b border-border/60 bg-muted/30 dark:bg-muted/15 px-4 sm:px-6 2xl:px-8">
+            <nav className="flex items-center gap-1 sm:gap-1.5 py-1.5 overflow-x-auto no-scrollbar scroll-smooth">
+              {veicularNavItems.map((item) => {
+                const active = isTopItemActive(item);
+                const hasChildren = item.children && item.children.length > 0;
+                const Icon = item.icon;
+
+                if (hasChildren) {
+                  return (
+                    <DropdownMenu key={item.label}>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className={cn(
+                            "h-9 px-3 rounded-lg font-semibold text-xs sm:text-sm gap-2 whitespace-nowrap transition-all duration-150 group cursor-pointer shrink-0",
+                            active
+                              ? "bg-primary text-primary-foreground font-bold shadow-xs hover:bg-primary/90 hover:text-primary-foreground"
+                              : "text-muted-foreground hover:text-foreground hover:bg-background/80"
+                          )}
+                        >
+                          <Icon className="size-4 shrink-0" />
+                          <span>{item.label}</span>
+                          <ChevronDown className="size-3.5 opacity-60 transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent
+                        align="start"
+                        className="w-64 p-1.5 rounded-2xl border border-border/80 shadow-xl bg-popover/95 backdrop-blur-md"
+                      >
+                        {item.children!.map((child) => {
+                          const cleanChildPath = child.to.split("?")[0];
+                          const hasQuery = child.to.includes("?");
+                          const queryParam = hasQuery ? child.to.split("?")[1] : "";
+                          const isChildActive = hasQuery
+                            ? pathname === cleanChildPath && typeof window !== "undefined" && window.location.search.includes(queryParam)
+                            : pathname.startsWith(cleanChildPath);
+                          const ChildIcon = child.icon;
+                          return (
+                            <DropdownMenuItem key={child.to} asChild className="p-0 focus:bg-transparent data-[highlighted]:bg-transparent">
+                              <Link
+                                to={child.to}
+                                className={cn(
+                                  "flex items-start gap-3 p-2.5 rounded-xl transition-all cursor-pointer w-full text-left group",
+                                  isChildActive
+                                    ? "bg-primary/10 text-primary font-bold"
+                                    : "text-foreground hover:bg-primary/10 hover:text-primary focus:bg-primary/10 focus:text-primary"
+                                )}
+                              >
+                                <span
+                                  className={cn(
+                                    "flex size-8 shrink-0 items-center justify-center rounded-lg mt-0.5 transition-colors",
+                                    isChildActive
+                                      ? "bg-primary text-primary-foreground shadow-xs"
+                                      : "bg-muted text-muted-foreground group-hover:bg-primary/20 group-hover:text-primary"
+                                  )}
+                                >
+                                  <ChildIcon className="size-4" />
+                                </span>
+                                <div className="flex-1 min-w-0">
+                                  <div className="text-xs font-bold leading-tight truncate group-hover:text-primary transition-colors">{child.label}</div>
+                                  {child.description && (
+                                    <p className="text-[11px] text-muted-foreground font-normal leading-tight mt-0.5 line-clamp-1 group-hover:text-primary/80 transition-colors">
+                                      {child.description}
+                                    </p>
+                                  )}
+                                </div>
+                              </Link>
+                            </DropdownMenuItem>
+                          );
+                        })}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  );
+                }
+
+                return (
+                  <Button
+                    key={item.label}
+                    variant="ghost"
+                    size="sm"
+                    asChild
+                    className={cn(
+                      "h-9 px-3 rounded-lg font-semibold text-xs sm:text-sm gap-2 whitespace-nowrap transition-all duration-150 shrink-0",
+                      active
+                        ? "bg-primary text-primary-foreground font-bold shadow-xs hover:bg-primary/90 hover:text-primary-foreground"
+                        : "text-muted-foreground hover:text-foreground hover:bg-background/80"
+                    )}
+                  >
+                    <Link to={item.to!}>
+                      <Icon className="size-4 shrink-0" />
+                      <span>{item.label}</span>
+                    </Link>
+                  </Button>
+                );
+              })}
+            </nav>
+          </div>
+
+          {/* Sub-barra de Título da Página e Ações (Linha 3) */}
           {(title || actions) && (
-            <div className="border-t border-border/50 bg-background/50 px-4 sm:px-6 2xl:px-8 py-3.5 flex items-center justify-between gap-4 flex-wrap">
+            <div className="border-b border-border/50 bg-background/50 px-4 sm:px-6 2xl:px-8 py-3.5 flex items-center justify-between gap-4 flex-wrap">
               <div className="truncate min-w-0">
                 <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground truncate">{title}</h1>
                 {subtitle && <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2 sm:truncate mt-0.5">{subtitle}</p>}

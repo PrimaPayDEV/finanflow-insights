@@ -374,3 +374,15 @@ input[type="number"] {
   appearance: textfield !important;
 }
 
+/* ==========================================================================
+   Utility Classes
+   ========================================================================== */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+
