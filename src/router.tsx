@@ -1,10 +1,15 @@
-import "@/lib/tab-session-install";
+import { ensureTabSessionScope } from "@/lib/tab-session-install";
 import { QueryClient } from "@tanstack/react-query";
 import { createRouter } from "@tanstack/react-router";
 import { routeTree } from "./routeTree.gen";
 
+// Chamada explícita (não só import): o build publicado descarta imports sem uso.
+ensureTabSessionScope();
+
 export const getRouter = () => {
+  ensureTabSessionScope();
   const queryClient = new QueryClient();
+
 
   const router = createRouter({
     routeTree,
