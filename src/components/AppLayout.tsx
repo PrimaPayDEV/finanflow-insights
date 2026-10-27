@@ -576,8 +576,8 @@ export function AppLayout({
           </div>
 
           {/* Linha 2: Menus de Navegação (Dashboard até Usuário/Termos) */}
-          <div className="border-b border-border/60 bg-muted/30 dark:bg-muted/15 px-4 sm:px-6 2xl:px-8">
-            <nav className="flex items-center gap-1 sm:gap-1.5 py-1.5 overflow-x-auto no-scrollbar scroll-smooth">
+          <div className="border-b border-border/60 bg-muted/20 dark:bg-muted/10 px-4 sm:px-6 2xl:px-8 overflow-x-auto no-scrollbar">
+            <nav className="flex items-center justify-start md:justify-center min-w-max mx-auto gap-2 sm:gap-3 lg:gap-4 py-2 scroll-smooth">
               {veicularNavItems.map((item) => {
                 const active = isTopItemActive(item);
                 const hasChildren = item.children && item.children.length > 0;
@@ -591,10 +591,10 @@ export function AppLayout({
                           variant="ghost"
                           size="sm"
                           className={cn(
-                            "h-9 px-3 rounded-lg font-semibold text-xs sm:text-sm gap-2 whitespace-nowrap transition-all duration-150 group cursor-pointer shrink-0",
+                            "h-9 px-3.5 sm:px-4 rounded-xl font-semibold text-xs sm:text-sm gap-2 whitespace-nowrap transition-all duration-150 group cursor-pointer shrink-0",
                             active
                               ? "bg-primary text-primary-foreground font-bold shadow-xs hover:bg-primary/90 hover:text-primary-foreground"
-                              : "text-muted-foreground hover:text-foreground hover:bg-background/80"
+                              : "text-muted-foreground hover:text-foreground hover:bg-background/90"
                           )}
                         >
                           <Icon className="size-4 shrink-0" />
@@ -603,7 +603,7 @@ export function AppLayout({
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent
-                        align="start"
+                        align="center"
                         className="w-64 p-1.5 rounded-2xl border border-border/80 shadow-xl bg-popover/95 backdrop-blur-md"
                       >
                         {item.children!.map((child) => {
@@ -659,10 +659,10 @@ export function AppLayout({
                     size="sm"
                     asChild
                     className={cn(
-                      "h-9 px-3 rounded-lg font-semibold text-xs sm:text-sm gap-2 whitespace-nowrap transition-all duration-150 shrink-0",
+                      "h-9 px-3.5 sm:px-4 rounded-xl font-semibold text-xs sm:text-sm gap-2 whitespace-nowrap transition-all duration-150 shrink-0",
                       active
                         ? "bg-primary text-primary-foreground font-bold shadow-xs hover:bg-primary/90 hover:text-primary-foreground"
-                        : "text-muted-foreground hover:text-foreground hover:bg-background/80"
+                        : "text-muted-foreground hover:text-foreground hover:bg-background/90"
                     )}
                   >
                     <Link to={item.to!}>
