@@ -29,7 +29,7 @@ import {
   isLocalEnvironment,
   resolvePlatformUrl,
 } from "@/lib/environment";
-import { ENTRY_PATHS, getTabScope } from "@/lib/tab-session";
+import { ENTRY_PATHS, getTabScope, setTabScope } from "@/lib/tab-session";
 
 /** Link para o login de um ambiente: abre o endereço próprio dele quando existir. */
 function EnvLoginLink({
@@ -129,10 +129,10 @@ function Login() {
   const [rememberMe, setRememberMe] = useState(true);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { user, role, segment, appMode } = useAuth();
+  const { user, role, segment, appMode, isLoading } = useAuth();
 
-  // Se já estiver logado, redireciona para a rota correta do ambiente
-  if (user) {
+  // Se já estiver logado no ambiente atual, redireciona para a rota correta do ambiente
+  if (!isLoading && user) {
     if (currentEnvKey === "veicular") {
       navigate({ to: "/dashboard" });
       return null;
@@ -161,6 +161,9 @@ function Login() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+
+    const activeEnv = currentEnvKey || "ec";
+    setTabScope(activeEnv);
 
     try {
       const { error } = await supabase.auth.signInWithPassword({
@@ -309,7 +312,7 @@ function Login() {
                   className="p-2 rounded-xl border border-border/80 bg-card hover:border-emerald-500/50 hover:bg-emerald-500/5 transition-all text-center flex flex-col items-center gap-1"
                 >
                   <Car className="size-4 text-emerald-600" />
-                  <span className="text-[10px] font-bold text-foreground">Planmais</span>
+                  <span className="text-[10px] font-bold text-foreground">Proteção Veicular</span>
                 </EnvLoginLink>
 
                 <EnvLoginLink

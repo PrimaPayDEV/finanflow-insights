@@ -1,11 +1,13 @@
+import { detectEnvironmentFromHostname } from "./environment";
+
 /**
  * Login independente por ambiente no mesmo endereço.
  *
- * O navegador guarda um único login por endereço. Para permitir ficar logado em
- * dois ambientes ao mesmo tempo (ex.: PrimaPay numa aba e PlanMais em outra), cada
- * aba recebe um "ambiente da aba" e o login é guardado numa gaveta separada por ambiente.
+ * Cada ambiente (ECs, Proteção Veicular, Imobiliária) funciona como uma
+ * plataforma independente, com seu próprio link, login e armazenamento isolado.
  *
- * Os sub-links /ec, /veicular e /imobiliaria definem o ambiente da aba.
+ * A gaveta de armazenamento do Supabase e o BroadcastChannel de cada aba
+ * são vinculados ao ambiente ativo da aba.
  */
 
 export type SessionScope = "ec" | "veicular" | "imobiliaria";
@@ -20,18 +22,18 @@ export const ENTRY_PATHS: Record<SessionScope, string> = {
 };
 
 const TAB_KEY = "prima_tab_env";
-const LAST_KEY = "prima_last_env";
-const AUTH_KEY_RE = /^sb-[a-z0-9_-]+-auth-token(-code-verifier)?$/i;
+// Captura qualquer chave do cliente de autenticação Supabase (token, user, verifier, etc.)
+const AUTH_KEY_RE = /^sb-[a-z0-9_-]+-auth-token/i;
 
 function isScope(value: unknown): value is SessionScope {
   return typeof value === "string" && (SESSION_SCOPES as string[]).includes(value);
 }
 
-/** Ambiente indicado pelo endereço aberto (sub-link ou /login?env=...). */
-export function scopeFromLocation(pathname: string, search: string): SessionScope | null {
-  const path = pathname.replace(/\/+$/, "") || "/";
-  const entry = SESSION_SCOPES.find((s) => ENTRY_PATHS[s] === path);
-  if (entry) return entry;
+/**
+ * Detecta o ambiente a partir da URL (parâmetro ?env= ou prefixo de rota).
+ */
+export function scopeFromLocation(pathname: string, search?: string): SessionScope | null {
+  // 1. Parâmetro de busca (?env=...) tem prioridade explícita
   if (search) {
     try {
       const env = new URLSearchParams(search).get("env");
@@ -40,6 +42,51 @@ export function scopeFromLocation(pathname: string, search: string): SessionScop
       /* ignore */
     }
   }
+
+  const clean = (pathname || "").replace(/\/+$/, "") || "/";
+
+  // 2. Rotas do ecossistema de Proteção Veicular
+  if (
+    clean === "/veicular" ||
+    clean.startsWith("/veicular/") ||
+    clean === "/vehicles" ||
+    clean.startsWith("/vehicles/") ||
+    clean === "/members" ||
+    clean.startsWith("/members/")
+  ) {
+    return "veicular";
+  }
+
+  // 3. Rotas do ecossistema de Gestão Imobiliária
+  if (
+    clean === "/imobiliaria" ||
+    clean.startsWith("/imobiliaria/") ||
+    clean === "/real-estate" ||
+    clean.startsWith("/real-estate/")
+  ) {
+    return "imobiliaria";
+  }
+
+  // 4. Rotas do ecossistema de Estabelecimentos Comerciais (EC)
+  if (
+    clean === "/ec" ||
+    clean.startsWith("/ec/") ||
+    clean === "/merchants" ||
+    clean.startsWith("/merchants/") ||
+    clean === "/closures" ||
+    clean.startsWith("/closures/") ||
+    clean === "/expenses" ||
+    clean.startsWith("/expenses/") ||
+    clean === "/import" ||
+    clean.startsWith("/import/") ||
+    clean === "/reports" ||
+    clean.startsWith("/reports/") ||
+    clean.startsWith("/recebiveis") ||
+    clean.startsWith("/settings/asaas")
+  ) {
+    return "ec";
+  }
+
   return null;
 }
 
@@ -50,7 +97,10 @@ export function isAuthStorageKey(key: string): boolean {
 
 /** Nome da gaveta de login de um ambiente. Sem ambiente, usa a gaveta original. */
 export function scopedAuthKey(key: string, scope: SessionScope | null): string {
-  return scope ? `${key}::${scope}` : key;
+  if (!scope) return key;
+  // Remove sufixo anterior se já existir para evitar duplicação (ex: ::ec::ec)
+  const baseKey = key.replace(/::(ec|veicular|imobiliaria)$/, "");
+  return `${baseKey}::${scope}`;
 }
 
 // Funções originais, para ler/gravar sem passar pelo redirecionamento.
@@ -73,19 +123,54 @@ function writeRaw(storage: Storage, key: string, value: string) {
   }
 }
 
-/** Ambiente da aba atual (ou o último usado, para abas novas). */
+/**
+ * Ambiente da aba atual.
+ * Prioridade:
+ * 1. Subdomínio da marca (ex: veicular.primapay.com.br)
+ * 2. URL atual (caminho ou query ?env=)
+ * 3. sessionStorage desta aba específica (NUNCA localStorage global de outra aba!)
+ */
 export function getTabScope(): SessionScope | null {
   if (typeof window === "undefined") return null;
+
+  // 1. Subdomínio da marca
+  try {
+    const fromHost = detectEnvironmentFromHostname();
+    if (fromHost) return fromHost;
+  } catch {
+    /* ignore */
+  }
+
+  // 2. URL atual (pathname ou search)
+  try {
+    const fromUrl = scopeFromLocation(window.location.pathname, window.location.search);
+    if (fromUrl) {
+      writeRaw(window.sessionStorage, TAB_KEY, fromUrl);
+      return fromUrl;
+    }
+  } catch {
+    /* ignore */
+  }
+
+  // 3. sessionStorage exclusivo desta aba
   const tab = readRaw(window.sessionStorage, TAB_KEY);
   if (isScope(tab)) return tab;
-  const last = readRaw(window.localStorage, LAST_KEY);
-  return isScope(last) ? last : null;
+
+  return null;
 }
 
 export function setTabScope(scope: SessionScope) {
   if (typeof window === "undefined") return;
   writeRaw(window.sessionStorage, TAB_KEY, scope);
-  writeRaw(window.localStorage, LAST_KEY, scope);
+}
+
+export function clearTabScope() {
+  if (typeof window === "undefined") return;
+  try {
+    window.sessionStorage.removeItem(TAB_KEY);
+  } catch {
+    /* ignore */
+  }
 }
 
 /**
@@ -97,9 +182,6 @@ export function installTabSessionScope() {
   const w = window as typeof window & { __primaTabScopeInstalled?: boolean };
   if (w.__primaTabScopeInstalled) return;
   w.__primaTabScopeInstalled = true;
-
-  // Dentro do editor do Lovable a prévia compartilha um único login; não mexe.
-  if (window.parent !== window) return;
 
   const fromUrl = scopeFromLocation(window.location.pathname, window.location.search);
   if (fromUrl) setTabScope(fromUrl);
@@ -113,7 +195,8 @@ export function installTabSessionScope() {
 
   const mapKey = (storage: Storage, key: string) => {
     if (storage !== window.localStorage || !isAuthStorageKey(String(key))) return key;
-    return scopedAuthKey(String(key), getTabScope());
+    const scope = getTabScope();
+    return scopedAuthKey(String(key), scope);
   };
 
   proto.getItem = function (this: Storage, key: string) {
@@ -131,7 +214,9 @@ export function installTabSessionScope() {
   if (OrigChannel) {
     class ScopedChannel extends OrigChannel {
       constructor(name: string) {
-        super(isAuthStorageKey(String(name)) ? scopedAuthKey(String(name), getTabScope()) : name);
+        const isAuth = isAuthStorageKey(String(name));
+        const scope = getTabScope();
+        super(isAuth && scope ? scopedAuthKey(String(name), scope) : name);
       }
     }
     window.BroadcastChannel = ScopedChannel as typeof BroadcastChannel;

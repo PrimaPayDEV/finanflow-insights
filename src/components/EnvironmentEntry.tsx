@@ -11,16 +11,14 @@ import { useAuth } from "@/contexts/AuthContext";
  */
 export function EnvironmentEntry({ env }: { env: SessionScope }) {
   const navigate = useNavigate();
-  const { user, role, segment } = useAuth();
+  const { user, role, segment, isLoading } = useAuth();
 
   useEffect(() => {
-    const currentScope = getTabScope();
-    if (currentScope !== env) {
-      setTabScope(env);
-      window.location.replace(`/login?env=${env}`);
-      return;
-    }
+    // Fixa o ambiente desta aba
     setTabScope(env);
+
+    // Aguarda o término do carregamento da autenticação para checar a sessão real
+    if (isLoading) return;
 
     // Se já estiver logado neste ambiente nesta aba, vai direto para o painel correspondente
     if (user) {
@@ -40,8 +38,9 @@ export function EnvironmentEntry({ env }: { env: SessionScope }) {
       return;
     }
 
+    // Se não estiver logado neste ambiente, abre a tela de login correspondente
     navigate({ to: "/login", search: { env }, replace: true });
-  }, [env, navigate, user, role, segment]);
+  }, [env, navigate, user, role, segment, isLoading]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">

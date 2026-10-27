@@ -16,6 +16,7 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { Loader2, ShieldAlert } from "lucide-react";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
+import { getTabScope, scopeFromLocation } from "@/lib/tab-session";
 
 function NotFoundComponent() {
   return (
@@ -147,14 +148,25 @@ function AuthGuard({ children }: { children: ReactNode }) {
     if (!isLoading) {
       const isPublic = isPublicRoute(pathname);
       if (!user && !isPublic) {
-        navigate({ to: "/" });
+        // Redireciona para o login do ambiente correspondente se for rota específica de plataforma
+        const targetScope = scopeFromLocation(pathname);
+        if (targetScope) {
+          navigate({ to: "/login", search: { env: targetScope } });
+        } else {
+          navigate({ to: "/" });
+        }
       } else if (user && pathname === "/login") {
-        if (role === 'merchant') {
+        const scope = getTabScope();
+        if (scope === "imobiliaria") {
+          navigate({ to: "/real-estate/charges" });
+        } else if (scope === "veicular") {
+          navigate({ to: "/dashboard" });
+        } else if (role === "merchant") {
           navigate({ to: "/recebiveis/dashboard" });
         } else {
           navigate({ to: "/dashboard" });
         }
-      } else if (user && role === 'merchant' && !pathname.startsWith("/recebiveis") && !isPublic) {
+      } else if (user && role === "merchant" && !pathname.startsWith("/recebiveis") && !isPublic) {
         // Protect merchants from seeing admin routes
         navigate({ to: "/recebiveis/dashboard" });
       }

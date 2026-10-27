@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { AsaasBaasSeal } from "@/components/AsaasBaasSeal";
 import { useAuth } from "@/contexts/AuthContext";
+import { clearTabScope, getTabScope } from "@/lib/tab-session";
 import {
   resolvePlatformUrl,
   getPlatformShareableUrl,
@@ -119,6 +120,7 @@ function HubPage() {
 
   const handleSignOut = async () => {
     await signOut();
+    clearTabScope();
     navigate({ to: "/" });
   };
 
