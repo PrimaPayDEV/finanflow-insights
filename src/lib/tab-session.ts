@@ -183,6 +183,19 @@ export function installTabSessionScope() {
   if (w.__primaTabScopeInstalled) return;
   w.__primaTabScopeInstalled = true;
 
+  // Remove o login antigo compartilhado (de antes da separação por ambiente),
+  // para que nenhuma aba sem ambiente herde a sessão de outra plataforma.
+  try {
+    const legacy: string[] = [];
+    for (let i = 0; i < window.localStorage.length; i++) {
+      const k = window.localStorage.key(i);
+      if (k && isAuthStorageKey(k) && !/::(ec|veicular|imobiliaria)$/.test(k)) legacy.push(k);
+    }
+    legacy.forEach((k) => window.localStorage.removeItem(k));
+  } catch {
+    /* armazenamento bloqueado */
+  }
+
   const fromUrl = scopeFromLocation(window.location.pathname, window.location.search);
   if (fromUrl) setTabScope(fromUrl);
 
