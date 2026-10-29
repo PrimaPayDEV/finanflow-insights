@@ -221,30 +221,30 @@ export interface LoteCobranca {
 }
 
 // -------------------------------------------------------------
-// DADOS PADRÃO DE COTAS DE PARTICIPAÇÃO (Franquia de Mercado)
+// DADOS PADRÃO DE COTAS DE PARTICIPAÇÃO (Regulamento PPM PLANMAIS - Cap. IV)
+// Art. 21º: Nacionais 7,5% (mín. R$ 2.700,00)
+// Art. 22º: Importados 10% (mín. R$ 3.500,00)
+// Art. 23º: Uso profissional/trabalho acresce +3% cumulativamente
 // -------------------------------------------------------------
+export const PPM_RATEIO_MAX_MENSAL = 25.00; // Art. 90º: limite mensal de R$ 25,00 por participante
+
 export const DEFAULT_COTAS_PARTICIPACAO: CotaParticipacaoFaixa[] = [
-  // Carros e Utilitários Leves
-  { id: "c-1", vehicleType: "carro", minFipe: 0, maxFipe: 35000, percentage: 6, minAmount: 1400, description: "Carros populares até R$ 35.000" },
-  { id: "c-2", vehicleType: "carro", minFipe: 35001, maxFipe: 60000, percentage: 6, minAmount: 1800, description: "Carros médios até R$ 60.000" },
-  { id: "c-3", vehicleType: "carro", minFipe: 60001, maxFipe: 100000, percentage: 6.5, minAmount: 2400, description: "Sedans e SUVs até R$ 100.000" },
-  { id: "c-4", vehicleType: "carro", minFipe: 100001, maxFipe: 180000, percentage: 7, minAmount: 3500, description: "SUVs e Pickups premium até R$ 180.000" },
-  { id: "c-5", vehicleType: "carro", minFipe: 180001, maxFipe: 999999, percentage: 8, minAmount: 5000, description: "Veículos de alto padrão acima de R$ 180.000" },
+  // Carros Nacionais e Importados (Cap. IV - Art. 21º e 22º)
+  { id: "c-1", vehicleType: "carro", minFipe: 0, maxFipe: 60000, percentage: 7.5, minAmount: 2700, description: "Veículos Nacionais até R$ 60.000 (Art. 21º PPM: 7,5% / mín. R$ 2.700)" },
+  { id: "c-2", vehicleType: "carro", minFipe: 60001, maxFipe: 120000, percentage: 7.5, minAmount: 2700, description: "Veículos Nacionais R$ 60.001 a R$ 120.000 (Art. 21º PPM: 7,5% / mín. R$ 2.700)" },
+  { id: "c-3", vehicleType: "carro", minFipe: 120001, maxFipe: 999999, percentage: 10, minAmount: 3500, description: "Veículos Importados / Especial acima de R$ 120.000 (Art. 22º PPM: 10% / mín. R$ 3.500)" },
   
   // Motocicletas
-  { id: "m-1", vehicleType: "moto", minFipe: 0, maxFipe: 15000, percentage: 8, minAmount: 900, description: "Motos até 160cc" },
-  { id: "m-2", vehicleType: "moto", minFipe: 15001, maxFipe: 35000, percentage: 9, minAmount: 1500, description: "Motos 250cc a 400cc" },
-  { id: "m-3", vehicleType: "moto", minFipe: 35001, maxFipe: 999999, percentage: 10, minAmount: 2500, description: "Motos de alta cilindrada (acima de 500cc)" },
+  { id: "m-1", vehicleType: "moto", minFipe: 0, maxFipe: 35000, percentage: 7.5, minAmount: 2700, description: "Motos Nacionais (Art. 21º PPM: 7,5% / mín. R$ 2.700)" },
+  { id: "m-2", vehicleType: "moto", minFipe: 35001, maxFipe: 999999, percentage: 10, minAmount: 3500, description: "Motos Importadas / Alta Cilindrada (Art. 22º PPM: 10% / mín. R$ 3.500)" },
 
-  // Utilitários e Vans
-  { id: "u-1", vehicleType: "utilitario", minFipe: 0, maxFipe: 70000, percentage: 7, minAmount: 2200, description: "Furgões e Pickups pequenas" },
-  { id: "u-2", vehicleType: "utilitario", minFipe: 70001, maxFipe: 160000, percentage: 7.5, minAmount: 3200, description: "Vans de passageiros e carga" },
-  { id: "u-3", vehicleType: "utilitario", minFipe: 160001, maxFipe: 999999, percentage: 8, minAmount: 4500, description: "Micro-ônibus e utilitários pesados" },
+  // Utilitários e Vans (com ou sem adicional profissional de +3% do Art. 23º)
+  { id: "u-1", vehicleType: "utilitario", minFipe: 0, maxFipe: 120000, percentage: 7.5, minAmount: 2700, description: "Utilitários Nacionais (Art. 21º PPM: 7,5% / mín. R$ 2.700; +3% se uso profissional)" },
+  { id: "u-2", vehicleType: "utilitario", minFipe: 120001, maxFipe: 999999, percentage: 10, minAmount: 3500, description: "Utilitários Importados (Art. 22º PPM: 10% / mín. R$ 3.500; +3% se uso profissional)" },
 
-  // Caminhões e Pesados
-  { id: "p-1", vehicleType: "pesado", minFipe: 0, maxFipe: 150000, percentage: 8, minAmount: 4000, description: "Caminhões 3/4 e toco" },
-  { id: "p-2", vehicleType: "pesado", minFipe: 150001, maxFipe: 300000, percentage: 8.5, minAmount: 6000, description: "Caminhões trucados e cavalos mecânicos" },
-  { id: "p-3", vehicleType: "pesado", minFipe: 300001, maxFipe: 999999, percentage: 9, minAmount: 8500, description: "Cavalos mecânicos pesados e carretas" },
+  // Caminhões e Pesados (Art. 21º + Art. 23º atividade profissional +3% = 10,5%)
+  { id: "p-1", vehicleType: "pesado", minFipe: 0, maxFipe: 300000, percentage: 10.5, minAmount: 2700, description: "Pesados Nacionais Uso Profissional (Art. 21º + Art. 23º PPM: 7,5% + 3% = 10,5%)" },
+  { id: "p-2", vehicleType: "pesado", minFipe: 300001, maxFipe: 999999, percentage: 13, minAmount: 3500, description: "Pesados Importados Uso Profissional (Art. 22º + Art. 23º PPM: 10% + 3% = 13%)" },
 ];
 
 // -------------------------------------------------------------
@@ -254,32 +254,32 @@ export const DEFAULT_PRODUTOS_VEICULARES: ProdutoVeicular[] = [
   {
     id: "prod-base-roubo",
     vehicleType: "todos",
-    name: "Proteção Integral (Roubo, Furto, Colisão, Incêndio)",
+    name: "Proteção Patrimonial Mutualista (PPM - Danos Materiais ao Veículo)",
     category: "cobertura",
     monthlyFee: 119.90,
-    coverageLimit: "100% Tabela FIPE",
-    description: "Cobertura completa com indenização integral ou reparo em oficinas credenciadas.",
+    coverageLimit: "Tabela FIPE (Cap. III PPM)",
+    description: "Reparação de danos materiais ao veículo protegido conforme Regulamento PPM PLANMAIS.",
     isRequired: true,
     isActive: true,
   },
   {
     id: "prod-terceiros-50",
     vehicleType: "todos",
-    name: "Proteção para Terceiros (RCF) - R$ 50.000",
+    name: "Danos Materiais Causados a Terceiros (Cap. X PPM) - R$ 50.000",
     category: "cobertura",
     monthlyFee: 34.90,
-    coverageLimit: "R$ 50.000,00",
-    description: "Cobertura para danos materiais causados a veículos e patrimônio de terceiros.",
+    coverageLimit: "R$ 50.000,00 (Danos Materiais)",
+    description: "Reparação de danos materiais diretamente causados pelo veículo protegido a terceiros (Art. 72º a 81º).",
     isActive: true,
   },
   {
     id: "prod-terceiros-100",
     vehicleType: "todos",
-    name: "Proteção para Terceiros (RCF) - R$ 100.000",
+    name: "Danos Materiais Causados a Terceiros (Cap. X PPM) - R$ 100.000",
     category: "cobertura",
     monthlyFee: 49.90,
-    coverageLimit: "R$ 100.000,00",
-    description: "Cobertura ampliada para danos a terceiros com maior tranquilidade.",
+    coverageLimit: "R$ 100.000,00 (Danos Materiais)",
+    description: "Cobertura ampliada exclusivamente para danos materiais a terceiros (Art. 72º a 81º).",
     isActive: true,
   },
   {
@@ -315,73 +315,83 @@ export const DEFAULT_PRODUTOS_VEICULARES: ProdutoVeicular[] = [
   {
     id: "prod-vidros",
     vehicleType: "carro",
-    name: "Proteção de Vidros, Faróis, Lanternas e Retrovisores",
+    name: "Proteção de Vidros, Faróis e Retrovisores (Art. 64º e 65º PPM)",
     category: "cobertura",
     monthlyFee: 29.90,
-    coverageLimit: "Troca com coparticipação reduzida",
-    description: "Reparo ou substituição de para-brisas, vidros laterais, traseiro e conjunto óptico.",
+    coverageLimit: "Desconto de 60% sobre o valor da peça",
+    description: "Substituição de vidros, faróis e retrovisores com 60% de desconto sobre o valor da peça (Art. 65º PPM).",
     isActive: true,
   },
   {
     id: "prod-carro-reserva-7",
     vehicleType: "carro",
-    name: "Carro Reserva - 7 Dias",
+    name: "Benefício Adicional - Veículo Reserva 7 Dias",
     category: "assistencia",
     monthlyFee: 22.90,
-    coverageLimit: "7 diárias em locadora",
-    description: "Carro popular 1.0 com ar-condicionado liberado em caso de sinistro com perda parcial.",
+    coverageLimit: "7 diárias (se previsto no Termo de Adesão)",
+    description: "Benefício adicional específico conforme inciso III do Art. 15º do Regulamento PPM.",
     isActive: true,
   },
   {
     id: "prod-carro-reserva-15",
     vehicleType: "carro",
-    name: "Carro Reserva - 15 Dias",
+    name: "Benefício Adicional - Veículo Reserva 15 Dias",
     category: "assistencia",
     monthlyFee: 35.90,
-    coverageLimit: "15 diárias em locadora",
-    description: "Período estendido de locação para manutenções mais longas.",
-    isActive: true,
-  },
-  {
-    id: "prod-app-passageiro",
-    vehicleType: "todos",
-    name: "Acidentes Pessoais a Passageiros (APP)",
-    category: "adicional",
-    monthlyFee: 19.90,
-    coverageLimit: "R$ 20.000 por ocupante",
-    description: "Indenização por morte ou invalidez permanente para os ocupantes do veículo protegido.",
+    coverageLimit: "15 diárias (se previsto no Termo de Adesão)",
+    description: "Benefício adicional específico conforme inciso III do Art. 15º do Regulamento PPM.",
     isActive: true,
   },
 ];
 
 // -------------------------------------------------------------
-// HELPER PARA CÁLCULO DE COTA DE PARTICIPAÇÃO
+// HELPER PARA CÁLCULO DE COTA DE PARTICIPAÇÃO (CAPÍTULO IV PPM)
 // -------------------------------------------------------------
 export function calculateParticipationFee(
   vehicleType: VehicleType,
   fipeValue: number,
-  cotas: CotaParticipacaoFaixa[] = DEFAULT_COTAS_PARTICIPACAO
+  cotas: CotaParticipacaoFaixa[] = DEFAULT_COTAS_PARTICIPACAO,
+  options?: { isImported?: boolean; isProfessionalUsage?: boolean }
 ): { percentage: number; amount: number; description: string } {
+  const extraProfessionalPct = options?.isProfessionalUsage ? 3 : 0; // Art. 23º: +3% uso profissional/trabalho
+
+  if (options?.isImported !== undefined) {
+    const basePct = options.isImported ? 10 : 7.5; // Art. 21º (7,5%) / Art. 22º (10%)
+    const minAmt = options.isImported ? 3500 : 2700; // Art. 21º (R$ 2.700) / Art. 22º (R$ 3.500)
+    const totalPct = basePct + extraProfessionalPct;
+    const calculated = fipeValue * (totalPct / 100);
+    const amount = Math.max(calculated, minAmt);
+    return {
+      percentage: totalPct,
+      amount,
+      description: `${options.isImported ? "Importado (10%)" : "Nacional (7,5%)"}${
+        extraProfessionalPct > 0 ? " + 3% Uso Profissional" : ""
+      } — Mín. R$ ${minAmt.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`,
+    };
+  }
+
   const match = cotas.find(
     (c) => c.vehicleType === vehicleType && fipeValue >= c.minFipe && fipeValue <= c.maxFipe
   );
 
   if (match) {
-    const calculated = fipeValue * (match.percentage / 100);
+    const totalPct = match.percentage + extraProfessionalPct;
+    const calculated = fipeValue * (totalPct / 100);
     const amount = Math.max(calculated, match.minAmount);
     return {
-      percentage: match.percentage,
+      percentage: totalPct,
       amount,
-      description: match.description || `Mínimo de R$ ${match.minAmount.toFixed(2)} (${match.percentage}%)`,
+      description: match.description || `Mínimo de R$ ${match.minAmount.toFixed(2)} (${totalPct}%)`,
     };
   }
 
-  // Fallback genérico de 6% ou R$ 1.500
-  const fallbackAmount = Math.max(fipeValue * 0.06, 1500);
+  // Fallback padrão Art. 21º PPM: 7,5% ou mínimo R$ 2.700,00
+  const fallbackPct = 7.5 + extraProfessionalPct;
+  const fallbackAmount = Math.max(fipeValue * (fallbackPct / 100), 2700);
   return {
-    percentage: 6,
+    percentage: fallbackPct,
     amount: fallbackAmount,
-    description: "Cota padrão 6% (mínimo R$ 1.500,00)",
+    description: `Cota padrão PPM ${fallbackPct}% (mínimo R$ 2.700,00 - Art. 21º)`,
   };
 }
 
