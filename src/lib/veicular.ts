@@ -68,6 +68,88 @@ export interface ProdutoVeicular {
   isActive: boolean;
 }
 
+export interface ImplementoItem {
+  id: string;
+  brand: string;
+  model: string;
+  year: string;
+  chassi: string;
+  commercialValue: number;
+  monthlyFee: number;
+}
+
+export interface CustomCoverageItem {
+  id: string;
+  name: string;
+  limit?: string;
+  monthlyFee: number;
+  isActive: boolean;
+}
+
+export interface MemberExtraData {
+  rg?: string;
+  birthDate?: string;
+  maritalStatus?: string;
+  profession?: string;
+  secondaryPhone?: string;
+  cnhNumber?: string;
+  cnhCategory?: string;
+  cnhExpiryDate?: string;
+  cnhState?: string;
+  cep?: string;
+  address?: string;
+  number?: string;
+  complement?: string;
+  neighborhood?: string;
+  city?: string;
+  state?: string;
+  notes?: string;
+  registeredAt?: string;
+  updatedAt?: string;
+}
+
+export interface VehicleExtraData {
+  chassi?: string;
+  renavam?: string;
+  yearFab?: number;
+  yearModel?: number;
+  color?: string;
+  fuel?: string;
+  mileage?: string;
+  usage?: string;
+  transmission?: string;
+  engine?: string;
+  fipeCode?: string;
+  fipeValue?: number;
+  trackerStatus?: string;
+  trackerCode?: string;
+  notes?: string;
+  implementos?: ImplementoItem[];
+  customCoverages?: CustomCoverageItem[];
+  coverageActive?: boolean;
+  coveragePlan?: string;
+  coverageConfig?: any;
+  registeredAt?: string;
+}
+
+export interface EventoServicoItem {
+  id: string;
+  description: string;
+  provider?: string;
+  category?: string;
+  amount: number;
+}
+
+export interface EventoAnexoItem {
+  id: string;
+  name: string;
+  type: "FOTO" | "ORCAMENTO" | "RECIBO" | "NOTA_FISCAL" | "BOLETIM_OCORRENCIA" | "LAUDO" | "OUTRO";
+  fileType?: string;
+  size?: number;
+  dataUrl?: string;
+  uploadedAt: string;
+}
+
 export interface EventoSinistro {
   id: string;
   companyId: string;
@@ -87,9 +169,12 @@ export interface EventoSinistro {
     | "OUTROS";
   description: string;
   workshopProvider?: string;
+  baseAmount?: number;
   amount: number;
   status: "ANALISE" | "APROVADO" | "EM_REPARO" | "CONCLUIDO" | "PAGO";
   notes?: string;
+  services?: EventoServicoItem[];
+  attachments?: EventoAnexoItem[];
 }
 
 export interface RateioConfig {
@@ -374,6 +459,123 @@ export function setMemberDueDay(companyId: string, memberId: string, dueDay: num
 
 export function getAllMemberDueDays(companyId: string): Record<string, number> {
   return loadLocalData<Record<string, number>>(companyId, "member_due_days", {});
+}
+
+// -------------------------------------------------------------
+// HELPERS PARA DADOS COMPLEMENTARES DE ASSOCIADOS E VEÍCULOS
+// -------------------------------------------------------------
+export function categoryToVehicleType(category?: string): VehicleType {
+  const c = (category || "").toLowerCase();
+  if (c.includes("moto")) return "moto";
+  if (c.includes("pesad") || c.includes("caminh") || c.includes("carreta")) return "pesado";
+  if (c.includes("utilit") || c.includes("van") || c.includes("furg")) return "utilitario";
+  return "carro";
+}
+
+export function calculateImplementoMonthlyFee(commercialValue: number, categoryOrType?: string): number {
+  if (!commercialValue || commercialValue <= 0) return 0;
+  const vType =
+    categoryOrType === "carro" ||
+    categoryOrType === "moto" ||
+    categoryOrType === "pesado" ||
+    categoryOrType === "utilitario"
+      ? (categoryOrType as VehicleType)
+      : categoryToVehicleType(categoryOrType);
+  return calculateBaseMonthlyFee(vType, commercialValue);
+}
+
+export function getMemberExtraData(companyId: string, memberId: string): MemberExtraData {
+  if (typeof window === "undefined" || !memberId) return {};
+  const all = loadLocalData<Record<string, MemberExtraData>>(companyId, "members_extra", {});
+  const legacyAddr = loadLocalData<any>(companyId, `address_${memberId}`, null);
+  return {
+    ...(legacyAddr || {}),
+    ...(all[memberId] || {}),
+  };
+}
+
+export function saveMemberExtraData(companyId: string, memberId: string, data: MemberExtraData): void {
+  if (typeof window === "undefined" || !memberId) return;
+  const all = loadLocalData<Record<string, MemberExtraData>>(companyId, "members_extra", {});
+  all[memberId] = {
+    ...(all[memberId] || {}),
+    ...data,
+  };
+  saveLocalData(companyId, "members_extra", all);
+  if (data.cep || data.address || data.city) {
+    saveLocalData(companyId, `address_${memberId}`, {
+      cep: data.cep,
+      address: data.address,
+      number: data.number,
+      complement: data.complement,
+      neighborhood: data.neighborhood,
+      city: data.city,
+      state: data.state,
+    });
+  }
+}
+
+export function getAllMembersExtraData(companyId: string): Record<string, MemberExtraData> {
+  return loadLocalData<Record<string, MemberExtraData>>(companyId, "members_extra", {});
+}
+
+export function getVehicleExtraData(companyId: string, vehicleIdOrPlate?: string, fallbackPlate?: string): VehicleExtraData {
+  if (typeof window === "undefined") return {};
+  const all = loadLocalData<Record<string, VehicleExtraData>>(companyId, "vehicles_extra", {});
+  const byId = vehicleIdOrPlate ? all[vehicleIdOrPlate] : undefined;
+  const cleanPlate = (fallbackPlate || vehicleIdOrPlate || "").replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+  const byPlate = cleanPlate ? all[`PLATE_${cleanPlate}`] : undefined;
+  return {
+    ...(byPlate || {}),
+    ...(byId || {}),
+  };
+}
+
+export function saveVehicleExtraData(
+  companyId: string,
+  vehicleId: string | undefined,
+  plate: string | undefined,
+  data: VehicleExtraData
+): void {
+  if (typeof window === "undefined") return;
+  const all = loadLocalData<Record<string, VehicleExtraData>>(companyId, "vehicles_extra", {});
+  const cleanPlate = (plate || "").replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+  const merged = {
+    ...(cleanPlate ? all[`PLATE_${cleanPlate}`] || {} : {}),
+    ...(vehicleId ? all[vehicleId] || {} : {}),
+    ...data,
+  };
+  if (vehicleId) {
+    all[vehicleId] = merged;
+  }
+  if (cleanPlate) {
+    all[`PLATE_${cleanPlate}`] = merged;
+  }
+  saveLocalData(companyId, "vehicles_extra", all);
+}
+
+export function getAllVehiclesExtraData(companyId: string): Record<string, VehicleExtraData> {
+  return loadLocalData<Record<string, VehicleExtraData>>(companyId, "vehicles_extra", {});
+}
+
+export function formatDateTimeBR(isoOrDate?: string): string {
+  if (!isoOrDate) return "";
+  try {
+    const d = new Date(isoOrDate);
+    if (isNaN(d.getTime())) return isoOrDate;
+    const datePart = d.toLocaleDateString("pt-BR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+    const timePart = d.toLocaleTimeString("pt-BR", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+    return `${datePart} às ${timePart}`;
+  } catch {
+    return isoOrDate;
+  }
 }
 
 // -------------------------------------------------------------
