@@ -152,7 +152,7 @@ function WebAccessDialog({ merchant }: { merchant: Merchant }) {
         <Button
           variant="outline"
           size="sm"
-          className="gap-2 border-primary/20 text-primary hover:bg-primary/5 hover:border-primary/40 shadow-2xs font-medium"
+          className="gap-2 border-primary/30 text-primary hover:bg-primary/10 hover:text-primary hover:border-primary/50 dark:border-primary/40 dark:hover:bg-primary/20 dark:hover:text-primary-foreground shadow-2xs font-medium"
         >
           <Key className="size-3.5" />
           <span>Acesso Web</span>
@@ -1526,7 +1526,7 @@ function FeePlanForm({ merchant }: { merchant: Merchant }) {
                   <Button
                     type="button"
                     variant="outline"
-                    className="h-10 px-2.5 border-primary/40 text-primary hover:bg-primary/10 hover:border-primary transition-all shrink-0 flex items-center gap-1 font-semibold text-xs shadow-2xs"
+                    className="h-10 px-2.5 border-primary/40 text-primary hover:bg-primary/10 hover:text-primary hover:border-primary dark:border-primary/50 dark:hover:bg-primary/20 dark:hover:text-primary-foreground transition-all shrink-0 flex items-center gap-1 font-semibold text-xs shadow-2xs"
                     onClick={() => setIsInstallmentsModalOpen(true)}
                     title="Adicionar e gerenciar parcelas (1x, 2x, 3x...)"
                   >
@@ -1564,7 +1564,7 @@ function FeePlanForm({ merchant }: { merchant: Merchant }) {
                       size="sm"
                       onClick={() => setDraft(null)}
                       disabled={save.isPending}
-                      className="h-8 text-xs text-muted-foreground"
+                      className="h-8 text-xs text-muted-foreground hover:text-foreground"
                     >
                       <RotateCcw className="size-3.5 mr-1" /> Descartar
                     </Button>
@@ -1573,7 +1573,7 @@ function FeePlanForm({ merchant }: { merchant: Merchant }) {
                     type="button"
                     variant="outline"
                     size="sm"
-                    className="h-8 gap-1.5 border-primary/30 text-primary hover:bg-primary/5 font-medium text-xs"
+                    className="h-8 gap-1.5 border-primary/35 text-primary hover:bg-primary/10 hover:text-primary hover:border-primary/60 dark:border-primary/40 dark:hover:bg-primary/20 dark:hover:text-primary-foreground font-medium text-xs"
                     onClick={() => setIsInstallmentsModalOpen(true)}
                   >
                     <Plus className="size-3.5" /> Configurar parcelas (1x a 18x)
@@ -1646,7 +1646,7 @@ function FeePlanForm({ merchant }: { merchant: Merchant }) {
                     size="sm"
                     onClick={() => setDraft(null)}
                     disabled={save.isPending}
-                    className="h-8 text-xs text-muted-foreground"
+                    className="h-8 text-xs text-muted-foreground hover:text-foreground"
                   >
                     <RotateCcw className="size-3.5 mr-1" /> Descartar
                   </Button>
@@ -1655,7 +1655,7 @@ function FeePlanForm({ merchant }: { merchant: Merchant }) {
                   type="button"
                   variant="outline"
                   size="sm"
-                  className="gap-1.5 border-primary/30 text-primary hover:bg-primary/5 font-medium text-xs"
+                  className="gap-1.5 border-primary/35 text-primary hover:bg-primary/10 hover:text-primary hover:border-primary/60 dark:border-primary/40 dark:hover:bg-primary/20 dark:hover:text-primary-foreground font-medium text-xs"
                   onClick={() => setIsInstallmentsModalOpen(true)}
                 >
                   <Plus className="size-3.5" />
@@ -1728,7 +1728,7 @@ function FeePlanForm({ merchant }: { merchant: Merchant }) {
               type="button"
               variant="ghost"
               size="sm"
-              className="h-7 text-xs font-medium text-primary hover:bg-primary/10"
+              className="h-7 text-xs font-medium text-primary hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/20 dark:hover:text-primary-foreground"
               onClick={useCPAGDefaults}
               title="Preencher com taxas de referência do modelo padrão CPAG"
             >
@@ -1739,7 +1739,7 @@ function FeePlanForm({ merchant }: { merchant: Merchant }) {
                 type="button"
                 variant="ghost"
                 size="sm"
-                className="h-7 text-xs font-medium text-destructive hover:bg-destructive/10 ml-auto"
+                className="h-7 text-xs font-medium text-destructive hover:bg-destructive/10 hover:text-destructive ml-auto"
                 onClick={() => setInstallmentRates({})}
               >
                 Limpar todas

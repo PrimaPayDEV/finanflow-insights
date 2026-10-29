@@ -25,7 +25,8 @@ export function applyCompanyTheme(
     const root = document.documentElement;
     root.style.setProperty("--primary", effectiveColor);
     root.style.setProperty("--sidebar-primary", effectiveColor);
-    root.style.setProperty("--accent", effectiveColor);
+    root.style.removeProperty("--accent");
+    root.style.removeProperty("--accent-foreground");
     root.style.setProperty("--ring", effectiveColor);
     root.style.setProperty("--sidebar-ring", effectiveColor);
     root.style.setProperty("--chart-1", effectiveColor);
