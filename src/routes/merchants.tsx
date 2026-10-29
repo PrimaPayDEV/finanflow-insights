@@ -766,11 +766,12 @@ function MerchantsPage() {
         </Dialog>
       }
     >
-      <div className="grid gap-5 lg:grid-cols-[340px_1fr] xl:grid-cols-[380px_1fr] items-start">
+      <div className="grid gap-5 lg:grid-cols-[340px_1fr] xl:grid-cols-[380px_1fr] items-start lg:items-stretch">
         {/* =========================================================================
             COLUNA DA ESQUERDA: CARTEIRA DE ECs COM BUSCA E FILTROS
             ========================================================================= */}
-        <Card className="border border-border/80 shadow-card rounded-2xl overflow-hidden bg-card flex flex-col h-[480px] sm:h-[540px] lg:h-[calc(100vh-105px)] lg:sticky lg:top-4">
+        <div className={cn("relative h-[480px] sm:h-[540px] lg:h-auto", !active && "lg:min-h-[460px]")}>
+          <Card className="border border-border/80 shadow-card rounded-2xl overflow-hidden bg-card flex flex-col h-full lg:absolute lg:inset-0">
           <CardHeader className="p-4 pb-3 space-y-3 border-b border-border/60 shrink-0 bg-card">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -912,6 +913,7 @@ function MerchantsPage() {
             </div>
           </CardContent>
         </Card>
+        </div>
 
         {/* =========================================================================
             COLUNA DA DIREITA: DETALHES DO EC SELECIONADO & ABAS
@@ -921,7 +923,7 @@ function MerchantsPage() {
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             key={active.id}
-            className="space-y-5"
+            className="space-y-5 self-start w-full"
           >
             {/* Banner de Perfil do Estabelecimento */}
             <Card className="border border-border/80 shadow-card rounded-2xl bg-card overflow-hidden">
@@ -1537,35 +1539,63 @@ function FeePlanForm({ merchant }: { merchant: Merchant }) {
           </div>
 
           {/* =========================================================================
-              SEÇÃO 3: PARCELAMENTO PERSONALIZADO (GRID DE CHIPS OU CONVITE)
+              SEÇÃO 3: PARCELAMENTO PERSONALIZADO & BOTÃO SALVAR
               ========================================================================= */}
           {installedCount > 0 ? (
             <div className="p-4 rounded-2xl border border-border/80 bg-muted/20 space-y-3">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <Layers className="size-4 text-primary" />
                   <span className="text-xs font-bold text-foreground">
                     Taxas personalizadas por parcela ({installedCount} definidas):
                   </span>
+                  {draft !== null && (
+                    <span className="text-amber-600 dark:text-amber-400 text-[11px] font-medium inline-flex items-center gap-1">
+                      <span className="size-1.5 rounded-full bg-amber-500 animate-pulse" />
+                      Alterações não salvas
+                    </span>
+                  )}
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  {draft !== null && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setDraft(null)}
+                      disabled={save.isPending}
+                      className="h-8 text-xs text-muted-foreground"
+                    >
+                      <RotateCcw className="size-3.5 mr-1" /> Descartar
+                    </Button>
+                  )}
                   <Button
                     type="button"
-                    variant="ghost"
+                    variant="outline"
                     size="sm"
-                    className="h-7 text-xs text-primary hover:text-primary hover:bg-primary/10 font-medium px-2.5"
+                    className="h-8 gap-1.5 border-primary/30 text-primary hover:bg-primary/5 font-medium text-xs"
                     onClick={() => setIsInstallmentsModalOpen(true)}
                   >
-                    <Edit2 className="size-3 mr-1" /> Gerenciar Parcelas
+                    <Plus className="size-3.5" /> Configurar parcelas (1x a 18x)
                   </Button>
                   <Button
                     type="button"
                     variant="ghost"
                     size="sm"
-                    className="h-7 text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10 font-medium px-2"
+                    className="h-8 text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10 font-medium px-2"
                     onClick={() => setInstallmentRates({})}
                   >
                     Limpar
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={() => save.mutate()}
+                    disabled={save.isPending}
+                    className="h-8 gap-1.5 shadow-xs px-4 text-xs font-semibold"
+                  >
+                    <Save className="size-3.5" />
+                    <span>{save.isPending ? "Salvando..." : "Salvar"}</span>
                   </Button>
                 </div>
               </div>
@@ -1595,60 +1625,55 @@ function FeePlanForm({ merchant }: { merchant: Merchant }) {
           ) : (
             <div className="p-4 rounded-2xl border border-dashed border-border/90 bg-muted/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="space-y-0.5">
-                <p className="text-xs font-bold text-foreground">Deseja taxas diferentes por número de parcelas?</p>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <p className="text-xs font-bold text-foreground">Deseja taxas diferentes por número de parcelas?</p>
+                  {draft !== null && (
+                    <span className="text-amber-600 dark:text-amber-400 text-[11px] font-medium inline-flex items-center gap-1">
+                      <span className="size-1.5 rounded-full bg-amber-500 animate-pulse" />
+                      Alterações não salvas
+                    </span>
+                  )}
+                </div>
                 <p className="text-xs text-muted-foreground">
                   Atualmente todas as parcelas utilizam a taxa base de Crédito Parcelado ({values.credit_installment_rate || "0"}%).
                 </p>
               </div>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="gap-1.5 border-primary/30 text-primary hover:bg-primary/5 shrink-0 self-start sm:self-auto font-medium text-xs"
-                onClick={() => setIsInstallmentsModalOpen(true)}
-              >
-                <Plus className="size-3.5" />
-                Configurar parcelas (1x a 18x)
-              </Button>
-            </div>
-          )}
-
-          {/* =========================================================================
-              RODAPÉ DE AÇÕES DO PLANO
-              ========================================================================= */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-border/60">
-            <div className="text-xs text-muted-foreground">
-              {draft !== null && (
-                <span className="text-amber-600 dark:text-amber-400 font-medium inline-flex items-center gap-1">
-                  <span className="size-1.5 rounded-full bg-amber-500 animate-pulse" />
-                  Alterações não salvas
-                </span>
-              )}
-            </div>
-
-            <div className="flex items-center gap-2 self-end sm:self-auto">
-              {draft !== null && (
+              <div className="flex flex-wrap items-center gap-2 shrink-0 self-start sm:self-auto">
+                {draft !== null && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setDraft(null)}
+                    disabled={save.isPending}
+                    className="h-8 text-xs text-muted-foreground"
+                  >
+                    <RotateCcw className="size-3.5 mr-1" /> Descartar
+                  </Button>
+                )}
                 <Button
                   type="button"
-                  variant="ghost"
+                  variant="outline"
                   size="sm"
-                  onClick={() => setDraft(null)}
-                  disabled={save.isPending}
-                  className="text-xs text-muted-foreground"
+                  className="gap-1.5 border-primary/30 text-primary hover:bg-primary/5 font-medium text-xs"
+                  onClick={() => setIsInstallmentsModalOpen(true)}
                 >
-                  <RotateCcw className="size-3.5 mr-1" /> Descartar
+                  <Plus className="size-3.5" />
+                  Configurar parcelas (1x a 18x)
                 </Button>
-              )}
-              <Button
-                onClick={() => save.mutate()}
-                disabled={save.isPending}
-                className="gap-2 shadow-xs px-5"
-              >
-                <Save className="size-4" />
-                <span>{save.isPending ? "Salvando plano..." : "Salvar Plano Financeiro"}</span>
-              </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={() => save.mutate()}
+                  disabled={save.isPending}
+                  className="gap-1.5 shadow-xs px-4 text-xs font-semibold"
+                >
+                  <Save className="size-3.5" />
+                  <span>{save.isPending ? "Salvando..." : "Salvar"}</span>
+                </Button>
+              </div>
             </div>
-          </div>
+          )}
         </CardContent>
       </Card>
 
