@@ -643,13 +643,13 @@ export function generateTermoAceiteWhatsAppMessage(
   memberName: string,
   plate: string,
   model: string,
-  companyName: string = "Planmais Proteção Veicular"
+  companyName: string = "PLANMAIS PROTEÇÃO"
 ): string {
   return (
-    `📋 *TERMO DE ADESÃO & VISTORIA - ${companyName.toUpperCase()}*\n\n` +
-    `Olá, *${memberName}*! Parabéns pela adesão da proteção do seu veículo *${model}* (Placa: *${plate}*).\n\n` +
-    `O seu Termo de Filiação e Regulamento Interno foi gerado com sucesso.\n\n` +
-    `Por favor, revise os dados e responda a esta mensagem com *"CONCORDO"* para validação do seu cadastro e ativação imediata da proteção veicular.\n\n` +
-    `Qualquer dúvida estamos à disposição!`
+    `📋 *PROPOSTA DE FILIAÇÃO & CONTRATO DE ADESÃO – ${companyName.toUpperCase()}*\n\n` +
+    `Olá, *${memberName}*! Sua proposta de filiação ao Programa de Auxílio Mútuo (PAM) / Proteção Patrimonial Mutualista (PPM) para o veículo *${model}* (Placa: *${plate}*) foi emitida.\n\n` +
+    `*DECLARAÇÃO DE ADESÃO:*\n` +
+    `Solicito através desta proposta minha filiação à PLANMAIS PROTEÇÃO, declarando estar ciente dos meus direitos e deveres, bem como sujeito aos termos do regulamento do associado – Programa de Auxílio Mútuo (PAM), estando ciente de que o veículo cadastrado estará protegido a partir das 0:00hs do dia posterior à realização da inspeção/vistoria e pagamento de adesão.\n\n` +
+    `Por favor, revise os dados e responda a esta mensagem com *"CONCORDO"* para confirmar a assinatura digital do seu Contrato de Adesão.`
   );
 }

@@ -411,7 +411,9 @@ function TermosPage() {
                     <SelectItem value="PPM" className="font-bold text-primary">
                       Regulamento PPM (Proteção Patrimonial Mutualista) — PLANMAIS
                     </SelectItem>
-                    <SelectItem value="ADESAO">Termo de Adesão & Filiação</SelectItem>
+                    <SelectItem value="ADESAO" className="font-semibold">
+                      Contrato de Adesão & Proposta de Filiação — PLANMAIS PROTEÇÃO
+                    </SelectItem>
                     <SelectItem value="VISTORIA">Termo de Vistoria Prévia</SelectItem>
                     <SelectItem value="ACORDO">Autorização de Reparo de Sinistro</SelectItem>
                     <SelectItem value="CANCELAMENTO">Termo de Desfiliação / Cancelamento</SelectItem>
@@ -552,20 +554,22 @@ function TermosPage() {
           <div className="text-center py-2 space-y-1">
             <h2 className="text-base sm:text-lg font-black uppercase text-slate-900 tracking-wide underline decoration-slate-400 underline-offset-4">
               {termoType === "PPM" && "REGULAMENTO DO PROGRAMA DE PROTEÇÃO PATRIMONIAL MUTUALISTA – PPM"}
-              {termoType === "ADESAO" && "TERMO DE ADESÃO, FILIAÇÃO E PROTEÇÃO VEICULAR (PPM)"}
+              {termoType === "ADESAO" && "PROPOSTA DE FILIAÇÃO & CONTRATO DE ADESÃO – PLANMAIS PROTEÇÃO"}
               {termoType === "VISTORIA" && "LAUDO DE VISTORIA PRÉVIA & CONDIÇÕES DO VEÍCULO"}
               {termoType === "ACORDO" && "TERMO DE AUTORIZAÇÃO DE REPARO E LIQUIDAÇÃO DE SINISTRO"}
               {termoType === "CANCELAMENTO" && "TERMO DE DESFILIAÇÃO E CANCELAMENTO DE BENEFÍCIOS"}
             </h2>
-            {termoType === "PPM" && (
-              <p className="text-xs font-black uppercase tracking-widest text-slate-700">PLANMAIS</p>
+            {(termoType === "PPM" || termoType === "ADESAO") && (
+              <p className="text-xs font-black uppercase tracking-widest text-slate-700">
+                PLANMAIS PROTEÇÃO — PROGRAMA DE AUXÍLIO MÚTUO (PAM) & PROTEÇÃO PATRIMONIAL MUTUALISTA (PPM)
+              </p>
             )}
           </div>
 
           {/* Quadro 1: Dados do Associado */}
           <div className="rounded-xl border border-slate-300 overflow-hidden text-xs">
             <div className="bg-slate-100 px-4 py-2 font-bold text-slate-900 uppercase tracking-wider text-[11px] border-b border-slate-300">
-              1. Qualificação do Participante
+              1. Qualificação do(a) Associado(a) / Participante
             </div>
             <div className="p-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
@@ -584,8 +588,9 @@ function TermosPage() {
                 <span className="text-slate-500 block text-[10px] uppercase font-semibold">CNH & Validade:</span>
                 <span className="font-mono font-semibold text-slate-900">
                   {memberExtra.cnhNumber ? `Nº ${memberExtra.cnhNumber}` : "Conforme prontuário"}
+                  {memberExtra.cnhCategory ? ` (Cat. ${memberExtra.cnhCategory})` : ""}
                   {memberExtra.cnhExpiryDate
-                    ? ` (Val: ${memberExtra.cnhExpiryDate.split("-").reverse().join("/")})`
+                    ? ` • Val: ${memberExtra.cnhExpiryDate.split("-").reverse().join("/")}`
                     : ""}
                 </span>
               </div>
@@ -607,6 +612,23 @@ function TermosPage() {
                     : todayStr}
                 </span>
               </div>
+              {(memberExtra.address || memberExtra.city) && (
+                <div className="sm:col-span-3 pt-1 border-t border-slate-200">
+                  <span className="text-slate-500 block text-[10px] uppercase font-semibold">Endereço Completo:</span>
+                  <span className="text-slate-900 font-medium">
+                    {[
+                      memberExtra.address,
+                      memberExtra.number ? `nº ${memberExtra.number}` : "",
+                      memberExtra.complement,
+                      memberExtra.neighborhood,
+                      memberExtra.city ? `${memberExtra.city}/${memberExtra.state || ""}` : "",
+                      memberExtra.cep ? `CEP: ${memberExtra.cep}` : "",
+                    ]
+                      .filter(Boolean)
+                      .join(", ")}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
 
@@ -641,8 +663,12 @@ function TermosPage() {
                 </span>
               </div>
               <div>
-                <span className="text-slate-500 block text-[10px] uppercase font-semibold">Ano Fab./Modelo:</span>
-                <span className="font-mono text-slate-900">{selectedVehicle?.year || "-"}</span>
+                <span className="text-slate-500 block text-[10px] uppercase font-semibold">Ano / Cor / Combustível:</span>
+                <span className="font-mono text-slate-900">
+                  {selectedVehicle?.year || "-"}
+                  {selectedVehicle?.color ? ` • ${selectedVehicle.color}` : ""}
+                  {vehicleExtra.fuel ? ` • ${vehicleExtra.fuel}` : ""}
+                </span>
               </div>
               <div>
                 <span className="text-slate-500 block text-[10px] uppercase font-semibold">Valor de Referência (FIPE):</span>
@@ -653,7 +679,7 @@ function TermosPage() {
                 </span>
               </div>
               <div>
-                <span className="text-slate-500 block text-[10px] uppercase font-semibold">Contribuição Estimada:</span>
+                <span className="text-slate-500 block text-[10px] uppercase font-semibold">Contribuição Mensal:</span>
                 <span className="font-mono font-bold text-slate-900">
                   {selectedVehicle?.monthly_fee ? BRL(selectedVehicle.monthly_fee) : "R$ 179,90"} (Venc. Dia {memberDueDay})
                 </span>
@@ -666,6 +692,19 @@ function TermosPage() {
                     : "Nenhum implemento"}
                 </span>
               </div>
+              {vehicleExtra.implementos && vehicleExtra.implementos.length > 0 && (
+                <div className="col-span-2 sm:col-span-4 pt-2 border-t border-slate-200 space-y-1">
+                  <span className="text-slate-500 block text-[10px] uppercase font-semibold">
+                    Relação de Implementos Vinculados:
+                  </span>
+                  {vehicleExtra.implementos.map((imp, idx) => (
+                    <div key={imp.id || idx} className="text-[11px] font-mono text-slate-800">
+                      • {imp.brand} {imp.model} ({imp.year || "-"}) — Chassi: {imp.chassi || "-"} — Valor Comercial:{" "}
+                      {BRL(imp.commercialValue || 0)} (+{BRL(imp.monthlyFee || 0)}/mês)
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
@@ -722,28 +761,119 @@ function TermosPage() {
                 </p>
               </div>
             </div>
+          ) : termoType === "ADESAO" ? (
+            <div className="space-y-4 text-justify text-xs text-slate-800 leading-relaxed">
+              {/* PROPOSTA E DECLARAÇÕES INICIAIS */}
+              <div className="space-y-2.5 rounded-xl border border-slate-300 bg-slate-50/70 p-4">
+                <p className="indent-6">
+                  Solicito através desta proposta minha filiação à <strong>PLANMAIS PROTEÇÃO</strong>, declarando estar ciente dos meus direitos e deveres, bem como sujeito aos termos do regulamento do associado – Programa de Auxílio Mútuo (PAM) e das condições gerais de utilização de cada um dos demais benefícios ofertados ao qual tomei conhecimento e estou de acordo.
+                </p>
+                <p>
+                  Declaro para os devidos fins que o veículo acima descrito é de minha propriedade/responsabilidade. Declaro ainda estar ciente que se o referido veículo for produto de venda em leilão ou já tenha sofrido perda total, será avaliado e reembolsado em <strong>70% (setenta por cento)</strong> do valor da <strong>TABELA FIPE</strong> para indenizações de roubo/furto e perda total.
+                </p>
+                <p className="font-bold text-slate-950">
+                  DECLARO ainda estar ciente de que a presente proposta não se constitui em termo definitivo de filiação e que O VEÍCULO ORA CADASTRADO SÓ ESTARÁ PROTEGIDO DE PREJUÍZOS OCASIONADOS EM ACIDENTES DE TRÂNSITO, DEPOIS DE REALIZADA A INSPEÇÃO E PAGAMENTO DE ADESÃO.
+                </p>
+              </div>
+
+              {/* OBJETO DO CONTRATO */}
+              <div className="space-y-1.5">
+                <h3 className="font-black text-slate-950 text-xs uppercase border-b border-slate-300 pb-1">
+                  OBJETO DO CONTRATO
+                </h3>
+                <p>
+                  O presente instrumento visa a aplicação do Programa de Auxílio Mútuo (PAM), que fora criado pela sua Diretoria Executiva com a finalidade de proporcionar aos seus associados a proteção de seus veículos contra: roubo, furto, colisão, capotamento, abalroamento, incêndio, queda, ventos causados pela força da natureza e outros.
+                </p>
+              </div>
+
+              {/* VALOR DA CONTRIBUIÇÃO MENSAL */}
+              <div className="space-y-1.5">
+                <h3 className="font-black text-slate-950 text-xs uppercase border-b border-slate-300 pb-1">
+                  VALOR DA CONTRIBUIÇÃO MENSAL
+                </h3>
+                <p>
+                  O valor da contribuição mensal é aproximado devido ao rateio mensal.
+                </p>
+                <p>
+                  <strong>Parágrafo único</strong> – O valor da mensalidade poderá sofrer variação de até R$ 10,00 (dez reais).
+                </p>
+                <p>
+                  <strong>I.I-</strong> O(a) associado(a) se compromete a partir da assinatura deste presente instrumento, a pagar mensalmente uma contribuição para sua permanência no quadro social, com o objetivo exclusivo de participar do PAM.
+                </p>
+              </div>
+
+              {/* PRAZO */}
+              <div className="space-y-1.5">
+                <h3 className="font-black text-slate-950 text-xs uppercase border-b border-slate-300 pb-1">
+                  PRAZO
+                </h3>
+                <p>
+                  O prazo de vigência deste contrato será por tempo indeterminado.
+                </p>
+                <p className="indent-6">
+                  <strong>Parágrafo único</strong> – A vigência da proteção dos veículos cadastrados inicia-se às 0:00hs do dia posterior à realização da vistoria, desde que a sua filiação seja aceita.
+                </p>
+                <p>
+                  O pedido de retirada do PAM poderá ser realizado em qualquer dia do mês, ficando claro a responsabilidade pelo pagamento das contribuições em aberto até o dia em que for realizado o pedido de desligamento.
+                </p>
+                <p>
+                  <strong>II.I-</strong> A retirada do associado do PAM ocorre a seu pedido e ela pode acontecer a qualquer tempo com as seguintes limitações:
+                </p>
+                <ul className="list-disc pl-5 space-y-1">
+                  <li>
+                    O(a) Associado(a) deverá permanecer pelo período mínimo de <strong>30 (trinta) dias corridos</strong>, contados a partir da aceitação da proposta de filiação.
+                  </li>
+                  <li>
+                    Sua retirada ficará condicionada à quitação de todas as suas obrigações com a <strong>PLANMAIS PROTEÇÃO</strong> relacionadas ao plano, inclusive os valores devidos até o pedido de sua retirada do mesmo.
+                  </li>
+                  <li>
+                    O(a) associado(a) que desejar se desligar do PAM deverá encaminhar um requerimento por escrito à diretoria da associação, devendo o associado estar adimplente com todas as suas obrigações relativas ao PAM. O presente requerimento deverá seguir o modelo disponibilizado pela associação, através do endereço eletrônico (SITE) e/ou aplicativo.
+                  </li>
+                </ul>
+              </div>
+
+              {/* DISPOSIÇÕES GERAIS */}
+              <div className="space-y-2">
+                <h3 className="font-black text-slate-950 text-xs uppercase border-b border-slate-300 pb-1">
+                  DISPOSIÇÕES GERAIS
+                </h3>
+                <p>
+                  Caso não seja efetuado o pagamento da mensalidade em até <strong>5 (cinco) dias</strong> da data do vencimento da mensalidade, o associado perderá, automaticamente, todos os benefícios oferecidos pelo PAM, e após <strong>30 (trinta) dias</strong> de inadimplência, poderá ocorrer a exclusão do corpo social da associação, a critério da Diretoria Executiva.
+                </p>
+                <p>
+                  <strong>Parágrafo único</strong> – A perda dos benefícios do PAM ou a exclusão do corpo social da associação não exime o associado a saldar os débitos anteriores, caso assim permaneça, o nome do mesmo será negativado perante os órgãos de proteção ao crédito.
+                </p>
+                <p>
+                  O não pagamento da mensalidade dentro do prazo tolerado acarretará a imediata inativação do PAM, e a consequente exclusão da Associação, conforme consta no item I, independente de notificação prévia, inclusive na hipótese do veículo cadastrado que já esteja em processo de indenização de evento, seja por furto, roubo, perda total ou parcial.
+                </p>
+                <p>
+                  O(a) associado(a) declara estar ciente e de acordo com o Programa de Auxílio Mútuo e demais benefícios escolhidos com o Estatuto da <strong>PLANMAIS PROTEÇÃO</strong>.
+                </p>
+                <p>
+                  O(a) associado(a) declara estar ciente da variação de preço que poderá ocorrer sobre o valor da mensalidade, quando for aplicado o rateio das despesas, conforme as regras do PAM.
+                </p>
+                <p>
+                  A proteção é do veículo e qualquer condutor habilitado dentro da lei que esteja na direção, o mesmo estará protegido.
+                </p>
+                <p>
+                  Fica determinado que para a abertura de eventos ou qualquer outro tipo de requisição dos serviços prestados, é desnecessário a presença física do associado(a) nas instalações da <strong>PLANMAIS PROTEÇÃO</strong>.
+                </p>
+                <p>
+                  Para que ocorra a abertura de eventos o(a) associado(a) deverá estar em concordância com as leis de trânsito locais, realizar a abertura do boletim de ocorrência com a autoridade policial de forma imediata com o prazo máximo de <strong>36hrs</strong> e também capturar fotos dos veículos, das vias e sinalizações do local.
+                </p>
+                <p>
+                  Fica eleito o foro da <strong>Comarca de Ouro Preto</strong> para dirimir quaisquer dúvidas provenientes da celebração do presente instrumento.
+                </p>
+                <p className="font-semibold text-slate-900 pt-1">
+                  E assim, por se acharem justos e contratados, firmam o presente em 02 (duas) vias de igual teor, que deverá ser assinado de forma digitalizada e/ou impressa, e que o mesmo deverá ser disponibilizado impresso ou por meio digital.
+                </p>
+              </div>
+            </div>
           ) : (
             <div className="space-y-3 text-justify text-xs text-slate-700 leading-relaxed">
               <h3 className="font-bold text-slate-900 text-xs uppercase border-b border-slate-200 pb-1">
                 3. Das Cláusulas e Condições Gerais
               </h3>
-
-              {termoType === "ADESAO" && (
-                <>
-                  <p>
-                    <strong>CLÁUSULA PRIMEIRA – DO OBJETO E ADESÃO AO PPM:</strong> Pelo presente instrumento, o PARTICIPANTE adere voluntariamente ao Programa de Proteção Patrimonial Mutualista – PPM vinculado à PLANMAIS ({associationName}) e ao seu respectivo Regulamento (Art. 1º ao Art. 126º), passando a integrar o grupo mutualista para o veículo e implementos acima identificados.
-                  </p>
-                  <p>
-                    <strong>CLÁUSULA SEGUNDA – DAS CONTRIBUIÇÕES, RATEIO E INADIMPLÊNCIA:</strong> O PARTICIPANTE se compromete a manter em dia todas as contribuições e valores devidos ao PPM, observada a contribuição mensal ordinária destinada ao rateio limitada a R$ 25,00 (vinte e cinco reais) por participante (Art. 90º). O inadimplemento resultará na suspensão da proteção nos termos do Capítulo V do Regulamento PPM, não restabelecendo o simples pagamento após o vencimento a proteção sem o cumprimento dos requisitos do Art. 35º.
-                  </p>
-                  <p>
-                    <strong>CLÁUSULA TERCEIRA – DA COTA DE PARTICIPAÇÃO:</strong> A utilização dos benefícios do PPM estará sujeita ao pagamento da respectiva cota de participação (Capítulo IV): 7,5% (mínimo de R$ 2.700,00) para veículos nacionais; 10% (mínimo de R$ 3.500,00) para veículos importados; e adicional cumulativo de 3% quando utilizado para atividade profissional ou trabalho.
-                  </p>
-                  <p>
-                    <strong>CLÁUSULA QUARTA – DECLARAÇÃO DE CIÊNCIA:</strong> O PARTICIPANTE declara que recebeu, leu e compreendeu o Regulamento de Proteção Patrimonial Mutualista – PPM, estando ciente de que a Proteção Patrimonial Mutualista não corresponde a uma operação de seguro, sendo baseada no sistema mutualista e nas regras de rateio estabelecidas no Regulamento.
-                  </p>
-                </>
-              )}
 
               {termoType === "VISTORIA" && (
                 <>
