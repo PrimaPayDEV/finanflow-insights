@@ -154,7 +154,7 @@ export const upsertMember = createServerFn({ method: "POST" })
         monthly_fee: data.vehicle.monthly_fee ?? 179.90,
         fipe_value: data.vehicle.fipe_value || null,
       };
-      
+
       if (data.vehicle.id) {
         let { error: vError } = await supabaseAdmin.from("vehicles").update(vData).eq("id", data.vehicle.id).eq("company_id", data.companyId);
         if (vError && (vError.message?.includes("monthly_fee") || (vError as any).code === "42703")) {
@@ -194,7 +194,7 @@ export const deleteMember = createServerFn({ method: "POST" })
       .delete()
       .eq("id", data.id)
       .eq("company_id", data.companyId);
-    
+
     if (error) throw new Error(error.message);
     return { ok: true };
   });
@@ -228,14 +228,14 @@ export const getVehicles = createServerFn({ method: "GET" })
   });
 
 export const addVehicle = createServerFn({ method: "POST" })
-  .validator((d: { 
-    memberId?: string | null; 
-    companyId: string; 
-    plate: string; 
-    brand: string; 
-    model: string; 
-    year?: number; 
-    color?: string; 
+  .validator((d: {
+    memberId?: string | null;
+    companyId: string;
+    plate: string;
+    brand: string;
+    model: string;
+    year?: number;
+    color?: string;
     category?: string;
     monthly_fee?: number;
     fipe_value?: number;
@@ -379,18 +379,18 @@ export const generateInvoice = createServerFn({ method: "POST" })
     const headers = { "Content-Type": "application/json", "User-Agent": "PrimaHub", access_token: apiKey };
 
     if (!customerId) {
-        const created = await fetch(`${base}/customers`, {
-          method: "POST",
-          headers,
-          body: JSON.stringify({ name: member.name, cpfCnpj: member.document, email: member.email || undefined, mobilePhone: member.phone || undefined }),
-        });
-        const createdJson = (await created.json()) as { id?: string; errors?: any[] };
-        if (createdJson.id) {
-          customerId = createdJson.id;
-          await supabaseAdmin.from("members").update({ asaas_customer_id: customerId }).eq("id", data.memberId);
-        } else {
-          throw new Error("Falha ao criar cliente no Asaas: " + JSON.stringify(createdJson.errors));
-        }
+      const created = await fetch(`${base}/customers`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ name: member.name, cpfCnpj: member.document, email: member.email || undefined, mobilePhone: member.phone || undefined }),
+      });
+      const createdJson = (await created.json()) as { id?: string; errors?: any[] };
+      if (createdJson.id) {
+        customerId = createdJson.id;
+        await supabaseAdmin.from("members").update({ asaas_customer_id: customerId }).eq("id", data.memberId);
+      } else {
+        throw new Error("Falha ao criar cliente no Asaas: " + JSON.stringify(createdJson.errors));
+      }
     }
 
     // Identificar ambiente Planmais / Proteção Veicular
@@ -416,7 +416,7 @@ export const generateInvoice = createServerFn({ method: "POST" })
       const targetDate = new Date(targetYear, targetMonth, configuredDueDay);
       dueDate = format(targetDate, "yyyy-MM-dd");
     }
-    
+
     let partner = Array.isArray(member.partners) ? member.partners[0] : (member.partners as any);
     if (!partner && member.partner_id) {
       const { data: pDb } = await supabaseAdmin
@@ -426,7 +426,7 @@ export const generateInvoice = createServerFn({ method: "POST" })
         .maybeSingle();
       partner = pDb;
     }
-    
+
     const baseDescription = data.description?.trim() || "Cobrança de Proteção Veicular";
     const description = isPlanmais
       ? `${baseDescription} — NÃO RECEBER APÓS O VENCIMENTO`.slice(0, 500)
@@ -440,15 +440,15 @@ export const generateInvoice = createServerFn({ method: "POST" })
       description,
       ...(isPlanmais
         ? {
-            // No ambiente Planmais, os boletos não podem ser pagos após o vencimento
-            daysAfterDueDateToRegistrationCancellation: 0,
-            fine: { value: 0 },
-            interest: { value: 0 },
-          }
+          // No ambiente Planmais, os boletos não podem ser pagos após o vencimento
+          daysAfterDueDateToRegistrationCancellation: 0,
+          fine: { value: 0 },
+          interest: { value: 0 },
+        }
         : {
-            ...(Number(settings?.fine_percent ?? 0) > 0 ? { fine: { value: Number(settings?.fine_percent ?? 0), type: "PERCENTAGE" } } : {}),
-            ...(Number(settings?.interest_percent ?? 0) > 0 ? { interest: { value: Number(settings?.interest_percent ?? 0) } } : {}),
-          }),
+          ...(Number(settings?.fine_percent ?? 0) > 0 ? { fine: { value: Number(settings?.fine_percent ?? 0), type: "PERCENTAGE" } } : {}),
+          ...(Number(settings?.interest_percent ?? 0) > 0 ? { interest: { value: Number(settings?.interest_percent ?? 0) } } : {}),
+        }),
     };
 
     const splitPercent = partner?.split_percent ? Number(partner.split_percent) : 0;
