@@ -1657,18 +1657,6 @@ function FeePlanForm({ merchant }: { merchant: Merchant }) {
                     )}
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
-                    {draft !== null && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setDraft(null)}
-                        disabled={save.isPending}
-                        className="h-8 text-xs text-muted-foreground hover:text-foreground"
-                      >
-                        <RotateCcw className="size-3.5 mr-1" /> Descartar
-                      </Button>
-                    )}
                     <Button
                       type="button"
                       variant="outline"
@@ -1686,16 +1674,6 @@ function FeePlanForm({ merchant }: { merchant: Merchant }) {
                       onClick={() => setInstallmentRates({})}
                     >
                       Limpar
-                    </Button>
-                    <Button
-                      type="button"
-                      size="sm"
-                      onClick={() => save.mutate()}
-                      disabled={save.isPending}
-                      className="h-8 gap-1.5 shadow-xs px-4 text-xs font-semibold"
-                    >
-                      <Save className="size-3.5" />
-                      <span>{save.isPending ? "Salvando..." : "Salvar"}</span>
                     </Button>
                   </div>
                 </div>
@@ -1735,18 +1713,6 @@ function FeePlanForm({ merchant }: { merchant: Merchant }) {
                   </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2 shrink-0 self-start sm:self-auto">
-                  {draft !== null && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setDraft(null)}
-                      disabled={save.isPending}
-                      className="h-8 text-xs text-muted-foreground hover:text-foreground"
-                    >
-                      <RotateCcw className="size-3.5 mr-1" /> Descartar
-                    </Button>
-                  )}
                   <Button
                     type="button"
                     variant="outline"
@@ -1756,16 +1722,6 @@ function FeePlanForm({ merchant }: { merchant: Merchant }) {
                   >
                     <Plus className="size-3.5" />
                     Configurar parcelas (1x a 18x)
-                  </Button>
-                  <Button
-                    type="button"
-                    size="sm"
-                    onClick={() => save.mutate()}
-                    disabled={save.isPending}
-                    className="gap-1.5 shadow-xs px-4 text-xs font-semibold"
-                  >
-                    <Save className="size-3.5" />
-                    <span>{save.isPending ? "Salvando..." : "Salvar"}</span>
                   </Button>
                 </div>
               </div>
@@ -1999,6 +1955,59 @@ function FeePlanForm({ merchant }: { merchant: Merchant }) {
                 </div>
               </div>
             )}
+          </div>
+
+          {/* =========================================================================
+              RODAPÉ UNIFICADO DE AÇÕES (VISA/MASTER E DEMAIS BANDEIRAS)
+              ========================================================================= */}
+          <div className="pt-4 border-t border-border/70 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-muted/20 -mx-5 -mb-5 sm:-mx-6 sm:-mb-6 p-4 sm:p-5 rounded-b-2xl">
+            <div className="space-y-0.5">
+              <div className="flex items-center gap-2">
+                {draft !== null ? (
+                  <>
+                    <span className="size-2 rounded-full bg-amber-500 animate-pulse" />
+                    <span className="text-xs font-semibold text-amber-600 dark:text-amber-400">
+                      Alterações não salvas
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="size-3.5 text-emerald-600 dark:text-emerald-400" />
+                    <span className="text-xs font-medium text-muted-foreground">
+                      Todas as taxas estão atualizadas
+                    </span>
+                  </>
+                )}
+              </div>
+              <p className="text-[11px] text-muted-foreground">
+                O salvamento aplica conjuntamente as taxas de <strong>Visa e Master</strong>, <strong>Demais Bandeiras</strong> e a <strong>Taxa Operacional</strong>.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
+              {draft !== null && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setDraft(null)}
+                  disabled={save.isPending}
+                  className="h-9 text-xs text-muted-foreground hover:text-foreground"
+                >
+                  <RotateCcw className="size-3.5 mr-1" /> Descartar
+                </Button>
+              )}
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => save.mutate()}
+                disabled={save.isPending}
+                className="h-9 gap-2 shadow-xs px-5 text-xs font-semibold"
+              >
+                <Save className="size-3.5" />
+                <span>{save.isPending ? "Salvando taxas..." : "Salvar"}</span>
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
