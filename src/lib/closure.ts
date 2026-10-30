@@ -281,7 +281,7 @@ export function resolveTransactionRateTable(
 }
 
 /**
- * Identifica se a bandeira do cartão corresponde às bandeiras padrão Visa ou Master (incluindo Maestro).
+ * Identifica se a bandeira do cartão corresponde às bandeiras padrão Visa ou Master (incluindo Maestro e Pix genérico).
  * Se não informada, assume Visa/Master por padrão.
  */
 export function isVisaOrMaster(brand?: string | null): boolean {
@@ -291,11 +291,13 @@ export function isVisaOrMaster(brand?: string | null): boolean {
     b.includes("visa") ||
     b.includes("master") ||
     b.includes("maestro") ||
-    b === "vm"
+    b === "vm" ||
+    b === "pix"
   );
 }
 
 export type OtherBrandRates = {
+  pix_rate?: number;
   debit_rate?: number;
   credit_vista_rate?: number;
   credit_installment_rate?: number;
@@ -316,10 +318,16 @@ export function getOtherBrandRates(plan?: FeePlan | null): OtherBrandRates | nul
       ? (inst.other_rates as OtherBrandRates | undefined)
       : undefined;
 
+  const rawPix = (plan as any).other_pix_rate ?? jsonOther?.pix_rate;
   const rawDebit = (plan as any).other_debit_rate ?? jsonOther?.debit_rate;
   const rawVista = (plan as any).other_credit_vista_rate ?? jsonOther?.credit_vista_rate;
   const rawInstRate = (plan as any).other_credit_installment_rate ?? jsonOther?.credit_installment_rate;
   const rawInsts = (plan as any).other_installment_rates ?? jsonOther?.installment_rates;
+
+  const pix =
+    rawPix !== undefined && rawPix !== null && rawPix !== "" && Number(rawPix) > 0
+      ? Number(rawPix)
+      : undefined;
 
   const debit =
     rawDebit !== undefined && rawDebit !== null && rawDebit !== "" && Number(rawDebit) > 0
@@ -353,11 +361,18 @@ export function getOtherBrandRates(plan?: FeePlan | null): OtherBrandRates | nul
   }
 
   // Se nenhum campo da Tabela 2 estiver preenchido com valor positivo, considera vazia ou inexistente
-  if (debit === undefined && credit_vista === undefined && credit_installment === undefined && !installment_rates) {
+  if (
+    pix === undefined &&
+    debit === undefined &&
+    credit_vista === undefined &&
+    credit_installment === undefined &&
+    !installment_rates
+  ) {
     return null;
   }
 
   return {
+    pix_rate: pix,
     debit_rate: debit,
     credit_vista_rate: credit_vista,
     credit_installment_rate: credit_installment,
@@ -368,12 +383,23 @@ export function getOtherBrandRates(plan?: FeePlan | null): OtherBrandRates | nul
 export function getModalityRate(t: Transaction, plan?: FeePlan, rateTableKey?: string): number {
   const effectiveKey = resolveTransactionRateTable(t, rateTableKey);
   const table = getReferenceTable(effectiveKey);
-  if (t.modality === 'pix') return (plan && plan.pix_rate > 0) ? plan.pix_rate : table.pix;
   if (t.modality === 'cash') return plan ? plan.cash_rate : 0;
 
   const installments = t.installments || 1;
   const isVM = isVisaOrMaster(t.brand);
   const otherRates = !isVM ? getOtherBrandRates(plan) : null;
+
+  // PIX
+  if (t.modality === 'pix') {
+    // 1. Se bandeira diferente de Visa/Master e Tabela 2 tiver taxa Pix configurada
+    if (!isVM && otherRates?.pix_rate !== undefined && otherRates.pix_rate > 0) {
+      return otherRates.pix_rate;
+    }
+    // 2. Se for Visa/Master, OU se for outra bandeira com Tabela 2 vazia/inexistente (fallback retrocompatível)
+    if (plan && plan.pix_rate > 0) return plan.pix_rate;
+    // 3. Fallback tabela referencial CPAG
+    return table.pix;
+  }
 
   // DÉBITO
   if (t.modality === 'debit') {

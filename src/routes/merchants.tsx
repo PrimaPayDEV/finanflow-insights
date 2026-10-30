@@ -1197,12 +1197,13 @@ function MerchantsPage() {
    ========================================================================= */
 const planFields = [
   { key: "fixed_rate_percent", label: "Taxa operacional variável (%)" },
-  { key: "pix_rate", label: "Pix (%)" },
   // Tabela 1: Visa e Master
+  { key: "pix_rate", label: "Pix Visa/Master (%)" },
   { key: "debit_rate", label: "Débito Visa/Master (%)" },
   { key: "credit_vista_rate", label: "Crédito à vista Visa/Master (%)" },
   { key: "credit_installment_rate", label: "Crédito parcelado Visa/Master (%)" },
   // Tabela 2: Outras Bandeiras
+  { key: "other_pix_rate", label: "Pix Outras Bandeiras (%)" },
   { key: "other_debit_rate", label: "Débito Outras Bandeiras (%)" },
   { key: "other_credit_vista_rate", label: "Crédito à vista Outras Bandeiras (%)" },
   { key: "other_credit_installment_rate", label: "Crédito parcelado Outras Bandeiras (%)" },
@@ -1298,6 +1299,12 @@ function FeePlanForm({ merchant }: { merchant: Merchant }) {
     debit_rate: String(plan?.debit_rate ?? 0),
     credit_vista_rate: String(plan?.credit_vista_rate ?? 0),
     credit_installment_rate: String(plan?.credit_installment_rate ?? 0),
+    other_pix_rate: String(
+      (plan as any)?.other_pix_rate ??
+        (otherData.pix_rate !== undefined && otherData.pix_rate !== null && otherData.pix_rate !== 0
+          ? otherData.pix_rate
+          : "")
+    ),
     other_debit_rate: String(
       (plan as any)?.other_debit_rate ??
         (otherData.debit_rate !== undefined && otherData.debit_rate !== null && otherData.debit_rate !== 0
@@ -1389,6 +1396,7 @@ function FeePlanForm({ merchant }: { merchant: Merchant }) {
 
       const currentTargetRevenue = (plan as any)?.installment_rates?.target_revenue;
       const otherRatesPayload = {
+        pix_rate: values.other_pix_rate !== "" ? Number(values.other_pix_rate) : 0,
         debit_rate: values.other_debit_rate !== "" ? Number(values.other_debit_rate) : 0,
         credit_vista_rate: values.other_credit_vista_rate !== "" ? Number(values.other_credit_vista_rate) : 0,
         credit_installment_rate: values.other_credit_installment_rate !== "" ? Number(values.other_credit_installment_rate) : 0,
@@ -1456,26 +1464,26 @@ function FeePlanForm({ merchant }: { merchant: Merchant }) {
 
         <CardContent className="p-5 sm:p-6 space-y-6">
           {/* =========================================================================
-              SEÇÃO 1: TAXA OPERACIONAL E PIX (PARÂMETROS GERAIS)
+              SEÇÃO 1: TAXA OPERACIONAL VARIÁVEL DA PLATAFORMA (DESTAQUE)
               ========================================================================= */}
-          <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
-            {/* Taxa Operacional Variável */}
-            <div className="p-4 rounded-2xl border border-primary/20 bg-gradient-to-r from-primary/5 via-primary/2 to-transparent flex items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <div className="size-10 rounded-xl bg-primary/15 text-primary flex items-center justify-center shrink-0">
-                  <Percent className="size-5" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-1.5">
-                    <h4 className="text-sm font-bold text-foreground">Taxa Operacional Variável</h4>
-                    <Badge variant="outline" className="text-[10px] font-semibold text-primary border-primary/30">
-                      Obrigatório
-                    </Badge>
-                  </div>
-                  <p className="text-[11px] text-muted-foreground">Margem fixa da plataforma sobre as vendas</p>
-                </div>
+          <div className="p-4 sm:p-5 rounded-2xl border border-primary/20 bg-gradient-to-r from-primary/5 via-primary/2 to-transparent flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex items-start gap-3.5 max-w-xl">
+              <div className="size-10 rounded-xl bg-primary/15 text-primary flex items-center justify-center shrink-0">
+                <Percent className="size-5" />
               </div>
-              <div className="w-28 shrink-0 relative flex items-center">
+              <div className="space-y-0.5">
+                <div className="flex items-center gap-2">
+                  <h4 className="text-sm font-bold text-foreground">Taxa Operacional Variável</h4>
+                  <Badge variant="outline" className="text-[10px] font-semibold text-primary border-primary/30">
+                    Obrigatório
+                  </Badge>
+                </div>
+                <p className="text-xs text-muted-foreground">Margem fixa da plataforma aplicada sobre o faturamento do EC</p>
+              </div>
+            </div>
+
+            <div className="w-full md:w-48 shrink-0">
+              <div className="relative flex items-center">
                 <Input
                   id="fixed_rate_percent"
                   type="number"
@@ -1484,40 +1492,11 @@ function FeePlanForm({ merchant }: { merchant: Merchant }) {
                   placeholder="0,00"
                   value={values.fixed_rate_percent}
                   onChange={(e) => setDraft({ ...values, fixed_rate_percent: e.target.value })}
-                  className="h-10 pr-7 font-mono font-bold text-sm bg-background text-right"
+                  className="h-11 pr-8 font-mono font-bold text-base bg-background shadow-2xs text-right"
                 />
-                <span className="absolute right-2.5 text-xs font-bold text-muted-foreground pointer-events-none">%</span>
-              </div>
-            </div>
-
-            {/* Taxa Pix */}
-            <div className="p-4 rounded-2xl border border-emerald-500/25 bg-emerald-500/5 flex items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <div className="size-10 rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
-                  <Sparkles className="size-5" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-1.5">
-                    <h4 className="text-sm font-bold text-foreground">Taxa Pix</h4>
-                    <Badge variant="outline" className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 border-emerald-500/30">
-                      Instantâneo
-                    </Badge>
-                  </div>
-                  <p className="text-[11px] text-muted-foreground">Cobrado nas transações via Pix (Padrão: 1,39% ou 1,29%)</p>
-                </div>
-              </div>
-              <div className="w-28 shrink-0 relative flex items-center">
-                <Input
-                  id="pix_rate"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  placeholder="0,00"
-                  value={values.pix_rate}
-                  onChange={(e) => setDraft({ ...values, pix_rate: e.target.value })}
-                  className="h-10 pr-7 font-mono font-bold text-sm bg-background text-right"
-                />
-                <span className="absolute right-2.5 text-xs font-bold text-muted-foreground pointer-events-none">%</span>
+                <span className="absolute right-3 text-sm font-bold text-muted-foreground pointer-events-none">
+                  %
+                </span>
               </div>
             </div>
           </div>
@@ -1538,7 +1517,7 @@ function FeePlanForm({ merchant }: { merchant: Merchant }) {
                   </Badge>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Taxas negociadas aplicadas exclusivamente a vendas com cartões Visa, Mastercard e Maestro.
+                  Taxas negociadas aplicadas a vendas com cartões Visa, Mastercard e Maestro (e Pix padrão).
                 </p>
               </div>
               {installedCount > 0 && (
@@ -1552,8 +1531,34 @@ function FeePlanForm({ merchant }: { merchant: Merchant }) {
               )}
             </div>
 
-            <div className="grid gap-3.5 grid-cols-1 sm:grid-cols-3">
-              {/* Débito */}
+            <div className="grid gap-3.5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+              {/* PIX (Visa/Master) */}
+              <div className="p-3.5 rounded-xl border border-border/80 bg-background/80 space-y-2 hover:border-emerald-500/40 transition-colors">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5">
+                    <Sparkles className="size-3.5 text-emerald-500" />
+                    <Label htmlFor="pix_rate" className="text-xs font-bold text-foreground cursor-pointer">
+                      Pix (Visa/Master)
+                    </Label>
+                  </div>
+                  <span className="text-[10px] font-medium text-muted-foreground">Instantâneo</span>
+                </div>
+                <div className="relative">
+                  <Input
+                    id="pix_rate"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="0,00"
+                    value={values.pix_rate}
+                    onChange={(e) => setDraft({ ...values, pix_rate: e.target.value })}
+                    className="h-10 pr-7 font-mono font-semibold text-sm bg-background"
+                  />
+                  <span className="absolute right-2.5 top-2.5 text-xs font-bold text-muted-foreground">%</span>
+                </div>
+              </div>
+
+              {/* DÉBITO */}
               <div className="p-3.5 rounded-xl border border-border/80 bg-background/80 space-y-2 hover:border-blue-500/40 transition-colors">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="debit_rate" className="text-xs font-bold text-foreground cursor-pointer">
@@ -1576,7 +1581,7 @@ function FeePlanForm({ merchant }: { merchant: Merchant }) {
                 </div>
               </div>
 
-              {/* Crédito à vista */}
+              {/* CRÉDITO À VISTA */}
               <div className="p-3.5 rounded-xl border border-border/80 bg-background/80 space-y-2 hover:border-blue-500/40 transition-colors">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="credit_vista_rate" className="text-xs font-bold text-foreground cursor-pointer">
@@ -1599,7 +1604,7 @@ function FeePlanForm({ merchant }: { merchant: Merchant }) {
                 </div>
               </div>
 
-              {/* Crédito parcelado */}
+              {/* CRÉDITO PARCELADO */}
               <div className="p-3.5 rounded-xl border border-border/80 bg-background/80 space-y-2 hover:border-blue-500/40 transition-colors">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="credit_installment_rate" className="text-xs font-bold text-foreground cursor-pointer">
@@ -1797,8 +1802,34 @@ function FeePlanForm({ merchant }: { merchant: Merchant }) {
               )}
             </div>
 
-            <div className="grid gap-3.5 grid-cols-1 sm:grid-cols-3">
-              {/* Débito Outras Bandeiras */}
+            <div className="grid gap-3.5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+              {/* PIX Outras Bandeiras */}
+              <div className="p-3.5 rounded-xl border border-border/80 bg-background/80 space-y-2 hover:border-amber-500/40 transition-colors">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5">
+                    <Sparkles className="size-3.5 text-amber-500" />
+                    <Label htmlFor="other_pix_rate" className="text-xs font-bold text-foreground cursor-pointer">
+                      Pix (Outras Bandeiras)
+                    </Label>
+                  </div>
+                  <span className="text-[10px] font-medium text-muted-foreground">Instantâneo</span>
+                </div>
+                <div className="relative">
+                  <Input
+                    id="other_pix_rate"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="0,00"
+                    value={values.other_pix_rate}
+                    onChange={(e) => setDraft({ ...values, other_pix_rate: e.target.value })}
+                    className="h-10 pr-7 font-mono font-semibold text-sm bg-background"
+                  />
+                  <span className="absolute right-2.5 top-2.5 text-xs font-bold text-muted-foreground">%</span>
+                </div>
+              </div>
+
+              {/* DÉBITO Outras Bandeiras */}
               <div className="p-3.5 rounded-xl border border-border/80 bg-background/80 space-y-2 hover:border-amber-500/40 transition-colors">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="other_debit_rate" className="text-xs font-bold text-foreground cursor-pointer">
@@ -1821,7 +1852,7 @@ function FeePlanForm({ merchant }: { merchant: Merchant }) {
                 </div>
               </div>
 
-              {/* Crédito à vista Outras Bandeiras */}
+              {/* CRÉDITO À VISTA Outras Bandeiras */}
               <div className="p-3.5 rounded-xl border border-border/80 bg-background/80 space-y-2 hover:border-amber-500/40 transition-colors">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="other_credit_vista_rate" className="text-xs font-bold text-foreground cursor-pointer">
@@ -1844,7 +1875,7 @@ function FeePlanForm({ merchant }: { merchant: Merchant }) {
                 </div>
               </div>
 
-              {/* Crédito parcelado Outras Bandeiras */}
+              {/* CRÉDITO PARCELADO Outras Bandeiras */}
               <div className="p-3.5 rounded-xl border border-border/80 bg-background/80 space-y-2 hover:border-amber-500/40 transition-colors">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="other_credit_installment_rate" className="text-xs font-bold text-foreground cursor-pointer">

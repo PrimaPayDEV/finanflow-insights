@@ -748,6 +748,7 @@ function RouteComponent() {
                       const formData = new FormData(e.currentTarget);
                       const otherRatesData = (plan as any)?.installment_rates?.other_rates || {};
                       const otherRates = {
+                        pix_rate: formData.get("other_pix_rate") ? Number(formData.get("other_pix_rate")) : 0,
                         debit_rate: formData.get("other_debit_rate") ? Number(formData.get("other_debit_rate")) : 0,
                         credit_vista_rate: formData.get("other_credit_vista_rate") ? Number(formData.get("other_credit_vista_rate")) : 0,
                         credit_installment_rate: formData.get("other_credit_installment_rate") ? Number(formData.get("other_credit_installment_rate")) : 0,
@@ -780,16 +781,6 @@ function RouteComponent() {
                         className="bg-background font-mono"
                       />
                     </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-xs font-semibold">Taxa Pix (%)</Label>
-                      <Input
-                        name="pix_rate"
-                        type="number"
-                        step="0.01"
-                        defaultValue={plan.pix_rate}
-                        className="bg-background font-mono"
-                      />
-                    </div>
 
                     {/* Tabela 1: Visa e Master */}
                     <div className="p-3 rounded-xl border border-blue-500/20 bg-blue-500/5 space-y-2.5">
@@ -799,7 +790,17 @@ function RouteComponent() {
                         </Label>
                         <span className="text-[10px] text-muted-foreground font-medium">Bandeiras Padrão</span>
                       </div>
-                      <div className="grid grid-cols-3 gap-2">
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                        <div className="space-y-1">
+                          <Label className="text-[11px] font-medium">Pix (%)</Label>
+                          <Input
+                            name="pix_rate"
+                            type="number"
+                            step="0.01"
+                            defaultValue={plan.pix_rate}
+                            className="bg-background font-mono text-xs h-8"
+                          />
+                        </div>
                         <div className="space-y-1">
                           <Label className="text-[11px] font-medium">Débito (%)</Label>
                           <Input
@@ -844,7 +845,18 @@ function RouteComponent() {
                             </Label>
                             <span className="text-[10px] text-muted-foreground font-medium">Elo, Amex, Hiper, etc.</span>
                           </div>
-                          <div className="grid grid-cols-3 gap-2">
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                            <div className="space-y-1">
+                              <Label className="text-[11px] font-medium">Pix (%)</Label>
+                              <Input
+                                name="other_pix_rate"
+                                type="number"
+                                step="0.01"
+                                placeholder="0,00"
+                                defaultValue={otherData.pix_rate || ""}
+                                className="bg-background font-mono text-xs h-8"
+                              />
+                            </div>
                             <div className="space-y-1">
                               <Label className="text-[11px] font-medium">Débito (%)</Label>
                               <Input
