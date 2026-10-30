@@ -1198,9 +1198,14 @@ function MerchantsPage() {
 const planFields = [
   { key: "fixed_rate_percent", label: "Taxa operacional variável (%)" },
   { key: "pix_rate", label: "Pix (%)" },
-  { key: "debit_rate", label: "Débito (%)" },
-  { key: "credit_vista_rate", label: "Crédito à vista (%)" },
-  { key: "credit_installment_rate", label: "Crédito parcelado (%)" },
+  // Tabela 1: Visa e Master
+  { key: "debit_rate", label: "Débito Visa/Master (%)" },
+  { key: "credit_vista_rate", label: "Crédito à vista Visa/Master (%)" },
+  { key: "credit_installment_rate", label: "Crédito parcelado Visa/Master (%)" },
+  // Tabela 2: Outras Bandeiras
+  { key: "other_debit_rate", label: "Débito Outras Bandeiras (%)" },
+  { key: "other_credit_vista_rate", label: "Crédito à vista Outras Bandeiras (%)" },
+  { key: "other_credit_installment_rate", label: "Crédito parcelado Outras Bandeiras (%)" },
 ] as const;
 
 const DEFAULT_CPAG_INSTALLMENTS: Record<number, number> = {
@@ -1224,76 +1229,147 @@ const DEFAULT_CPAG_INSTALLMENTS: Record<number, number> = {
   18: 17.48,
 };
 
+const DEFAULT_ELO_INSTALLMENTS: Record<number, number> = {
+  1: 3.98,
+  2: 6.17,
+  3: 6.88,
+  4: 7.58,
+  5: 8.29,
+  6: 8.99,
+  7: 9.91,
+  8: 10.66,
+  9: 11.41,
+  10: 12.16,
+  11: 12.91,
+  12: 13.66,
+  13: 14.41,
+  14: 15.16,
+  15: 15.91,
+  16: 16.66,
+  17: 17.41,
+  18: 18.16,
+};
+
 function FeePlanForm({ merchant }: { merchant: Merchant }) {
   const qc = useQueryClient();
   const plans = useQuery(feePlansQuery);
   const plan = (plans.data ?? []).find((p) => p.merchant_id === merchant.id);
   const [draft, setDraft] = useState<Record<string, string> | null>(null);
 
-  const [isInstallmentsModalOpen, setIsInstallmentsModalOpen] = useState(false);
+  const [activeInstallmentsModal, setActiveInstallmentsModal] = useState<"vm" | "other" | null>(null);
   const [installmentRates, setInstallmentRates] = useState<Record<string, string>>({});
+  const [otherInstallmentRates, setOtherInstallmentRates] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (plan && (plan as any).installment_rates && typeof (plan as any).installment_rates === "object") {
-      const parsed: Record<string, string> = {};
-      Object.entries((plan as any).installment_rates).forEach(([k, v]) => {
+      const instObj = (plan as any).installment_rates;
+      const parsedVM: Record<string, string> = {};
+      Object.entries(instObj).forEach(([k, v]) => {
         if (!isNaN(Number(k))) {
-          parsed[k] = String(v ?? 0);
+          parsedVM[k] = String(v ?? 0);
         }
       });
-      setInstallmentRates(parsed);
+      setInstallmentRates(parsedVM);
+
+      const parsedOther: Record<string, string> = {};
+      const otherData = instObj.other_rates || {};
+      const otherInsts =
+        otherData.installment_rates && typeof otherData.installment_rates === "object"
+          ? otherData.installment_rates
+          : (plan as any).other_installment_rates && typeof (plan as any).other_installment_rates === "object"
+          ? (plan as any).other_installment_rates
+          : {};
+      Object.entries(otherInsts).forEach(([k, v]) => {
+        if (!isNaN(Number(k))) {
+          parsedOther[k] = String(v ?? 0);
+        }
+      });
+      setOtherInstallmentRates(parsedOther);
     } else {
       setInstallmentRates({});
+      setOtherInstallmentRates({});
     }
   }, [plan]);
 
-  const values =
-    draft ??
-    Object.fromEntries(
-      planFields.map((f) => [
-        f.key,
-        String(plan ? ((plan as unknown as Record<string, number>)[f.key] ?? 0) : 0),
-      ]),
-    );
+  const otherData = (plan as any)?.installment_rates?.other_rates || {};
+  const defaultValues: Record<string, string> = {
+    fixed_rate_percent: String(plan?.fixed_rate_percent ?? 0),
+    pix_rate: String(plan?.pix_rate ?? 0),
+    debit_rate: String(plan?.debit_rate ?? 0),
+    credit_vista_rate: String(plan?.credit_vista_rate ?? 0),
+    credit_installment_rate: String(plan?.credit_installment_rate ?? 0),
+    other_debit_rate: String(
+      (plan as any)?.other_debit_rate ??
+        (otherData.debit_rate !== undefined && otherData.debit_rate !== null && otherData.debit_rate !== 0
+          ? otherData.debit_rate
+          : "")
+    ),
+    other_credit_vista_rate: String(
+      (plan as any)?.other_credit_vista_rate ??
+        (otherData.credit_vista_rate !== undefined && otherData.credit_vista_rate !== null && otherData.credit_vista_rate !== 0
+          ? otherData.credit_vista_rate
+          : "")
+    ),
+    other_credit_installment_rate: String(
+      (plan as any)?.other_credit_installment_rate ??
+        (otherData.credit_installment_rate !== undefined && otherData.credit_installment_rate !== null && otherData.credit_installment_rate !== 0
+          ? otherData.credit_installment_rate
+          : "")
+    ),
+  };
+
+  const values = draft ?? defaultValues;
 
   const sortedInstallments = useMemo(() => {
     return Object.entries(installmentRates).sort(([a], [b]) => Number(a) - Number(b));
   }, [installmentRates]);
 
+  const sortedOtherInstallments = useMemo(() => {
+    return Object.entries(otherInstallmentRates).sort(([a], [b]) => Number(a) - Number(b));
+  }, [otherInstallmentRates]);
+
   const installedCount = sortedInstallments.length;
+  const otherInstalledCount = sortedOtherInstallments.length;
+
+  const isModalOther = activeInstallmentsModal === "other";
+  const currentModalRates = isModalOther ? otherInstallmentRates : installmentRates;
+  const setCurrentModalRates = isModalOther ? setOtherInstallmentRates : setInstallmentRates;
+  const currentDefaults = isModalOther ? DEFAULT_ELO_INSTALLMENTS : DEFAULT_CPAG_INSTALLMENTS;
+  const currentModalCount = isModalOther ? otherInstalledCount : installedCount;
+  const sortedModalInstallments = isModalOther ? sortedOtherInstallments : sortedInstallments;
 
   const addNextInstallment = () => {
-    const existingNums = Object.keys(installmentRates).map(Number);
+    const existingNums = Object.keys(currentModalRates).map(Number);
     let nextNum = 1;
     while (existingNums.includes(nextNum)) {
       nextNum++;
     }
-    const def = DEFAULT_CPAG_INSTALLMENTS[nextNum] ? String(DEFAULT_CPAG_INSTALLMENTS[nextNum]) : "0";
-    setInstallmentRates((prev) => ({ ...prev, [nextNum]: def }));
+    const def = currentDefaults[nextNum] ? String(currentDefaults[nextNum]) : "0";
+    setCurrentModalRates((prev) => ({ ...prev, [nextNum]: def }));
   };
 
   const populatePreset = (count: number) => {
-    setInstallmentRates((prev) => {
+    setCurrentModalRates((prev) => {
       const next = { ...prev };
       for (let i = 1; i <= count; i++) {
         if (next[i] === undefined) {
-          next[i] = String(DEFAULT_CPAG_INSTALLMENTS[i] || 0);
+          next[i] = String(currentDefaults[i] || 0);
         }
       }
       return next;
     });
   };
 
-  const useCPAGDefaults = () => {
+  const useModalDefaults = () => {
     const next: Record<string, string> = {};
     for (let i = 1; i <= 12; i++) {
-      next[i] = String(DEFAULT_CPAG_INSTALLMENTS[i] || 0);
+      next[i] = String(currentDefaults[i] || 0);
     }
-    setInstallmentRates(next);
+    setCurrentModalRates(next);
   };
 
   const removeInstallment = (num: string) => {
-    setInstallmentRates((prev) => {
+    setCurrentModalRates((prev) => {
       const copy = { ...prev };
       delete copy[num];
       return copy;
@@ -1301,7 +1377,7 @@ function FeePlanForm({ merchant }: { merchant: Merchant }) {
   };
 
   const updateInstallment = (num: string, val: string) => {
-    setInstallmentRates((prev) => ({ ...prev, [num]: val }));
+    setCurrentModalRates((prev) => ({ ...prev, [num]: val }));
   };
 
   const save = useMutation({
@@ -1312,10 +1388,20 @@ function FeePlanForm({ merchant }: { merchant: Merchant }) {
       }
 
       const currentTargetRevenue = (plan as any)?.installment_rates?.target_revenue;
+      const otherRatesPayload = {
+        debit_rate: values.other_debit_rate !== "" ? Number(values.other_debit_rate) : 0,
+        credit_vista_rate: values.other_credit_vista_rate !== "" ? Number(values.other_credit_vista_rate) : 0,
+        credit_installment_rate: values.other_credit_installment_rate !== "" ? Number(values.other_credit_installment_rate) : 0,
+        installment_rates: Object.fromEntries(
+          Object.entries(otherInstallmentRates).map(([k, v]) => [k, Number(v || 0)]),
+        ),
+      };
+
       const payload = {
         merchant_id: merchant.id,
         fixed_rate_percent: fixedRate,
         pix_rate: Number(values.pix_rate || 0),
+        // Tabela 1: Visa e Master
         debit_rate: Number(values.debit_rate || 0),
         credit_vista_rate: Number(values.credit_vista_rate || 0),
         credit_installment_rate: Number(values.credit_installment_rate || 0),
@@ -1325,6 +1411,7 @@ function FeePlanForm({ merchant }: { merchant: Merchant }) {
             Object.entries(installmentRates).map(([k, v]) => [k, Number(v || 0)]),
           ),
           ...(currentTargetRevenue !== undefined ? { target_revenue: currentTargetRevenue } : {}),
+          other_rates: otherRatesPayload,
         },
         ...(merchant.company_id ? { company_id: merchant.company_id } : {}),
       };
@@ -1352,16 +1439,16 @@ function FeePlanForm({ merchant }: { merchant: Merchant }) {
                 </CardTitle>
               </div>
               <CardDescription className="text-xs text-muted-foreground">
-                Defina a taxa operacional da plataforma e as taxas por modalidade e parcelamento para {merchant.name}.
+                Defina a taxa operacional da plataforma e as taxas negociadas para {merchant.name}.
               </CardDescription>
             </div>
-            {installedCount > 0 && (
+            {(installedCount > 0 || otherInstalledCount > 0) && (
               <Badge
                 variant="secondary"
                 className="font-medium text-xs bg-primary/10 text-primary border-primary/20 shrink-0 self-start sm:self-auto gap-1"
               >
                 <Layers className="size-3" />
-                <span>{installedCount} {installedCount === 1 ? "parcela customizada" : "parcelas customizadas"}</span>
+                <span>{installedCount + otherInstalledCount} parcelas configuradas</span>
               </Badge>
             )}
           </div>
@@ -1369,25 +1456,26 @@ function FeePlanForm({ merchant }: { merchant: Merchant }) {
 
         <CardContent className="p-5 sm:p-6 space-y-6">
           {/* =========================================================================
-              SEÇÃO 1: TAXA OPERACIONAL VARIÁVEL DA PLATAFORMA (DESTAQUE)
+              SEÇÃO 1: TAXA OPERACIONAL E PIX (PARÂMETROS GERAIS)
               ========================================================================= */}
-          <div className="p-4 sm:p-5 rounded-2xl border border-primary/20 bg-gradient-to-r from-primary/5 via-primary/2 to-transparent flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div className="flex items-start gap-3.5 max-w-xl">
-              <div className="size-10 rounded-xl bg-primary/15 text-primary flex items-center justify-center shrink-0">
-                <Percent className="size-5" />
-              </div>
-              <div className="space-y-0.5">
-                <div className="flex items-center gap-2">
-                  <h4 className="text-sm font-bold text-foreground">Taxa Operacional Variável</h4>
-                  <Badge variant="outline" className="text-[10px] font-semibold text-primary border-primary/30">
-                    Obrigatório
-                  </Badge>
+          <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
+            {/* Taxa Operacional Variável */}
+            <div className="p-4 rounded-2xl border border-primary/20 bg-gradient-to-r from-primary/5 via-primary/2 to-transparent flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="size-10 rounded-xl bg-primary/15 text-primary flex items-center justify-center shrink-0">
+                  <Percent className="size-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-1.5">
+                    <h4 className="text-sm font-bold text-foreground">Taxa Operacional Variável</h4>
+                    <Badge variant="outline" className="text-[10px] font-semibold text-primary border-primary/30">
+                      Obrigatório
+                    </Badge>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">Margem fixa da plataforma sobre as vendas</p>
                 </div>
               </div>
-            </div>
-
-            <div className="w-full md:w-48 shrink-0">
-              <div className="relative flex items-center">
+              <div className="w-28 shrink-0 relative flex items-center">
                 <Input
                   id="fixed_rate_percent"
                   type="number"
@@ -1396,65 +1484,81 @@ function FeePlanForm({ merchant }: { merchant: Merchant }) {
                   placeholder="0,00"
                   value={values.fixed_rate_percent}
                   onChange={(e) => setDraft({ ...values, fixed_rate_percent: e.target.value })}
-                  className="h-11 pr-8 font-mono font-bold text-base bg-background shadow-2xs text-right"
+                  className="h-10 pr-7 font-mono font-bold text-sm bg-background text-right"
                 />
-                <span className="absolute right-3 text-sm font-bold text-muted-foreground pointer-events-none">
-                  %
-                </span>
+                <span className="absolute right-2.5 text-xs font-bold text-muted-foreground pointer-events-none">%</span>
+              </div>
+            </div>
+
+            {/* Taxa Pix */}
+            <div className="p-4 rounded-2xl border border-emerald-500/25 bg-emerald-500/5 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="size-10 rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                  <Sparkles className="size-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-1.5">
+                    <h4 className="text-sm font-bold text-foreground">Taxa Pix</h4>
+                    <Badge variant="outline" className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 border-emerald-500/30">
+                      Instantâneo
+                    </Badge>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">Cobrado nas transações via Pix (Padrão: 1,39% ou 1,29%)</p>
+                </div>
+              </div>
+              <div className="w-28 shrink-0 relative flex items-center">
+                <Input
+                  id="pix_rate"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="0,00"
+                  value={values.pix_rate}
+                  onChange={(e) => setDraft({ ...values, pix_rate: e.target.value })}
+                  className="h-10 pr-7 font-mono font-bold text-sm bg-background text-right"
+                />
+                <span className="absolute right-2.5 text-xs font-bold text-muted-foreground pointer-events-none">%</span>
               </div>
             </div>
           </div>
 
           {/* =========================================================================
-              SEÇÃO 2: TAXAS POR MODALIDADE DE PAGAMENTO
+              SEÇÃO 2: TABELA 1 — BANDEIRAS VISA E MASTER (PADRÃO)
               ========================================================================= */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <CreditCard className="size-4 text-primary" />
-                <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                  Taxas por Modalidade de Venda
-                </h4>
+          <div className="p-4 sm:p-5 rounded-2xl border border-blue-500/30 bg-blue-500/[0.03] space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div className="space-y-0.5">
+                <div className="flex items-center gap-2">
+                  <CreditCard className="size-4 text-blue-600 dark:text-blue-400" />
+                  <h4 className="text-sm font-bold text-foreground">
+                    Tabela 1 — Visa e Master
+                  </h4>
+                  <Badge variant="secondary" className="text-[10px] font-semibold bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-500/20">
+                    Bandeiras Padrão
+                  </Badge>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Taxas negociadas aplicadas exclusivamente a vendas com cartões Visa, Mastercard e Maestro.
+                </p>
               </div>
-              <span className="text-xs text-muted-foreground">Valores aplicados nas vendas do EC</span>
+              {installedCount > 0 && (
+                <Badge
+                  variant="secondary"
+                  className="font-medium text-xs bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/20 shrink-0 self-start sm:self-auto gap-1"
+                >
+                  <Layers className="size-3" />
+                  <span>{installedCount} {installedCount === 1 ? "parcela customizada" : "parcelas customizadas"}</span>
+                </Badge>
+              )}
             </div>
 
-            <div className="grid gap-3.5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-              {/* PIX */}
-              <div className="p-3.5 rounded-xl border border-border/80 bg-muted/15 space-y-2 hover:border-emerald-500/40 transition-colors">
+            <div className="grid gap-3.5 grid-cols-1 sm:grid-cols-3">
+              {/* Débito */}
+              <div className="p-3.5 rounded-xl border border-border/80 bg-background/80 space-y-2 hover:border-blue-500/40 transition-colors">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5">
-                    <Sparkles className="size-3.5 text-emerald-500" />
-                    <Label htmlFor="pix_rate" className="text-xs font-bold text-foreground cursor-pointer">
-                      Pix
-                    </Label>
-                  </div>
-                  <span className="text-[10px] font-medium text-muted-foreground">Instantâneo</span>
-                </div>
-                <div className="relative">
-                  <Input
-                    id="pix_rate"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    placeholder="0,00"
-                    value={values.pix_rate}
-                    onChange={(e) => setDraft({ ...values, pix_rate: e.target.value })}
-                    className="h-10 pr-7 font-mono font-semibold text-sm bg-background"
-                  />
-                  <span className="absolute right-2.5 top-2.5 text-xs font-bold text-muted-foreground">%</span>
-                </div>
-              </div>
-
-              {/* DÉBITO */}
-              <div className="p-3.5 rounded-xl border border-border/80 bg-muted/15 space-y-2 hover:border-blue-500/40 transition-colors">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5">
-                    <CreditCard className="size-3.5 text-blue-500" />
-                    <Label htmlFor="debit_rate" className="text-xs font-bold text-foreground cursor-pointer">
-                      Débito
-                    </Label>
-                  </div>
+                  <Label htmlFor="debit_rate" className="text-xs font-bold text-foreground cursor-pointer">
+                    Débito (Visa/Master)
+                  </Label>
                   <span className="text-[10px] font-medium text-muted-foreground">Cartão à vista</span>
                 </div>
                 <div className="relative">
@@ -1472,15 +1576,12 @@ function FeePlanForm({ merchant }: { merchant: Merchant }) {
                 </div>
               </div>
 
-              {/* CRÉDITO À VISTA */}
-              <div className="p-3.5 rounded-xl border border-border/80 bg-muted/15 space-y-2 hover:border-violet-500/40 transition-colors">
+              {/* Crédito à vista */}
+              <div className="p-3.5 rounded-xl border border-border/80 bg-background/80 space-y-2 hover:border-blue-500/40 transition-colors">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5">
-                    <CreditCard className="size-3.5 text-violet-500" />
-                    <Label htmlFor="credit_vista_rate" className="text-xs font-bold text-foreground cursor-pointer">
-                      Crédito à vista
-                    </Label>
-                  </div>
+                  <Label htmlFor="credit_vista_rate" className="text-xs font-bold text-foreground cursor-pointer">
+                    Crédito à vista (Visa/Master)
+                  </Label>
                   <span className="text-[10px] font-medium text-muted-foreground">1x</span>
                 </div>
                 <div className="relative">
@@ -1498,15 +1599,12 @@ function FeePlanForm({ merchant }: { merchant: Merchant }) {
                 </div>
               </div>
 
-              {/* CRÉDITO PARCELADO COM BOTÃO + PARCELAS ACOPLADO */}
-              <div className="p-3.5 rounded-xl border border-border/80 bg-muted/15 space-y-2 hover:border-primary/40 transition-colors">
+              {/* Crédito parcelado */}
+              <div className="p-3.5 rounded-xl border border-border/80 bg-background/80 space-y-2 hover:border-blue-500/40 transition-colors">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5">
-                    <Layers className="size-3.5 text-primary" />
-                    <Label htmlFor="credit_installment_rate" className="text-xs font-bold text-foreground cursor-pointer">
-                      Crédito parcelado
-                    </Label>
-                  </div>
+                  <Label htmlFor="credit_installment_rate" className="text-xs font-bold text-foreground cursor-pointer">
+                    Crédito parcelado (Visa/Master)
+                  </Label>
                   <span className="text-[10px] font-medium text-muted-foreground">Taxa base</span>
                 </div>
                 <div className="flex items-center gap-1.5">
@@ -1526,9 +1624,9 @@ function FeePlanForm({ merchant }: { merchant: Merchant }) {
                   <Button
                     type="button"
                     variant="outline"
-                    className="h-10 px-2.5 border-primary/40 text-primary hover:bg-primary/10 hover:text-primary hover:border-primary dark:border-primary/50 dark:hover:bg-primary/20 dark:hover:text-primary-foreground transition-all shrink-0 flex items-center gap-1 font-semibold text-xs shadow-2xs"
-                    onClick={() => setIsInstallmentsModalOpen(true)}
-                    title="Adicionar e gerenciar parcelas (1x, 2x, 3x...)"
+                    className="h-10 px-2.5 border-blue-500/40 text-blue-700 dark:text-blue-300 hover:bg-blue-500/10 hover:border-blue-500 transition-all shrink-0 flex items-center gap-1 font-semibold text-xs shadow-2xs"
+                    onClick={() => setActiveInstallmentsModal("vm")}
+                    title="Adicionar e gerenciar parcelas Visa e Master"
                   >
                     <Plus className="size-4" />
                     <span>Parcelas</span>
@@ -1536,27 +1634,102 @@ function FeePlanForm({ merchant }: { merchant: Merchant }) {
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* =========================================================================
-              SEÇÃO 3: PARCELAMENTO PERSONALIZADO & BOTÃO SALVAR
-              ========================================================================= */}
-          {installedCount > 0 ? (
-            <div className="p-4 rounded-2xl border border-border/80 bg-muted/20 space-y-3">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <Layers className="size-4 text-primary" />
-                  <span className="text-xs font-bold text-foreground">
-                    Taxas personalizadas por parcela ({installedCount} definidas):
-                  </span>
-                  {draft !== null && (
-                    <span className="text-amber-600 dark:text-amber-400 text-[11px] font-medium inline-flex items-center gap-1">
-                      <span className="size-1.5 rounded-full bg-amber-500 animate-pulse" />
-                      Alterações não salvas
+            {/* Sub-painel de parcelas Visa/Master e botões de ação */}
+            {installedCount > 0 ? (
+              <div className="p-3.5 rounded-xl border border-border/80 bg-muted/20 space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Layers className="size-4 text-blue-600 dark:text-blue-400" />
+                    <span className="text-xs font-bold text-foreground">
+                      Parcelas Visa/Master ({installedCount} definidas):
                     </span>
-                  )}
+                    {draft !== null && (
+                      <span className="text-amber-600 dark:text-amber-400 text-[11px] font-medium inline-flex items-center gap-1">
+                        <span className="size-1.5 rounded-full bg-amber-500 animate-pulse" />
+                        Alterações não salvas
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    {draft !== null && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setDraft(null)}
+                        disabled={save.isPending}
+                        className="h-8 text-xs text-muted-foreground hover:text-foreground"
+                      >
+                        <RotateCcw className="size-3.5 mr-1" /> Descartar
+                      </Button>
+                    )}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-8 gap-1.5 border-primary/35 text-primary hover:bg-primary/10 hover:text-primary hover:border-primary/60 dark:border-primary/40 dark:hover:bg-primary/20 dark:hover:text-primary-foreground font-medium text-xs"
+                      onClick={() => setActiveInstallmentsModal("vm")}
+                    >
+                      <Plus className="size-3.5" /> Configurar parcelas (1x a 18x)
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10 font-medium px-2"
+                      onClick={() => setInstallmentRates({})}
+                    >
+                      Limpar
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={() => save.mutate()}
+                      disabled={save.isPending}
+                      className="h-8 gap-1.5 shadow-xs px-4 text-xs font-semibold"
+                    >
+                      <Save className="size-3.5" />
+                      <span>{save.isPending ? "Salvando..." : "Salvar"}</span>
+                    </Button>
+                  </div>
                 </div>
-                <div className="flex flex-wrap items-center gap-2">
+                <div className="flex flex-wrap gap-2 max-h-36 overflow-y-auto pr-1">
+                  {sortedInstallments.map(([num, rate]) => (
+                    <Badge
+                      key={num}
+                      variant="outline"
+                      className="px-2.5 py-1 text-xs font-mono bg-background border flex items-center gap-2 shadow-2xs rounded-lg hover:border-blue-500/40 transition-colors"
+                    >
+                      <span className="font-bold text-blue-600 dark:text-blue-400">{num}x:</span>
+                      <span className="font-semibold text-foreground">{Number(rate).toFixed(2)}%</span>
+                      <button
+                        type="button"
+                        className="text-muted-foreground hover:text-destructive transition-colors ml-0.5 cursor-pointer p-0.5"
+                        onClick={() => {
+                          setInstallmentRates((prev) => {
+                            const copy = { ...prev };
+                            delete copy[num];
+                            return copy;
+                          });
+                        }}
+                        title={`Remover ${num}x`}
+                      >
+                        <X className="size-3" />
+                      </button>
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="p-3.5 rounded-xl border border-dashed border-border/90 bg-muted/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="space-y-0.5">
+                  <p className="text-xs font-bold text-foreground">Deseja taxas diferentes por número de parcelas para Visa/Master?</p>
+                  <p className="text-xs text-muted-foreground">
+                    Atualmente todas as parcelas utilizam a taxa base de Crédito Parcelado ({values.credit_installment_rate || "0"}%).
+                  </p>
+                </div>
+                <div className="flex flex-wrap items-center gap-2 shrink-0 self-start sm:self-auto">
                   {draft !== null && (
                     <Button
                       type="button"
@@ -1573,124 +1746,294 @@ function FeePlanForm({ merchant }: { merchant: Merchant }) {
                     type="button"
                     variant="outline"
                     size="sm"
-                    className="h-8 gap-1.5 border-primary/35 text-primary hover:bg-primary/10 hover:text-primary hover:border-primary/60 dark:border-primary/40 dark:hover:bg-primary/20 dark:hover:text-primary-foreground font-medium text-xs"
-                    onClick={() => setIsInstallmentsModalOpen(true)}
+                    className="gap-1.5 border-primary/35 text-primary hover:bg-primary/10 hover:text-primary hover:border-primary/60 dark:border-primary/40 dark:hover:bg-primary/20 dark:hover:text-primary-foreground font-medium text-xs"
+                    onClick={() => setActiveInstallmentsModal("vm")}
                   >
-                    <Plus className="size-3.5" /> Configurar parcelas (1x a 18x)
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="h-8 text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10 font-medium px-2"
-                    onClick={() => setInstallmentRates({})}
-                  >
-                    Limpar
+                    <Plus className="size-3.5" />
+                    Configurar parcelas (1x a 18x)
                   </Button>
                   <Button
                     type="button"
                     size="sm"
                     onClick={() => save.mutate()}
                     disabled={save.isPending}
-                    className="h-8 gap-1.5 shadow-xs px-4 text-xs font-semibold"
+                    className="gap-1.5 shadow-xs px-4 text-xs font-semibold"
                   >
                     <Save className="size-3.5" />
                     <span>{save.isPending ? "Salvando..." : "Salvar"}</span>
                   </Button>
                 </div>
               </div>
+            )}
+          </div>
 
-              {/* Grid de Chips de Parcelas */}
-              <div className="flex flex-wrap gap-2 max-h-36 overflow-y-auto pr-1">
-                {sortedInstallments.map(([num, rate]) => (
-                  <Badge
-                    key={num}
-                    variant="outline"
-                    className="px-2.5 py-1 text-xs font-mono bg-background border flex items-center gap-2 shadow-2xs rounded-lg hover:border-primary/40 transition-colors"
-                  >
-                    <span className="font-bold text-primary">{num}x:</span>
-                    <span className="font-semibold text-foreground">{Number(rate).toFixed(2)}%</span>
-                    <button
-                      type="button"
-                      className="text-muted-foreground hover:text-destructive transition-colors ml-0.5 cursor-pointer p-0.5"
-                      onClick={() => removeInstallment(num)}
-                      title={`Remover ${num}x`}
-                    >
-                      <X className="size-3" />
-                    </button>
-                  </Badge>
-                ))}
-              </div>
-            </div>
-          ) : (
-            <div className="p-4 rounded-2xl border border-dashed border-border/90 bg-muted/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          {/* =========================================================================
+              SEÇÃO 3: TABELA 2 — OUTRAS BANDEIRAS (ELO, AMEX, HIPERCARD, CABAL, ETC.)
+              ========================================================================= */}
+          <div className="p-4 sm:p-5 rounded-2xl border border-amber-500/30 bg-amber-500/[0.03] space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div className="space-y-0.5">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <p className="text-xs font-bold text-foreground">Deseja taxas diferentes por número de parcelas?</p>
-                  {draft !== null && (
-                    <span className="text-amber-600 dark:text-amber-400 text-[11px] font-medium inline-flex items-center gap-1">
-                      <span className="size-1.5 rounded-full bg-amber-500 animate-pulse" />
-                      Alterações não salvas
-                    </span>
-                  )}
+                <div className="flex items-center gap-2">
+                  <CreditCard className="size-4 text-amber-600 dark:text-amber-400" />
+                  <h4 className="text-sm font-bold text-foreground">
+                    Tabela 2 — Outras Bandeiras
+                  </h4>
+                  <Badge variant="secondary" className="text-[10px] font-semibold bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/25">
+                    Elo, Amex, Hipercard, Cabal, etc.
+                  </Badge>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Atualmente todas as parcelas utilizam a taxa base de Crédito Parcelado ({values.credit_installment_rate || "0"}%).
+                  Taxas negociadas para vendas com bandeiras diferentes de Visa e Master. Se mantido em branco ou 0%, o sistema utiliza as taxas da Tabela 1 (Visa e Master) como fallback automático.
                 </p>
               </div>
-              <div className="flex flex-wrap items-center gap-2 shrink-0 self-start sm:self-auto">
-                {draft !== null && (
+              {otherInstalledCount > 0 && (
+                <Badge
+                  variant="secondary"
+                  className="font-medium text-xs bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/25 shrink-0 self-start sm:self-auto gap-1"
+                >
+                  <Layers className="size-3" />
+                  <span>{otherInstalledCount} {otherInstalledCount === 1 ? "parcela customizada" : "parcelas customizadas"}</span>
+                </Badge>
+              )}
+            </div>
+
+            <div className="grid gap-3.5 grid-cols-1 sm:grid-cols-3">
+              {/* Débito Outras Bandeiras */}
+              <div className="p-3.5 rounded-xl border border-border/80 bg-background/80 space-y-2 hover:border-amber-500/40 transition-colors">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="other_debit_rate" className="text-xs font-bold text-foreground cursor-pointer">
+                    Débito (Outras Bandeiras)
+                  </Label>
+                  <span className="text-[10px] font-medium text-muted-foreground">Elo / Amex / etc.</span>
+                </div>
+                <div className="relative">
+                  <Input
+                    id="other_debit_rate"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="0,00"
+                    value={values.other_debit_rate}
+                    onChange={(e) => setDraft({ ...values, other_debit_rate: e.target.value })}
+                    className="h-10 pr-7 font-mono font-semibold text-sm bg-background"
+                  />
+                  <span className="absolute right-2.5 top-2.5 text-xs font-bold text-muted-foreground">%</span>
+                </div>
+              </div>
+
+              {/* Crédito à vista Outras Bandeiras */}
+              <div className="p-3.5 rounded-xl border border-border/80 bg-background/80 space-y-2 hover:border-amber-500/40 transition-colors">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="other_credit_vista_rate" className="text-xs font-bold text-foreground cursor-pointer">
+                    Crédito à vista (Outras)
+                  </Label>
+                  <span className="text-[10px] font-medium text-muted-foreground">1x</span>
+                </div>
+                <div className="relative">
+                  <Input
+                    id="other_credit_vista_rate"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="0,00"
+                    value={values.other_credit_vista_rate}
+                    onChange={(e) => setDraft({ ...values, other_credit_vista_rate: e.target.value })}
+                    className="h-10 pr-7 font-mono font-semibold text-sm bg-background"
+                  />
+                  <span className="absolute right-2.5 top-2.5 text-xs font-bold text-muted-foreground">%</span>
+                </div>
+              </div>
+
+              {/* Crédito parcelado Outras Bandeiras */}
+              <div className="p-3.5 rounded-xl border border-border/80 bg-background/80 space-y-2 hover:border-amber-500/40 transition-colors">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="other_credit_installment_rate" className="text-xs font-bold text-foreground cursor-pointer">
+                    Crédito parcelado (Outras)
+                  </Label>
+                  <span className="text-[10px] font-medium text-muted-foreground">Taxa base</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="relative flex-1">
+                    <Input
+                      id="other_credit_installment_rate"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      placeholder="0,00"
+                      value={values.other_credit_installment_rate}
+                      onChange={(e) => setDraft({ ...values, other_credit_installment_rate: e.target.value })}
+                      className="h-10 pr-7 font-mono font-semibold text-sm bg-background"
+                    />
+                    <span className="absolute right-2.5 top-2.5 text-xs font-bold text-muted-foreground">%</span>
+                  </div>
                   <Button
                     type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setDraft(null)}
-                    disabled={save.isPending}
-                    className="h-8 text-xs text-muted-foreground hover:text-foreground"
+                    variant="outline"
+                    className="h-10 px-2.5 border-amber-500/40 text-amber-700 dark:text-amber-300 hover:bg-amber-500/10 hover:border-amber-500 transition-all shrink-0 flex items-center gap-1 font-semibold text-xs shadow-2xs"
+                    onClick={() => setActiveInstallmentsModal("other")}
+                    title="Adicionar e gerenciar parcelas para Outras Bandeiras (Elo, Amex, etc.)"
                   >
-                    <RotateCcw className="size-3.5 mr-1" /> Descartar
+                    <Plus className="size-4" />
+                    <span>Parcelas</span>
                   </Button>
-                )}
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="gap-1.5 border-primary/35 text-primary hover:bg-primary/10 hover:text-primary hover:border-primary/60 dark:border-primary/40 dark:hover:bg-primary/20 dark:hover:text-primary-foreground font-medium text-xs"
-                  onClick={() => setIsInstallmentsModalOpen(true)}
-                >
-                  <Plus className="size-3.5" />
-                  Configurar parcelas (1x a 18x)
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  onClick={() => save.mutate()}
-                  disabled={save.isPending}
-                  className="gap-1.5 shadow-xs px-4 text-xs font-semibold"
-                >
-                  <Save className="size-3.5" />
-                  <span>{save.isPending ? "Salvando..." : "Salvar"}</span>
-                </Button>
+                </div>
               </div>
             </div>
-          )}
+
+            {/* Sub-painel de parcelas Outras Bandeiras e botões de ação */}
+            {otherInstalledCount > 0 ? (
+              <div className="p-3.5 rounded-xl border border-border/80 bg-muted/20 space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Layers className="size-4 text-amber-600 dark:text-amber-400" />
+                    <span className="text-xs font-bold text-foreground">
+                      Parcelas Outras Bandeiras ({otherInstalledCount} definidas):
+                    </span>
+                    {draft !== null && (
+                      <span className="text-amber-600 dark:text-amber-400 text-[11px] font-medium inline-flex items-center gap-1">
+                        <span className="size-1.5 rounded-full bg-amber-500 animate-pulse" />
+                        Alterações não salvas
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    {draft !== null && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setDraft(null)}
+                        disabled={save.isPending}
+                        className="h-8 text-xs text-muted-foreground hover:text-foreground"
+                      >
+                        <RotateCcw className="size-3.5 mr-1" /> Descartar
+                      </Button>
+                    )}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-8 gap-1.5 border-amber-500/40 text-amber-700 dark:text-amber-300 hover:bg-amber-500/10 hover:border-amber-500 font-medium text-xs"
+                      onClick={() => setActiveInstallmentsModal("other")}
+                    >
+                      <Plus className="size-3.5" /> Configurar parcelas (Outras Bandeiras)
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10 font-medium px-2"
+                      onClick={() => setOtherInstallmentRates({})}
+                    >
+                      Limpar
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={() => save.mutate()}
+                      disabled={save.isPending}
+                      className="h-8 gap-1.5 shadow-xs px-4 text-xs font-semibold"
+                    >
+                      <Save className="size-3.5" />
+                      <span>{save.isPending ? "Salvando..." : "Salvar"}</span>
+                    </Button>
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-2 max-h-36 overflow-y-auto pr-1">
+                  {sortedOtherInstallments.map(([num, rate]) => (
+                    <Badge
+                      key={num}
+                      variant="outline"
+                      className="px-2.5 py-1 text-xs font-mono bg-background border flex items-center gap-2 shadow-2xs rounded-lg hover:border-amber-500/40 transition-colors"
+                    >
+                      <span className="font-bold text-amber-600 dark:text-amber-400">{num}x:</span>
+                      <span className="font-semibold text-foreground">{Number(rate).toFixed(2)}%</span>
+                      <button
+                        type="button"
+                        className="text-muted-foreground hover:text-destructive transition-colors ml-0.5 cursor-pointer p-0.5"
+                        onClick={() => {
+                          setOtherInstallmentRates((prev) => {
+                            const copy = { ...prev };
+                            delete copy[num];
+                            return copy;
+                          });
+                        }}
+                        title={`Remover ${num}x`}
+                      >
+                        <X className="size-3" />
+                      </button>
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="p-3.5 rounded-xl border border-dashed border-border/90 bg-muted/10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="space-y-0.5">
+                  <p className="text-xs font-bold text-foreground">Deseja taxas diferentes por número de parcelas para Outras Bandeiras?</p>
+                  <p className="text-xs text-muted-foreground">
+                    {values.other_credit_installment_rate
+                      ? `Atualmente utilizando a taxa base de Crédito Parcelado de Outras Bandeiras (${values.other_credit_installment_rate}%).`
+                      : "Em branco: o sistema utilizará as parcelas da Tabela 1 (Visa e Master) como fallback automático."}
+                  </p>
+                </div>
+                <div className="flex flex-wrap items-center gap-2 shrink-0 self-start sm:self-auto">
+                  {draft !== null && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setDraft(null)}
+                      disabled={save.isPending}
+                      className="h-8 text-xs text-muted-foreground hover:text-foreground"
+                    >
+                      <RotateCcw className="size-3.5 mr-1" /> Descartar
+                    </Button>
+                  )}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5 border-amber-500/40 text-amber-700 dark:text-amber-300 hover:bg-amber-500/10 hover:border-amber-500 font-medium text-xs"
+                    onClick={() => setActiveInstallmentsModal("other")}
+                  >
+                    <Plus className="size-3.5" />
+                    Configurar parcelas (Outras Bandeiras)
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={() => save.mutate()}
+                    disabled={save.isPending}
+                    className="gap-1.5 shadow-xs px-4 text-xs font-semibold"
+                  >
+                    <Save className="size-3.5" />
+                    <span>{save.isPending ? "Salvando..." : "Salvar"}</span>
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
         </CardContent>
       </Card>
 
       {/* =========================================================================
           MODAL DE GERENCIAMENTO DE PARCELAS (1x, 2x, 3x...)
           ========================================================================= */}
-      <Dialog open={isInstallmentsModalOpen} onOpenChange={setIsInstallmentsModalOpen}>
+      <Dialog open={activeInstallmentsModal !== null} onOpenChange={(open) => !open && setActiveInstallmentsModal(null)}>
         <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col p-6 rounded-2xl">
           <DialogHeader className="pb-3 border-b border-border/60">
             <div className="flex items-center gap-2.5 mb-1">
-              <div className="p-2 rounded-lg bg-primary/10 text-primary">
+              <div className={`p-2 rounded-lg ${isModalOther ? "bg-amber-500/15 text-amber-700 dark:text-amber-300" : "bg-primary/10 text-primary"}`}>
                 <Percent className="size-5" />
               </div>
-              <DialogTitle className="text-lg">Configurar Taxas por Parcela (Crédito)</DialogTitle>
+              <DialogTitle className="text-lg">
+                {isModalOther ? "Configurar Parcelas — Tabela 2 (Outras Bandeiras)" : "Configurar Parcelas — Tabela 1 (Visa e Master)"}
+              </DialogTitle>
             </div>
             <DialogDescription>
-              Insira a taxa negociada para cada número de parcelas (1x, 2x, 3x...) de <strong>{merchant.name}</strong>.
+              {isModalOther
+                ? `Insira a taxa negociada por parcela para outras bandeiras (Elo, Amex, Hiper, etc.) de ${merchant.name}. Caso em branco, utiliza Visa e Master como fallback.`
+                : `Insira a taxa negociada para cada número de parcelas (1x, 2x, 3x...) para Visa e Master de ${merchant.name}.`}
             </DialogDescription>
           </DialogHeader>
 
@@ -1729,18 +2072,18 @@ function FeePlanForm({ merchant }: { merchant: Merchant }) {
               variant="ghost"
               size="sm"
               className="h-7 text-xs font-medium text-primary hover:bg-primary/10 hover:text-primary dark:hover:bg-primary/20 dark:hover:text-primary-foreground"
-              onClick={useCPAGDefaults}
-              title="Preencher com taxas de referência do modelo padrão CPAG"
+              onClick={useModalDefaults}
+              title={isModalOther ? "Preencher com taxas de referência padrão Elo" : "Preencher com taxas de referência do modelo padrão CPAG"}
             >
-              Sugerir padrão
+              {isModalOther ? "Sugerir padrão Elo" : "Sugerir padrão"}
             </Button>
-            {installedCount > 0 && (
+            {currentModalCount > 0 && (
               <Button
                 type="button"
                 variant="ghost"
                 size="sm"
                 className="h-7 text-xs font-medium text-destructive hover:bg-destructive/10 hover:text-destructive ml-auto"
-                onClick={() => setInstallmentRates({})}
+                onClick={() => setCurrentModalRates({})}
               >
                 Limpar todas
               </Button>
@@ -1749,7 +2092,7 @@ function FeePlanForm({ merchant }: { merchant: Merchant }) {
 
           {/* Grid de parcelas rolável */}
           <div className="flex-1 overflow-y-auto py-4 space-y-3 pr-1 scrollbar-thin">
-            {installedCount === 0 ? (
+            {currentModalCount === 0 ? (
               <div className="p-10 text-center border border-dashed rounded-xl text-muted-foreground bg-muted/10 space-y-2">
                 <p className="text-sm font-semibold text-foreground">Nenhuma parcela personalizada adicionada ainda.</p>
                 <p className="text-xs text-muted-foreground">
@@ -1763,7 +2106,7 @@ function FeePlanForm({ merchant }: { merchant: Merchant }) {
               </div>
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                {sortedInstallments.map(([num, rate]) => (
+                {sortedModalInstallments.map(([num, rate]) => (
                   <div
                     key={num}
                     className="p-3 rounded-xl border bg-card hover:border-primary/40 transition-colors flex flex-col gap-1.5 shadow-2xs"
@@ -1771,7 +2114,11 @@ function FeePlanForm({ merchant }: { merchant: Merchant }) {
                     <div className="flex items-center justify-between">
                       <Badge
                         variant="secondary"
-                        className="px-2 py-0.5 text-xs font-bold text-primary bg-primary/10 border-none"
+                        className={`px-2 py-0.5 text-xs font-bold border-none ${
+                          isModalOther
+                            ? "text-amber-700 dark:text-amber-300 bg-amber-500/15"
+                            : "text-primary bg-primary/10"
+                        }`}
                       >
                         {num}x
                       </Badge>
@@ -1804,9 +2151,9 @@ function FeePlanForm({ merchant }: { merchant: Merchant }) {
 
           <DialogFooter className="pt-3 border-t border-border/60 flex flex-row items-center justify-between sm:justify-between">
             <span className="text-xs font-medium text-muted-foreground">
-              {installedCount} {installedCount === 1 ? "parcela definida" : "parcelas definidas"}
+              {currentModalCount} {currentModalCount === 1 ? "parcela definida" : "parcelas definidas"}
             </span>
-            <Button type="button" onClick={() => setIsInstallmentsModalOpen(false)}>
+            <Button type="button" onClick={() => setActiveInstallmentsModal(null)}>
               Confirmar e Fechar
             </Button>
           </DialogFooter>

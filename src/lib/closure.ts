@@ -280,6 +280,91 @@ export function resolveTransactionRateTable(
   return getSavedMerchantRateTable((t as any)?.merchant_id, fallbackRateTableKey);
 }
 
+/**
+ * Identifica se a bandeira do cartão corresponde às bandeiras padrão Visa ou Master (incluindo Maestro).
+ * Se não informada, assume Visa/Master por padrão.
+ */
+export function isVisaOrMaster(brand?: string | null): boolean {
+  if (!brand) return true;
+  const b = brand.toLowerCase().trim();
+  return (
+    b.includes("visa") ||
+    b.includes("master") ||
+    b.includes("maestro") ||
+    b === "vm"
+  );
+}
+
+export type OtherBrandRates = {
+  debit_rate?: number;
+  credit_vista_rate?: number;
+  credit_installment_rate?: number;
+  installment_rates?: Record<string, number>;
+};
+
+/**
+ * Extrai as taxas personalizadas para Outras Bandeiras (Tabela 2) configuradas no plano do EC.
+ * Lê de `plan.installment_rates.other_rates` (armazenamento JSON seguro) ou de campos diretos.
+ * Se nenhum campo de Outras Bandeiras estiver preenchido com taxa positiva, retorna null.
+ */
+export function getOtherBrandRates(plan?: FeePlan | null): OtherBrandRates | null {
+  if (!plan) return null;
+
+  const inst = (plan as any).installment_rates;
+  const jsonOther =
+    inst && typeof inst === "object" && !Array.isArray(inst)
+      ? (inst.other_rates as OtherBrandRates | undefined)
+      : undefined;
+
+  const rawDebit = (plan as any).other_debit_rate ?? jsonOther?.debit_rate;
+  const rawVista = (plan as any).other_credit_vista_rate ?? jsonOther?.credit_vista_rate;
+  const rawInstRate = (plan as any).other_credit_installment_rate ?? jsonOther?.credit_installment_rate;
+  const rawInsts = (plan as any).other_installment_rates ?? jsonOther?.installment_rates;
+
+  const debit =
+    rawDebit !== undefined && rawDebit !== null && rawDebit !== "" && Number(rawDebit) > 0
+      ? Number(rawDebit)
+      : undefined;
+
+  const credit_vista =
+    rawVista !== undefined && rawVista !== null && rawVista !== "" && Number(rawVista) > 0
+      ? Number(rawVista)
+      : undefined;
+
+  const credit_installment =
+    rawInstRate !== undefined && rawInstRate !== null && rawInstRate !== "" && Number(rawInstRate) > 0
+      ? Number(rawInstRate)
+      : undefined;
+
+  let installment_rates: Record<string, number> | undefined;
+  if (rawInsts && typeof rawInsts === "object" && !Array.isArray(rawInsts)) {
+    const parsed: Record<string, number> = {};
+    let count = 0;
+    for (const [k, v] of Object.entries(rawInsts)) {
+      const num = Number(v);
+      if (!isNaN(num) && num > 0) {
+        parsed[k] = num;
+        count++;
+      }
+    }
+    if (count > 0) {
+      installment_rates = parsed;
+    }
+  }
+
+  // Se nenhum campo da Tabela 2 estiver preenchido com valor positivo, considera vazia ou inexistente
+  if (debit === undefined && credit_vista === undefined && credit_installment === undefined && !installment_rates) {
+    return null;
+  }
+
+  return {
+    debit_rate: debit,
+    credit_vista_rate: credit_vista,
+    credit_installment_rate: credit_installment,
+    installment_rates,
+  };
+}
+
 export function getModalityRate(t: Transaction, plan?: FeePlan, rateTableKey?: string): number {
   const effectiveKey = resolveTransactionRateTable(t, rateTableKey);
   const table = getReferenceTable(effectiveKey);
@@ -287,9 +372,32 @@ export function getModalityRate(t: Transaction, plan?: FeePlan, rateTableKey?: s
   if (t.modality === 'cash') return plan ? plan.cash_rate : 0;
 
   const installments = t.installments || 1;
+  const isVM = isVisaOrMaster(t.brand);
+  const otherRates = !isVM ? getOtherBrandRates(plan) : null;
 
-  if (t.modality === 'debit' && plan && plan.debit_rate > 0) return plan.debit_rate;
+  // DÉBITO
+  if (t.modality === 'debit') {
+    // 1. Se bandeira diferente de Visa/Master e Tabela 2 preenchida, aplica Tabela 2
+    if (!isVM && otherRates?.debit_rate !== undefined && otherRates.debit_rate > 0) {
+      return otherRates.debit_rate;
+    }
+    // 2. Se for Visa/Master, OU se for outra bandeira com Tabela 2 vazia/inexistente (fallback retrocompatível)
+    if (plan && plan.debit_rate > 0) return plan.debit_rate;
+  }
+
+  // CRÉDITO À VISTA
   if (t.modality === 'credit_vista') {
+    // 1. Se bandeira diferente de Visa/Master e Tabela 2 preenchida
+    if (!isVM && otherRates) {
+      if (otherRates.credit_vista_rate !== undefined && otherRates.credit_vista_rate > 0) {
+        return otherRates.credit_vista_rate;
+      }
+      if (otherRates.installment_rates) {
+        const v1 = otherRates.installment_rates["1"] ?? otherRates.installment_rates[1];
+        if (v1 !== undefined && v1 !== null && Number(v1) > 0) return Number(v1);
+      }
+    }
+    // 2. Se for Visa/Master, OU se for outra bandeira com Tabela 2 vazia/inexistente (fallback retrocompatível)
     if (plan && plan.credit_vista_rate > 0) return plan.credit_vista_rate;
     if (plan && (plan as any).installment_rates) {
       const instRates = (plan as any).installment_rates;
@@ -297,7 +405,22 @@ export function getModalityRate(t: Transaction, plan?: FeePlan, rateTableKey?: s
       if (v1 !== undefined && v1 !== null && Number(v1) > 0) return Number(v1);
     }
   }
+
+  // CRÉDITO PARCELADO
   if (t.modality === 'credit_installment') {
+    // 1. Se bandeira diferente de Visa/Master e Tabela 2 preenchida
+    if (!isVM && otherRates) {
+      if (otherRates.installment_rates) {
+        const val = otherRates.installment_rates[String(installments)] ?? otherRates.installment_rates[installments];
+        if (val !== undefined && val !== null && Number(val) > 0) {
+          return Number(val);
+        }
+      }
+      if (otherRates.credit_installment_rate !== undefined && otherRates.credit_installment_rate > 0) {
+        return otherRates.credit_installment_rate;
+      }
+    }
+    // 2. Se for Visa/Master, OU se for outra bandeira com Tabela 2 vazia/inexistente (fallback retrocompatível)
     if (plan && (plan as any).installment_rates) {
       const instRates = (plan as any).installment_rates;
       if (instRates && typeof instRates === "object") {
@@ -309,6 +432,9 @@ export function getModalityRate(t: Transaction, plan?: FeePlan, rateTableKey?: s
     }
     if (plan && plan.credit_installment_rate > 0) return plan.credit_installment_rate;
   }
+
+  // 3. Fallback final: Tabela padrão contratual de referência (CPAG59 ou CPAG56)
+  // identificando exatamente a bandeira da transação (elo, hiper, amex, cabal, vm)
   const brand = (t.brand || "").toLowerCase();
   let bKey: keyof typeof CPAG59 = 'vm';
   if (brand.includes('elo')) bKey = 'elo';

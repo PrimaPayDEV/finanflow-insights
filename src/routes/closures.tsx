@@ -76,7 +76,7 @@ import {
   importsQuery,
   terminalsQuery,
 } from "@/lib/db";
-import { calculateClosure, getModalityRate, getTraditionalRate, getMaxDiscountRate, getCPAG59Rate, resolveTransactionRateTable, getSavedMerchantRateTable } from "@/lib/closure";
+import { calculateClosure, getModalityRate, getTraditionalRate, getMaxDiscountRate, getCPAG59Rate, resolveTransactionRateTable, getSavedMerchantRateTable, isVisaOrMaster } from "@/lib/closure";
 import { createAsaasCharge } from "@/lib/asaas.functions";
 import {
   BRL,
@@ -746,6 +746,16 @@ function RouteComponent() {
                     onSubmit={(e) => {
                       e.preventDefault();
                       const formData = new FormData(e.currentTarget);
+                      const otherRatesData = (plan as any)?.installment_rates?.other_rates || {};
+                      const otherRates = {
+                        debit_rate: formData.get("other_debit_rate") ? Number(formData.get("other_debit_rate")) : 0,
+                        credit_vista_rate: formData.get("other_credit_vista_rate") ? Number(formData.get("other_credit_vista_rate")) : 0,
+                        credit_installment_rate: formData.get("other_credit_installment_rate") ? Number(formData.get("other_credit_installment_rate")) : 0,
+                        installment_rates: otherRatesData.installment_rates || {},
+                      };
+                      const currentInst = typeof plan.installment_rates === "object" && plan.installment_rates !== null
+                        ? (plan.installment_rates as any)
+                        : {};
                       updatePlan.mutate({
                         id: plan.id,
                         fixed_rate_percent: Number(formData.get("fixed_rate_percent")),
@@ -753,7 +763,11 @@ function RouteComponent() {
                         debit_rate: Number(formData.get("debit_rate")),
                         credit_vista_rate: Number(formData.get("credit_vista_rate")),
                         credit_installment_rate: Number(formData.get("credit_installment_rate")),
-                      });
+                        installment_rates: {
+                          ...currentInst,
+                          other_rates: otherRates,
+                        },
+                      } as any);
                     }}
                   >
                     <div className="space-y-1.5 p-3 rounded-xl bg-primary/5 border border-primary/20">
@@ -766,48 +780,112 @@ function RouteComponent() {
                         className="bg-background font-mono"
                       />
                     </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="space-y-1.5">
-                        <Label className="text-xs font-semibold">Taxa Pix (%)</Label>
-                        <Input
-                          name="pix_rate"
-                          type="number"
-                          step="0.01"
-                          defaultValue={plan.pix_rate}
-                          className="bg-background font-mono"
-                        />
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-semibold">Taxa Pix (%)</Label>
+                      <Input
+                        name="pix_rate"
+                        type="number"
+                        step="0.01"
+                        defaultValue={plan.pix_rate}
+                        className="bg-background font-mono"
+                      />
+                    </div>
+
+                    {/* Tabela 1: Visa e Master */}
+                    <div className="p-3 rounded-xl border border-blue-500/20 bg-blue-500/5 space-y-2.5">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-xs font-bold text-blue-700 dark:text-blue-300">
+                          Tabela 1 — Visa e Master
+                        </Label>
+                        <span className="text-[10px] text-muted-foreground font-medium">Bandeiras Padrão</span>
                       </div>
-                      <div className="space-y-1.5">
-                        <Label className="text-xs font-semibold">Taxa Débito (%)</Label>
-                        <Input
-                          name="debit_rate"
-                          type="number"
-                          step="0.01"
-                          defaultValue={plan.debit_rate}
-                          className="bg-background font-mono"
-                        />
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label className="text-xs font-semibold">Taxa Créd. Vista (%)</Label>
-                        <Input
-                          name="credit_vista_rate"
-                          type="number"
-                          step="0.01"
-                          defaultValue={plan.credit_vista_rate}
-                          className="bg-background font-mono"
-                        />
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label className="text-xs font-semibold">Taxa Créd. Parc. (%)</Label>
-                        <Input
-                          name="credit_installment_rate"
-                          type="number"
-                          step="0.01"
-                          defaultValue={plan.credit_installment_rate}
-                          className="bg-background font-mono"
-                        />
+                      <div className="grid grid-cols-3 gap-2">
+                        <div className="space-y-1">
+                          <Label className="text-[11px] font-medium">Débito (%)</Label>
+                          <Input
+                            name="debit_rate"
+                            type="number"
+                            step="0.01"
+                            defaultValue={plan.debit_rate}
+                            className="bg-background font-mono text-xs h-8"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-[11px] font-medium">Créd. Vista (%)</Label>
+                          <Input
+                            name="credit_vista_rate"
+                            type="number"
+                            step="0.01"
+                            defaultValue={plan.credit_vista_rate}
+                            className="bg-background font-mono text-xs h-8"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-[11px] font-medium">Créd. Parc. (%)</Label>
+                          <Input
+                            name="credit_installment_rate"
+                            type="number"
+                            step="0.01"
+                            defaultValue={plan.credit_installment_rate}
+                            className="bg-background font-mono text-xs h-8"
+                          />
+                        </div>
                       </div>
                     </div>
+
+                    {/* Tabela 2: Outras Bandeiras */}
+                    {(() => {
+                      const otherData = (plan as any)?.installment_rates?.other_rates || {};
+                      return (
+                        <div className="p-3 rounded-xl border border-amber-500/25 bg-amber-500/5 space-y-2.5">
+                          <div className="flex items-center justify-between">
+                            <Label className="text-xs font-bold text-amber-700 dark:text-amber-300">
+                              Tabela 2 — Outras Bandeiras
+                            </Label>
+                            <span className="text-[10px] text-muted-foreground font-medium">Elo, Amex, Hiper, etc.</span>
+                          </div>
+                          <div className="grid grid-cols-3 gap-2">
+                            <div className="space-y-1">
+                              <Label className="text-[11px] font-medium">Débito (%)</Label>
+                              <Input
+                                name="other_debit_rate"
+                                type="number"
+                                step="0.01"
+                                placeholder="0,00"
+                                defaultValue={otherData.debit_rate || ""}
+                                className="bg-background font-mono text-xs h-8"
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-[11px] font-medium">Créd. Vista (%)</Label>
+                              <Input
+                                name="other_credit_vista_rate"
+                                type="number"
+                                step="0.01"
+                                placeholder="0,00"
+                                defaultValue={otherData.credit_vista_rate || ""}
+                                className="bg-background font-mono text-xs h-8"
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-[11px] font-medium">Créd. Parc. (%)</Label>
+                              <Input
+                                name="other_credit_installment_rate"
+                                type="number"
+                                step="0.01"
+                                placeholder="0,00"
+                                defaultValue={otherData.credit_installment_rate || ""}
+                                className="bg-background font-mono text-xs h-8"
+                              />
+                            </div>
+                          </div>
+                          <p className="text-[10px] text-muted-foreground italic">
+                            Se em branco ou zerado, utiliza automaticamente a Tabela 1 (Visa e Master) como fallback.
+                          </p>
+                        </div>
+                      );
+                    })()}
+
                     <Button type="submit" className="w-full mt-6 gap-2" disabled={updatePlan.isPending}>
                       <Save className="size-4" />
                       {updatePlan.isPending ? "Salvando..." : "Salvar Alterações"}
@@ -1969,6 +2047,25 @@ function RouteComponent() {
                               <TableCell className="capitalize text-xs print:text-[8px] font-medium print:py-0.5 print:px-1">
                                 <div className="flex items-center gap-1.5 flex-wrap">
                                   <span>{modalityLabel(tx.modality as any)}</span>
+                                  {tx.brand ? (
+                                    <Badge
+                                      variant="secondary"
+                                      className={`text-[9px] px-1.5 py-0 font-bold uppercase tracking-wider ${
+                                        isVisaOrMaster(tx.brand)
+                                          ? "bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/20"
+                                          : "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30"
+                                      }`}
+                                    >
+                                      {tx.brand}
+                                    </Badge>
+                                  ) : tx.modality !== "pix" && tx.modality !== "cash" ? (
+                                    <Badge
+                                      variant="outline"
+                                      className="text-[9px] px-1.5 py-0 font-normal text-muted-foreground"
+                                    >
+                                      Visa/Master
+                                    </Badge>
+                                  ) : null}
                                   {(tx as any)?.acquirer && (
                                     <Badge variant="outline" className="text-[9px] px-1 py-0 font-mono text-muted-foreground font-semibold">
                                       {(tx as any).acquirer}
