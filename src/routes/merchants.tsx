@@ -842,8 +842,8 @@ function MerchantsPage() {
           </CardHeader>
 
           {/* Lista de Estabelecimentos */}
-          <CardContent className="p-2 flex-1 min-h-0 flex flex-col overflow-hidden">
-            <div className="flex-1 overflow-y-auto pr-1 space-y-1.5 scrollbar-thin">
+          <CardContent className="p-2.5 flex-1 min-h-0 flex flex-col overflow-hidden">
+            <div className="flex-1 overflow-y-auto pl-1 pr-2.5 py-2 space-y-2 scrollbar-thin">
               {filteredList.length === 0 ? (
                 <div className="p-8 text-center text-muted-foreground flex flex-col items-center justify-center space-y-2">
                   <Store className="size-8 opacity-30" />
@@ -863,15 +863,15 @@ function MerchantsPage() {
                       type="button"
                       key={m.id}
                       onClick={() => setSelected(m.id)}
-                      className={`w-full rounded-xl p-3 text-left transition-all duration-150 flex items-center gap-3 relative cursor-pointer border ${
+                      className={`w-full rounded-xl pl-4 pr-3 py-3 text-left transition-all duration-150 flex items-center gap-3 relative cursor-pointer border overflow-hidden ${
                         isSelected
                           ? "bg-primary/5 border-primary shadow-xs ring-1 ring-primary/20"
-                          : "border-transparent hover:border-border/80 hover:bg-muted/40"
+                          : "border-border/40 hover:border-border/80 hover:bg-muted/40"
                       }`}
                     >
                       {/* Marcador vertical quando selecionado */}
                       {isSelected && (
-                        <div className="absolute left-0 top-2.5 bottom-2.5 w-1 bg-primary rounded-r-full" />
+                        <span className="absolute left-1.5 top-3 bottom-3 w-1 bg-primary rounded-full shadow-xs" />
                       )}
 
                       <div
@@ -1928,18 +1928,6 @@ function FeePlanForm({ merchant }: { merchant: Merchant }) {
                     )}
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
-                    {draft !== null && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setDraft(null)}
-                        disabled={save.isPending}
-                        className="h-8 text-xs text-muted-foreground hover:text-foreground"
-                      >
-                        <RotateCcw className="size-3.5 mr-1" /> Descartar
-                      </Button>
-                    )}
                     <Button
                       type="button"
                       variant="outline"
@@ -1957,16 +1945,6 @@ function FeePlanForm({ merchant }: { merchant: Merchant }) {
                       onClick={() => setOtherInstallmentRates({})}
                     >
                       Limpar
-                    </Button>
-                    <Button
-                      type="button"
-                      size="sm"
-                      onClick={() => save.mutate()}
-                      disabled={save.isPending}
-                      className="h-8 gap-1.5 shadow-xs px-4 text-xs font-semibold"
-                    >
-                      <Save className="size-3.5" />
-                      <span>{save.isPending ? "Salvando..." : "Salvar"}</span>
                     </Button>
                   </div>
                 </div>
@@ -2008,18 +1986,6 @@ function FeePlanForm({ merchant }: { merchant: Merchant }) {
                   </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2 shrink-0 self-start sm:self-auto">
-                  {draft !== null && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setDraft(null)}
-                      disabled={save.isPending}
-                      className="h-8 text-xs text-muted-foreground hover:text-foreground"
-                    >
-                      <RotateCcw className="size-3.5 mr-1" /> Descartar
-                    </Button>
-                  )}
                   <Button
                     type="button"
                     variant="outline"
@@ -2029,16 +1995,6 @@ function FeePlanForm({ merchant }: { merchant: Merchant }) {
                   >
                     <Plus className="size-3.5" />
                     Configurar parcelas (Outras Bandeiras)
-                  </Button>
-                  <Button
-                    type="button"
-                    size="sm"
-                    onClick={() => save.mutate()}
-                    disabled={save.isPending}
-                    className="gap-1.5 shadow-xs px-4 text-xs font-semibold"
-                  >
-                    <Save className="size-3.5" />
-                    <span>{save.isPending ? "Salvando..." : "Salvar"}</span>
                   </Button>
                 </div>
               </div>
