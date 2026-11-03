@@ -3,18 +3,35 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { getPublicReportData } from "@/lib/publicReport.functions";
 import { useQuery } from "@tanstack/react-query";
-import { calculateClosure } from "@/lib/closure";
-import { BRL, PCT, monthLabel } from "@/lib/format";
+import { calculateClosure, getTraditionalRate, getMaxDiscountRate, isVisaOrMaster } from "@/lib/closure";
+import { BRL, monthLabel, modalityLabel } from "@/lib/format";
+import { format } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PiggyBank, TrendingUp, SearchX, Receipt, Banknote, ArrowDownRight, ArrowUpRight, CheckCircle2, Sparkles } from "lucide-react";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { motion, AnimatePresence } from "framer-motion";
 import { AsaasBaasFooterDisclosure } from "@/components/AsaasBaasSeal";
 
 export const Route = createFileRoute("/public/report/$closureId")({
+  head: () => ({
+    meta: [
+      { title: "Relatório de Economia — PrimaPay" },
+      { name: "description", content: "Relatório de economia e detalhamento das vendas do mês do seu estabelecimento." },
+      { name: "robots", content: "noindex, nofollow" },
+      { property: "og:title", content: "Relatório de Economia — PrimaPay" },
+      { property: "og:description", content: "Relatório de economia e detalhamento das vendas do mês do seu estabelecimento." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: PublicReportPage,
 });
+
+function formatTxDate(value: string | null | undefined) {
+  if (!value) return "—";
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? String(value) : format(d, "dd/MM/yyyy");
+}
 
 function PublicReportPage() {
   const { closureId } = Route.useParams();
@@ -25,17 +42,16 @@ function PublicReportPage() {
     queryFn: () => fetchReport({ data: closureId }),
   });
 
-  if (isLoading) {
-    return <div className="flex h-screen items-center justify-center p-4"><p className="text-muted-foreground animate-pulse">Carregando relatório...</p></div>;
-  }
+  const report = data as any;
+  const merchantTerminals = ((report?.terminals as any[]) || []);
+  const txs: any[] = (report?.txs as any[]) || [];
+  const exps: any[] = (report?.exps as any[]) || [];
+  const plan = report?.plan ?? undefined;
 
-  if (error || !data) {
-    return <div className="flex h-screen items-center justify-center p-4"><p className="text-destructive font-semibold">Erro ao carregar o relatório.</p></div>;
-  }
-
-  const { closure, merchant, plan, txs, exps, terminals } = data as any;
-  const merchantTerminals = (terminals as any[]) || [];
-  const calc = calculateClosure(txs as any, exps as any, plan as any, merchantTerminals);
+  const calc = useMemo(
+    () => calculateClosure(txs as any, exps as any, plan as any, merchantTerminals),
+    [txs, exps, plan, merchantTerminals],
+  );
 
   const displayExpenses = useMemo(() => {
     const terminalItems = (calc.terminalSummary?.items ?? []).map((tItem) => ({
@@ -50,11 +66,11 @@ function PublicReportPage() {
     }));
 
     const filteredManual = merchantTerminals.length > 0
-      ? (exps || []).filter((e: any) => {
+      ? exps.filter((e: any) => {
           const desc = (e.description || "").toLowerCase().trim();
           return !desc.match(/^maquina\s*(\(\d+\/\d+\))?$/i) && !desc.match(/^maquininha/i);
         })
-      : (exps || []);
+      : exps;
 
     const manualItems = filteredManual.map((e: any) => ({
       id: e.id,
@@ -69,6 +85,48 @@ function PublicReportPage() {
 
     return [...terminalItems, ...manualItems];
   }, [calc.terminalSummary, merchantTerminals.length, exps]);
+
+  // Same per-sale math as the client view of the closing PDF
+  const salesRows = useMemo(() => {
+    return txs.map((tx) => {
+      const gross = Number(tx.gross_amount) || 0;
+      let discountedValue = 0;
+      let tradRate = 0;
+      if (tx.net_amount !== null && tx.net_amount !== undefined) {
+        discountedValue = gross - Number(tx.net_amount);
+        tradRate = gross > 0 ? (discountedValue / gross) * 100 : 0;
+      } else {
+        tradRate = getTraditionalRate(tx, plan);
+        discountedValue = gross * (tradRate / 100);
+      }
+      const opRate = Math.max(0, getMaxDiscountRate(tx, plan) - tradRate);
+      const opValue = gross * (opRate / 100);
+      return { tx, gross, discountedValue, tradRate, opRate, opValue };
+    });
+  }, [txs, plan]);
+
+  const salesTotals = useMemo(() => {
+    const totalGross = salesRows.reduce((a, r) => a + r.gross, 0);
+    const totalDiscounted = salesRows.reduce((a, r) => a + r.discountedValue, 0);
+    const totalOpValue = salesRows.reduce((a, r) => a + r.opValue, 0);
+    return {
+      totalGross,
+      totalDiscounted,
+      totalOpValue,
+      avgDiscountRate: totalGross > 0 ? (totalDiscounted / totalGross) * 100 : 0,
+      avgOpRate: totalGross > 0 ? (totalOpValue / totalGross) * 100 : 0,
+    };
+  }, [salesRows]);
+
+  if (isLoading) {
+    return <div className="flex h-screen items-center justify-center p-4"><p className="text-muted-foreground animate-pulse">Carregando relatório...</p></div>;
+  }
+
+  if (error || !data) {
+    return <div className="flex h-screen items-center justify-center p-4"><p className="text-destructive font-semibold">Erro ao carregar o relatório.</p></div>;
+  }
+
+  const { closure, merchant } = report;
 
   return (
     <div className="min-h-screen bg-slate-50/50 dark:bg-slate-950 p-4 md:p-8 font-sans">
@@ -250,6 +308,97 @@ function PublicReportPage() {
                       ))
                     )}
                   </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        </section>
+
+        <section className="pt-2">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg md:text-xl font-bold tracking-tight flex items-center gap-2">
+              <div className="size-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+                <Banknote className="size-4" />
+              </div>
+              Relatório Detalhado de Vendas
+            </h2>
+            <Badge variant="secondary" className="font-mono text-xs">
+              {salesRows.length} {salesRows.length === 1 ? "venda" : "vendas"}
+            </Badge>
+          </div>
+
+          <Card className="rounded-2xl border border-border/80 shadow-card bg-card overflow-hidden">
+            <CardContent className="p-0">
+              <div className="overflow-x-auto max-h-[600px] overflow-y-auto">
+                <Table>
+                  <TableHeader className="bg-muted/40 sticky top-0 z-10 backdrop-blur-xs">
+                    <TableRow>
+                      <TableHead className="font-semibold text-xs py-3">Data</TableHead>
+                      <TableHead className="font-semibold text-xs py-3">Modalidade</TableHead>
+                      <TableHead className="text-right font-semibold text-xs py-3">Vlr. Bruto</TableHead>
+                      <TableHead className="text-right font-semibold text-xs py-3">Vlr. Descontado</TableHead>
+                      <TableHead className="text-right font-semibold text-xs py-3">% Descontado</TableHead>
+                      <TableHead className="text-right font-semibold text-xs py-3">% Taxa Op.</TableHead>
+                      <TableHead className="text-right font-semibold text-xs py-3">Vlr. Taxa Op.</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {salesRows.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={7} className="h-24 text-center text-muted-foreground text-sm">
+                          Nenhuma venda registrada neste período.
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      salesRows.map(({ tx, gross, discountedValue, tradRate, opRate, opValue }) => (
+                        <TableRow key={tx.id} className="hover:bg-muted/30 transition-colors">
+                          <TableCell className="font-medium whitespace-nowrap text-xs font-mono py-2">
+                            {formatTxDate(tx.transaction_date)}
+                          </TableCell>
+                          <TableCell className="capitalize text-xs font-medium py-2">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span>{modalityLabel(tx.modality as any)}</span>
+                              {tx.brand ? (
+                                <Badge
+                                  variant="secondary"
+                                  className={`text-[9px] px-1.5 py-0 font-bold uppercase tracking-wider ${
+                                    isVisaOrMaster(tx.brand)
+                                      ? "bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/20"
+                                      : "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30"
+                                  }`}
+                                >
+                                  {tx.brand}
+                                </Badge>
+                              ) : tx.modality !== "pix" && tx.modality !== "cash" ? (
+                                <Badge variant="outline" className="text-[9px] px-1.5 py-0 font-normal text-muted-foreground">
+                                  Visa/Master
+                                </Badge>
+                              ) : null}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-right font-medium text-xs font-mono py-2">{BRL(gross)}</TableCell>
+                          <TableCell className="text-right text-destructive font-medium text-xs font-mono py-2">{BRL(discountedValue)}</TableCell>
+                          <TableCell className="text-right text-muted-foreground text-xs font-mono py-2">{tradRate.toFixed(2)}%</TableCell>
+                          <TableCell className="text-right font-medium text-xs font-mono py-2">{opRate.toFixed(2)}%</TableCell>
+                          <TableCell className="text-right font-bold text-primary text-xs font-mono py-2">{BRL(opValue)}</TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                  {salesRows.length > 0 && (
+                    <TableFooter className="bg-muted/50 font-bold border-t sticky bottom-0 z-10 backdrop-blur-xs">
+                      <TableRow>
+                        <TableCell colSpan={2} className="text-xs font-bold">
+                          Totais ({salesRows.length} vendas)
+                        </TableCell>
+                        <TableCell className="text-right font-bold font-mono text-xs">{BRL(salesTotals.totalGross)}</TableCell>
+                        <TableCell className="text-right font-bold text-destructive font-mono text-xs">{BRL(salesTotals.totalDiscounted)}</TableCell>
+                        <TableCell className="text-right font-bold text-muted-foreground font-mono text-xs">{salesTotals.avgDiscountRate.toFixed(2)}%</TableCell>
+                        <TableCell className="text-right font-bold font-mono text-xs">{salesTotals.avgOpRate.toFixed(2)}%</TableCell>
+                        <TableCell className="text-right font-black text-primary text-sm font-mono">{BRL(salesTotals.totalOpValue)}</TableCell>
+                      </TableRow>
+                    </TableFooter>
+                  )}
                 </Table>
               </div>
             </CardContent>
