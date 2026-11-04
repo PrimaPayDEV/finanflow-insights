@@ -271,7 +271,7 @@ function BillingDashboard({ companyId }: { companyId: string }) {
             asChild
             className="rounded-xl h-9 px-3.5 text-xs font-bold bg-primary hover:bg-primary/90 text-primary-foreground gap-1.5 shadow-xs"
           >
-            <Link to="/invoices">
+            <Link to="/veicular/financeiro">
               <Plus className="size-4" />
               <span>Gerar Fatura</span>
             </Link>
@@ -334,7 +334,7 @@ function BillingDashboard({ companyId }: { companyId: string }) {
             </Link>
 
             <Link
-              to="/reports"
+              to="/veicular/relatorios"
               className="group p-4 rounded-2xl bg-card border border-border/70 shadow-xs hover:border-purple-500/50 hover:shadow-md transition-all flex items-center gap-3.5"
             >
               <div className="size-10 rounded-xl bg-purple-500/10 text-purple-600 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">

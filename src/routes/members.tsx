@@ -58,6 +58,8 @@ import { translateError } from "@/lib/translateError";
 import { BRL, formatCpfCnpj, formatPhone, formatCurrencyInput } from "@/lib/format";
 import { VehicleCategorySelector, VehicleCategoryBadge } from "@/components/VehicleCategorySelector";
 import { fetchCepData } from "@/lib/cep";
+import { lookupVehicleByPlate, formatPlate } from "@/lib/plate";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   type ImplementoItem,
   getMemberDueDay,
@@ -305,6 +307,41 @@ export function ImplementosManager({
   );
 }
 
+export interface MemberVehicleFormItem {
+  id?: string;
+  plate: string;
+  brand: string;
+  model: string;
+  year: string;
+  color: string;
+  chassi: string;
+  renavam: string;
+  fuel: string;
+  mileage: string;
+  usage: string;
+  fipeValueStr: string;
+  category: string;
+  implementos: ImplementoItem[];
+}
+
+function createEmptyVehicleItem(): MemberVehicleFormItem {
+  return {
+    plate: "",
+    brand: "",
+    model: "",
+    year: new Date().getFullYear().toString(),
+    color: "",
+    chassi: "",
+    renavam: "",
+    fuel: "Flex",
+    mileage: "",
+    usage: "Particular",
+    fipeValueStr: "5000000",
+    category: "Leves e utilitários",
+    implementos: [],
+  };
+}
+
 function MemberDialog({
   member,
   open: controlledOpen,
@@ -322,6 +359,8 @@ function MemberDialog({
   const isControlled = controlledOpen !== undefined;
   const open = isControlled ? controlledOpen : internalOpen;
   const setOpen = isControlled ? (controlledOnOpenChange || (() => {})) : setInternalOpen;
+
+  const [activeTab, setActiveTab] = useState<"associado" | "veiculos">("associado");
 
   // Dados Pessoais do Associado
   const [name, setName] = useState(member?.name || "");
@@ -345,7 +384,7 @@ function MemberDialog({
   const [cnhExpiryDate, setCnhExpiryDate] = useState("");
   const [cnhState, setCnhState] = useState("SP");
 
-  // Endereço state (com preenchimento automático por CEP e manual)
+  // Endereço (com busca automática por CEP)
   const [cep, setCep] = useState("");
   const [address, setAddress] = useState("");
   const [number, setNumber] = useState("");
@@ -355,28 +394,11 @@ function MemberDialog({
   const [state, setState] = useState("");
   const [isSearchingCep, setIsSearchingCep] = useState(false);
 
-  // Modo de Veículo: "new" (cadastrar novo), "existing" (vincular da frota/avulso), "none" (associado avulso sem veículo)
-  const [vehicleMode, setVehicleMode] = useState<"new" | "existing" | "none">("new");
-  const [selectedExistingVehicleId, setSelectedExistingVehicleId] = useState<string>("");
+  // Lista de Veículos do Associado (Suporta Múltiplos Veículos e Implementos)
+  const [vehiclesList, setVehiclesList] = useState<MemberVehicleFormItem[]>([createEmptyVehicleItem()]);
+  const [searchingPlateIdx, setSearchingPlateIdx] = useState<number | null>(null);
 
-  // Veículo fields (mais robustos)
-  const firstVehicle = member?.vehicles?.[0];
-  const [vehicleId, setVehicleId] = useState(firstVehicle?.id || "");
-  const [plate, setPlate] = useState(firstVehicle?.plate || "");
-  const [brandName, setBrandName] = useState(firstVehicle?.brand || "");
-  const [modelName, setModelName] = useState(firstVehicle?.model || "");
-  const [year, setYear] = useState(firstVehicle?.year?.toString() || "");
-  const [color, setColor] = useState(firstVehicle?.color || "");
-  const [chassi, setChassi] = useState("");
-  const [renavam, setRenavam] = useState("");
-  const [fuel, setFuel] = useState("Flex");
-  const [mileage, setMileage] = useState("");
-  const [usage, setUsage] = useState("Particular");
-  const [fipeValueStr, setFipeValueStr] = useState("5000000"); // R$ 50.000,00
-  const [category, setCategory] = useState<string>(firstVehicle?.category || "Leves e utilitários");
-  const [implementos, setImplementos] = useState<ImplementoItem[]>([]);
-  const [brandCode, setBrandCode] = useState("");
-
+  // Consultores e Veículos da frota existentes
   const fetchPartners = useServerFn(getPartners);
   const { data: partners } = useQuery({
     queryKey: ["partners", companyId],
@@ -391,12 +413,16 @@ function MemberDialog({
     enabled: !!companyId && open,
   });
 
-  // FIPE API integration
+  // FIPE API marcas
   const { data: fipeBrands } = useQuery({
     queryKey: ["fipe-brands"],
     queryFn: async () => {
-      const res = await fetch("https://parallelum.com.br/fipe/api/v1/carros/marcas");
-      return (await res.json()) as Array<{ codigo: string; nome: string }>;
+      try {
+        const res = await fetch("https://parallelum.com.br/fipe/api/v1/carros/marcas");
+        return (await res.json()) as Array<{ codigo: string; nome: string }>;
+      } catch {
+        return [];
+      }
     },
     staleTime: Infinity,
   });
@@ -433,41 +459,31 @@ function MemberDialog({
       setNotes(extra.notes || "");
       setRegisteredAt(extra.registeredAt || member.created_at || "");
 
-      const fv = member.vehicles?.[0];
-      if (fv) {
-        const vExtra = getVehicleExtraData(companyId || "default", fv.id, fv.plate);
-        setVehicleMode("new");
-        setVehicleId(fv.id || "");
-        setPlate(fv.plate || "");
-        setBrandName(fv.brand || "");
-        setModelName(fv.model || "");
-        setYear(fv.year?.toString() || "");
-        setColor(fv.color || vExtra.color || "");
-        setChassi(vExtra.chassi || "");
-        setRenavam(vExtra.renavam || "");
-        setFuel(vExtra.fuel || "Flex");
-        setMileage(vExtra.mileage || "");
-        setUsage(vExtra.usage || "Particular");
-        const fVal = fv.fipe_value || vExtra.fipeValue || 50000;
-        setFipeValueStr(String(Math.round(fVal * 100)));
-        setCategory(fv.category || "Leves e utilitários");
-        setImplementos(vExtra.implementos || []);
+      // Carregar todos os veículos vinculados ao associado
+      if (member.vehicles && member.vehicles.length > 0) {
+        const mapped = member.vehicles.map((v: any) => {
+          const vExtra = getVehicleExtraData(companyId || "default", v.id, v.plate);
+          const fVal = v.fipe_value || vExtra.fipeValue || 50000;
+          return {
+            id: v.id || "",
+            plate: v.plate || "",
+            brand: v.brand || "",
+            model: v.model || "",
+            year: v.year?.toString() || "",
+            color: v.color || vExtra.color || "",
+            chassi: vExtra.chassi || "",
+            renavam: vExtra.renavam || "",
+            fuel: vExtra.fuel || "Flex",
+            mileage: vExtra.mileage || "",
+            usage: vExtra.usage || "Particular",
+            fipeValueStr: String(Math.round(fVal * 100)),
+            category: v.category || "Leves e utilitários",
+            implementos: vExtra.implementos || [],
+          };
+        });
+        setVehiclesList(mapped);
       } else {
-        setVehicleMode("none");
-        setVehicleId("");
-        setPlate("");
-        setBrandName("");
-        setModelName("");
-        setYear("");
-        setColor("");
-        setChassi("");
-        setRenavam("");
-        setFuel("Flex");
-        setMileage("");
-        setUsage("Particular");
-        setFipeValueStr("5000000");
-        setCategory("Leves e utilitários");
-        setImplementos([]);
+        setVehiclesList([createEmptyVehicleItem()]);
       }
     } else {
       setName("");
@@ -495,50 +511,14 @@ function MemberDialog({
       setNeighborhood("");
       setCity("");
       setState("");
-      setVehicleMode("new");
-      setVehicleId("");
-      setPlate("");
-      setBrandName("");
-      setModelName("");
-      setYear("");
-      setColor("");
-      setChassi("");
-      setRenavam("");
-      setFuel("Flex");
-      setMileage("");
-      setUsage("Particular");
-      setFipeValueStr("5000000");
-      setBrandCode("");
-      setCategory("Leves e utilitários");
-      setImplementos([]);
-      setSelectedExistingVehicleId("");
+      setVehiclesList([createEmptyVehicleItem()]);
     }
   }, [member, open, companyId]);
 
-  useEffect(() => {
-    if (fipeBrands && brandName && !brandCode) {
-      const b = fipeBrands.find((x) => x.nome === brandName);
-      if (b) setBrandCode(b.codigo);
-    }
-  }, [fipeBrands, brandName, brandCode]);
-
-  const { data: fipeModels } = useQuery({
-    queryKey: ["fipe-models", brandCode],
-    queryFn: async () => {
-      const res = await fetch(`https://parallelum.com.br/fipe/api/v1/carros/marcas/${brandCode}/modelos`);
-      const data = await res.json();
-      return data.modelos as Array<{ codigo: string; nome: string }>;
-    },
-    enabled: !!brandCode,
-    staleTime: Infinity,
-  });
-
+  // Busca de CEP com preenchimento automático
   const handleCepSearch = async (cepInput: string) => {
     const clean = cepInput.replace(/\D/g, "");
-    if (clean.length !== 8) {
-      toast.error("Informe um CEP válido com 8 dígitos.");
-      return;
-    }
+    if (clean.length !== 8) return;
     setIsSearchingCep(true);
     try {
       const data = await fetchCepData(clean);
@@ -547,7 +527,7 @@ function MemberDialog({
         setNeighborhood(data.bairro || "");
         setCity(data.localidade || "");
         setState(data.uf || "");
-        toast.success("Endereço localizado com sucesso!");
+        toast.success("Endereço preenchido automaticamente via CEP!");
       }
     } catch {
       toast.error("Erro ao buscar dados do CEP.");
@@ -556,57 +536,136 @@ function MemberDialog({
     }
   };
 
-  // Cálculo da mensalidade do veículo + implementos pela tabela de preços
-  const parsedFipeValue = Number(fipeValueStr.replace(/\D/g, "")) / 100 || 50000;
-  const baseVehicleMonthlyFee = useMemo(() => {
-    return calculateBaseMonthlyFee(categoryToVehicleType(category), parsedFipeValue);
-  }, [category, parsedFipeValue]);
+  // Preenchimento automático do veículo pela placa
+  const handlePlateLookup = async (idx: number, plateVal: string) => {
+    const clean = (plateVal || "").replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+    if (clean.length < 7) return;
 
-  const implementosMonthlyFee = useMemo(() => {
-    return implementos.reduce((acc, imp) => acc + (imp.monthlyFee || 0), 0);
-  }, [implementos]);
+    setSearchingPlateIdx(idx);
+    try {
+      const data = await lookupVehicleByPlate(clean);
+      if (data) {
+        setVehiclesList((prev) => {
+          const copy = [...prev];
+          const target = { ...copy[idx] };
+          target.plate = clean;
+          if (data.brand && (!target.brand || target.brand === "Não informada")) target.brand = data.brand;
+          if (data.model && (!target.model || target.model === "Modelo não informado")) target.model = data.model;
+          if (data.year) target.year = String(data.year);
+          if (data.color) target.color = data.color;
+          if (data.fuel) target.fuel = data.fuel;
+          if (data.chassi) target.chassi = data.chassi;
+          if (data.renavam) target.renavam = data.renavam;
+          if (data.category) {
+            target.category = data.category === "moto" ? "Motocicletas" : data.category === "pesado" ? "Pesados" : data.category === "utilitario" ? "Vans e Utilitários" : "Leves e utilitários";
+          }
+          if (data.fipeValue) {
+            target.fipeValueStr = String(Math.round(data.fipeValue * 100));
+          }
+          copy[idx] = target;
+          return copy;
+        });
+        toast.success("Veículo localizado pela placa!", {
+          description: `${data.brand} ${data.model} (${data.year})`,
+        });
+      }
+    } finally {
+      setSearchingPlateIdx(null);
+    }
+  };
 
-  const totalCalculatedMonthlyFee = baseVehicleMonthlyFee + implementosMonthlyFee;
+  // Gerenciamento da lista de veículos
+  const handleAddVehicle = () => {
+    setVehiclesList((prev) => [...prev, createEmptyVehicleItem()]);
+    toast.info("Novo veículo adicionado ao formulário!");
+  };
 
-  // Verificar validade da CNH
+  const handleRemoveVehicle = (idx: number) => {
+    if (vehiclesList.length <= 1) {
+      setVehiclesList([createEmptyVehicleItem()]);
+      return;
+    }
+    setVehiclesList((prev) => prev.filter((_, i) => i !== idx));
+    toast.info("Veículo removido do cadastro.");
+  };
+
+  const updateVehicleField = <K extends keyof MemberVehicleFormItem>(
+    idx: number,
+    field: K,
+    value: MemberVehicleFormItem[K]
+  ) => {
+    setVehiclesList((prev) => {
+      const copy = [...prev];
+      copy[idx] = { ...copy[idx], [field]: value };
+      return copy;
+    });
+  };
+
+  // Cálculos financeiros totais
+  const vehiclesPricing = useMemo(() => {
+    return vehiclesList.map((v) => {
+      const parsedFipe = Number(v.fipeValueStr.replace(/\D/g, "")) / 100 || 50000;
+      const baseFee = calculateBaseMonthlyFee(categoryToVehicleType(v.category), parsedFipe);
+      const impFee = (v.implementos || []).reduce((acc, imp) => acc + (imp.monthlyFee || 0), 0);
+      return {
+        baseFee,
+        impFee,
+        totalFee: baseFee + impFee,
+      };
+    });
+  }, [vehiclesList]);
+
+  const totalMonthlyFeeAllVehicles = useMemo(() => {
+    return vehiclesPricing.reduce((acc, p) => acc + p.totalFee, 0);
+  }, [vehiclesPricing]);
+
+  // Validação da CNH
   const isCnhExpired = useMemo(() => {
     if (!cnhExpiryDate) return false;
     const today = new Date().toISOString().split("T")[0];
     return cnhExpiryDate < today;
   }, [cnhExpiryDate]);
 
+  // Submissão do Formulário
   const submit = useMutation({
     mutationFn: async () => {
       if (!companyId) throw new Error("Empresa não identificada");
       if (!name.trim()) throw new Error("Informe o nome do associado");
-      if (!document.trim()) throw new Error("Informe o CPF ou CNPJ");
+      if (!document.trim()) throw new Error("Informe o CPF ou CNPJ do associado");
 
       const nowIso = new Date().toISOString();
       const finalRegisteredAt = registeredAt || nowIso;
+
+      // Filtrar veículos válidos (que tenham ao menos placa ou marca/modelo)
+      const validVehicles = vehiclesList.filter((v) => v.plate || v.brand || v.model);
+
+      const vehiclesPayload = validVehicles.map((v, i) => {
+        const pricing = vehiclesPricing[i] || { totalFee: 179.90 };
+        const fVal = Number(v.fipeValueStr.replace(/\D/g, "")) / 100 || 50000;
+        return {
+          id: v.id || undefined,
+          plate: v.plate ? v.plate.toUpperCase().trim() : undefined,
+          brand: v.brand.trim(),
+          model: v.model.trim(),
+          year: v.year ? parseInt(v.year, 10) : undefined,
+          category: v.category,
+          monthly_fee: pricing.totalFee,
+          fipe_value: fVal,
+        };
+      });
 
       const res = await upsertMember({
         data: {
           id: member?.id,
           companyId,
-          name,
-          document,
-          email,
-          phone,
+          name: name.trim(),
+          document: document.trim(),
+          email: email.trim() || undefined,
+          phone: phone.trim() || undefined,
           partner_id: partnerId && partnerId !== "none" ? partnerId : undefined,
           status,
-          vehicle:
-            vehicleMode === "new" && (plate || brandName || modelName)
-              ? {
-                  id: vehicleId || undefined,
-                  plate: plate ? plate.toUpperCase() : undefined,
-                  brand: brandName,
-                  model: modelName,
-                  year: year ? parseInt(year) : undefined,
-                  category,
-                  monthly_fee: totalCalculatedMonthlyFee,
-                  fipe_value: parsedFipeValue,
-                }
-              : undefined,
+          vehicles: vehiclesPayload,
+          vehicle: vehiclesPayload[0] || undefined,
         },
       });
 
@@ -617,7 +676,7 @@ function MemberDialog({
         // Persistir dia de vencimento
         setMemberDueDay(companyId, targetMemberId, dueDay);
 
-        // Persistir dados complementares completos do associado (incluindo CNH e data/hora do cadastro)
+        // Persistir dados complementares completos do associado
         saveMemberExtraData(companyId, targetMemberId, {
           rg,
           birthDate,
@@ -640,59 +699,51 @@ function MemberDialog({
           updatedAt: nowIso,
         });
 
-        // Se cadastrou/editou veículo, persistir dados extras do veículo e implementos
-        if (vehicleMode === "new" && (plate || brandName || modelName)) {
-          saveVehicleExtraData(companyId, vehicleId || undefined, plate, {
-            chassi: chassi.trim().toUpperCase(),
-            renavam: renavam.trim(),
-            color,
-            fuel,
-            mileage,
-            usage,
-            fipeValue: parsedFipeValue,
-            implementos,
-            registeredAt: finalRegisteredAt,
-          });
-        }
-
-        // Vincular a veículo avulso existente caso selecionado
-        if (vehicleMode === "existing" && selectedExistingVehicleId) {
-          await linkVehicleToMember({
-            data: {
-              companyId,
-              memberId: targetMemberId,
-              vehicleId: selectedExistingVehicleId,
-            },
-          });
-        }
+        // Persistir dados extras e implementos de CADA veículo
+        validVehicles.forEach((v) => {
+          if (v.plate || v.brand) {
+            const fVal = Number(v.fipeValueStr.replace(/\D/g, "")) / 100 || 50000;
+            saveVehicleExtraData(companyId, v.id || undefined, v.plate, {
+              chassi: (v.chassi || "").trim().toUpperCase(),
+              renavam: (v.renavam || "").trim(),
+              color: v.color,
+              fuel: v.fuel,
+              mileage: v.mileage,
+              usage: v.usage,
+              fipeValue: fVal,
+              implementos: v.implementos || [],
+              registeredAt: finalRegisteredAt,
+            });
+          }
+        });
       }
 
       return { registeredAt: finalRegisteredAt };
     },
-    onSuccess: (data) => {
-      const formattedStamp = formatDateTimeBR(data?.registeredAt || new Date().toISOString());
-      toast.success(member ? "Cadastro do associado atualizado!" : "Associado cadastrado com sucesso!", {
-        description: `Registro concluído em ${formattedStamp}.`,
-      });
+    onSuccess: () => {
+      toast.success(
+        member ? "Associado e veículos atualizados com sucesso!" : "Novo associado cadastrado com sucesso!"
+      );
+      qc.invalidateQueries({ queryKey: ["members", companyId] });
+      qc.invalidateQueries({ queryKey: ["vehicles", companyId] });
       setOpen(false);
-      qc.invalidateQueries({ queryKey: ["members"] });
-      qc.invalidateQueries({ queryKey: ["vehicles"] });
     },
     onError: (e) => toast.error(translateError(e.message)),
   });
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="w-[96vw] sm:w-[980px] sm:max-w-5xl max-h-[92vh] flex flex-col p-0 gap-0 border-border bg-card shadow-2xl rounded-2xl sm:rounded-3xl overflow-hidden">
-        <DialogHeader className="p-4 sm:p-5 pb-3 border-b border-border/60 bg-muted/10 shrink-0">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pr-8">
+      <DialogContent className="w-[96vw] sm:w-[1100px] sm:max-w-6xl max-h-[92vh] flex flex-col p-0 gap-0 border-border bg-card shadow-2xl rounded-2xl sm:rounded-3xl overflow-hidden">
+        {/* Cabeçalho */}
+        <DialogHeader className="p-4 sm:p-5 pb-3 border-b border-border/60 bg-muted/15 shrink-0">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pr-8">
             <div>
-              <DialogTitle className="text-base font-bold flex items-center gap-2">
-                <User className="size-4.5 text-primary" />
-                {member ? "Ficha Cadastral do Associado" : "Novo Cadastro de Associado & Veículo"}
+              <DialogTitle className="text-base sm:text-lg font-bold flex items-center gap-2">
+                <User className="size-5 text-primary" />
+                {member ? "Ficha Cadastral do Associado" : "Novo Cadastro de Associado & Veículos"}
               </DialogTitle>
-              <DialogDescription className="text-xs">
-                Formulário completo com dados pessoais, validade da CNH, endereço, veículo e implementos.
+              <DialogDescription className="text-xs text-muted-foreground mt-0.5">
+                Preencha os dados pessoais, endereço com busca automática por CEP, habilitação e múltiplos veículos com implementos.
               </DialogDescription>
             </div>
             <div className="flex items-center gap-2 shrink-0">
@@ -703,84 +754,101 @@ function MemberDialog({
                 <Clock className="size-3" />
                 {registeredAt
                   ? `Cadastrado em: ${formatDateTimeBR(registeredAt)}`
-                  : `Data/Hora atual: ${formatDateTimeBR(new Date().toISOString())}`}
+                  : `Data atual: ${formatDateTimeBR(new Date().toISOString())}`}
               </Badge>
             </div>
           </div>
+
+          {/* Abas de Navegação Superior */}
+          <div className="pt-2">
+            <Tabs value={activeTab} onValueChange={(v: any) => setActiveTab(v)} className="w-full">
+              <TabsList className="bg-muted/60 p-1 rounded-xl h-10 w-full sm:w-auto grid grid-cols-2 sm:inline-flex">
+                <TabsTrigger value="associado" className="rounded-lg text-xs font-bold gap-2 px-4 h-8">
+                  <User className="size-3.5" />
+                  <span>1. Dados Pessoais & Endereço</span>
+                </TabsTrigger>
+                <TabsTrigger value="veiculos" className="rounded-lg text-xs font-bold gap-2 px-4 h-8">
+                  <Car className="size-3.5" />
+                  <span>2. Veículos & Implementos ({vehiclesList.length})</span>
+                  {totalMonthlyFeeAllVehicles > 0 && (
+                    <span className="hidden sm:inline-block ml-1 font-mono text-[10px] bg-primary/15 text-primary px-1.5 py-0.2 rounded-md">
+                      {BRL(totalMonthlyFeeAllVehicles)}/mês
+                    </span>
+                  )}
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-5 min-h-0">
-          <div className="grid md:grid-cols-2 gap-5 items-start">
-            {/* COLUNA ESQUERDA: Dados Pessoais, CNH e Cobrança */}
-            <div className="space-y-4">
-              {/* Bloco 1: Identificação Pessoal */}
-              <div className="p-3.5 rounded-2xl border border-border/70 bg-muted/10 space-y-3">
-                <div className="flex items-center justify-between pb-1.5 border-b border-border/50">
-                  <h3 className="font-bold text-xs uppercase tracking-wider text-primary flex items-center gap-1.5">
-                    <User className="size-3.5" /> 1. Dados Pessoais & Identificação
+        {/* Conteúdo com rolagem suave */}
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-5 min-h-0">
+          {activeTab === "associado" && (
+            <div className="space-y-5">
+              {/* BLOCO 1: Identificação Pessoal */}
+              <div className="p-4 rounded-2xl border border-border/80 bg-muted/10 space-y-4">
+                <div className="flex items-center justify-between pb-2 border-b border-border/60">
+                  <h3 className="font-bold text-xs uppercase tracking-wider text-primary flex items-center gap-2">
+                    <User className="size-4" /> 1. Identificação Pessoal & Contato
                   </h3>
                   <div className="flex items-center gap-2">
                     <span
-                      className={`text-[10px] font-bold ${
+                      className={`text-xs font-bold ${
                         status === "active" ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground"
                       }`}
                     >
-                      {status === "active" ? "Associado Ativo" : "Inativo"}
+                      {status === "active" ? "Associado Ativo" : "Associado Inativo"}
                     </span>
                     <Switch
                       checked={status === "active"}
                       onCheckedChange={(c) => setStatus(c ? "active" : "inactive")}
-                      className="scale-75 data-[state=checked]:bg-emerald-600"
+                      className="scale-90 data-[state=checked]:bg-emerald-600"
                     />
                   </div>
                 </div>
 
-                <div className="space-y-1">
-                  <Label className="text-xs font-semibold">Nome Completo / Razão Social *</Label>
-                  <Input
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Nome completo do associado"
-                    className="h-8.5 rounded-xl text-xs bg-background"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                  <div className="space-y-1">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+                  <div className="space-y-1.5 sm:col-span-2">
+                    <Label className="text-xs font-semibold">Nome Completo / Razão Social *</Label>
+                    <Input
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder="Nome completo do associado ou empresa"
+                      className="h-9 rounded-xl text-xs bg-background"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
                     <Label className="text-xs font-semibold">CPF / CNPJ *</Label>
                     <Input
                       value={document}
                       onChange={(e) => setDocument(formatCpfCnpj(e.target.value))}
                       placeholder="000.000.000-00"
                       maxLength={18}
-                      className="h-8.5 rounded-xl text-xs font-mono bg-background"
+                      className="h-9 rounded-xl text-xs font-mono font-bold bg-background"
                     />
                   </div>
-                  <div className="space-y-1">
+                  <div className="space-y-1.5">
                     <Label className="text-xs font-semibold">RG / Órgão Emissor</Label>
                     <Input
                       value={rg}
                       onChange={(e) => setRg(e.target.value)}
-                      placeholder="Ex: 12.345.678-9 SSP"
-                      className="h-8.5 rounded-xl text-xs font-mono bg-background"
+                      placeholder="Ex: 12.345.678-9 SSP/SP"
+                      className="h-9 rounded-xl text-xs bg-background"
                     />
                   </div>
-                  <div className="space-y-1 col-span-2 sm:col-span-1">
+                  <div className="space-y-1.5">
                     <Label className="text-xs font-semibold">Data de Nascimento</Label>
                     <Input
                       type="date"
                       value={birthDate}
                       onChange={(e) => setBirthDate(e.target.value)}
-                      className="h-8.5 rounded-xl text-xs font-mono bg-background"
+                      className="h-9 rounded-xl text-xs font-mono bg-background"
                     />
                   </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="space-y-1">
+                  <div className="space-y-1.5">
                     <Label className="text-xs font-semibold">Estado Civil</Label>
                     <Select value={maritalStatus} onValueChange={setMaritalStatus}>
-                      <SelectTrigger className="h-8.5 rounded-xl text-xs bg-background">
+                      <SelectTrigger className="h-9 rounded-xl text-xs bg-background">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent className="rounded-xl">
@@ -792,55 +860,49 @@ function MemberDialog({
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="space-y-1">
+                  <div className="space-y-1.5">
                     <Label className="text-xs font-semibold">Profissão / Ocupação</Label>
                     <Input
                       value={profession}
                       onChange={(e) => setProfession(e.target.value)}
-                      placeholder="Ex: Autônomo, Empresário..."
-                      className="h-8.5 rounded-xl text-xs bg-background"
+                      placeholder="Ex: Motorista, Autônomo, Comerciante"
+                      className="h-9 rounded-xl text-xs bg-background"
                     />
                   </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="space-y-1">
-                    <Label className="text-xs font-semibold">Celular / WhatsApp Principal *</Label>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold">WhatsApp / Celular Principal *</Label>
                     <Input
                       value={phone}
                       onChange={(e) => setPhone(formatPhone(e.target.value))}
                       placeholder="(00) 00000-0000"
                       maxLength={15}
-                      className="h-8.5 rounded-xl text-xs font-mono bg-background"
+                      className="h-9 rounded-xl text-xs font-mono bg-background font-bold text-foreground"
                     />
                   </div>
-                  <div className="space-y-1">
+                  <div className="space-y-1.5">
                     <Label className="text-xs font-semibold">Telefone Secundário / Recado</Label>
                     <Input
                       value={secondaryPhone}
                       onChange={(e) => setSecondaryPhone(formatPhone(e.target.value))}
                       placeholder="(00) 00000-0000"
                       maxLength={15}
-                      className="h-8.5 rounded-xl text-xs font-mono bg-background"
+                      className="h-9 rounded-xl text-xs font-mono bg-background"
                     />
                   </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="space-y-1">
+                  <div className="space-y-1.5 sm:col-span-2">
                     <Label className="text-xs font-semibold">E-mail</Label>
                     <Input
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="email@exemplo.com"
-                      className="h-8.5 rounded-xl text-xs bg-background"
+                      className="h-9 rounded-xl text-xs bg-background"
                     />
                   </div>
-                  <div className="space-y-1">
+                  <div className="space-y-1.5">
                     <Label className="text-xs font-semibold">Consultor Responsável</Label>
                     <Select value={partnerId} onValueChange={setPartnerId}>
-                      <SelectTrigger className="h-8.5 rounded-xl text-xs bg-background">
+                      <SelectTrigger className="h-9 rounded-xl text-xs bg-background">
                         <SelectValue placeholder="Direto / Sem Consultor" />
                       </SelectTrigger>
                       <SelectContent className="rounded-xl">
@@ -856,18 +918,18 @@ function MemberDialog({
                 </div>
               </div>
 
-              {/* Bloco 2: Dados da CNH (Habilitação) */}
-              <div className="p-3.5 rounded-2xl border border-primary/25 bg-primary/5 space-y-2.5">
-                <div className="flex items-center justify-between pb-1 border-b border-primary/15">
-                  <h3 className="font-bold text-xs uppercase tracking-wider text-primary flex items-center gap-1.5">
-                    <CreditCard className="size-3.5" /> 2. Carteira Nacional de Habilitação (CNH)
+              {/* BLOCO 2: CNH (Carteira Nacional de Habilitação) */}
+              <div className="p-4 rounded-2xl border border-primary/25 bg-primary/5 space-y-3.5">
+                <div className="flex items-center justify-between pb-1.5 border-b border-primary/20">
+                  <h3 className="font-bold text-xs uppercase tracking-wider text-primary flex items-center gap-2">
+                    <CreditCard className="size-4" /> 2. Carteira Nacional de Habilitação (CNH)
                   </h3>
                   {cnhExpiryDate && (
                     <Badge
                       className={
                         isCnhExpired
-                          ? "bg-destructive text-destructive-foreground text-[9px] font-bold"
-                          : "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30 text-[9px] font-bold"
+                          ? "bg-destructive text-destructive-foreground text-[10px] font-bold"
+                          : "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30 text-[10px] font-bold"
                       }
                     >
                       {isCnhExpired ? "CNH Vencida!" : "CNH Regular"}
@@ -875,487 +937,489 @@ function MemberDialog({
                   )}
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                  <div className="space-y-1 col-span-2 sm:col-span-1">
-                    <Label className="text-[11px] font-semibold">Nº Registro CNH</Label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold">Nº Registro CNH</Label>
                     <Input
                       value={cnhNumber}
                       onChange={(e) => setCnhNumber(e.target.value.replace(/\D/g, "").slice(0, 11))}
                       placeholder="00000000000"
                       maxLength={11}
-                      className="h-8.5 rounded-xl text-xs font-mono bg-background"
+                      className="h-9 rounded-xl text-xs font-mono bg-background"
                     />
                   </div>
-                  <div className="space-y-1">
-                    <Label className="text-[11px] font-semibold">Categoria</Label>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold">Categoria</Label>
                     <Select value={cnhCategory} onValueChange={setCnhCategory}>
-                      <SelectTrigger className="h-8.5 rounded-xl text-xs font-bold bg-background">
+                      <SelectTrigger className="h-9 rounded-xl text-xs font-bold bg-background">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent className="rounded-xl">
                         <SelectItem value="A">Cat. A (Moto)</SelectItem>
                         <SelectItem value="B">Cat. B (Carro)</SelectItem>
-                        <SelectItem value="AB">Cat. AB</SelectItem>
-                        <SelectItem value="C">Cat. C</SelectItem>
-                        <SelectItem value="D">Cat. D</SelectItem>
-                        <SelectItem value="E">Cat. E</SelectItem>
+                        <SelectItem value="AB">Cat. AB (Carro e Moto)</SelectItem>
+                        <SelectItem value="C">Cat. C (Caminhão Pequeno)</SelectItem>
+                        <SelectItem value="D">Cat. D (Ônibus / Vans)</SelectItem>
+                        <SelectItem value="E">Cat. E (Carretas / Pesados)</SelectItem>
                         <SelectItem value="AD">Cat. AD</SelectItem>
                         <SelectItem value="AE">Cat. AE</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="space-y-1 col-span-2 sm:col-span-1">
-                    <Label className="text-[11px] font-bold text-primary">Validade da CNH *</Label>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-bold text-primary">Validade da CNH</Label>
                     <Input
                       type="date"
                       value={cnhExpiryDate}
                       onChange={(e) => setCnhExpiryDate(e.target.value)}
-                      className="h-8.5 rounded-xl text-xs font-mono bg-background border-primary/40"
+                      className="h-9 rounded-xl text-xs font-mono bg-background border-primary/40 font-bold"
                     />
                   </div>
-                  <div className="space-y-1">
-                    <Label className="text-[11px] font-semibold">UF Emissão</Label>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold">UF de Emissão</Label>
                     <Input
                       value={cnhState}
                       onChange={(e) => setCnhState(e.target.value.toUpperCase().slice(0, 2))}
                       placeholder="SP"
                       maxLength={2}
-                      className="h-8.5 rounded-xl text-xs font-mono uppercase bg-background"
+                      className="h-9 rounded-xl text-xs font-mono uppercase bg-background"
                     />
                   </div>
                 </div>
               </div>
 
-              {/* Bloco 3: Vencimento e Observações */}
-              <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/25 space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label className="text-xs font-bold text-amber-900 dark:text-amber-200 flex items-center gap-1.5">
-                    <Calendar className="size-3.5 text-amber-600" /> Vencimento do Boleto no Lote *
-                  </Label>
-                  <Badge variant="outline" className="border-amber-500/40 text-amber-700 dark:text-amber-300 text-[9px] font-bold">
-                    Lote Financeiro
-                  </Badge>
-                </div>
-                <Select value={String(dueDay)} onValueChange={(v) => setDueDay(Number(v))}>
-                  <SelectTrigger className="h-8.5 rounded-xl text-xs bg-background font-bold">
-                    <SelectValue placeholder="Selecione o dia de vencimento" />
-                  </SelectTrigger>
-                  <SelectContent className="rounded-xl">
-                    <SelectItem value="5">Dia 05 de cada mês</SelectItem>
-                    <SelectItem value="10">Dia 10 de cada mês</SelectItem>
-                    <SelectItem value="15">Dia 15 de cada mês</SelectItem>
-                    <SelectItem value="20">Dia 20 de cada mês (Padrão)</SelectItem>
-                    <SelectItem value="25">Dia 25 de cada mês</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            {/* COLUNA DIREITA: Endereço & Veículo + Implemento */}
-            <div className="space-y-4">
-              {/* Endereço Residencial */}
-              <div className="p-3.5 rounded-2xl border border-border/70 bg-muted/10 space-y-2.5">
-                <div className="flex items-center justify-between pb-1 border-b border-border/50">
-                  <span className="text-xs font-bold uppercase tracking-wider text-primary flex items-center gap-1.5">
-                    <MapPin className="size-3.5" /> 3. Endereço Residencial
+              {/* BLOCO 3: Endereço Residencial com Auto-busca por CEP */}
+              <div className="p-4 rounded-2xl border border-border/80 bg-muted/10 space-y-3.5">
+                <div className="flex items-center justify-between pb-1.5 border-b border-border/60">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-primary flex items-center gap-2">
+                    <MapPin className="size-4" /> 3. Endereço Residencial
+                  </h3>
+                  <span className="text-[11px] text-muted-foreground flex items-center gap-1">
+                    <Sparkles className="size-3 text-amber-500" />
+                    Autocompletar instantâneo por CEP
                   </span>
-                  <span className="text-[10px] text-muted-foreground">Autocompletar por CEP</span>
                 </div>
 
-                <div className="grid grid-cols-3 gap-2">
-                  <div className="space-y-1 col-span-1">
-                    <Label className="text-[11px] font-semibold">CEP</Label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold">CEP (8 dígitos)</Label>
                     <div className="relative">
                       <Input
                         value={cep}
-                        onChange={(e) => setCep(e.target.value.replace(/\D/g, "").slice(0, 8))}
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/\D/g, "").slice(0, 8);
+                          setCep(val);
+                          if (val.length === 8) handleCepSearch(val);
+                        }}
                         onBlur={(e) => handleCepSearch(e.target.value)}
                         placeholder="00000-000"
-                        className="h-8 rounded-xl text-xs font-mono bg-background pr-6"
+                        className="h-9 rounded-xl text-xs font-mono bg-background pr-7 font-bold"
                       />
                       {isSearchingCep && (
-                        <Loader2 className="size-3 animate-spin absolute right-2 top-2.5 text-muted-foreground" />
+                        <Loader2 className="size-3.5 animate-spin absolute right-2.5 top-2.5 text-primary" />
                       )}
                     </div>
                   </div>
-                  <div className="space-y-1 col-span-2">
-                    <Label className="text-[11px] font-semibold">Logradouro / Rua</Label>
+                  <div className="space-y-1.5 sm:col-span-2">
+                    <Label className="text-xs font-semibold">Logradouro / Rua</Label>
                     <Input
                       value={address}
                       onChange={(e) => setAddress(e.target.value)}
                       placeholder="Rua, Avenida, Alameda..."
-                      className="h-8 rounded-xl text-xs bg-background"
+                      className="h-9 rounded-xl text-xs bg-background"
                     />
                   </div>
-                </div>
-
-                <div className="grid grid-cols-3 gap-2">
-                  <div className="space-y-1 col-span-1">
-                    <Label className="text-[11px] font-semibold">Número</Label>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold">Número</Label>
                     <Input
                       value={number}
                       onChange={(e) => setNumber(e.target.value)}
                       placeholder="Nº ou S/N"
-                      className="h-8 rounded-xl text-xs bg-background"
+                      className="h-9 rounded-xl text-xs bg-background"
                     />
                   </div>
-                  <div className="space-y-1 col-span-2">
-                    <Label className="text-[11px] font-semibold">Complemento / Bairro</Label>
-                    <div className="grid grid-cols-2 gap-1.5">
-                      <Input
-                        value={complement}
-                        onChange={(e) => setComplement(e.target.value)}
-                        placeholder="Apto / Bloco"
-                        className="h-8 rounded-xl text-xs bg-background"
-                      />
-                      <Input
-                        value={neighborhood}
-                        onChange={(e) => setNeighborhood(e.target.value)}
-                        placeholder="Bairro"
-                        className="h-8 rounded-xl text-xs bg-background"
-                      />
-                    </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold">Complemento</Label>
+                    <Input
+                      value={complement}
+                      onChange={(e) => setComplement(e.target.value)}
+                      placeholder="Apto, Bloco, Sala..."
+                      className="h-9 rounded-xl text-xs bg-background"
+                    />
                   </div>
-                </div>
-
-                <div className="grid grid-cols-3 gap-2">
-                  <div className="space-y-1 col-span-2">
-                    <Label className="text-[11px] font-semibold">Cidade</Label>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold">Bairro</Label>
+                    <Input
+                      value={neighborhood}
+                      onChange={(e) => setNeighborhood(e.target.value)}
+                      placeholder="Bairro"
+                      className="h-9 rounded-xl text-xs bg-background"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold">Cidade</Label>
                     <Input
                       value={city}
                       onChange={(e) => setCity(e.target.value)}
                       placeholder="Cidade"
-                      className="h-8 rounded-xl text-xs bg-background"
+                      className="h-9 rounded-xl text-xs bg-background"
                     />
                   </div>
-                  <div className="space-y-1 col-span-1">
-                    <Label className="text-[11px] font-semibold">UF</Label>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold">UF</Label>
                     <Input
                       value={state}
                       onChange={(e) => setState(e.target.value.toUpperCase().slice(0, 2))}
                       placeholder="UF"
                       maxLength={2}
-                      className="h-8 rounded-xl text-xs font-mono uppercase bg-background"
+                      className="h-9 rounded-xl text-xs font-mono uppercase bg-background"
                     />
                   </div>
                 </div>
               </div>
 
-              {/* Bloco 4: Veículo do Associado + Implementos */}
-              <div className="p-3.5 rounded-2xl border border-border/70 bg-muted/10 space-y-3">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-bold text-xs uppercase tracking-wider text-primary flex items-center gap-1.5">
-                    <Car className="size-3.5" /> 4. Veículo & Implementos
-                  </h3>
-                  {member?.vehicles?.length > 0 && onNavigateToVehicle && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        setOpen(false);
-                        onNavigateToVehicle(member.vehicles[0].id, member.vehicles[0].plate);
-                      }}
-                      className="h-6.5 text-[11px] font-bold text-primary hover:bg-primary/10 gap-1 px-2 rounded-lg"
-                    >
-                      <ExternalLink className="size-3" />
-                      Ver Coberturas & Mensalidade
-                    </Button>
-                  )}
+              {/* BLOCO 4: Vencimento & Observações */}
+              <div className="p-4 rounded-2xl border border-amber-500/30 bg-amber-500/10 space-y-3.5">
+                <div className="flex items-center justify-between pb-1.5 border-b border-amber-500/20">
+                  <Label className="text-xs font-bold text-amber-900 dark:text-amber-200 flex items-center gap-2">
+                    <Calendar className="size-4 text-amber-600" /> 4. Parametrização do Boleto no Lote
+                  </Label>
+                  <Badge variant="outline" className="border-amber-500/40 text-amber-700 dark:text-amber-300 text-[10px] font-bold">
+                    Fechamento Financeiro
+                  </Badge>
                 </div>
-
-                {/* Veículos já vinculados ao associado (clique direto para aba Veículos) */}
-                {member?.vehicles?.length > 0 && (
-                  <div className="p-2.5 rounded-xl bg-primary/5 border border-primary/20 space-y-1.5">
-                    <span className="text-[10px] font-bold uppercase text-muted-foreground block">
-                      Veículos vinculados a este associado (clique para abrir Ficha, Coberturas e Mensalidade):
-                    </span>
-                    <div className="flex flex-wrap gap-1.5">
-                      {member.vehicles.map((v: any) => (
-                        <button
-                          key={v.id}
-                          type="button"
-                          onClick={() => {
-                            if (onNavigateToVehicle) {
-                              setOpen(false);
-                              onNavigateToVehicle(v.id, v.plate);
-                            }
-                          }}
-                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-background hover:bg-primary hover:text-primary-foreground border border-primary/30 text-xs font-semibold transition-colors shadow-2xs"
-                        >
-                          <Car className="size-3" />
-                          <span className="font-mono font-bold">{v.plate}</span>
-                          <span className="text-[11px] opacity-85">
-                            {v.brand} {v.model}
-                          </span>
-                          <ExternalLink className="size-3 opacity-75" />
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Seletor de Modo de Veículo */}
-                <div className="grid grid-cols-3 gap-1 p-1 rounded-xl bg-muted/50 border border-border/60">
-                  <Button
-                    type="button"
-                    variant={vehicleMode === "new" ? "default" : "ghost"}
-                    size="sm"
-                    onClick={() => setVehicleMode("new")}
-                    className="rounded-lg h-7 text-[11px] font-bold"
-                  >
-                    {vehicleId ? "Editar Veículo" : "Novo Veículo"}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant={vehicleMode === "existing" ? "default" : "ghost"}
-                    size="sm"
-                    onClick={() => setVehicleMode("existing")}
-                    className="rounded-lg h-7 text-[11px] font-bold"
-                  >
-                    Vincular Frota
-                  </Button>
-                  <Button
-                    type="button"
-                    variant={vehicleMode === "none" ? "default" : "ghost"}
-                    size="sm"
-                    onClick={() => setVehicleMode("none")}
-                    className="rounded-lg h-7 text-[11px] font-bold"
-                  >
-                    Sem Veículo
-                  </Button>
-                </div>
-
-                {/* MODO 1: Cadastrar / Editar Veículo Completo */}
-                {vehicleMode === "new" && (
-                  <div className="space-y-2.5 p-3 rounded-xl border border-border/60 bg-background/60">
-                    <div className="grid grid-cols-3 gap-2">
-                      <div className="space-y-1">
-                        <Label className="text-[11px] font-semibold">Placa (Mercosul) *</Label>
-                        <Input
-                          value={plate}
-                          onChange={(e) => setPlate(e.target.value.replace(/[^a-zA-Z0-9]/g, "").toUpperCase())}
-                          placeholder="ABC1234"
-                          maxLength={7}
-                          className="h-8 rounded-xl text-xs font-mono font-bold uppercase bg-background"
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-[11px] font-semibold">Ano Fab./Mod.</Label>
-                        <Input
-                          value={year}
-                          onChange={(e) => setYear(e.target.value.replace(/\D/g, "").slice(0, 4))}
-                          placeholder="2023"
-                          maxLength={4}
-                          className="h-8 rounded-xl text-xs bg-background font-mono"
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-[11px] font-semibold">Cor</Label>
-                        <Input
-                          value={color}
-                          onChange={(e) => setColor(e.target.value)}
-                          placeholder="Branco, Prata..."
-                          className="h-8 rounded-xl text-xs bg-background"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-2">
-                      <div className="space-y-1">
-                        <Label className="text-[11px] font-semibold">Marca *</Label>
-                        <Input
-                          value={brandName}
-                          onChange={(e) => setBrandName(e.target.value)}
-                          placeholder="Ex: Toyota, Fiat, VW..."
-                          list="fipe-brands-list"
-                          className="h-8 rounded-xl text-xs bg-background"
-                        />
-                        <datalist id="fipe-brands-list">
-                          {fipeBrands?.map((b) => (
-                            <option key={b.codigo} value={b.nome} />
-                          ))}
-                        </datalist>
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-[11px] font-semibold">Modelo *</Label>
-                        <Input
-                          value={modelName}
-                          onChange={(e) => setModelName(e.target.value)}
-                          placeholder="Ex: Corolla XEi 2.0 Flex"
-                          list="fipe-models-list"
-                          className="h-8 rounded-xl text-xs bg-background"
-                        />
-                        <datalist id="fipe-models-list">
-                          {fipeModels?.map((m) => (
-                            <option key={m.codigo} value={m.nome} />
-                          ))}
-                        </datalist>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-2">
-                      <div className="space-y-1">
-                        <Label className="text-[11px] font-semibold">Número do Chassi *</Label>
-                        <Input
-                          value={chassi}
-                          onChange={(e) => setChassi(e.target.value.toUpperCase())}
-                          placeholder="9BWZZZ377VT004251"
-                          maxLength={20}
-                          className="h-8 rounded-xl text-xs font-mono uppercase bg-background"
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-[11px] font-semibold">Número do Renavam *</Label>
-                        <Input
-                          value={renavam}
-                          onChange={(e) => setRenavam(e.target.value.replace(/\D/g, "").slice(0, 11))}
-                          placeholder="00123456789"
-                          maxLength={11}
-                          className="h-8 rounded-xl text-xs font-mono bg-background"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-3 gap-2">
-                      <div className="space-y-1">
-                        <Label className="text-[11px] font-semibold">Combustível</Label>
-                        <Select value={fuel} onValueChange={setFuel}>
-                          <SelectTrigger className="h-8 rounded-xl text-xs bg-background">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent className="rounded-xl">
-                            <SelectItem value="Flex">Flex</SelectItem>
-                            <SelectItem value="Gasolina">Gasolina</SelectItem>
-                            <SelectItem value="Diesel">Diesel</SelectItem>
-                            <SelectItem value="Etanol">Etanol</SelectItem>
-                            <SelectItem value="GNV">GNV</SelectItem>
-                            <SelectItem value="Híbrido/Elétrico">Híbrido/Elétrico</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-[11px] font-semibold">Hodômetro (KM)</Label>
-                        <Input
-                          value={mileage}
-                          onChange={(e) => setMileage(e.target.value)}
-                          placeholder="Ex: 45.000 km"
-                          className="h-8 rounded-xl text-xs font-mono bg-background"
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-[11px] font-semibold">Valor FIPE / Comercial</Label>
-                        <Input
-                          value={formatCurrencyInput(fipeValueStr)}
-                          onChange={(e) => setFipeValueStr(e.target.value)}
-                          placeholder="R$ 50.000,00"
-                          className="h-8 rounded-xl text-xs font-mono font-bold bg-background"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="pt-0.5">
-                      <VehicleCategorySelector value={category} onChange={setCategory} compact />
-                    </div>
-
-                    {/* Gerenciador de Implementos */}
-                    <ImplementosManager
-                      implementos={implementos}
-                      onChange={setImplementos}
-                      category={category}
-                    />
-
-                    {/* Resumo de Precificação Automática */}
-                    <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-between text-xs">
-                      <div>
-                        <span className="font-bold text-emerald-900 dark:text-emerald-200 block">
-                          Mensalidade Estimada (Tabela):
-                        </span>
-                        <span className="text-[10px] text-muted-foreground">
-                          Veículo ({BRL(baseVehicleMonthlyFee)})
-                          {implementosMonthlyFee > 0 ? ` + Implementos (${BRL(implementosMonthlyFee)})` : ""}
-                        </span>
-                      </div>
-                      <span className="font-mono font-black text-sm text-emerald-700 dark:text-emerald-300">
-                        {BRL(totalCalculatedMonthlyFee)}/mês
-                      </span>
-                    </div>
-                  </div>
-                )}
-
-                {/* MODO 2: Vincular Veículo Existente da Base / Avulso */}
-                {vehicleMode === "existing" && (
-                  <div className="p-3 rounded-xl border border-primary/30 bg-primary/5 space-y-2.5">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-1.5">
-                        <Link2 className="size-3.5 text-primary" />
-                        <Label className="text-xs font-bold text-foreground">Selecionar Veículo Existente</Label>
-                      </div>
-                      {selectedExistingVehicleId && onNavigateToVehicle && (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            const v = fleetVehicles.find((x: any) => x.id === selectedExistingVehicleId);
-                            setOpen(false);
-                            onNavigateToVehicle(selectedExistingVehicleId, v?.plate);
-                          }}
-                          className="h-7 rounded-lg text-[11px] font-bold gap-1 border-primary/40 text-primary"
-                        >
-                          <ExternalLink className="size-3" />
-                          Abrir em Veículos (Coberturas & Mensalidade)
-                        </Button>
-                      )}
-                    </div>
-                    <Select value={selectedExistingVehicleId} onValueChange={setSelectedExistingVehicleId}>
-                      <SelectTrigger className="h-8.5 rounded-xl text-xs bg-background font-semibold">
-                        <SelectValue placeholder="Escolha um veículo cadastrado..." />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold">Dia de Vencimento do Boleto Mensal</Label>
+                    <Select value={String(dueDay)} onValueChange={(v) => setDueDay(Number(v))}>
+                      <SelectTrigger className="h-9 rounded-xl text-xs bg-background font-bold">
+                        <SelectValue placeholder="Selecione o dia de vencimento" />
                       </SelectTrigger>
-                      <SelectContent className="rounded-xl max-h-60">
-                        {fleetVehicles.map((v: any) => {
-                          const isAvulso =
-                            !v.members || v.members.document === "00000000000" || v.members.name?.includes("Avulso");
-                          return (
-                            <SelectItem key={v.id} value={v.id}>
-                              <span className="font-mono font-bold">{v.plate}</span> — {v.brand} {v.model} (
-                              {v.year || "S/A"})
-                              {isAvulso ? " [AVULSO DISPONÍVEL]" : ` [Atual: ${v.members?.name}]`}
-                            </SelectItem>
-                          );
-                        })}
+                      <SelectContent className="rounded-xl">
+                        <SelectItem value="5">Dia 05 de cada mês</SelectItem>
+                        <SelectItem value="10">Dia 10 de cada mês</SelectItem>
+                        <SelectItem value="15">Dia 15 de cada mês</SelectItem>
+                        <SelectItem value="20">Dia 20 de cada mês (Padrão)</SelectItem>
+                        <SelectItem value="25">Dia 25 de cada mês</SelectItem>
                       </SelectContent>
                     </Select>
-                    <p className="text-[10px] text-muted-foreground leading-tight">
-                      Ao salvar, o veículo selecionado será vinculado a este associado. Você também pode clicar em
-                      &ldquo;Abrir em Veículos&rdquo; para gerenciar coberturas (ativas/inativas) e mensalidades.
-                    </p>
                   </div>
-                )}
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold">Observações Internas</Label>
+                    <Input
+                      value={notes}
+                      onChange={(e) => setNotes(e.target.value)}
+                      placeholder="Observações ou anotações cadastrais"
+                      className="h-9 rounded-xl text-xs bg-background"
+                    />
+                  </div>
+                </div>
+              </div>
 
-                {/* MODO 3: Associado Sem Veículo no Momento */}
-                {vehicleMode === "none" && (
-                  <div className="p-3.5 rounded-xl border border-dashed border-border/80 bg-muted/20 text-center space-y-1">
-                    <div className="size-7 rounded-lg bg-muted/60 text-muted-foreground flex items-center justify-center mx-auto">
-                      <Car className="size-3.5" />
-                    </div>
-                    <h4 className="text-xs font-bold text-foreground">Associado Avulso (Sem Veículo)</h4>
-                    <p className="text-[10px] text-muted-foreground max-w-xs mx-auto leading-tight">
-                      O associado será cadastrado sem veículo inicial. Você poderá vincular veículos depois.
-                    </p>
-                  </div>
-                )}
+              {/* Botão de avanço rápido para aba de veículos */}
+              <div className="flex justify-end pt-2">
+                <Button
+                  type="button"
+                  onClick={() => setActiveTab("veiculos")}
+                  className="rounded-xl h-9 text-xs font-bold px-4 gap-2 bg-primary text-primary-foreground shadow-xs"
+                >
+                  <span>Avançar para Veículos & Implementos ({vehiclesList.length})</span>
+                  <Car className="size-4" />
+                </Button>
               </div>
             </div>
-          </div>
+          )}
+
+          {activeTab === "veiculos" && (
+            <div className="space-y-5">
+              {/* Resumo superior dos veículos */}
+              <div className="p-4 rounded-2xl bg-gradient-to-r from-primary/15 via-primary/5 to-muted/30 border border-primary/25 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="space-y-0.5">
+                  <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+                    <Car className="size-4.5 text-primary" />
+                    <span>Veículos & Implementos Vinculados ({vehiclesList.length})</span>
+                  </h3>
+                  <p className="text-xs text-muted-foreground">
+                    Você pode cadastrar quantos veículos o associado possuir. Digite a placa para preenchimento automático.
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    onClick={handleAddVehicle}
+                    size="sm"
+                    className="h-8.5 rounded-xl text-xs font-bold gap-1.5 bg-primary text-primary-foreground shadow-xs hover:bg-primary/90"
+                  >
+                    <Plus className="size-4" />
+                    <span>Adicionar Outro Veículo</span>
+                  </Button>
+                </div>
+              </div>
+
+              {/* Lista dos Veículos Cadastrados */}
+              <div className="space-y-4">
+                {vehiclesList.map((vehicle, idx) => {
+                  const pricing = vehiclesPricing[idx] || { baseFee: 179.9, impFee: 0, totalFee: 179.9 };
+                  const isSearchingThis = searchingPlateIdx === idx;
+
+                  return (
+                    <div
+                      key={vehicle.id || idx}
+                      className="p-4 rounded-2xl border border-border/80 bg-background/80 shadow-xs space-y-4 relative"
+                    >
+                      {/* Header do Card do Veículo */}
+                      <div className="flex items-center justify-between pb-3 border-b border-border/60 flex-wrap gap-2">
+                        <div className="flex items-center gap-2.5">
+                          <span className="size-6 rounded-lg bg-primary/10 text-primary font-bold text-xs flex items-center justify-center">
+                            #{idx + 1}
+                          </span>
+                          <span className="font-mono font-bold text-xs text-foreground">
+                            {vehicle.plate ? formatPlate(vehicle.plate) : "NOVO VEÍCULO"}
+                          </span>
+                          {vehicle.brand && (
+                            <span className="text-xs font-semibold text-muted-foreground">
+                              • {vehicle.brand} {vehicle.model}
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-bold font-mono text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-lg border border-emerald-500/25">
+                            {BRL(pricing.totalFee)}/mês
+                          </span>
+                          {vehiclesList.length > 1 && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleRemoveVehicle(idx)}
+                              className="h-7 text-xs text-destructive hover:bg-destructive/10 px-2 rounded-lg gap-1"
+                              title="Remover este veículo"
+                            >
+                              <Trash2 className="size-3.5" />
+                              <span className="hidden sm:inline">Remover</span>
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Linha 1: Placa, Ano, Cor e Busca Automática */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+                        <div className="space-y-1.5">
+                          <Label className="text-xs font-semibold flex items-center justify-between">
+                            <span>Placa do Veículo *</span>
+                            {isSearchingThis && (
+                              <span className="text-[10px] text-primary flex items-center gap-1 font-normal">
+                                <Loader2 className="size-2.5 animate-spin" /> Buscando...
+                              </span>
+                            )}
+                          </Label>
+                          <div className="relative">
+                            <Input
+                              value={vehicle.plate}
+                              onChange={(e) => {
+                                const val = e.target.value.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
+                                updateVehicleField(idx, "plate", val);
+                                if (val.length === 7) {
+                                  handlePlateLookup(idx, val);
+                                }
+                              }}
+                              onBlur={(e) => handlePlateLookup(idx, e.target.value)}
+                              placeholder="ABC1234"
+                              maxLength={7}
+                              className="h-9 rounded-xl text-xs font-mono font-bold uppercase bg-background"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => handlePlateLookup(idx, vehicle.plate)}
+                              title="Buscar dados do veículo pela placa"
+                              className="absolute right-2 top-2 text-primary hover:text-primary/80 transition-colors"
+                            >
+                              <Sparkles className="size-4" />
+                            </button>
+                          </div>
+                          <span className="text-[10px] text-muted-foreground block leading-tight">
+                            Digite os 7 caracteres para preenchimento automático.
+                          </span>
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <Label className="text-xs font-semibold">Ano Fabricação/Modelo</Label>
+                          <Input
+                            value={vehicle.year}
+                            onChange={(e) => updateVehicleField(idx, "year", e.target.value.replace(/\D/g, "").slice(0, 4))}
+                            placeholder="2023"
+                            maxLength={4}
+                            className="h-9 rounded-xl text-xs bg-background font-mono"
+                          />
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <Label className="text-xs font-semibold">Cor Predominante</Label>
+                          <Input
+                            value={vehicle.color}
+                            onChange={(e) => updateVehicleField(idx, "color", e.target.value)}
+                            placeholder="Branco, Prata, Preto..."
+                            className="h-9 rounded-xl text-xs bg-background"
+                          />
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <Label className="text-xs font-semibold">Combustível</Label>
+                          <Select
+                            value={vehicle.fuel}
+                            onValueChange={(val) => updateVehicleField(idx, "fuel", val)}
+                          >
+                            <SelectTrigger className="h-9 rounded-xl text-xs bg-background">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent className="rounded-xl">
+                              <SelectItem value="Flex">Flex (Álcool/Gasolina)</SelectItem>
+                              <SelectItem value="Gasolina">Gasolina</SelectItem>
+                              <SelectItem value="Diesel">Diesel</SelectItem>
+                              <SelectItem value="Etanol">Etanol</SelectItem>
+                              <SelectItem value="GNV">GNV</SelectItem>
+                              <SelectItem value="Híbrido/Elétrico">Híbrido / Elétrico</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+
+                      {/* Linha 2: Marca, Modelo, Categoria */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+                        <div className="space-y-1.5">
+                          <Label className="text-xs font-semibold">Marca *</Label>
+                          <Input
+                            value={vehicle.brand}
+                            onChange={(e) => updateVehicleField(idx, "brand", e.target.value)}
+                            placeholder="Ex: Toyota, Volkswagen, Fiat"
+                            className="h-9 rounded-xl text-xs bg-background"
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-xs font-semibold">Modelo do Veículo *</Label>
+                          <Input
+                            value={vehicle.model}
+                            onChange={(e) => updateVehicleField(idx, "model", e.target.value)}
+                            placeholder="Ex: Corolla XEi 2.0 Flex"
+                            className="h-9 rounded-xl text-xs bg-background"
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-xs font-semibold">Valor FIPE / Comercial</Label>
+                          <Input
+                            value={formatCurrencyInput(vehicle.fipeValueStr)}
+                            onChange={(e) => updateVehicleField(idx, "fipeValueStr", e.target.value)}
+                            placeholder="R$ 50.000,00"
+                            className="h-9 rounded-xl text-xs font-mono font-bold bg-background text-emerald-600 dark:text-emerald-400"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Categoria do Veículo */}
+                      <div className="pt-1">
+                        <VehicleCategorySelector
+                          value={vehicle.category}
+                          onChange={(cat) => updateVehicleField(idx, "category", cat)}
+                          compact
+                        />
+                      </div>
+
+                      {/* Linha 3: Chassi, Renavam, KM e Uso */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+                        <div className="space-y-1.5">
+                          <Label className="text-xs font-semibold">Chassi</Label>
+                          <Input
+                            value={vehicle.chassi}
+                            onChange={(e) => updateVehicleField(idx, "chassi", e.target.value.toUpperCase())}
+                            placeholder="9BWZZZ..."
+                            maxLength={20}
+                            className="h-9 rounded-xl text-xs font-mono uppercase bg-background"
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-xs font-semibold">Renavam</Label>
+                          <Input
+                            value={vehicle.renavam}
+                            onChange={(e) => updateVehicleField(idx, "renavam", e.target.value.replace(/\D/g, "").slice(0, 11))}
+                            placeholder="00123456789"
+                            maxLength={11}
+                            className="h-9 rounded-xl text-xs font-mono bg-background"
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-xs font-semibold">Hodômetro (KM)</Label>
+                          <Input
+                            value={vehicle.mileage}
+                            onChange={(e) => updateVehicleField(idx, "mileage", e.target.value)}
+                            placeholder="Ex: 45.000 km"
+                            className="h-9 rounded-xl text-xs font-mono bg-background"
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-xs font-semibold">Tipo de Utilização</Label>
+                          <Select
+                            value={vehicle.usage}
+                            onValueChange={(val) => updateVehicleField(idx, "usage", val)}
+                          >
+                            <SelectTrigger className="h-9 rounded-xl text-xs bg-background">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent className="rounded-xl">
+                              <SelectItem value="Particular">Particular / Passeio</SelectItem>
+                              <SelectItem value="Comercial / Trabalho">Comercial / Trabalho</SelectItem>
+                              <SelectItem value="Aplicativo">Motorista de Aplicativo</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+
+                      {/* Implementos deste Veículo */}
+                      <div className="pt-2">
+                        <ImplementosManager
+                          implementos={vehicle.implementos}
+                          onChange={(imps) => updateVehicleField(idx, "implementos", imps)}
+                          category={vehicle.category}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Botão para adicionar mais veículos */}
+              <div className="flex justify-between items-center pt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setActiveTab("associado")}
+                  className="rounded-xl h-9 text-xs font-bold gap-1.5"
+                >
+                  ← Voltar aos Dados Pessoais
+                </Button>
+                <Button
+                  type="button"
+                  onClick={handleAddVehicle}
+                  variant="secondary"
+                  className="rounded-xl h-9 text-xs font-bold gap-1.5 border border-primary/20"
+                >
+                  <Plus className="size-4 text-primary" />
+                  <span>+ Adicionar Outro Veículo</span>
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
 
+        {/* Rodapé do Modal */}
         <div className="p-3.5 sm:p-4 border-t border-border/60 bg-muted/20 shrink-0 flex flex-col-reverse sm:flex-row items-center sm:justify-between gap-3">
           <div className="flex items-center gap-3">
             <AsaasFormSeal />
             <span className="text-[10px] text-muted-foreground hidden sm:inline-flex items-center gap-1">
               <Clock className="size-3 text-primary" />
-              Ao concluir, data e horário do cadastro são registrados automaticamente.
+              Total mensalidade acumulada:{" "}
+              <strong className="text-foreground font-mono">{BRL(totalMonthlyFeeAllVehicles)}/mês</strong>
             </span>
           </div>
           <div className="flex justify-end gap-2 w-full sm:w-auto">
@@ -1363,7 +1427,7 @@ function MemberDialog({
               variant="outline"
               size="sm"
               onClick={() => setOpen(false)}
-              className="rounded-xl h-8 text-xs font-medium"
+              className="rounded-xl h-8.5 text-xs font-medium"
             >
               Cancelar
             </Button>
@@ -1371,7 +1435,7 @@ function MemberDialog({
               size="sm"
               onClick={() => submit.mutate()}
               disabled={submit.isPending}
-              className="rounded-xl h-8 text-xs font-semibold px-4 bg-primary text-primary-foreground shadow-xs"
+              className="rounded-xl h-8.5 text-xs font-semibold px-4 bg-primary text-primary-foreground shadow-xs"
             >
               {submit.isPending ? "Salvando..." : member ? "Salvar Alterações" : "Concluir Cadastro"}
             </Button>

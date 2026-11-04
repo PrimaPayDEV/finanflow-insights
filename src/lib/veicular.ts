@@ -42,7 +42,8 @@ export interface CotacaoItem {
   totalMonthlyFee: number;
   estimatedParticipationFee: number; // Cota de participação / Franquia
   // Status
-  status: "rascunho" | "enviada" | "aprovada" | "efetivada" | "cancelada";
+  planName?: string;
+  status: "rascunho" | "enviada" | "aprovada" | "efetivada" | "cancelada" | "aguardando_aceite";
   notes?: string;
 }
 
@@ -341,6 +342,40 @@ export const DEFAULT_PRODUTOS_VEICULARES: ProdutoVeicular[] = [
     coverageLimit: "15 diárias (se previsto no Termo de Adesão)",
     description: "Benefício adicional específico conforme inciso III do Art. 15º do Regulamento PPM.",
     isActive: true,
+  },
+];
+
+export interface CotacaoPlanoPreset {
+  id: string;
+  name: string;
+  badge?: string;
+  description: string;
+  recommended?: boolean;
+  productIds: string[];
+}
+
+export const COTACAO_PLANOS_PRESETS: CotacaoPlanoPreset[] = [
+  {
+    id: "plano-essencial",
+    name: "Plano Essencial",
+    badge: "Econômico",
+    description: "Proteção contra Roubo, Furto, Incêndio e Guincho 24h (500 km em todo território nacional).",
+    productIds: ["prod-base-roubo", "prod-reboque-500"],
+  },
+  {
+    id: "plano-completo",
+    name: "Plano Completo",
+    badge: "Mais Escolhido ⭐",
+    recommended: true,
+    description: "Proteção Total (Colisão + Roubo/Furto) + Danos Materiais a Terceiros (R$ 50k) + Guincho 500 km + Vidros, Faróis e Retrovisores.",
+    productIds: ["prod-base-roubo", "prod-terceiros-50", "prod-reboque-500", "prod-vidros"],
+  },
+  {
+    id: "plano-premium",
+    name: "Plano Premium Total",
+    badge: "Proteção Máxima 🛡️",
+    description: "Proteção Total Completa + Terceiros (R$ 100k) + Guincho 1.000 km + Vidros + Rastreador GPS com App + Carro Reserva.",
+    productIds: ["prod-base-roubo", "prod-terceiros-100", "prod-reboque-1000", "prod-vidros", "prod-rastreador", "prod-carro-reserva-7"],
   },
 ];
 

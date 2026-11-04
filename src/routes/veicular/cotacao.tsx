@@ -49,6 +49,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { getPartners } from "@/lib/partner.functions";
 import { upsertMember } from "@/lib/members.functions";
 import { fetchCepData } from "@/lib/cep";
+import { lookupVehicleByPlate, formatPlate, PlateLookupData } from "@/lib/plate";
+import { VehiclePlateBadge } from "@/routes/vehicles";
 import { BRL, formatCpfCnpj, formatPhone, formatCurrencyInput } from "@/lib/format";
 import {
   type VehicleType,
@@ -56,6 +58,8 @@ import {
   type ProdutoVeicular,
   DEFAULT_PRODUTOS_VEICULARES,
   DEFAULT_COTAS_PARTICIPACAO,
+  COTACAO_PLANOS_PRESETS,
+  type CotacaoPlanoPreset,
   calculateParticipationFee,
   calculateBaseMonthlyFee,
   loadLocalData,
@@ -70,28 +74,6 @@ export const Route = createFileRoute('/veicular/cotacao')({
   component: CotacaoPage,
 });
 
-function MercosulPlatePreview({ plate }: { plate: string }) {
-  const clean = (plate || "BRA2E19").replace(/[^A-Za-z0-9]/g, "").toUpperCase();
-  const formatted = /^[A-Z]{3}[0-9]{4}$/.test(clean) ? `${clean.slice(0, 3)}-${clean.slice(3)}` : clean;
-
-  return (
-    <div className="relative inline-flex flex-col items-center justify-between bg-white text-slate-900 rounded-lg font-mono font-black border-2 border-slate-900 shadow-md overflow-hidden select-none w-32 h-9">
-      <div className="w-full bg-[#003399] text-white flex items-center justify-between px-1.5 py-0.5 leading-none">
-        <span className="text-[6px] tracking-wider uppercase font-sans font-bold">BRASIL</span>
-        <div className="flex items-center gap-0.5">
-          <div className="w-1.5 h-1 bg-[#009b3a] rounded-xs relative flex items-center justify-center">
-            <div className="w-1 h-0.5 bg-[#fedf00] rotate-45 flex items-center justify-center">
-              <div className="w-0.5 h-0.5 bg-[#002776] rounded-full" />
-            </div>
-          </div>
-        </div>
-      </div>
-      <div className="flex-1 flex items-center justify-center tracking-wider font-extrabold text-slate-950 text-sm font-mono">
-        {formatted || "PLACA"}
-      </div>
-    </div>
-  );
-}
 
 function CotacaoPage() {
   const { companyId, companyName } = useAuth();
@@ -153,6 +135,50 @@ function CotacaoPage() {
 
   const [loadingCep, setLoadingCep] = useState(false);
   const [activeTab, setActiveTab] = useState<"formulario" | "historico">("formulario");
+  const [selectedPlanId, setSelectedPlanId] = useState<string>("plano-completo");
+  const [searchingPlate, setSearchingPlate] = useState(false);
+
+  const handlePlateSearch = async (val: string) => {
+    const clean = (val || "").replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+    if (clean.length < 7) return;
+
+    setSearchingPlate(true);
+    try {
+      const data = await lookupVehicleByPlate(clean);
+      if (data) {
+        setVehiclePlate(clean);
+        if (data.brand) setVehicleBrand(data.brand);
+        if (data.model) setVehicleModel(data.model);
+        if (data.year) setVehicleYear(String(data.year));
+        if (data.color) setVehicleColor(data.color);
+        if (data.category) setVehicleType(data.category);
+        if (data.fipeValue) setRawFipe(String(Math.round(data.fipeValue * 100)));
+        toast.success("Dados do veículo preenchidos pela placa!", {
+          description: `${data.brand} ${data.model} (${data.year})`,
+        });
+      }
+    } finally {
+      setSearchingPlate(false);
+    }
+  };
+
+  const handleCopyPublicLink = () => {
+    const origin = typeof window !== "undefined" ? window.location.origin : "";
+    const publicUrl = `${origin}/public/cotacao`;
+    navigator.clipboard.writeText(publicUrl);
+    toast.success("Link copiado com sucesso!", {
+      description: "Envie este link externo para o cliente realizar a cotação online.",
+    });
+  };
+
+  const handleSelectPlanPreset = (presetId: string) => {
+    setSelectedPlanId(presetId);
+    const plan = COTACAO_PLANOS_PRESETS.find((p) => p.id === presetId);
+    if (plan) {
+      setSelectedProductIds(plan.productIds);
+      toast.info(`Plano "${plan.name}" selecionado.`);
+    }
+  };
 
   // Auto-busca do CEP com possibilidade total de edição manual
   const handleCepSearch = async (cepInput: string) => {
@@ -338,7 +364,27 @@ function CotacaoPage() {
             </TabsList>
           </Tabs>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button
+              variant="default"
+              size="sm"
+              onClick={handleCopyPublicLink}
+              className="rounded-xl text-xs font-bold gap-1.5 bg-primary text-primary-foreground shadow-xs"
+            >
+              <Copy className="size-3.5" />
+              <span>Copiar Link de Cotação Externa</span>
+            </Button>
+
+            <a
+              href="/public/cotacao"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-border/80 bg-background hover:bg-muted text-xs font-semibold text-foreground transition-colors shadow-2xs"
+            >
+              <ExternalLink className="size-3 text-muted-foreground" />
+              <span>Abrir Formulário Externo</span>
+            </a>
+
             <Button
               variant="outline"
               size="sm"
@@ -389,6 +435,8 @@ function CotacaoPage() {
                             className={
                               c.status === "efetivada"
                                 ? "bg-emerald-500 text-white text-[10px]"
+                                : c.status === "aguardando_aceite"
+                                ? "bg-amber-500 text-slate-950 font-bold text-[10px]"
                                 : c.status === "enviada"
                                 ? "bg-blue-500 text-white text-[10px]"
                                 : "bg-muted text-muted-foreground text-[10px]"
@@ -408,19 +456,47 @@ function CotacaoPage() {
                           <div className="text-[10px] text-muted-foreground">Franquia: {BRL(c.estimatedParticipationFee)}</div>
                         </div>
 
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => {
-                            const msg = generateCotacaoWhatsAppMessage(c, companyName || "Planmais");
-                            const clean = c.memberPhone.replace(/\D/g, "");
-                            window.open(`https://wa.me/55${clean}?text=${encodeURIComponent(msg)}`, "_blank");
-                          }}
-                          className="rounded-xl text-xs gap-1.5 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/30"
-                        >
-                          <MessageCircle className="size-3.5" />
-                          <span>WhatsApp</span>
-                        </Button>
+                        <div className="flex items-center gap-1.5">
+                          {c.status === "aguardando_aceite" && (
+                            <Button
+                              size="sm"
+                              onClick={() => {
+                                setMemberName(c.memberName);
+                                setMemberDocument(c.memberDocument);
+                                setMemberPhone(c.memberPhone);
+                                setMemberEmail(c.memberEmail || "");
+                                setVehiclePlate(c.vehiclePlate);
+                                setVehicleBrand(c.vehicleBrand);
+                                setVehicleModel(c.vehicleModel);
+                                setVehicleYear(String(c.vehicleYear));
+                                setVehicleColor(c.vehicleColor || "");
+                                setVehicleType(c.vehicleType);
+                                setRawFipe(String(Math.round((c.vehicleFipeValue || 50000) * 100)));
+                                setSelectedProductIds(c.selectedProducts || []);
+                                setActiveTab("formulario");
+                                toast.info("Dados carregados no formulário. Clique em 'Efetivar Cadastro' para concluir o aceite.");
+                              }}
+                              className="rounded-xl text-xs font-bold gap-1 bg-amber-500 hover:bg-amber-600 text-slate-950 shadow-xs"
+                            >
+                              <CheckCircle2 className="size-3.5" />
+                              <span>Conferir & Efetivar Aceite</span>
+                            </Button>
+                          )}
+
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              const msg = generateCotacaoWhatsAppMessage(c, companyName || "Planmais");
+                              const clean = c.memberPhone.replace(/\D/g, "");
+                              window.open(`https://wa.me/55${clean}?text=${encodeURIComponent(msg)}`, "_blank");
+                            }}
+                            className="rounded-xl text-xs gap-1.5 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/30"
+                          >
+                            <MessageCircle className="size-3.5" />
+                            <span>WhatsApp</span>
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -608,7 +684,7 @@ function CotacaoPage() {
                       </div>
                       <span>Dados do Veículo</span>
                     </CardTitle>
-                    <MercosulPlatePreview plate={vehiclePlate} />
+                    <VehiclePlateBadge plate={vehiclePlate || "PLACA"} size="md" />
                   </div>
                 </CardHeader>
                 <CardContent className="p-5 space-y-4">
@@ -639,13 +715,28 @@ function CotacaoPage() {
 
                     <div className="space-y-1.5">
                       <Label className="text-xs font-semibold">Placa do Veículo</Label>
-                      <Input
-                        value={vehiclePlate}
-                        onChange={(e) => setVehiclePlate(e.target.value.toUpperCase())}
-                        placeholder="ABC-1234 ou BRA2E19"
-                        maxLength={8}
-                        className="rounded-xl text-xs font-mono font-bold uppercase"
-                      />
+                      <div className="relative">
+                        <Input
+                          value={vehiclePlate}
+                          onChange={(e) => {
+                            const val = e.target.value.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
+                            setVehiclePlate(val);
+                            if (val.length === 7) handlePlateSearch(val);
+                          }}
+                          onBlur={(e) => handlePlateSearch(e.target.value)}
+                          placeholder="ABC1234 ou BRA2E19"
+                          maxLength={7}
+                          className="rounded-xl text-xs font-mono font-bold uppercase pr-7"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handlePlateSearch(vehiclePlate)}
+                          title="Buscar placa automaticamente"
+                          className="absolute right-2 top-2 text-primary hover:text-primary/80"
+                        >
+                          <Sparkles className="size-3.5" />
+                        </button>
+                      </div>
                     </div>
 
                     <div className="space-y-1.5">
@@ -743,7 +834,41 @@ function CotacaoPage() {
                     </span>
                   </div>
                 </CardHeader>
-                <CardContent className="p-5 space-y-3">
+                <CardContent className="p-5 space-y-4">
+                  {/* Atalho de Planos Pré-definidos */}
+                  <div className="space-y-1.5 pb-2 border-b border-border/60">
+                    <Label className="text-xs font-bold text-foreground">Escolher Modelo de Plano Rápido:</Label>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                      {COTACAO_PLANOS_PRESETS.map((preset) => {
+                        const isSelected = selectedPlanId === preset.id;
+                        return (
+                          <button
+                            key={preset.id}
+                            type="button"
+                            onClick={() => handleSelectPlanPreset(preset.id)}
+                            className={`p-2.5 rounded-xl border text-left transition-all ${
+                              isSelected
+                                ? "bg-primary/10 border-primary ring-1 ring-primary/40 font-bold"
+                                : "bg-muted/30 border-border/70 hover:bg-muted/60"
+                            }`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs font-bold text-foreground">{preset.name}</span>
+                              {preset.recommended && (
+                                <Badge className="bg-primary text-primary-foreground text-[8px] py-0 px-1">
+                                  Top
+                                </Badge>
+                              )}
+                            </div>
+                            <p className="text-[10px] text-muted-foreground mt-0.5 line-clamp-2">
+                              {preset.description}
+                            </p>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {applicableProducts.map((p) => {
                       const isSelected = selectedProductIds.includes(p.id);

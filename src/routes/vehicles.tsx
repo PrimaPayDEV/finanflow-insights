@@ -1,3 +1,4 @@
+import { cn } from "@/lib/utils";
 import { createFileRoute } from '@tanstack/react-router';
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -91,33 +92,25 @@ export function formatPlate(rawPlate: string): string {
   return clean;
 }
 
-// Componente Visual de Placa Mercosul / Padrão Nacional
-function MercosulPlate({ plate, size = "md" }: { plate: string; size?: "sm" | "md" | "lg" }) {
+// Componente Elegante e Profissional de Identificação da Placa do Veículo
+export function VehiclePlateBadge({ plate, size = "md" }: { plate: string; size?: "sm" | "md" | "lg" }) {
   const formatted = formatPlate(plate);
-
   const sizeClasses = {
-    sm: "w-24 h-6.5 text-[11px] border-[1.5px]",
-    md: "w-28 h-7.5 text-xs border-[1.5px]",
-    lg: "w-32 h-9 text-sm border-2",
+    sm: "px-2 py-0.5 text-xs gap-1.5",
+    md: "px-2.5 py-1 text-xs gap-1.5",
+    lg: "px-3 py-1.5 text-sm gap-2",
   };
 
   return (
-    <div className={`relative inline-flex flex-col items-center justify-between bg-white text-slate-900 rounded-md font-mono font-black border-slate-900 shadow-xs overflow-hidden select-none shrink-0 ${sizeClasses[size]}`}>
-      {/* Tarja azul Mercosul */}
-      <div className="w-full bg-[#003399] text-white flex items-center justify-between px-1.5 py-0.5 leading-none">
-        <span className="text-[5px] tracking-wider uppercase font-sans font-bold">BRASIL</span>
-        <div className="flex items-center gap-0.5">
-          <div className="w-1.5 h-1 bg-[#009b3a] rounded-xs relative flex items-center justify-center">
-            <div className="w-1 h-0.5 bg-[#fedf00] rotate-45 flex items-center justify-center">
-              <div className="w-0.5 h-0.5 bg-[#002776] rounded-full" />
-            </div>
-          </div>
-        </div>
-      </div>
-      {/* Texto da Placa */}
-      <div className="flex-1 flex items-center justify-center tracking-wider font-extrabold text-slate-950 font-mono">
-        {formatted}
-      </div>
+    <div
+      className={cn(
+        "inline-flex items-center font-mono font-bold rounded-lg border border-border/80 bg-muted/60 text-foreground shrink-0 select-all tracking-wider shadow-2xs hover:bg-muted/80 transition-colors",
+        sizeClasses[size]
+      )}
+      title={"Placa: " + formatted}
+    >
+      <Car className={size === "sm" ? "size-3 text-primary" : "size-3.5 text-primary"} />
+      <span>{formatted}</span>
     </div>
   );
 }
@@ -381,7 +374,7 @@ function VehiclesPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [selectedVehicle, setSelectedVehicle] = useState<VehicleItem | null>(null);
-  const [dossierOpen, setDossierOpen] = useState(false);
+  const [detailsOpen, setDetailsOpen] = useState(false);
   const [certificateOpen, setCertificateOpen] = useState(false);
 
   // Estado local para persistir edições de coberturas, ficha técnica e mensalidades
@@ -506,7 +499,7 @@ function VehiclesPage() {
     });
   }, [mappedDbVehicles, overrides]);
 
-  // Se o usuário clicou em um veículo existente na tela de Associados (?vehicleId=... ou ?plate=...), abre automaticamente o Dossiê
+  // Se o usuário clicou em um veículo existente na tela de Associados (?vehicleId=... ou ?plate=...), abre automaticamente a Ficha do Veículo
   useEffect(() => {
     if (typeof window !== "undefined" && allVehicles.length > 0) {
       const params = new URLSearchParams(window.location.search);
@@ -520,7 +513,7 @@ function VehiclesPage() {
         );
         if (match) {
           setSelectedVehicle(match);
-          setDossierOpen(true);
+          setDetailsOpen(true);
           // Limpar query params sem recarregar para evitar reabrir ao fechar
           window.history.replaceState({}, "", window.location.pathname);
         }
@@ -553,9 +546,9 @@ function VehiclesPage() {
   const pendingInspection = allVehicles.filter((v) => v.status === "PENDING_INSPECTION").length;
   const totalFipeValue = allVehicles.reduce((acc, v) => acc + (v.fipeValue || 0), 0);
 
-  const openDossier = (vehicle: VehicleItem) => {
+  const openVehicleDetails = (vehicle: VehicleItem) => {
     setSelectedVehicle(vehicle);
-    setDossierOpen(true);
+    setDetailsOpen(true);
   };
 
   const handleUpdateVehicle = async (updated: VehicleItem) => {
@@ -780,14 +773,14 @@ function VehiclesPage() {
                     return (
                       <tr
                         key={vehicle.id}
-                        onClick={() => openDossier(vehicle)}
+                        onClick={() => openVehicleDetails(vehicle)}
                         className="hover:bg-muted/30 transition-colors cursor-pointer group"
                         title="Clique para abrir Ficha Técnica, Coberturas (Ativa/Inativa) e Mensalidades"
                       >
                         {/* Veículo */}
                         <td className="px-3 py-2.5 sm:px-3.5 sm:py-3 align-middle">
                           <div className="flex items-center gap-2.5 min-w-0">
-                            <MercosulPlate plate={vehicle.plate} size="sm" />
+                            <VehiclePlateBadge plate={vehicle.plate} size="sm" />
                             <div className="min-w-0">
                               <div className="flex items-center gap-1.5 flex-wrap">
                                 <span className="text-[11px] font-bold text-primary uppercase tracking-wide">
@@ -918,12 +911,12 @@ function VehiclesPage() {
                         <td className="px-3 py-2.5 sm:px-3.5 sm:py-3 align-middle text-right whitespace-nowrap">
                           <Button
                             size="sm"
-                            onClick={() => openDossier(vehicle)}
+                            onClick={() => openVehicleDetails(vehicle)}
                             className="rounded-xl h-7.5 px-2.5 sm:px-3 text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground gap-1 shadow-xs"
-                            title="Abrir Dossiê, Coberturas e Mensalidade"
+                            title="Abrir Ficha Técnica, Coberturas e Mensalidade"
                           >
                             <Eye className="size-3.5 shrink-0" />
-                            <span>Dossiê / Coberturas</span>
+                            <span>Ficha do Veículo</span>
                           </Button>
                         </td>
                       </tr>
@@ -935,15 +928,15 @@ function VehiclesPage() {
           </div>
         )}
 
-        {/* Modal do Dossiê Completo do Veículo (3 Abas: Ficha Técnica Completa, Coberturas Ativa/Inativa + Outras, e Mensalidades) */}
+        {/* Modal de Detalhes da Ficha do Veículo (3 Abas: Ficha Técnica Completa, Coberturas Ativa/Inativa + Outras, e Mensalidades) */}
         {selectedVehicle && (
-          <VehicleDossierDialog
-            open={dossierOpen}
-            onOpenChange={setDossierOpen}
+          <VehicleDetailsDialog
+            open={detailsOpen}
+            onOpenChange={setDetailsOpen}
             vehicle={selectedVehicle}
             onUpdate={handleUpdateVehicle}
             onOpenCertificate={() => {
-              setDossierOpen(false);
+              setDetailsOpen(false);
               setCertificateOpen(true);
             }}
           />
@@ -1024,8 +1017,8 @@ function VehiclesPage() {
   );
 }
 
-// Modal do Dossiê com 3 abas completas: Ficha Técnica (editável + implementos), Coberturas (Ativa/Inativa + Adicionar Outras Coberturas) e Mensalidades
-function VehicleDossierDialog({
+// Modal de Detalhes com 3 abas completas: Ficha Técnica (editável + implementos), Coberturas (Ativa/Inativa + Adicionar Outras Coberturas) e Mensalidades
+function VehicleDetailsDialog({
   open,
   onOpenChange,
   vehicle,
@@ -1209,7 +1202,7 @@ function VehicleDossierDialog({
         <div className="relative bg-gradient-to-r from-primary/15 via-primary/5 to-card pl-4 sm:pl-5 pr-12 sm:pr-14 py-3 border-b border-border/70 shrink-0">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3">
             <div className="flex items-center gap-2.5 min-w-0 flex-1">
-              <MercosulPlate plate={vehicle.plate} size="md" />
+              <VehiclePlateBadge plate={vehicle.plate} size="md" />
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-1.5 flex-wrap">
                   <span className="text-[11px] font-bold text-primary uppercase tracking-wide">

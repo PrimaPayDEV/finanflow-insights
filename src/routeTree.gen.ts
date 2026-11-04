@@ -26,6 +26,7 @@ import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as VehiclesRouteImport } from './routes/vehicles'
 import { Route as AdminCompaniesRouteImport } from './routes/admin.companies'
+import { Route as PublicCotacaoRouteImport } from './routes/public.cotacao'
 import { Route as PublicPrivacyRouteImport } from './routes/public.privacy'
 import { Route as RealEstateAdvanceRouteImport } from './routes/real-estate/advance'
 import { Route as RealEstateChargesRouteImport } from './routes/real-estate/charges'
@@ -140,6 +141,11 @@ const VehiclesRoute = VehiclesRouteImport.update({
 const AdminCompaniesRoute = AdminCompaniesRouteImport.update({
   id: '/admin/companies',
   path: '/admin/companies',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PublicCotacaoRoute = PublicCotacaoRouteImport.update({
+  id: '/public/cotacao',
+  path: '/public/cotacao',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PublicPrivacyRoute = PublicPrivacyRouteImport.update({
@@ -311,6 +317,7 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/vehicles': typeof VehiclesRoute
   '/admin/companies': typeof AdminCompaniesRoute
+  '/public/cotacao': typeof PublicCotacaoRoute
   '/public/privacy': typeof PublicPrivacyRoute
   '/real-estate/advance': typeof RealEstateAdvanceRoute
   '/real-estate/charges': typeof RealEstateChargesRoute
@@ -360,6 +367,7 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/vehicles': typeof VehiclesRoute
   '/admin/companies': typeof AdminCompaniesRoute
+  '/public/cotacao': typeof PublicCotacaoRoute
   '/public/privacy': typeof PublicPrivacyRoute
   '/real-estate/advance': typeof RealEstateAdvanceRoute
   '/real-estate/charges': typeof RealEstateChargesRoute
@@ -410,6 +418,7 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/vehicles': typeof VehiclesRoute
   '/admin/companies': typeof AdminCompaniesRoute
+  '/public/cotacao': typeof PublicCotacaoRoute
   '/public/privacy': typeof PublicPrivacyRoute
   '/real-estate/advance': typeof RealEstateAdvanceRoute
   '/real-estate/charges': typeof RealEstateChargesRoute
@@ -461,6 +470,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/vehicles'
     | '/admin/companies'
+    | '/public/cotacao'
     | '/public/privacy'
     | '/real-estate/advance'
     | '/real-estate/charges'
@@ -510,6 +520,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/vehicles'
     | '/admin/companies'
+    | '/public/cotacao'
     | '/public/privacy'
     | '/real-estate/advance'
     | '/real-estate/charges'
@@ -559,6 +570,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/vehicles'
     | '/admin/companies'
+    | '/public/cotacao'
     | '/public/privacy'
     | '/real-estate/advance'
     | '/real-estate/charges'
@@ -609,6 +621,7 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   VehiclesRoute: typeof VehiclesRoute
   AdminCompaniesRoute: typeof AdminCompaniesRoute
+  PublicCotacaoRoute: typeof PublicCotacaoRoute
   PublicPrivacyRoute: typeof PublicPrivacyRoute
   RealEstateAdvanceRoute: typeof RealEstateAdvanceRoute
   RealEstateChargesRoute: typeof RealEstateChargesRoute
@@ -760,6 +773,13 @@ declare module '@tanstack/react-router' {
       path: '/admin/companies'
       fullPath: '/admin/companies'
       preLoaderRoute: typeof AdminCompaniesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/public/cotacao': {
+      id: '/public/cotacao'
+      path: '/public/cotacao'
+      fullPath: '/public/cotacao'
+      preLoaderRoute: typeof PublicCotacaoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/public/privacy': {
@@ -993,6 +1013,7 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   VehiclesRoute: VehiclesRoute,
   AdminCompaniesRoute: AdminCompaniesRoute,
+  PublicCotacaoRoute: PublicCotacaoRoute,
   PublicPrivacyRoute: PublicPrivacyRoute,
   RealEstateAdvanceRoute: RealEstateAdvanceRoute,
   RealEstateChargesRoute: RealEstateChargesRoute,

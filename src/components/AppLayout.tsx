@@ -468,17 +468,17 @@ export function AppLayout({
                     <span className="text-sm font-medium leading-none">
                       {notification.title}
                     </span>
-                    {notification.partnerStatus && (
+                    {(notification as any).partnerStatus && (
                       <Badge
                         variant="secondary"
                         className={cn(
                           "text-[10px] font-bold px-1.5 py-0.2 rounded-md uppercase tracking-wider ml-1",
-                          notification.partnerStatus === "pago" && "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20",
-                          notification.partnerStatus === "vencido" && "bg-destructive/10 text-destructive border border-destructive/20",
-                          notification.partnerStatus === "pendente" && "bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20"
+                          (notification as any).partnerStatus === "pago" && "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20",
+                          (notification as any).partnerStatus === "vencido" && "bg-destructive/10 text-destructive border border-destructive/20",
+                          (notification as any).partnerStatus === "pendente" && "bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20"
                         )}
                       >
-                        {notification.partnerStatus}
+                        {(notification as any).partnerStatus}
                       </Badge>
                     )}
                     {!notification.is_read && <span className="ml-auto w-2 h-2 rounded-full bg-primary" />}

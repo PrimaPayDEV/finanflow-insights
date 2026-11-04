@@ -3,6 +3,17 @@ import { z } from "zod";
 import { addDays, format, parseISO } from "date-fns";
 import { getNextBusinessDay } from "./dateUtils";
 
+const vehicleItemSchema = z.object({
+  id: z.string().uuid().optional(),
+  plate: z.string().max(10).optional().or(z.literal("")),
+  brand: z.string().optional().or(z.literal("")),
+  model: z.string().optional().or(z.literal("")),
+  year: z.number().optional(),
+  category: z.string().optional().or(z.literal("")),
+  monthly_fee: z.number().optional(),
+  fipe_value: z.number().optional(),
+});
+
 const memberSchema = z.object({
   id: z.string().uuid().optional(),
   companyId: z.string().uuid(),
@@ -12,16 +23,8 @@ const memberSchema = z.object({
   phone: z.string().optional().or(z.literal("")),
   partner_id: z.string().uuid().optional().or(z.literal("")),
   status: z.string().optional(),
-  vehicle: z.object({
-    id: z.string().uuid().optional(),
-    plate: z.string().max(7).optional().or(z.literal("")),
-    brand: z.string().optional().or(z.literal("")),
-    model: z.string().optional().or(z.literal("")),
-    year: z.number().optional(),
-    category: z.string().optional().or(z.literal("")),
-    monthly_fee: z.number().optional(),
-    fipe_value: z.number().optional(),
-  }).optional()
+  vehicle: vehicleItemSchema.optional(),
+  vehicles: z.array(vehicleItemSchema).optional(),
 });
 
 export const getMembers = createServerFn({ method: "GET" })
@@ -141,43 +144,50 @@ export const upsertMember = createServerFn({ method: "POST" })
 
     if (error) throw new Error(error.message);
 
-    // Upsert vehicle if provided
-    if (data.id && data.vehicle && (data.vehicle.plate || data.vehicle.brand || data.vehicle.model)) {
-      const vData: any = {
-        member_id: data.id,
-        company_id: data.companyId,
-        plate: (data.vehicle.plate || "").toUpperCase(),
-        brand: data.vehicle.brand || "",
-        model: data.vehicle.model || "",
-        year: data.vehicle.year,
-        category: data.vehicle.category || "Leves e utilitários",
-        monthly_fee: data.vehicle.monthly_fee ?? 179.90,
-        fipe_value: data.vehicle.fipe_value || null,
-      };
+    // Upsert multiple or single vehicles if provided
+    const allVehiclesToUpsert = [
+      ...(data.vehicles || []),
+      ...(data.vehicle && !data.vehicles?.some(v => v.id && v.id === data.vehicle?.id) ? [data.vehicle] : [])
+    ].filter(v => v && (v.plate || v.brand || v.model));
 
-      if (data.vehicle.id) {
-        let { error: vError } = await supabaseAdmin.from("vehicles").update(vData).eq("id", data.vehicle.id).eq("company_id", data.companyId);
-        if (vError && (vError.message?.includes("monthly_fee") || (vError as any).code === "42703")) {
-          delete vData.monthly_fee;
-          delete vData.fipe_value;
-          const retry = await supabaseAdmin.from("vehicles").update(vData).eq("id", data.vehicle.id).eq("company_id", data.companyId);
-          vError = retry.error;
-        }
-        if (vError && (vError.message?.includes("category") || (vError as any).code === "42703")) {
-          delete vData.category;
-          await supabaseAdmin.from("vehicles").update(vData).eq("id", data.vehicle.id).eq("company_id", data.companyId);
-        }
-      } else {
-        let { error: vError } = await supabaseAdmin.from("vehicles").insert(vData);
-        if (vError && (vError.message?.includes("monthly_fee") || (vError as any).code === "42703")) {
-          delete vData.monthly_fee;
-          delete vData.fipe_value;
-          const retry = await supabaseAdmin.from("vehicles").insert(vData);
-          vError = retry.error;
-        }
-        if (vError && (vError.message?.includes("category") || (vError as any).code === "42703")) {
-          delete vData.category;
-          await supabaseAdmin.from("vehicles").insert(vData);
+    if (data.id && allVehiclesToUpsert.length > 0) {
+      for (const vItem of allVehiclesToUpsert) {
+        const vData: any = {
+          member_id: data.id,
+          company_id: data.companyId,
+          plate: (vItem.plate || "").toUpperCase(),
+          brand: vItem.brand || "",
+          model: vItem.model || "",
+          year: vItem.year,
+          category: vItem.category || "Leves e utilitários",
+          monthly_fee: vItem.monthly_fee ?? 179.90,
+          fipe_value: vItem.fipe_value || null,
+        };
+
+        if (vItem.id) {
+          let { error: vError } = await supabaseAdmin.from("vehicles").update(vData).eq("id", vItem.id).eq("company_id", data.companyId);
+          if (vError && (vError.message?.includes("monthly_fee") || (vError as any).code === "42703")) {
+            delete vData.monthly_fee;
+            delete vData.fipe_value;
+            const retry = await supabaseAdmin.from("vehicles").update(vData).eq("id", vItem.id).eq("company_id", data.companyId);
+            vError = retry.error;
+          }
+          if (vError && (vError.message?.includes("category") || (vError as any).code === "42703")) {
+            delete vData.category;
+            await supabaseAdmin.from("vehicles").update(vData).eq("id", vItem.id).eq("company_id", data.companyId);
+          }
+        } else {
+          let { error: vError } = await supabaseAdmin.from("vehicles").insert(vData);
+          if (vError && (vError.message?.includes("monthly_fee") || (vError as any).code === "42703")) {
+            delete vData.monthly_fee;
+            delete vData.fipe_value;
+            const retry = await supabaseAdmin.from("vehicles").insert(vData);
+            vError = retry.error;
+          }
+          if (vError && (vError.message?.includes("category") || (vError as any).code === "42703")) {
+            delete vData.category;
+            await supabaseAdmin.from("vehicles").insert(vData);
+          }
         }
       }
     }
