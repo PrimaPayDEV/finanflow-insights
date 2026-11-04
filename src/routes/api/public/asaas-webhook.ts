@@ -124,11 +124,14 @@ export const Route = createFileRoute("/api/public/asaas-webhook")({
               .single();
               
             if (closureUpdate.data?.merchants?.name) {
+              const isOverdue = parsed.event === "PAYMENT_OVERDUE";
               await supabaseAdmin.from("notifications").insert({
                 company_id: companyId,
-                type: "error",
-                title: "Pagamento Revertido",
-                description: `A cobrança do EC ${closureUpdate.data.merchants.name} teve seu status revertido no Asaas.`,
+                type: isOverdue ? "warning" : "error",
+                title: isOverdue ? "Boleto Vencido" : "Pagamento Revertido",
+                description: isOverdue
+                  ? `Boleto do EC ${closureUpdate.data.merchants.name} venceu sem pagamento.`
+                  : `A cobrança do EC ${closureUpdate.data.merchants.name} teve seu status revertido no Asaas.`,
               });
             } else if (parsed.payment?.customer) {
               const memberRes = await supabaseAdmin.from("members").select("name").eq("asaas_customer_id", parsed.payment.customer).eq("company_id", companyId).maybeSingle();

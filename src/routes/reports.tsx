@@ -34,6 +34,7 @@ import {
 import { closuresQuery, merchantsQuery, asaasSettingsQuery, splitRulesQuery, transactionsQuery, feePlansQuery, importsQuery } from "@/lib/db";
 import { MerchantsGeneralReport } from "@/components/MerchantsGeneralReport";
 import { BRL } from "@/lib/format";
+import { cn } from "@/lib/utils";
 import { format, isBefore, startOfDay, addDays, subDays, startOfMonth, endOfMonth, isWithinInterval } from "date-fns";
 
 export const Route = createFileRoute("/reports")({
@@ -78,6 +79,19 @@ function ReportsPage() {
     }
     return Array.from(map.values());
   }, [splitRules.data]);
+
+  const availableMerchants = useMemo(() => {
+    const allMerchants = merchants.data ?? [];
+    if (role === "partner") {
+      const partnerMerchantIds = new Set(
+        (splitRules.data ?? [])
+          .filter((r) => r.partner_id === partnerId)
+          .map((r) => r.merchant_id)
+      );
+      return allMerchants.filter((m) => partnerMerchantIds.has(m.id));
+    }
+    return allMerchants;
+  }, [merchants.data, splitRules.data, role, partnerId]);
 
   const today = startOfDay(new Date());
   
@@ -443,7 +457,7 @@ function ReportsPage() {
                 Filtros de Pesquisa
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+            <CardContent className={cn("p-4 grid grid-cols-1 gap-4", role === "partner" ? "md:grid-cols-2" : "md:grid-cols-3")}>
               {role !== "partner" && (
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold text-muted-foreground">Parceiro / Licenciado</label>
@@ -484,8 +498,10 @@ function ReportsPage() {
                     <SelectValue placeholder="Todos os estabelecimentos" />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl">
-                    <SelectItem value="all">Todos os estabelecimentos</SelectItem>
-                    {(merchants.data ?? []).map((m) => (
+                    <SelectItem value="all">
+                      {role === "partner" ? "Todos os meus estabelecimentos" : "Todos os estabelecimentos"}
+                    </SelectItem>
+                    {availableMerchants.map((m) => (
                       <SelectItem key={m.id} value={m.id}>
                         {m.name}
                       </SelectItem>

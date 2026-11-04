@@ -1,10 +1,11 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { notificationsQuery } from "@/lib/db";
+import { notificationsQuery, splitRulesQuery, merchantsQuery } from "@/lib/db";
 import { supabase } from "@/integrations/supabase/client";
 import { applyCompanyTheme } from "@/lib/theme";
+import { Badge } from "@/components/ui/badge";
 import {
   LayoutDashboard,
   Store,
@@ -103,8 +104,9 @@ export function AppLayout({
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
-  const { user, companyId, companyName, role, appMode, segment, logoUrl, primaryColor, signOut } = useAuth();
+  const { user, companyId, companyName, role, partnerId, appMode, segment, logoUrl, primaryColor, signOut } = useAuth();
   const isPlatformAdmin = companyName === "Prima Hub" || companyName === "PrimaPay" || role === "admin";
+  const isPartner = role === "partner";
   
   useEffect(() => {
     applyCompanyTheme(primaryColor, companyName, appMode, segment);
@@ -113,7 +115,100 @@ export function AppLayout({
   const qc = useQueryClient();
   const navigate = useNavigate();
   const { data: notifications = [] } = useQuery(notificationsQuery(companyId));
-  const unreadCount = notifications.filter(n => !n.is_read).length;
+
+  const splitRules = useQuery({
+    ...splitRulesQuery,
+    enabled: isPartner && !!partnerId,
+  });
+
+  const merchants = useQuery({
+    ...merchantsQuery,
+    enabled: isPartner && !!partnerId,
+  });
+
+  // ECs vinculados à conta do parceiro via split
+  const partnerMerchants = useMemo(() => {
+    if (!isPartner || !partnerId) return [];
+    const linkedIds = new Set(
+      (splitRules.data ?? [])
+        .filter((r) => r.partner_id === partnerId)
+        .map((r) => r.merchant_id)
+    );
+    return (merchants.data ?? []).filter((m) => linkedIds.has(m.id));
+  }, [isPartner, partnerId, splitRules.data, merchants.data]);
+
+  // Notificações visíveis: parceiro só vê ECs com split vinculados a ele e sem valores em R$ (apenas status: pendente, pago, vencido)
+  const visibleNotifications = useMemo(() => {
+    if (!isPartner) return notifications;
+
+    if (!partnerId || partnerMerchants.length === 0) return [];
+
+    return notifications
+      .map((n) => {
+        const text = `${n.title} ${n.description || ""}`.toLowerCase();
+
+        // Encontrar se algum EC vinculado a este parceiro é citado nesta notificação
+        const matchedMerchant = partnerMerchants.find((m) =>
+          text.includes(m.name.toLowerCase())
+        );
+
+        if (!matchedMerchant) return null;
+
+        // Determinar o status padronizado: pendente, pago ou vencido
+        let statusLabel = "Pendente";
+        let statusBadge: "pago" | "vencido" | "pendente" = "pendente";
+        const titleLower = n.title.toLowerCase();
+        const descLower = (n.description || "").toLowerCase();
+
+        if (
+          n.type === "payment" ||
+          titleLower.includes("pago") ||
+          titleLower.includes("recebido") ||
+          descLower.includes("paga") ||
+          descLower.includes("pago")
+        ) {
+          statusLabel = "Pago";
+          statusBadge = "pago";
+        } else if (
+          titleLower.includes("vencid") ||
+          descLower.includes("venceu") ||
+          descLower.includes("vencid")
+        ) {
+          statusLabel = "Vencido";
+          statusBadge = "vencido";
+        } else if (
+          n.type === "error" ||
+          titleLower.includes("revertido") ||
+          descLower.includes("revertido")
+        ) {
+          statusLabel = "Vencido";
+          statusBadge = "vencido";
+        } else {
+          statusLabel = "Pendente";
+          statusBadge = "pendente";
+        }
+
+        let partnerTitle = "Boleto Gerado";
+        if (statusBadge === "pago") {
+          partnerTitle = "Pagamento Recebido";
+        } else if (statusBadge === "vencido") {
+          partnerTitle = "Boleto Vencido";
+        }
+
+        // Descrição sem mostrar os valores dos boletos, somente o EC e o status
+        const partnerDescription = `EC: ${matchedMerchant.name} • Status: ${statusLabel}`;
+
+        return {
+          ...n,
+          title: partnerTitle,
+          description: partnerDescription,
+          partnerStatus: statusBadge,
+        };
+      })
+      .filter((n): n is NonNullable<typeof n> => n !== null);
+  }, [notifications, isPartner, partnerId, partnerMerchants]);
+
+  const unreadCount = visibleNotifications.filter((n) => !n.is_read).length;
 
   const markAsRead = useMutation({
     mutationFn: async (id: string) => {
@@ -125,8 +220,15 @@ export function AppLayout({
 
   const markAllAsRead = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from('notifications').update({ is_read: true }).eq('is_read', false).eq('company_id', companyId!);
-      if (error) throw new Error(error.message);
+      if (isPartner) {
+        const idsToMark = visibleNotifications.filter((n) => !n.is_read).map((n) => n.id);
+        if (idsToMark.length === 0) return;
+        const { error } = await supabase.from('notifications').update({ is_read: true }).in('id', idsToMark);
+        if (error) throw new Error(error.message);
+      } else {
+        const { error } = await supabase.from('notifications').update({ is_read: true }).eq('is_read', false).eq('company_id', companyId!);
+        if (error) throw new Error(error.message);
+      }
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["notifications"] })
   });
@@ -286,7 +388,6 @@ export function AppLayout({
     }
   }
   // Parceiros do ambiente de ECs não acessam o Hub nem outros ambientes
-  const isPartner = role === "partner";
   if (!isPartner) {
     currentNav.push({ to: "/", label: "Hub de Ambientes", icon: LayoutGrid, section: "Ecossistema" });
   }
@@ -341,10 +442,10 @@ export function AppLayout({
               )}
             </div>
             <DropdownMenuSeparator />
-            {notifications.length === 0 ? (
+            {visibleNotifications.length === 0 ? (
               <DropdownMenuItem disabled>Nenhuma notificação</DropdownMenuItem>
             ) : (
-              notifications.map(notification => (
+              visibleNotifications.map(notification => (
                 <DropdownMenuItem 
                   key={notification.id}
                   className={cn(
@@ -355,18 +456,31 @@ export function AppLayout({
                   )}
                   onClick={() => {
                     if (!notification.is_read) markAsRead.mutate(notification.id);
-                    navigate({ to: "/closures" });
+                    navigate({ to: isPartner ? "/reports" : "/closures" });
                   }}
                 >
-                  <div className="flex items-center gap-3 w-full">
+                  <div className="flex items-center gap-2.5 w-full">
                     <div className="shrink-0 mt-0.5">
                       {notification.type === 'payment' && <CircleDollarSign className="w-4 h-4 text-emerald-500" />}
                       {notification.type === 'closure' && <FileText className="w-4 h-4 text-blue-500" />}
-                      {notification.type === 'error' && <AlertCircle className="w-4 h-4 text-destructive" />}
+                      {(notification.type === 'error' || notification.type === 'warning') && <AlertCircle className="w-4 h-4 text-destructive" />}
                     </div>
                     <span className="text-sm font-medium leading-none">
                       {notification.title}
                     </span>
+                    {notification.partnerStatus && (
+                      <Badge
+                        variant="secondary"
+                        className={cn(
+                          "text-[10px] font-bold px-1.5 py-0.2 rounded-md uppercase tracking-wider ml-1",
+                          notification.partnerStatus === "pago" && "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20",
+                          notification.partnerStatus === "vencido" && "bg-destructive/10 text-destructive border border-destructive/20",
+                          notification.partnerStatus === "pendente" && "bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20"
+                        )}
+                      >
+                        {notification.partnerStatus}
+                      </Badge>
+                    )}
                     {!notification.is_read && <span className="ml-auto w-2 h-2 rounded-full bg-primary" />}
                   </div>
                   {notification.description && (
