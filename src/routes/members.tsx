@@ -492,7 +492,7 @@ function MemberDialog({
         });
         setVehiclesList(mapped);
       } else {
-        setVehiclesList([createEmptyVehicleItem()]);
+        setVehiclesList([]);
       }
     } else {
       setName("");
@@ -591,12 +591,8 @@ function MemberDialog({
   };
 
   const handleRemoveVehicle = (idx: number) => {
-    if (vehiclesList.length <= 1) {
-      setVehiclesList([createEmptyVehicleItem()]);
-      return;
-    }
     setVehiclesList((prev) => prev.filter((_, i) => i !== idx));
-    toast.info("Veículo removido do cadastro.");
+    toast.info("Veículo removido da lista. Clique em 'Salvar Alterações' para confirmar a exclusão.");
   };
 
   const updateVehicleField = <K extends keyof MemberVehicleFormItem>(
@@ -1233,7 +1229,29 @@ function MemberDialog({
 
               {/* Lista dos Veículos Cadastrados */}
               <div className="space-y-4">
-                {vehiclesList.map((vehicle, idx) => {
+                {vehiclesList.length === 0 ? (
+                  <div className="p-8 text-center border-2 border-dashed border-border/80 rounded-2xl bg-muted/10 space-y-3">
+                    <Car className="size-8 text-muted-foreground mx-auto opacity-50" />
+                    <div className="space-y-1">
+                      <p className="text-xs font-bold text-foreground">
+                        Nenhum veículo vinculado a este associado
+                      </p>
+                      <p className="text-[11px] text-muted-foreground max-w-sm mx-auto">
+                        Você removeu os veículos deste cadastro. Clique em <strong>"Salvar Alterações"</strong> abaixo para confirmar a exclusão definitiva no sistema.
+                      </p>
+                    </div>
+                    <Button
+                      type="button"
+                      onClick={handleAddVehicle}
+                      size="sm"
+                      className="rounded-xl h-8.5 text-xs font-bold gap-1.5"
+                    >
+                      <Plus className="size-4" />
+                      <span>+ Adicionar Veículo</span>
+                    </Button>
+                  </div>
+                ) : (
+                  vehiclesList.map((vehicle, idx) => {
                   const pricing = vehiclesPricing[idx] || { baseFee: 179.9, impFee: 0, totalFee: 179.9 };
                   const isSearchingThis = searchingPlateIdx === idx;
 
@@ -1262,19 +1280,17 @@ function MemberDialog({
                           <span className="text-xs font-bold font-mono text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-lg border border-emerald-500/25">
                             {BRL(pricing.totalFee)}/mês
                           </span>
-                          {vehiclesList.length > 1 && (
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleRemoveVehicle(idx)}
-                              className="h-7 text-xs text-destructive hover:bg-destructive/10 px-2 rounded-lg gap-1"
-                              title="Remover este veículo"
-                            >
-                              <Trash2 className="size-3.5" />
-                              <span className="hidden sm:inline">Remover</span>
-                            </Button>
-                          )}
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleRemoveVehicle(idx)}
+                            className="h-7 text-xs text-destructive hover:bg-destructive/10 px-2 rounded-lg gap-1"
+                            title="Remover este veículo do associado"
+                          >
+                            <Trash2 className="size-3.5" />
+                            <span className="hidden sm:inline">Remover Veículo</span>
+                          </Button>
                         </div>
                       </div>
 
@@ -1459,7 +1475,7 @@ function MemberDialog({
                       </div>
                     </div>
                   );
-                })}
+                }))}
               </div>
 
               {/* Botão para adicionar mais veículos */}

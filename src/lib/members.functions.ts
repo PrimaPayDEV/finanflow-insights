@@ -151,6 +151,32 @@ export const upsertMember = createServerFn({ method: "POST" })
       ...(data.vehicle && !data.vehicles?.some(v => v.id && v.id === data.vehicle?.id) ? [data.vehicle] : [])
     ].filter(v => v && (v.plate || v.brand || v.model));
 
+    if (data.id) {
+      // 1. Obter veículos atualmente vinculados a este associado no banco
+      const { data: currentVehicles } = await supabaseAdmin
+        .from("vehicles")
+        .select("id")
+        .eq("member_id", data.id)
+        .eq("company_id", data.companyId);
+
+      const keptIds = new Set(
+        allVehiclesToUpsert.map((v) => v.id).filter((id): id is string => !!id)
+      );
+
+      // 2. Excluir do banco os veículos que foram removidos do perfil do associado
+      const toDelete = (currentVehicles || [])
+        .map((v) => v.id)
+        .filter((id) => !keptIds.has(id));
+
+      if (toDelete.length > 0) {
+        await supabaseAdmin
+          .from("vehicles")
+          .delete()
+          .in("id", toDelete)
+          .eq("company_id", data.companyId);
+      }
+    }
+
     if (data.id && allVehiclesToUpsert.length > 0) {
       for (let i = 0; i < allVehiclesToUpsert.length; i++) {
         const vItem = allVehiclesToUpsert[i];

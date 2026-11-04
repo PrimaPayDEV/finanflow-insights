@@ -59,7 +59,19 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { getVehicles, getMembers, addVehicle, linkVehicleToMember } from "@/lib/members.functions";
+import { getVehicles, getMembers, addVehicle, linkVehicleToMember, deleteVehicle } from "@/lib/members.functions";
+import { translateError } from "@/lib/translateError";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { getPartners } from "@/lib/partner.functions";
 import { BRL, formatCpfCnpj, formatPhone, formatCurrencyInput } from "@/lib/format";
 import { lookupVehicleByPlate } from "@/lib/plate";
@@ -369,6 +381,91 @@ function getStatusBadge(status: VehicleItem["status"]) {
         </Badge>
       );
   }
+}
+
+function DeleteVehicleButton({
+  vehicleId,
+  plate,
+  onDeleted,
+  variant = "icon",
+}: {
+  vehicleId: string;
+  plate: string;
+  onDeleted?: () => void;
+  variant?: "icon" | "full";
+}) {
+  const qc = useQueryClient();
+  const { companyId } = useAuth();
+  const [open, setOpen] = useState(false);
+
+  const remove = useMutation({
+    mutationFn: async () => {
+      if (!companyId) throw new Error("Empresa não identificada");
+      const res = await deleteVehicle({ data: { id: vehicleId, companyId } });
+      if (!res.ok) throw new Error("Erro ao excluir veículo.");
+    },
+    onSuccess: () => {
+      toast.success(`Veículo placa ${plate} excluído com sucesso!`);
+      setOpen(false);
+      if (onDeleted) onDeleted();
+      qc.invalidateQueries({ queryKey: ["vehicles", companyId] });
+      qc.invalidateQueries({ queryKey: ["members", companyId] });
+    },
+    onError: (e) => toast.error(translateError(e.message)),
+  });
+
+  return (
+    <AlertDialog open={open} onOpenChange={setOpen}>
+      <AlertDialogTrigger asChild>
+        {variant === "full" ? (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="rounded-xl text-xs h-8.5 font-semibold gap-1.5 border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive"
+          >
+            <Trash2 className="size-3.5" />
+            <span>Excluir Veículo</span>
+          </Button>
+        ) : (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="size-7.5 rounded-xl hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
+            title={`Excluir veículo placa ${plate}`}
+          >
+            <Trash2 className="size-3.5" />
+          </Button>
+        )}
+      </AlertDialogTrigger>
+      <AlertDialogContent className="rounded-2xl border-border bg-card shadow-2xl max-w-md">
+        <AlertDialogHeader>
+          <AlertDialogTitle className="text-base font-bold flex items-center gap-2 text-destructive">
+            <Trash2 className="size-4.5" /> Excluir Veículo
+          </AlertDialogTitle>
+          <AlertDialogDescription className="text-xs text-muted-foreground">
+            Tem certeza que deseja excluir permanentemente o veículo de placa{" "}
+            <strong className="font-mono text-foreground font-bold">{plate}</strong>? Esta ação
+            não pode ser desfeita e removerá o veículo de todos os relatórios e cobranças.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel className="rounded-xl text-xs h-8.5 font-medium">Cancelar</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={(e) => {
+              e.preventDefault();
+              remove.mutate();
+            }}
+            disabled={remove.isPending}
+            className="rounded-xl text-xs h-8.5 font-bold bg-destructive text-destructive-foreground hover:bg-destructive/90 px-4"
+          >
+            {remove.isPending ? "Excluindo..." : "Sim, Excluir Veículo"}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
 }
 
 function VehiclesPage() {
@@ -913,15 +1010,18 @@ function VehiclesPage() {
 
                         {/* Ações */}
                         <td className="px-3 py-2.5 sm:px-3.5 sm:py-3 align-middle text-right whitespace-nowrap">
-                          <Button
-                            size="sm"
-                            onClick={() => openVehicleDetails(vehicle)}
-                            className="rounded-xl h-7.5 px-2.5 sm:px-3 text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground gap-1 shadow-xs"
-                            title="Abrir Ficha Técnica, Coberturas e Mensalidade"
-                          >
-                            <Eye className="size-3.5 shrink-0" />
-                            <span>Ficha do Veículo</span>
-                          </Button>
+                          <div className="flex items-center justify-end gap-1.5" onClick={(e) => e.stopPropagation()}>
+                            <Button
+                              size="sm"
+                              onClick={() => openVehicleDetails(vehicle)}
+                              className="rounded-xl h-7.5 px-2.5 sm:px-3 text-xs font-semibold bg-primary hover:bg-primary/90 text-primary-foreground gap-1 shadow-xs"
+                              title="Abrir Ficha Técnica, Coberturas e Mensalidade"
+                            >
+                              <Eye className="size-3.5 shrink-0" />
+                              <span>Ficha</span>
+                            </Button>
+                            <DeleteVehicleButton vehicleId={vehicle.id} plate={vehicle.plate} />
+                          </div>
                         </td>
                       </tr>
                     );
@@ -2097,6 +2197,12 @@ function VehicleDetailsDialog({
               <Award className="size-4" />
               <span>Certificado Digital</span>
             </Button>
+            <DeleteVehicleButton
+              vehicleId={vehicle.id}
+              plate={vehicle.plate}
+              variant="full"
+              onDeleted={() => onOpenChange(false)}
+            />
           </div>
 
           <Button
