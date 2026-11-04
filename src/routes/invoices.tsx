@@ -16,6 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
 import { getMembers, generateInvoice } from "@/lib/members.functions";
 import { getAsaasDashboardMetrics } from "@/lib/asaas.functions";
+import { getMemberEffectiveMonthlyFee } from "@/lib/veicular";
 import { translateError } from "@/lib/translateError";
 import { BRL, formatCurrencyInput } from "@/lib/format";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -90,15 +91,16 @@ function NewInvoiceDialog() {
   const partner = Array.isArray(selectedMember?.partners) ? selectedMember.partners[0] : (selectedMember?.partners as any);
   const memberVehicles: any[] = Array.isArray((selectedMember as any)?.vehicles) ? (selectedMember as any).vehicles : [];
 
-  // Ao selecionar o associado, preenche o valor com a soma das mensalidades dos veículos dele
+  // Ao selecionar o associado, preenche o valor com a mensalidade efetiva (manual ou calculada)
   const handleSelectMember = (id: string) => {
     setMemberId(id);
     const m: any = members?.find(x => x.id === id);
-    const vehicles: any[] = Array.isArray(m?.vehicles) ? m.vehicles : [];
-    const total = vehicles.reduce((acc, v) => acc + (Number(v.monthly_fee) || 0), 0);
-    if (total > 0) {
-      setAmount(formatCurrencyInput(String(Math.round(total * 100))));
-      if (!description) setDescription("Mensalidade Proteção Veicular");
+    if (m) {
+      const fee = getMemberEffectiveMonthlyFee(companyId || "default", m);
+      if (fee > 0) {
+        setAmount(formatCurrencyInput(String(Math.round(fee * 100))));
+        if (!description) setDescription("Mensalidade Proteção Veicular");
+      }
     }
   };
 

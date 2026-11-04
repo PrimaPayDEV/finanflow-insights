@@ -61,7 +61,8 @@ import {
   loadLocalData,
   saveLocalData,
   generateBoletoWhatsAppMessage,
-  getMemberDueDay
+  getMemberDueDay,
+  getMemberEffectiveMonthlyFee
 } from "@/lib/veicular";
 
 export const Route = createFileRoute('/veicular/financeiro')({
@@ -156,13 +157,8 @@ function FinanceiroPage() {
       const primaryVehicle = vehicles[0];
       const consultant = Array.isArray(m.partners) ? m.partners[0] : (m.partners as any);
 
-      // Calcular mensalidade base
-      let baseFee = 0;
-      if (vehicles.length > 0) {
-        baseFee = vehicles.reduce((acc: number, v: any) => acc + (Number(v.monthly_fee) || 179.90), 0);
-      } else {
-        baseFee = 179.90;
-      }
+      // Calcular mensalidade base considerando valor configurado manualmente no associado
+      const baseFee = getMemberEffectiveMonthlyFee(companyId || "default", m);
 
       // Calcular rateio
       let rateioVal = 0;

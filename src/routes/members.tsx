@@ -74,7 +74,8 @@ import {
   calculateBaseMonthlyFee,
   calculateImplementoMonthlyFee,
   categoryToVehicleType,
-  formatDateTimeBR
+  formatDateTimeBR,
+  getMemberEffectiveMonthlyFee
 } from "@/lib/veicular";
 
 export const Route = createFileRoute("/members")({
@@ -378,6 +379,7 @@ function MemberDialog({
   const [status, setStatus] = useState<"active" | "inactive">("active");
   const [notes, setNotes] = useState("");
   const [registeredAt, setRegisteredAt] = useState<string>("");
+  const [customMonthlyFeeStr, setCustomMonthlyFeeStr] = useState("");
 
   // Dados da CNH
   const [cnhNumber, setCnhNumber] = useState("");
@@ -459,6 +461,12 @@ function MemberDialog({
       setState(extra.state || "");
       setNotes(extra.notes || "");
       setRegisteredAt(extra.registeredAt || member.created_at || "");
+      if (extra.customMonthlyFee && extra.customMonthlyFee > 0) {
+        setCustomMonthlyFeeStr(formatCurrencyInput(String(Math.round(extra.customMonthlyFee * 100))));
+      } else {
+        const vSum = (member.vehicles || []).reduce((acc: number, v: any) => acc + (Number(v.monthly_fee) || 0), 0);
+        setCustomMonthlyFeeStr(vSum > 0 ? formatCurrencyInput(String(Math.round(vSum * 100))) : "");
+      }
 
       // Carregar todos os veículos vinculados ao associado
       if (member.vehicles && member.vehicles.length > 0) {
@@ -501,6 +509,7 @@ function MemberDialog({
       setStatus("active");
       setNotes("");
       setRegisteredAt("");
+      setCustomMonthlyFeeStr("");
       setCnhNumber("");
       setCnhCategory("B");
       setCnhExpiryDate("");
@@ -620,6 +629,15 @@ function MemberDialog({
     return vehiclesPricing.reduce((acc, p) => acc + p.totalFee, 0);
   }, [vehiclesPricing]);
 
+  const customMonthlyFeeNum = useMemo(() => {
+    return Number(customMonthlyFeeStr.replace(/\D/g, "")) / 100 || 0;
+  }, [customMonthlyFeeStr]);
+
+  const effectiveMonthlyFee = useMemo(() => {
+    if (customMonthlyFeeNum > 0) return customMonthlyFeeNum;
+    return totalMonthlyFeeAllVehicles > 0 ? totalMonthlyFeeAllVehicles : 179.90;
+  }, [customMonthlyFeeNum, totalMonthlyFeeAllVehicles]);
+
   // Validação da CNH
   const isCnhExpired = useMemo(() => {
     if (!cnhExpiryDate) return false;
@@ -643,6 +661,11 @@ function MemberDialog({
       const vehiclesPayload = validVehicles.map((v, i) => {
         const pricing = vehiclesPricing[i] || { totalFee: 179.90 };
         const fVal = Number(v.fipeValueStr.replace(/\D/g, "")) / 100 || 50000;
+        const vehMonthlyFee =
+          validVehicles.length === 1 && customMonthlyFeeNum > 0
+            ? customMonthlyFeeNum
+            : pricing.totalFee;
+
         return {
           id: v.id || undefined,
           plate: v.plate ? v.plate.toUpperCase().trim() : undefined,
@@ -650,7 +673,7 @@ function MemberDialog({
           model: v.model.trim(),
           year: v.year ? parseInt(v.year, 10) : undefined,
           category: v.category,
-          monthly_fee: pricing.totalFee,
+          monthly_fee: vehMonthlyFee,
           fipe_value: fVal,
         };
       });
@@ -667,6 +690,7 @@ function MemberDialog({
           status,
           vehicles: vehiclesPayload,
           vehicle: vehiclesPayload[0] || undefined,
+          monthly_fee: effectiveMonthlyFee,
         },
       });
 
@@ -698,6 +722,7 @@ function MemberDialog({
           notes,
           registeredAt: finalRegisteredAt,
           updatedAt: nowIso,
+          customMonthlyFee: effectiveMonthlyFee,
         });
 
         // Persistir dados extras e implementos de CADA veículo
@@ -747,7 +772,15 @@ function MemberDialog({
                 Preencha os dados pessoais, endereço com busca automática por CEP, habilitação e múltiplos veículos com implementos.
               </DialogDescription>
             </div>
-            <div className="flex items-center gap-2 shrink-0">
+            <div className="flex items-center gap-2 shrink-0 flex-wrap">
+              <Badge
+                variant="outline"
+                className="text-xs font-mono bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400 gap-1 py-1 px-3 font-bold"
+              >
+                <DollarSign className="size-3.5" />
+                {BRL(effectiveMonthlyFee)}/mês
+                {customMonthlyFeeNum > 0 && <span className="text-[10px] text-amber-600 dark:text-amber-400 font-semibold ml-1">(Manual)</span>}
+              </Badge>
               <Badge
                 variant="outline"
                 className="text-[10px] font-mono bg-primary/5 border-primary/25 text-primary gap-1 py-1 px-2.5"
@@ -1079,19 +1112,52 @@ function MemberDialog({
                 </div>
               </div>
 
-              {/* BLOCO 4: Vencimento & Observações */}
+              {/* BLOCO 4: Mensalidade Contratada & Vencimento */}
               <div className="p-4 rounded-2xl border border-amber-500/30 bg-amber-500/10 space-y-3.5">
                 <div className="flex items-center justify-between pb-1.5 border-b border-amber-500/20">
                   <Label className="text-xs font-bold text-amber-900 dark:text-amber-200 flex items-center gap-2">
-                    <Calendar className="size-4 text-amber-600" /> 4. Parametrização do Boleto no Lote
+                    <DollarSign className="size-4 text-amber-600" /> 4. Mensalidade Contratada & Vencimento do Boleto
                   </Label>
                   <Badge variant="outline" className="border-amber-500/40 text-amber-700 dark:text-amber-300 text-[10px] font-bold">
-                    Fechamento Financeiro
+                    Regra Financeira Global
                   </Badge>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold">Dia de Vencimento do Boleto Mensal</Label>
+                    <div className="flex items-center justify-between">
+                      <Label className="text-xs font-bold text-foreground">
+                        Mensalidade Manual (R$) *
+                      </Label>
+                      {totalMonthlyFeeAllVehicles > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setCustomMonthlyFeeStr(formatCurrencyInput(String(Math.round(totalMonthlyFeeAllVehicles * 100))));
+                            toast.info(`Valor ajustado para ${BRL(totalMonthlyFeeAllVehicles)}`);
+                          }}
+                          className="text-[10px] text-amber-700 dark:text-amber-300 hover:underline font-semibold"
+                          title="Usar valor sugerido pela tabela FIPE e implementos"
+                        >
+                          Usar tabela: {BRL(totalMonthlyFeeAllVehicles)}
+                        </button>
+                      )}
+                    </div>
+                    <div className="relative">
+                      <Input
+                        value={customMonthlyFeeStr}
+                        onChange={(e) => setCustomMonthlyFeeStr(formatCurrencyInput(e.target.value))}
+                        placeholder={totalMonthlyFeeAllVehicles > 0 ? formatCurrencyInput(String(Math.round(totalMonthlyFeeAllVehicles * 100))) : "R$ 179,90"}
+                        className="h-9 rounded-xl text-xs font-mono font-black text-foreground bg-background border-amber-500/40 focus:border-amber-500 pr-8"
+                      />
+                      <DollarSign className="size-3.5 text-muted-foreground absolute right-2.5 top-1/2 -translate-y-1/2" />
+                    </div>
+                    <p className="text-[10px] text-muted-foreground leading-tight">
+                      Valor manual fixo aplicado a todo o ambiente veicular (Lotes, Boletos, Termos e Relatórios).
+                    </p>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold">Dia de Vencimento do Boleto</Label>
                     <Select value={String(dueDay)} onValueChange={(v) => setDueDay(Number(v))}>
                       <SelectTrigger className="h-9 rounded-xl text-xs bg-background font-bold">
                         <SelectValue placeholder="Selecione o dia de vencimento" />
@@ -1104,7 +1170,11 @@ function MemberDialog({
                         <SelectItem value="25">Dia 25 de cada mês</SelectItem>
                       </SelectContent>
                     </Select>
+                    <p className="text-[10px] text-muted-foreground leading-tight">
+                      Dia de corte para geração dos lotes e boletos mensais.
+                    </p>
                   </div>
+
                   <div className="space-y-1.5">
                     <Label className="text-xs font-semibold">Observações Internas</Label>
                     <Input
@@ -1113,6 +1183,9 @@ function MemberDialog({
                       placeholder="Observações ou anotações cadastrais"
                       className="h-9 rounded-xl text-xs bg-background"
                     />
+                    <p className="text-[10px] text-muted-foreground leading-tight">
+                      Anotações de negociação ou particularidades.
+                    </p>
                   </div>
                 </div>
               </div>
@@ -1419,8 +1492,11 @@ function MemberDialog({
             <AsaasFormSeal />
             <span className="text-[10px] text-muted-foreground hidden sm:inline-flex items-center gap-1">
               <Clock className="size-3 text-primary" />
-              Total mensalidade acumulada:{" "}
-              <strong className="text-foreground font-mono">{BRL(totalMonthlyFeeAllVehicles)}/mês</strong>
+              Mensalidade configurada:{" "}
+              <strong className="text-foreground font-mono">{BRL(effectiveMonthlyFee)}/mês</strong>
+              {customMonthlyFeeNum > 0 && (
+                <span className="text-amber-600 dark:text-amber-400 font-bold ml-1">(Definida manualmente)</span>
+              )}
             </span>
           </div>
           <div className="flex justify-end gap-2 w-full sm:w-auto">
@@ -2098,6 +2174,7 @@ function MembersPage() {
                     <th className="px-3 py-3 sm:px-3.5">Associado / Registro</th>
                     <th className="px-3 py-3 sm:px-3.5 whitespace-nowrap">CNH / Validade</th>
                     <th className="px-3 py-3 sm:px-3.5 whitespace-nowrap">Vencimento</th>
+                    <th className="px-3 py-3 sm:px-3.5 whitespace-nowrap">Mensalidade</th>
                     <th className="px-3 py-3 sm:px-3.5">Contatos</th>
                     <th className="px-3 py-3 sm:px-3.5">Veículos (Clique p/ Coberturas)</th>
                     <th className="px-3 py-3 sm:px-3.5 whitespace-nowrap">Consultor</th>
@@ -2173,6 +2250,24 @@ function MembersPage() {
                             <Calendar className="size-3 text-amber-600 dark:text-amber-400" />
                             Dia {due}
                           </Badge>
+                        </td>
+
+                        {/* Mensalidade Contratada (Manual ou Calculada) */}
+                        <td className="px-3 py-2.5 sm:px-3.5 sm:py-3 align-middle whitespace-nowrap">
+                          <div className="space-y-0.5">
+                            <Badge
+                              variant="outline"
+                              className="text-[11px] font-mono font-bold bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded-lg inline-flex items-center gap-1"
+                            >
+                              <DollarSign className="size-3" />
+                              {BRL(getMemberEffectiveMonthlyFee(companyId || "default", m))}
+                            </Badge>
+                            {typeof extra.customMonthlyFee === "number" && extra.customMonthlyFee > 0 && (
+                              <span className="text-[9px] text-amber-600 dark:text-amber-400 block font-semibold">
+                                Fixada Manualmente
+                              </span>
+                            )}
+                          </div>
                         </td>
 
                         {/* Contatos */}

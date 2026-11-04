@@ -28,7 +28,8 @@ import {
   getMemberExtraData,
   getVehicleExtraData,
   getMemberDueDay,
-  formatDateTimeBR
+  formatDateTimeBR,
+  getMemberEffectiveMonthlyFee
 } from "@/lib/veicular";
 
 export const Route = createFileRoute('/veicular/termos')({
@@ -681,7 +682,7 @@ function TermosPage() {
               <div>
                 <span className="text-slate-500 block text-[10px] uppercase font-semibold">Contribuição Mensal:</span>
                 <span className="font-mono font-bold text-slate-900">
-                  {selectedVehicle?.monthly_fee ? BRL(selectedVehicle.monthly_fee) : "R$ 179,90"} (Venc. Dia {memberDueDay})
+                  {BRL(getMemberEffectiveMonthlyFee(companyId || "default", selectedMember))} (Venc. Dia {memberDueDay})
                 </span>
               </div>
               <div>

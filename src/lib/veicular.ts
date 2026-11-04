@@ -107,6 +107,7 @@ export interface MemberExtraData {
   notes?: string;
   registeredAt?: string;
   updatedAt?: string;
+  customMonthlyFee?: number; // Valor da mensalidade definido manualmente no cadastro do associado
 }
 
 export interface VehicleExtraData {
@@ -562,6 +563,45 @@ export function saveMemberExtraData(companyId: string, memberId: string, data: M
 
 export function getAllMembersExtraData(companyId: string): Record<string, MemberExtraData> {
   return loadLocalData<Record<string, MemberExtraData>>(companyId, "members_extra", {});
+}
+
+/**
+ * Obtém o valor efetivo da mensalidade do associado.
+ * Prioridade:
+ * 1. Mensalidade configurada manualmente no cadastro do associado (customMonthlyFee)
+ * 2. Mensalidade gravada no objeto do associado
+ * 3. Soma das mensalidades dos veículos vinculados
+ * 4. Valor padrão de fallback (179.90)
+ */
+export function getMemberEffectiveMonthlyFee(companyId: string, member: any): number {
+  if (!member) return 179.90;
+
+  // 1. Verificar se há mensalidade configurada manualmente nos dados extras do associado
+  const memberId = member.id || member.memberId;
+  if (memberId) {
+    const extra = getMemberExtraData(companyId || "default", memberId);
+    if (typeof extra?.customMonthlyFee === "number" && !isNaN(extra.customMonthlyFee) && extra.customMonthlyFee > 0) {
+      return extra.customMonthlyFee;
+    }
+  }
+
+  // 2. Verificar se o próprio objeto member já tem customMonthlyFee ou monthly_fee
+  if (typeof (member as any).customMonthlyFee === "number" && (member as any).customMonthlyFee > 0) {
+    return (member as any).customMonthlyFee;
+  }
+  if (typeof (member as any).monthly_fee === "number" && (member as any).monthly_fee > 0) {
+    return (member as any).monthly_fee;
+  }
+
+  // 3. Soma das mensalidades dos veículos do associado
+  const vehicles = Array.isArray(member.vehicles) ? member.vehicles : member.vehicle ? [member.vehicle] : [];
+  if (vehicles.length > 0) {
+    const sum = vehicles.reduce((acc: number, v: any) => acc + (Number(v.monthly_fee) || 0), 0);
+    if (sum > 0) return sum;
+  }
+
+  // 4. Valor padrão de fallback
+  return 179.90;
 }
 
 export function getVehicleExtraData(companyId: string, vehicleIdOrPlate?: string, fallbackPlate?: string): VehicleExtraData {

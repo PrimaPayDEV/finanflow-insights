@@ -25,6 +25,7 @@ const memberSchema = z.object({
   status: z.string().optional(),
   vehicle: vehicleItemSchema.optional(),
   vehicles: z.array(vehicleItemSchema).optional(),
+  monthly_fee: z.number().optional(),
 });
 
 export const getMembers = createServerFn({ method: "GET" })
@@ -151,7 +152,14 @@ export const upsertMember = createServerFn({ method: "POST" })
     ].filter(v => v && (v.plate || v.brand || v.model));
 
     if (data.id && allVehiclesToUpsert.length > 0) {
-      for (const vItem of allVehiclesToUpsert) {
+      for (let i = 0; i < allVehiclesToUpsert.length; i++) {
+        const vItem = allVehiclesToUpsert[i];
+        // Atribui a mensalidade manual configurada no associado
+        const assignedFee =
+          allVehiclesToUpsert.length === 1 && typeof data.monthly_fee === "number" && data.monthly_fee > 0
+            ? data.monthly_fee
+            : vItem.monthly_fee ?? (i === 0 && typeof data.monthly_fee === "number" && data.monthly_fee > 0 ? data.monthly_fee : 179.90);
+
         const vData: any = {
           member_id: data.id,
           company_id: data.companyId,
@@ -160,7 +168,7 @@ export const upsertMember = createServerFn({ method: "POST" })
           model: vItem.model || "",
           year: vItem.year,
           category: vItem.category || "Leves e utilitários",
-          monthly_fee: vItem.monthly_fee ?? 179.90,
+          monthly_fee: assignedFee,
           fipe_value: vItem.fipe_value || null,
         };
 
