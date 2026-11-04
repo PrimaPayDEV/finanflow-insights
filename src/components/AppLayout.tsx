@@ -134,13 +134,14 @@ export function AppLayout({
   const tabScope = getTabScope();
 
   // Identificação do ambiente de Proteção Veicular
-  const isVeicular =
+  // Parceiros pertencem ao ambiente de ECs e nunca usam o layout veicular
+  const isVeicular = role !== "partner" && (
     tabScope === "veicular" ||
     appMode === "billing" ||
     segment === "PROTECAO_VEICULAR" ||
     pathname.startsWith("/vehicles") ||
     pathname.startsWith("/members") ||
-    pathname.startsWith("/veicular");
+    pathname.startsWith("/veicular"));
 
   // Estrutura de menus no topo para Proteção Veicular conforme especificação completa
   const veicularNavItems: TopNavItem[] = [

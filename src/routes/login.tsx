@@ -133,6 +133,10 @@ function Login() {
 
   // Se já estiver logado no ambiente atual, redireciona para a rota correta do ambiente
   if (!isLoading && user) {
+    if (role === "partner") {
+      navigate({ to: "/reports" });
+      return null;
+    }
     if (currentEnvKey === "veicular") {
       navigate({ to: "/dashboard" });
       return null;
