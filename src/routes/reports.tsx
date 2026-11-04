@@ -57,7 +57,10 @@ function ReportsPage() {
   
   const { role, partnerId, appMode } = useAuth();
 
-  const [reportView, setReportView] = useState<"general" | "receivables">("general");
+  const [selectedView, setReportView] = useState<"general" | "receivables">("general");
+  // Parceiros só podem ver o relatório de recebíveis vinculados a eles
+  const isPartnerUser = role === "partner";
+  const reportView = isPartnerUser ? "receivables" : selectedView;
   const [period, setPeriod] = useState<PeriodType>("month");
   const [customRange, setCustomRange] = useState<{ from?: Date; to?: Date }>();
 
@@ -267,6 +270,7 @@ function ReportsPage() {
         appMode === "billing" ? undefined : (
           <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2">
             {/* Alternância entre Relatório Geral e Painel de Recebíveis */}
+            {!isPartnerUser && (
             <div className="flex items-center gap-1 p-1 bg-muted/60 rounded-xl border border-border/60">
               <Button
                 variant={reportView === "general" ? "default" : "ghost"}
@@ -287,6 +291,7 @@ function ReportsPage() {
                 <span>Recebíveis</span>
               </Button>
             </div>
+            )}
 
             {reportView === "receivables" && (
               <>

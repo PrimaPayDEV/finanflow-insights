@@ -284,7 +284,11 @@ export function AppLayout({
       currentNav.push({ to: "/admin/companies", label: "Administração", icon: ShieldCheck, section: "Administração" });
     }
   }
-  currentNav.push({ to: "/", label: "Hub de Ambientes", icon: LayoutGrid, section: "Ecossistema" });
+  // Parceiros do ambiente de ECs não acessam o Hub nem outros ambientes
+  const isPartner = role === "partner";
+  if (!isPartner) {
+    currentNav.push({ to: "/", label: "Hub de Ambientes", icon: LayoutGrid, section: "Ecossistema" });
+  }
 
   // Componente reutilizável para a área de perfil e notificações da direita
   const RightActions = ({ showSeal = true }: { showSeal?: boolean } = {}) => (
@@ -295,7 +299,7 @@ export function AppLayout({
         </div>
       )}
 
-      <EnvironmentSwitcher />
+      {!isPartner && <EnvironmentSwitcher />}
 
       <div className="flex items-center gap-2 pl-2 sm:pl-3 border-l border-border/70">
         <ThemeToggle />
@@ -406,6 +410,7 @@ export function AppLayout({
                 </Link>
               </DropdownMenuItem>
             )}
+            {!isPartner && (
             <DropdownMenuItem asChild>
               {!isLocalEnvironment() && typeof window !== "undefined" && window.location.origin !== DEFAULT_PLATFORM_URLS.hub ? (
                 <a
@@ -422,11 +427,15 @@ export function AppLayout({
                 </Link>
               )}
             </DropdownMenuItem>
+            )}
             <DropdownMenuSeparator />
             <DropdownMenuItem 
               onClick={async () => {
                 await signOut();
-                if (typeof window !== "undefined" && !isLocalEnvironment() && window.location.origin !== DEFAULT_PLATFORM_URLS.hub) {
+                if (isPartner) {
+                  // Parceiro volta direto para o login do ambiente de ECs, sem passar pelo Hub
+                  window.location.href = "/login?env=ec";
+                } else if (typeof window !== "undefined" && !isLocalEnvironment() && window.location.origin !== DEFAULT_PLATFORM_URLS.hub) {
                   window.location.href = DEFAULT_PLATFORM_URLS.hub;
                 } else {
                   navigate({ to: "/" });
