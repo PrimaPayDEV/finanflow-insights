@@ -139,6 +139,17 @@ function isPublicRoute(pathname: string): boolean {
   );
 }
 
+function isPartnerAllowedRoute(pathname: string): boolean {
+  const clean = pathname.replace(/\/+$/, "") || "/";
+  return (
+    clean === "/reports" ||
+    clean === "/profile" ||
+    clean === "/login" ||
+    clean.startsWith("/public") ||
+    clean.startsWith("/api/public")
+  );
+}
+
 function AuthGuard({ children }: { children: ReactNode }) {
   const { user, isLoading, isActive, companyName, role } = useAuth();
   const navigate = useNavigate();
@@ -163,12 +174,17 @@ function AuthGuard({ children }: { children: ReactNode }) {
           navigate({ to: "/dashboard" });
         } else if (role === "merchant") {
           navigate({ to: "/recebiveis/dashboard" });
+        } else if (role === "partner") {
+          navigate({ to: "/reports" });
         } else {
           navigate({ to: "/dashboard" });
         }
       } else if (user && role === "merchant" && !pathname.startsWith("/recebiveis") && !isPublic) {
         // Protect merchants from seeing admin routes
         navigate({ to: "/recebiveis/dashboard" });
+      } else if (user && role === "partner" && !isPartnerAllowedRoute(pathname)) {
+        // Parceiros dos ECs: sem Hub, sem outros ambientes, apenas o relatório de recebíveis
+        navigate({ to: "/reports" });
       }
     }
   }, [user, isLoading, pathname, navigate, role]);
