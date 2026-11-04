@@ -1463,6 +1463,7 @@ function VehicleDialog({ memberId, memberName }: { memberId: string; memberName:
   const [fipeValueStr, setFipeValueStr] = useState("5000000"); // R$ 50.000,00
   const [category, setCategory] = useState("Leves e utilitários");
   const [implementos, setImplementos] = useState<ImplementoItem[]>([]);
+  const [searchingPlate, setSearchingPlate] = useState(false);
 
   const fipeValue = Number(fipeValueStr.replace(/\D/g, "")) / 100 || 50000;
   const baseFee = useMemo(
@@ -1474,6 +1475,43 @@ function VehicleDialog({ memberId, memberName }: { memberId: string; memberName:
     [implementos]
   );
   const totalMonthlyFee = baseFee + implementosFee;
+
+  const handlePlateBlur = async () => {
+    const clean = (plate || "").replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+    if (clean.length < 7) return;
+    setSearchingPlate(true);
+    try {
+      const data = await lookupVehicleByPlate(clean);
+      if (data) {
+        if (data.brand && (!brand || brand === "Não informada")) setBrand(data.brand);
+        if (data.model && (!model || model === "Modelo não informado")) setModel(data.model);
+        if (data.year) setYear(String(data.year));
+        if (data.color) setColor(data.color);
+        if (data.fuel) setFuel(data.fuel);
+        if (data.chassi) setChassi(data.chassi);
+        if (data.renavam) setRenavam(data.renavam);
+        if (data.category) {
+          setCategory(
+            data.category === "moto"
+              ? "Motocicletas"
+              : data.category === "pesado"
+              ? "Pesados"
+              : data.category === "utilitario"
+              ? "Vans e Utilitários"
+              : "Leves e utilitários"
+          );
+        }
+        if (data.fipeValue) {
+          setFipeValueStr(String(Math.round(data.fipeValue * 100)));
+        }
+        toast.success("Veículo localizado pela placa!", {
+          description: `${data.brand} ${data.model} (${data.year})`,
+        });
+      }
+    } finally {
+      setSearchingPlate(false);
+    }
+  };
 
   const submit = useMutation({
     mutationFn: async () => {
@@ -1535,99 +1573,137 @@ function VehicleDialog({ memberId, memberName }: { memberId: string; memberName:
           <Car className="size-3 text-primary" /> + Cadastrar Veículo
         </Button>
       </DialogTrigger>
-      <DialogContent className="w-[95vw] sm:max-w-2xl max-h-[92vh] flex flex-col justify-between rounded-2xl border-border bg-card shadow-2xl p-0 gap-0 overflow-hidden">
-        <DialogHeader className="p-4 sm:p-5 pb-3 border-b border-border/60 bg-muted/10 shrink-0">
-          <DialogTitle className="text-base font-bold flex items-center gap-2">
-            <Car className="size-4.5 text-primary" />
-            Cadastrar Veículo — {memberName}
-          </DialogTitle>
-          <DialogDescription className="text-xs">
-            Preencha os dados completos do veículo (Chassi, Renavam, FIPE) e adicione implementos se houver
-          </DialogDescription>
+      <DialogContent className="w-[96vw] sm:w-[950px] sm:max-w-4xl max-h-[92vh] flex flex-col justify-between rounded-2xl sm:rounded-3xl border-border bg-card shadow-2xl p-0 gap-0 overflow-hidden">
+        <DialogHeader className="p-4 sm:p-5 pb-3 border-b border-border/60 bg-muted/15 shrink-0">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pr-8">
+            <div>
+              <DialogTitle className="text-base sm:text-lg font-bold flex items-center gap-2">
+                <Car className="size-5 text-primary" />
+                <span>Cadastrar Veículo — {memberName}</span>
+              </DialogTitle>
+              <DialogDescription className="text-xs text-muted-foreground mt-0.5">
+                Preencha os dados completos do veículo (Placa com busca automática, Chassi, Renavam, FIPE) e implementos.
+              </DialogDescription>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <Badge
+                variant="outline"
+                className="text-xs font-mono bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400 gap-1 py-1 px-3 font-bold"
+              >
+                <DollarSign className="size-3.5" />
+                {BRL(totalMonthlyFee)}/mês
+              </Badge>
+            </div>
+          </div>
         </DialogHeader>
 
-        <div className="p-4 sm:p-5 flex-1 overflow-y-auto min-h-0 space-y-3">
-          <div className="grid grid-cols-3 gap-2.5">
-            <div className="space-y-1">
-              <Label className="text-xs font-semibold">Placa (Mercosul) *</Label>
-              <Input
-                value={plate}
-                onChange={(e) => setPlate(e.target.value.replace(/[^a-zA-Z0-9]/g, "").toUpperCase())}
-                placeholder="ABC1234"
-                maxLength={7}
-                className="h-8.5 rounded-xl text-xs font-mono font-bold uppercase bg-background"
-              />
+        <div className="p-4 sm:p-6 flex-1 overflow-y-auto min-h-0 space-y-4">
+          {/* Linha 1: Placa com busca automática, Ano e Cor */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs font-semibold text-foreground">Placa (Mercosul/Antiga) *</Label>
+                {searchingPlate && (
+                  <span className="text-[10px] text-primary flex items-center gap-1 font-medium">
+                    <Loader2 className="size-3 animate-spin" /> Buscando...
+                  </span>
+                )}
+              </div>
+              <div className="relative">
+                <Input
+                  value={plate}
+                  onChange={(e) => setPlate(e.target.value.replace(/[^a-zA-Z0-9]/g, "").toUpperCase())}
+                  onBlur={handlePlateBlur}
+                  placeholder="Ex: ABC1D23"
+                  maxLength={7}
+                  className="h-9 rounded-xl text-xs font-mono font-bold uppercase bg-background pr-8"
+                />
+                <button
+                  type="button"
+                  onClick={handlePlateBlur}
+                  disabled={searchingPlate || plate.length < 7}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary transition-colors disabled:opacity-40"
+                  title="Buscar dados do veículo pela placa"
+                >
+                  <Sparkles className="size-3.5" />
+                </button>
+              </div>
             </div>
-            <div className="space-y-1">
-              <Label className="text-xs font-semibold">Ano Fab./Mod. *</Label>
+
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold text-foreground">Ano Fab./Modelo *</Label>
               <Input
                 value={year}
                 onChange={(e) => setYear(e.target.value.replace(/\D/g, "").slice(0, 4))}
                 placeholder="2023"
                 maxLength={4}
-                className="h-8.5 rounded-xl text-xs bg-background font-mono"
+                className="h-9 rounded-xl text-xs bg-background font-mono"
               />
             </div>
-            <div className="space-y-1">
-              <Label className="text-xs font-semibold">Cor</Label>
+
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold text-foreground">Cor Predominante</Label>
               <Input
                 value={color}
                 onChange={(e) => setColor(e.target.value)}
-                placeholder="Ex: Branco, Prata"
-                className="h-8.5 rounded-xl text-xs bg-background"
+                placeholder="Ex: Prata, Branco, Preto"
+                className="h-9 rounded-xl text-xs bg-background"
               />
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-2.5">
-            <div className="space-y-1">
-              <Label className="text-xs font-semibold">Marca *</Label>
+          {/* Linha 2: Marca e Modelo */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold text-foreground">Marca do Veículo *</Label>
               <Input
                 value={brand}
                 onChange={(e) => setBrand(e.target.value)}
                 placeholder="Ex: Chevrolet, Toyota, Volvo"
-                className="h-8.5 rounded-xl text-xs bg-background"
+                className="h-9 rounded-xl text-xs bg-background"
               />
             </div>
-            <div className="space-y-1">
-              <Label className="text-xs font-semibold">Modelo *</Label>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold text-foreground">Modelo do Veículo *</Label>
               <Input
                 value={model}
                 onChange={(e) => setModel(e.target.value)}
                 placeholder="Ex: Onix Plus 1.0 Turbo"
-                className="h-8.5 rounded-xl text-xs bg-background"
+                className="h-9 rounded-xl text-xs bg-background"
               />
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-2.5">
-            <div className="space-y-1">
-              <Label className="text-xs font-semibold">Número do Chassi *</Label>
+          {/* Linha 3: Chassi e Renavam */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold text-foreground">Número do Chassi *</Label>
               <Input
                 value={chassi}
                 onChange={(e) => setChassi(e.target.value.toUpperCase())}
                 placeholder="Ex: 9BGKT69F0P0284719"
                 maxLength={20}
-                className="h-8.5 rounded-xl text-xs font-mono uppercase bg-background"
+                className="h-9 rounded-xl text-xs font-mono uppercase bg-background"
               />
             </div>
-            <div className="space-y-1">
-              <Label className="text-xs font-semibold">Número do Renavam *</Label>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold text-foreground">Número do Renavam *</Label>
               <Input
                 value={renavam}
                 onChange={(e) => setRenavam(e.target.value.replace(/\D/g, "").slice(0, 11))}
                 placeholder="Ex: 01384719283"
                 maxLength={11}
-                className="h-8.5 rounded-xl text-xs font-mono bg-background"
+                className="h-9 rounded-xl text-xs font-mono bg-background"
               />
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-2.5">
-            <div className="space-y-1">
-              <Label className="text-xs font-semibold">Combustível</Label>
+          {/* Linha 4: Combustível, Finalidade e Valor FIPE */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold text-foreground">Combustível</Label>
               <Select value={fuel} onValueChange={setFuel}>
-                <SelectTrigger className="h-8.5 rounded-xl text-xs bg-background">
+                <SelectTrigger className="h-9 rounded-xl text-xs bg-background">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="rounded-xl">
@@ -1640,10 +1716,11 @@ function VehicleDialog({ memberId, memberName }: { memberId: string; memberName:
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-1">
-              <Label className="text-xs font-semibold">Finalidade de Uso</Label>
+
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold text-foreground">Finalidade de Uso</Label>
               <Select value={usage} onValueChange={setUsage}>
-                <SelectTrigger className="h-8.5 rounded-xl text-xs bg-background">
+                <SelectTrigger className="h-9 rounded-xl text-xs bg-background">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="rounded-xl">
@@ -1654,18 +1731,20 @@ function VehicleDialog({ memberId, memberName }: { memberId: string; memberName:
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-1">
-              <Label className="text-xs font-semibold">Valor FIPE / Comercial *</Label>
+
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold text-foreground">Valor FIPE / Comercial *</Label>
               <Input
                 value={formatCurrencyInput(fipeValueStr)}
                 onChange={(e) => setFipeValueStr(e.target.value)}
                 placeholder="R$ 50.000,00"
-                className="h-8.5 rounded-xl text-xs font-mono font-bold bg-background"
+                className="h-9 rounded-xl text-xs font-mono font-bold bg-background"
               />
             </div>
           </div>
 
-          <div className="pt-0.5">
+          {/* Categoria */}
+          <div className="pt-1">
             <VehicleCategorySelector value={category} onChange={setCategory} compact />
           </div>
 
@@ -1676,33 +1755,44 @@ function VehicleDialog({ memberId, memberName }: { memberId: string; memberName:
             category={category}
           />
 
-          <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-between text-xs">
+          {/* Banner de Mensalidade */}
+          <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-between text-xs">
             <div>
               <span className="font-bold text-foreground block">
                 Mensalidade Total Calculada (Tabela de Preços):
               </span>
-              <span className="text-[10px] text-muted-foreground">
+              <span className="text-[11px] text-muted-foreground">
                 Veículo: {BRL(baseFee)}
                 {implementosFee > 0 ? ` + Implementos: ${BRL(implementosFee)}` : ""}
               </span>
             </div>
-            <span className="font-mono font-black text-base text-emerald-600 dark:text-emerald-400">
+            <span className="font-mono font-black text-lg text-emerald-600 dark:text-emerald-400">
               {BRL(totalMonthlyFee)}/mês
             </span>
           </div>
         </div>
 
-        <div className="p-3.5 sm:p-4 border-t border-border/60 bg-muted/20 shrink-0 flex flex-col-reverse sm:flex-row items-center sm:justify-between gap-3">
+        <DialogFooter className="p-3.5 sm:p-4 border-t border-border/60 bg-muted/20 shrink-0 flex flex-col-reverse sm:flex-row items-center sm:justify-between gap-3">
           <AsaasFormSeal />
           <div className="flex justify-end gap-2 w-full sm:w-auto">
-            <Button variant="outline" size="sm" onClick={() => setOpen(false)} className="rounded-xl h-8 text-xs font-medium">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setOpen(false)}
+              className="rounded-xl h-8.5 text-xs font-medium"
+            >
               Cancelar
             </Button>
-            <Button size="sm" onClick={() => submit.mutate()} disabled={submit.isPending} className="rounded-xl h-8 text-xs font-semibold px-4 bg-primary text-primary-foreground shadow-xs">
+            <Button
+              size="sm"
+              onClick={() => submit.mutate()}
+              disabled={submit.isPending}
+              className="rounded-xl h-8.5 text-xs font-semibold px-5 bg-primary text-primary-foreground shadow-xs"
+            >
               {submit.isPending ? "Salvando..." : "Salvar Veículo"}
             </Button>
           </div>
-        </div>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

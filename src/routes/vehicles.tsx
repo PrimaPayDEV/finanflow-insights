@@ -9,6 +9,9 @@ import {
   Search,
   ShieldCheck,
   CheckCircle2,
+  Loader2,
+  ArrowLeft,
+  ArrowRight,
   AlertTriangle,
   Clock,
   Wrench,
@@ -59,6 +62,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getVehicles, getMembers, addVehicle, linkVehicleToMember } from "@/lib/members.functions";
 import { getPartners } from "@/lib/partner.functions";
 import { BRL, formatCpfCnpj, formatPhone, formatCurrencyInput } from "@/lib/format";
+import { lookupVehicleByPlate } from "@/lib/plate";
 import { VehicleCategorySelector, VehicleCategoryBadge } from "@/components/VehicleCategorySelector";
 import { ImplementosManager } from "@/routes/members";
 import {
@@ -1102,7 +1106,7 @@ function VehicleDetailsDialog({
     setProtectionStatus(vehicle.status || "ACTIVE");
   }, [vehicle]);
 
-  // Cálculo automático de sugestão de mensalidade (Base + Implementos + Coberturas Extras Ativas)
+  // Cálculo automático de sugestão de mensalidade
   const parsedFipe = Number(fipeValueInput.replace(/\D/g, "")) / 100 || vehicle.fipeValue || 50000;
   const baseSuggestedFee = useMemo(
     () => calculateBaseMonthlyFee(categoryToVehicleType(vehicle.category), parsedFipe),
@@ -1197,37 +1201,37 @@ function VehicleDetailsDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[96vw] sm:w-[940px] sm:max-w-5xl sm:h-[640px] max-h-[92vh] flex flex-col p-0 gap-0 border-border bg-card shadow-2xl rounded-2xl sm:rounded-3xl overflow-hidden">
-        {/* Cabeçalho Compacto */}
-        <div className="relative bg-gradient-to-r from-primary/15 via-primary/5 to-card pl-4 sm:pl-5 pr-12 sm:pr-14 py-3 border-b border-border/70 shrink-0">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3">
-            <div className="flex items-center gap-2.5 min-w-0 flex-1">
-              <VehiclePlateBadge plate={vehicle.plate} size="md" />
+      <DialogContent className="w-[96vw] sm:w-[1100px] sm:max-w-6xl max-h-[92vh] flex flex-col p-0 gap-0 border-border bg-card shadow-2xl rounded-2xl sm:rounded-3xl overflow-hidden">
+        {/* Cabeçalho Amplo e Elegante */}
+        <div className="relative bg-gradient-to-r from-primary/15 via-primary/5 to-card p-4 sm:p-6 pb-4 border-b border-border/70 shrink-0">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pr-8 sm:pr-10">
+            <div className="flex items-center gap-3 min-w-0 flex-1">
+              <VehiclePlateBadge plate={vehicle.plate} size="lg" />
               <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <span className="text-[11px] font-bold text-primary uppercase tracking-wide">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-xs font-bold text-primary uppercase tracking-wide">
                     {vehicle.brand} • {vehicle.year}
                   </span>
                   <VehicleCategoryBadge category={vehicle.category} size="sm" />
                   {implementos.length > 0 && (
-                    <Badge className="bg-primary text-primary-foreground text-[9px] font-bold px-1.5 py-0">
+                    <Badge className="bg-primary text-primary-foreground text-[10px] font-bold px-2 py-0.5">
                       {implementos.length} Implemento(s)
                     </Badge>
                   )}
                 </div>
-                <h2 className="text-sm sm:text-base font-bold text-foreground leading-tight truncate" title={vehicle.model}>
+                <h2 className="text-base sm:text-lg font-extrabold text-foreground leading-tight truncate mt-0.5" title={vehicle.model}>
                   {vehicle.model}
                 </h2>
               </div>
             </div>
 
-            <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto flex-wrap">
+            <div className="flex items-center gap-2.5 shrink-0 self-start sm:self-auto flex-wrap">
               {getStatusBadge(vehicle.status)}
-              <div className="text-right flex flex-col items-end justify-center bg-card/85 backdrop-blur-xs px-2.5 py-1 rounded-xl border border-border/60 shadow-xs">
-                <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground leading-none">
+              <div className="text-right flex flex-col items-end justify-center bg-card/90 backdrop-blur-xs px-3 py-1.5 rounded-xl border border-border/60 shadow-xs">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground leading-none">
                   FIPE Avaliada
                 </span>
-                <span className="text-xs font-black text-emerald-600 dark:text-emerald-400 mt-0.5 font-mono">
+                <span className="text-sm font-black text-emerald-600 dark:text-emerald-400 mt-0.5 font-mono">
                   {BRL(parsedFipe)}
                 </span>
               </div>
@@ -1235,286 +1239,259 @@ function VehicleDetailsDialog({
           </div>
         </div>
 
-        {/* Abas */}
+        {/* Abas com espaçamento confortável */}
         <Tabs defaultValue="overview" className="w-full flex-1 flex flex-col min-h-0">
-          <div className="border-b border-border/60 px-4 sm:px-5 bg-muted/20 shrink-0">
-            <TabsList className="bg-transparent h-9 p-0 gap-4 sm:gap-6 w-full justify-start overflow-x-auto no-scrollbar">
+          <div className="border-b border-border/60 px-4 sm:px-6 bg-muted/20 shrink-0">
+            <TabsList className="bg-transparent h-11 p-0 gap-4 sm:gap-6 w-full justify-start overflow-x-auto no-scrollbar">
               <TabsTrigger
                 value="overview"
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary font-bold text-xs px-1 h-9 transition-colors"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary font-bold text-xs sm:text-sm px-1.5 h-11 transition-colors gap-2"
               >
-                Ficha Técnica & Implementos
+                <Car className="size-4" />
+                <span>1. Ficha Técnica & Implementos</span>
               </TabsTrigger>
               <TabsTrigger
                 value="coverage"
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary font-bold text-xs px-1 h-9 transition-colors"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary font-bold text-xs sm:text-sm px-1.5 h-11 transition-colors gap-2"
               >
-                Coberturas (Ativa/Inativa & Adicionais)
+                <ShieldCheck className="size-4" />
+                <span>2. Coberturas (Ativa/Inativa & Adicionais)</span>
               </TabsTrigger>
               <TabsTrigger
                 value="financial"
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary font-bold text-xs px-1 h-9 transition-colors"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:text-primary font-bold text-xs sm:text-sm px-1.5 h-11 transition-colors gap-2"
               >
-                Mensalidades
+                <Receipt className="size-4" />
+                <span>3. Mensalidades & Cobrança</span>
               </TabsTrigger>
             </TabsList>
           </div>
 
-          <div className="flex-1 overflow-y-auto min-h-0 p-4 sm:p-5 flex flex-col justify-start">
+          <div className="flex-1 overflow-y-auto min-h-0 p-4 sm:p-6 space-y-5">
             {/* ABA 1: Ficha Técnica Completa + Implementos */}
-            <TabsContent value="overview" className="m-0 p-0 space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-start">
-                {/* Lado Esquerdo: Informações Completas do Veículo (7 colunas) */}
-                <div className="md:col-span-7 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-[11px] font-bold uppercase tracking-wider text-primary flex items-center gap-1.5">
-                      <Car className="size-3.5" /> Informações Detalhadas do Veículo
-                    </h3>
-                    <Button
-                      size="sm"
-                      onClick={handleSaveTechnical}
-                      className="h-7 rounded-xl text-[11px] font-bold gap-1 bg-primary text-primary-foreground px-3"
-                    >
-                      <Save className="size-3" />
-                      Salvar Ficha Técnica
-                    </Button>
-                  </div>
-
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
-                    <div className="space-y-1">
-                      <Label className="text-[10px] font-semibold text-muted-foreground">Número do Chassi *</Label>
-                      <Input
-                        value={chassi}
-                        onChange={(e) => setChassi(e.target.value.toUpperCase())}
-                        placeholder="9BWZZZ377VT004251"
-                        className="h-8 rounded-xl text-xs font-mono font-bold uppercase bg-background"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-[10px] font-semibold text-muted-foreground">Número do Renavam *</Label>
-                      <Input
-                        value={renavam}
-                        onChange={(e) => setRenavam(e.target.value.replace(/\D/g, "").slice(0, 11))}
-                        placeholder="00123456789"
-                        className="h-8 rounded-xl text-xs font-mono font-bold bg-background"
-                      />
-                    </div>
-                    <div className="space-y-1 col-span-2 sm:col-span-1">
-                      <Label className="text-[10px] font-semibold text-muted-foreground">Valor FIPE / Comercial</Label>
-                      <Input
-                        value={formatCurrencyInput(fipeValueInput)}
-                        onChange={(e) => setFipeValueInput(e.target.value)}
-                        className="h-8 rounded-xl text-xs font-mono font-bold text-emerald-600 dark:text-emerald-400 bg-background"
-                      />
-                    </div>
-
-                    <div className="space-y-1">
-                      <Label className="text-[10px] font-semibold text-muted-foreground">Cor</Label>
-                      <Input
-                        value={color}
-                        onChange={(e) => setColor(e.target.value)}
-                        className="h-8 rounded-xl text-xs bg-background"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-[10px] font-semibold text-muted-foreground">Combustível</Label>
-                      <Select value={fuel} onValueChange={setFuel}>
-                        <SelectTrigger className="h-8 rounded-xl text-xs bg-background">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="rounded-xl">
-                          <SelectItem value="Flex">Flex</SelectItem>
-                          <SelectItem value="Flex (Álcool/Gasolina)">Flex (Álcool/Gasolina)</SelectItem>
-                          <SelectItem value="Gasolina">Gasolina</SelectItem>
-                          <SelectItem value="Diesel">Diesel</SelectItem>
-                          <SelectItem value="Etanol">Etanol</SelectItem>
-                          <SelectItem value="GNV">GNV</SelectItem>
-                          <SelectItem value="Híbrido/Elétrico">Híbrido / Elétrico</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-[10px] font-semibold text-muted-foreground">Hodômetro (KM)</Label>
-                      <Input
-                        value={mileage}
-                        onChange={(e) => setMileage(e.target.value)}
-                        placeholder="Ex: 42.000 km"
-                        className="h-8 rounded-xl text-xs font-mono bg-background"
-                      />
-                    </div>
-
-                    <div className="space-y-1">
-                      <Label className="text-[10px] font-semibold text-muted-foreground">Finalidade de Uso</Label>
-                      <Select value={usage} onValueChange={setUsage}>
-                        <SelectTrigger className="h-8 rounded-xl text-xs bg-background">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="rounded-xl">
-                          <SelectItem value="Particular">Passeio / Particular</SelectItem>
-                          <SelectItem value="Comercial">Comercial / Trabalho</SelectItem>
-                          <SelectItem value="Motorista App">Aplicativo (Uber/99)</SelectItem>
-                          <SelectItem value="Frota / Carga">Transporte de Carga</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-[10px] font-semibold text-muted-foreground">Câmbio</Label>
-                      <Input
-                        value={transmission}
-                        onChange={(e) => setTransmission(e.target.value)}
-                        placeholder="Manual, Automático..."
-                        className="h-8 rounded-xl text-xs bg-background"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-[10px] font-semibold text-muted-foreground">Motorização</Label>
-                      <Input
-                        value={engine}
-                        onChange={(e) => setEngine(e.target.value)}
-                        placeholder="Ex: 2.0 16V, 1.0 Turbo"
-                        className="h-8 rounded-xl text-xs bg-background"
-                      />
-                    </div>
-
-                    <div className="space-y-1">
-                      <Label className="text-[10px] font-semibold text-muted-foreground">Status Rastreador GPS</Label>
-                      <Select value={trackerStatus} onValueChange={setTrackerStatus}>
-                        <SelectTrigger className="h-8 rounded-xl text-xs bg-background">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="rounded-xl">
-                          <SelectItem value="Instalado e Ativo">Instalado e Ativo</SelectItem>
-                          <SelectItem value="Aguardando Instalação">Aguardando Instalação</SelectItem>
-                          <SelectItem value="Isento / Não Requerido">Isento / Não Requerido</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-[10px] font-semibold text-muted-foreground">ID / IMEI Rastreador</Label>
-                      <Input
-                        value={trackerCode}
-                        onChange={(e) => setTrackerCode(e.target.value)}
-                        placeholder="Ex: IMEI-882910"
-                        className="h-8 rounded-xl text-xs font-mono bg-background"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-[10px] font-semibold text-muted-foreground">Observações / Vistoria</Label>
-                      <Input
-                        value={notes}
-                        onChange={(e) => setNotes(e.target.value)}
-                        placeholder="Laudo, avarias..."
-                        className="h-8 rounded-xl text-xs bg-background"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Seção de Implementos dentro da Ficha Técnica */}
-                  <ImplementosManager
-                    implementos={implementos}
-                    onChange={setImplementos}
-                    category={vehicle.category}
-                  />
+            <TabsContent value="overview" className="m-0 p-0 space-y-5">
+              {/* BLOCO 1: Informações Técnicas e Cadastrais */}
+              <div className="p-4 sm:p-5 rounded-2xl border border-border/80 bg-muted/10 space-y-4">
+                <div className="flex items-center justify-between pb-2 border-b border-border/60 flex-wrap gap-2">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-primary flex items-center gap-2">
+                    <Car className="size-4" /> Informações Técnicas do Veículo
+                  </h3>
+                  <Button
+                    size="sm"
+                    onClick={handleSaveTechnical}
+                    className="h-8 rounded-xl text-xs font-bold gap-1.5 bg-primary text-primary-foreground px-4 shadow-xs"
+                  >
+                    <Save className="size-3.5" />
+                    Salvar Ficha Técnica
+                  </Button>
                 </div>
 
-                {/* Lado Direito: Associado Titular & Resumo (5 colunas) */}
-                <div className="md:col-span-5 space-y-3">
-                  <h3 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                    <User className="size-3.5 text-primary" /> Associado Titular
-                  </h3>
-                  <div className="p-3.5 rounded-2xl bg-muted/25 border border-border/60 space-y-2.5">
-                    <div className="flex items-center gap-2.5">
-                      <div className="size-9 rounded-xl bg-primary text-primary-foreground flex items-center justify-center font-bold text-xs shadow-xs shrink-0">
-                        {vehicle.member.name.charAt(0)}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <h4 className="font-bold text-foreground text-xs leading-tight truncate">{vehicle.member.name}</h4>
-                        <p className="text-[10px] text-muted-foreground font-mono">
-                          CPF: {formatCpfCnpj(vehicle.member.document)}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2 text-xs pt-1.5 border-t border-border/40">
-                      <div>
-                        <span className="text-[9px] text-muted-foreground block">Cidade / UF</span>
-                        <span className="font-medium text-[11px] text-foreground truncate block">
-                          {vehicle.member.city || "São Paulo - SP"}
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-[9px] text-muted-foreground block">E-mail</span>
-                        <span className="font-medium text-[11px] text-foreground truncate block">
-                          {vehicle.member.email || "Sem e-mail"}
-                        </span>
-                      </div>
-                    </div>
-                    {vehicle.registeredAt && (
-                      <div className="text-[10px] text-muted-foreground font-mono flex items-center gap-1 pt-1 border-t border-border/40">
-                        <Clock className="size-3 text-primary" />
-                        <span>Cadastrado em: {formatDateTimeBR(vehicle.registeredAt)}</span>
-                      </div>
-                    )}
-                    {vehicle.member.partnerName && (
-                      <div className="p-1.5 px-2 rounded-xl bg-primary/5 border border-primary/20 flex items-center justify-between text-xs">
-                        <span className="text-muted-foreground text-[10px]">Consultor:</span>
-                        <span className="font-bold text-primary text-[11px] truncate">{vehicle.member.partnerName}</span>
-                      </div>
-                    )}
-                    {vehicle.member.phone && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        asChild
-                        className="w-full rounded-xl border-emerald-500/40 text-emerald-600 hover:bg-emerald-500/10 gap-1.5 text-xs font-semibold h-7.5 justify-center"
-                      >
-                        <a
-                          href={`https://wa.me/55${vehicle.member.phone.replace(/\D/g, "")}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          <MessageCircle className="size-3.5" />
-                          <span>WhatsApp: {formatPhone(vehicle.member.phone)}</span>
-                        </a>
-                      </Button>
-                    )}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 text-xs">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold">Número do Chassi *</Label>
+                    <Input
+                      value={chassi}
+                      onChange={(e) => setChassi(e.target.value.toUpperCase())}
+                      placeholder="9BWZZZ377VT004251"
+                      className="h-9 rounded-xl text-xs font-mono font-bold uppercase bg-background"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold">Número do Renavam *</Label>
+                    <Input
+                      value={renavam}
+                      onChange={(e) => setRenavam(e.target.value.replace(/\D/g, "").slice(0, 11))}
+                      placeholder="00123456789"
+                      className="h-9 rounded-xl text-xs font-mono font-bold bg-background"
+                    />
+                  </div>
+                  <div className="space-y-1.5 sm:col-span-2">
+                    <Label className="text-xs font-semibold">Valor FIPE / Comercial</Label>
+                    <Input
+                      value={formatCurrencyInput(fipeValueInput)}
+                      onChange={(e) => setFipeValueInput(e.target.value)}
+                      className="h-9 rounded-xl text-xs font-mono font-bold text-emerald-600 dark:text-emerald-400 bg-background"
+                    />
                   </div>
 
-                  {/* Card de Composição de Preço */}
-                  <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/25 space-y-1.5 text-xs">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-800 dark:text-emerald-300 block">
-                      Precificação pela Tabela de Veículos
-                    </span>
-                    <div className="flex justify-between text-[11px]">
-                      <span className="text-muted-foreground">Mensalidade Base Veículo:</span>
-                      <span className="font-mono font-bold">{BRL(baseSuggestedFee)}</span>
-                    </div>
-                    {implementosTotalFee > 0 && (
-                      <div className="flex justify-between text-[11px]">
-                        <span className="text-muted-foreground">Implementos ({implementos.length}):</span>
-                        <span className="font-mono font-bold text-primary">+ {BRL(implementosTotalFee)}</span>
-                      </div>
-                    )}
-                    {activeCustomCoveragesFee > 0 && (
-                      <div className="flex justify-between text-[11px]">
-                        <span className="text-muted-foreground">Coberturas Extras Ativas:</span>
-                        <span className="font-mono font-bold text-primary">+ {BRL(activeCustomCoveragesFee)}</span>
-                      </div>
-                    )}
-                    <div className="flex justify-between pt-1 border-t border-emerald-500/20 font-bold text-xs">
-                      <span>Mensalidade Atual do Veículo:</span>
-                      <span className="font-mono text-emerald-700 dark:text-emerald-300">{BRL(vehicle.monthlyFee)}</span>
-                    </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold">Cor Predominante</Label>
+                    <Input
+                      value={color}
+                      onChange={(e) => setColor(e.target.value)}
+                      className="h-9 rounded-xl text-xs bg-background"
+                    />
                   </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold">Combustível</Label>
+                    <Select value={fuel} onValueChange={setFuel}>
+                      <SelectTrigger className="h-9 rounded-xl text-xs bg-background">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="rounded-xl">
+                        <SelectItem value="Flex">Flex (Álcool/Gasolina)</SelectItem>
+                        <SelectItem value="Gasolina">Gasolina</SelectItem>
+                        <SelectItem value="Diesel">Diesel</SelectItem>
+                        <SelectItem value="Etanol">Etanol</SelectItem>
+                        <SelectItem value="GNV">GNV</SelectItem>
+                        <SelectItem value="Híbrido/Elétrico">Híbrido / Elétrico</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold">Hodômetro (KM)</Label>
+                    <Input
+                      value={mileage}
+                      onChange={(e) => setMileage(e.target.value)}
+                      placeholder="Ex: 42.000 km"
+                      className="h-9 rounded-xl text-xs font-mono bg-background"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold">Finalidade de Uso</Label>
+                    <Select value={usage} onValueChange={setUsage}>
+                      <SelectTrigger className="h-9 rounded-xl text-xs bg-background">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="rounded-xl">
+                        <SelectItem value="Particular">Passeio / Particular</SelectItem>
+                        <SelectItem value="Comercial">Comercial / Trabalho</SelectItem>
+                        <SelectItem value="Motorista App">Aplicativo (Uber/99)</SelectItem>
+                        <SelectItem value="Frota / Carga">Transporte de Carga</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold">Tipo de Câmbio</Label>
+                    <Input
+                      value={transmission}
+                      onChange={(e) => setTransmission(e.target.value)}
+                      placeholder="Manual, Automático..."
+                      className="h-9 rounded-xl text-xs bg-background"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold">Motorização / Potência</Label>
+                    <Input
+                      value={engine}
+                      onChange={(e) => setEngine(e.target.value)}
+                      placeholder="Ex: 2.0 16V, 1.0 Turbo"
+                      className="h-9 rounded-xl text-xs bg-background"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold">Status Rastreador GPS</Label>
+                    <Select value={trackerStatus} onValueChange={setTrackerStatus}>
+                      <SelectTrigger className="h-9 rounded-xl text-xs bg-background">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="rounded-xl">
+                        <SelectItem value="Instalado e Ativo">Instalado e Ativo</SelectItem>
+                        <SelectItem value="Aguardando Instalação">Aguardando Instalação</SelectItem>
+                        <SelectItem value="Isento / Não Requerido">Isento / Não Requerido</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold">ID / IMEI Rastreador</Label>
+                    <Input
+                      value={trackerCode}
+                      onChange={(e) => setTrackerCode(e.target.value)}
+                      placeholder="Ex: IMEI-882910"
+                      className="h-9 rounded-xl text-xs font-mono bg-background"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5 sm:col-span-2 lg:col-span-4">
+                    <Label className="text-xs font-semibold">Observações / Vistoria Prévia</Label>
+                    <Input
+                      value={notes}
+                      onChange={(e) => setNotes(e.target.value)}
+                      placeholder="Laudo de vistoria, avarias prévias ou notas internas"
+                      className="h-9 rounded-xl text-xs bg-background"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* BLOCO 2: Associado Titular & Contato */}
+              <div className="p-4 sm:p-5 rounded-2xl border border-border/80 bg-muted/10 space-y-3">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-primary flex items-center gap-2">
+                  <User className="size-4" /> Associado Titular & Vínculo
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 text-xs">
+                  <div>
+                    <span className="text-[10px] text-muted-foreground uppercase block font-semibold">Nome Completo:</span>
+                    <strong className="text-foreground text-xs block truncate">{vehicle.member.name}</strong>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-muted-foreground uppercase block font-semibold">CPF / CNPJ:</span>
+                    <strong className="text-foreground text-xs font-mono block">
+                      {formatCpfCnpj(vehicle.member.document)}
+                    </strong>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-muted-foreground uppercase block font-semibold">E-mail:</span>
+                    <span className="text-foreground text-xs block truncate">
+                      {vehicle.member.email || "Não informado"}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-muted-foreground uppercase block font-semibold">Contato WhatsApp:</span>
+                    {vehicle.member.phone ? (
+                      <a
+                        href={`https://wa.me/55${vehicle.member.phone.replace(/\D/g, "")}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline"
+                      >
+                        <MessageCircle className="size-3.5" />
+                        <span>{formatPhone(vehicle.member.phone)}</span>
+                      </a>
+                    ) : (
+                      <span className="text-muted-foreground text-xs">Sem telefone</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* BLOCO 3: Implementos & Acessórios */}
+              <div className="p-4 sm:p-5 rounded-2xl border border-border/80 bg-card space-y-3">
+                <ImplementosManager
+                  implementos={implementos}
+                  onChange={setImplementos}
+                  category={vehicle.category}
+                />
+              </div>
+
+              {/* BLOCO 4: Resumo de Precificação */}
+              <div className="p-4 rounded-2xl bg-gradient-to-r from-emerald-500/15 via-emerald-500/5 to-card border border-emerald-500/30 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                <div>
+                  <span className="text-xs font-bold text-emerald-900 dark:text-emerald-200 block">
+                    Composição da Mensalidade Atual do Veículo:
+                  </span>
+                  <span className="text-[11px] text-muted-foreground">
+                    Base Veículo ({BRL(baseSuggestedFee)})
+                    {implementosTotalFee > 0 ? ` + Implementos (${BRL(implementosTotalFee)})` : ""}
+                    {activeCustomCoveragesFee > 0 ? ` + Coberturas Extras (${BRL(activeCustomCoveragesFee)})` : ""}
+                  </span>
+                </div>
+                <div className="text-right">
+                  <span className="text-[10px] uppercase font-bold text-muted-foreground block">Valor Ativo:</span>
+                  <span className="font-mono font-black text-lg text-emerald-600 dark:text-emerald-400">
+                    {BRL(vehicle.monthlyFee)}/mês
+                  </span>
                 </div>
               </div>
             </TabsContent>
 
-            {/* ABA 2: Coberturas (Status Ativa/Inativa + Adicionar Outras Coberturas) */}
-            <TabsContent value="coverage" className="space-y-3.5 m-0 p-0 flex-1 flex flex-col justify-start">
-              {/* Barra Superior de Cobertura Geral Ativa/Inativa */}
-              <div className="p-3 rounded-2xl bg-muted/30 border border-border/70 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="flex flex-wrap items-center gap-3 flex-1">
-                  <div className="flex items-center gap-2 bg-background px-3 py-1.5 rounded-xl border border-border/80">
+            {/* ABA 2: Coberturas (Ativa/Inativa & Adicionais) */}
+            <TabsContent value="coverage" className="space-y-4 m-0 p-0 flex-1 flex flex-col justify-start">
+              {/* Barra Superior de Cobertura Geral */}
+              <div className="p-4 rounded-2xl bg-muted/20 border border-border/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex flex-wrap items-center gap-4 flex-1">
+                  <div className="flex items-center gap-2.5 bg-background px-3.5 py-2 rounded-xl border border-border/80 shadow-2xs">
                     <Switch
                       checked={coverageActive}
                       onCheckedChange={setCoverageActive}
@@ -1522,23 +1499,23 @@ function VehicleDetailsDialog({
                     />
                     <div>
                       <span
-                        className={`text-xs font-extrabold block leading-none ${
+                        className={`text-xs font-black block leading-none ${
                           coverageActive ? "text-emerald-600 dark:text-emerald-400" : "text-destructive"
                         }`}
                       >
                         {coverageActive ? "COBERTURA ATIVA" : "COBERTURA INATIVA"}
                       </span>
-                      <span className="text-[9px] text-muted-foreground">Status geral da cobertura do veículo</span>
+                      <span className="text-[10px] text-muted-foreground">Status geral da proteção</span>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 flex-1 min-w-[200px] max-w-xs">
-                    <Label className="text-xs font-semibold text-muted-foreground whitespace-nowrap">Plano:</Label>
+                  <div className="flex items-center gap-2 flex-1 min-w-[220px]">
+                    <Label className="text-xs font-semibold whitespace-nowrap">Plano:</Label>
                     <Input
                       value={coveragePlan}
                       onChange={(e) => setCoveragePlan(e.target.value)}
                       placeholder="Ex: Plano Ouro 100% FIPE"
-                      className="h-8 rounded-xl text-xs bg-background border-border/80"
+                      className="h-9 rounded-xl text-xs bg-background font-bold text-foreground"
                     />
                   </div>
                 </div>
@@ -1549,17 +1526,17 @@ function VehicleDetailsDialog({
                     variant="outline"
                     size="sm"
                     onClick={() => setAddingCoverage(!addingCoverage)}
-                    className="rounded-xl border-primary/40 text-primary hover:bg-primary/10 gap-1 font-bold text-xs h-8 px-3"
+                    className="rounded-xl border-primary/40 text-primary hover:bg-primary/10 gap-1.5 font-bold text-xs h-9 px-3.5"
                   >
-                    <Plus className="size-3.5" />
+                    <Plus className="size-4" />
                     Adicionar Outra Cobertura
                   </Button>
                   <Button
                     size="sm"
                     onClick={handleSaveCoverage}
-                    className="rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground gap-1.5 font-bold text-xs h-8 px-3.5 shadow-xs"
+                    className="rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground gap-1.5 font-bold text-xs h-9 px-4 shadow-xs"
                   >
-                    <Save className="size-3.5" />
+                    <Save className="size-4" />
                     Salvar Coberturas
                   </Button>
                 </div>
@@ -1567,26 +1544,26 @@ function VehicleDetailsDialog({
 
               {/* Painel para Adicionar Outra Cobertura */}
               {addingCoverage && (
-                <div className="p-3.5 rounded-2xl border border-primary/40 bg-primary/5 space-y-3">
+                <div className="p-4 rounded-2xl border border-primary/40 bg-primary/5 space-y-3.5">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-primary flex items-center gap-1.5">
-                      <ShieldCheck className="size-4" /> Adicionar Nova Cobertura ao Veículo
+                    <span className="text-xs font-bold text-primary flex items-center gap-2">
+                      <ShieldCheck className="size-4" /> Incluir Nova Cobertura Específica ao Veículo
                     </span>
                     <Button
                       type="button"
                       variant="ghost"
                       size="sm"
                       onClick={() => setAddingCoverage(false)}
-                      className="h-6 text-[10px] px-2"
+                      className="h-7 text-xs px-2"
                     >
                       Fechar
                     </Button>
                   </div>
 
-                  {/* Atalhos do catálogo de produtos */}
+                  {/* Atalhos rápidos do catálogo */}
                   <div className="space-y-1">
                     <span className="text-[10px] font-semibold text-muted-foreground block">
-                      Sugestões rápidas do catálogo (clique para preencher):
+                      Sugestões do catálogo (clique para preencher):
                     </span>
                     <div className="flex flex-wrap gap-1.5">
                       {catalogProducts.slice(0, 6).map((prod) => (
@@ -1598,7 +1575,7 @@ function VehicleDetailsDialog({
                             setNewCovLimit(prod.coverageLimit || "Incluso");
                             setNewCovFeeStr(String(Math.round(prod.monthlyFee * 100)));
                           }}
-                          className="text-[10px] px-2 py-0.5 rounded-lg bg-background hover:bg-primary hover:text-primary-foreground border border-border transition-colors font-medium"
+                          className="text-[11px] px-2.5 py-1 rounded-xl bg-background hover:bg-primary hover:text-primary-foreground border border-border transition-colors font-medium shadow-2xs"
                         >
                           + {prod.name} ({BRL(prod.monthlyFee)})
                         </button>
@@ -1606,38 +1583,38 @@ function VehicleDetailsDialog({
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-4 gap-2.5 items-end">
-                    <div className="space-y-1 sm:col-span-2">
-                      <Label className="text-[11px] font-semibold">Nome da Cobertura / Benefício *</Label>
+                  <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 items-end">
+                    <div className="space-y-1.5 sm:col-span-2">
+                      <Label className="text-xs font-semibold">Nome da Cobertura *</Label>
                       <Input
                         value={newCovName}
                         onChange={(e) => setNewCovName(e.target.value)}
-                        placeholder="Ex: Cobertura de Implemento, Kit GNV, APP R$ 50 mil..."
-                        className="h-8 rounded-xl text-xs bg-background"
+                        placeholder="Ex: Cobertura de Implemento, Kit GNV, APP..."
+                        className="h-9 rounded-xl text-xs bg-background"
                       />
                     </div>
-                    <div className="space-y-1">
-                      <Label className="text-[11px] font-semibold">Limite / Condição</Label>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-semibold">Limite de Indenização</Label>
                       <Input
                         value={newCovLimit}
                         onChange={(e) => setNewCovLimit(e.target.value)}
-                        placeholder="Ex: R$ 50.000,00 / 100%"
-                        className="h-8 rounded-xl text-xs bg-background"
+                        placeholder="Ex: R$ 50.000,00"
+                        className="h-9 rounded-xl text-xs bg-background"
                       />
                     </div>
-                    <div className="space-y-1">
-                      <Label className="text-[11px] font-semibold">Valor Mensal (R$)</Label>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-semibold">Valor Mensal (R$)</Label>
                       <div className="flex items-center gap-1.5">
                         <Input
                           value={formatCurrencyInput(newCovFeeStr)}
                           onChange={(e) => setNewCovFeeStr(e.target.value)}
-                          className="h-8 rounded-xl text-xs font-mono font-bold bg-background"
+                          className="h-9 rounded-xl text-xs font-mono font-bold bg-background"
                         />
                         <Button
                           type="button"
                           size="sm"
                           onClick={handleAddCustomCoverage}
-                          className="h-8 rounded-xl text-xs font-bold px-3 shrink-0"
+                          className="h-9 rounded-xl text-xs font-bold px-3.5 shrink-0"
                         >
                           Incluir
                         </Button>
@@ -1647,13 +1624,13 @@ function VehicleDetailsDialog({
                 </div>
               )}
 
-              {/* Grade de Coberturas Padrão com Indicador Ativa / Inativa */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 text-xs">
+              {/* Grade de Coberturas Padrão em Cards Espaçosos */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {/* Tabela FIPE % */}
-                <div className="p-2.5 rounded-xl bg-muted/35 border border-border/50 flex items-center justify-between gap-2">
+                <div className="p-3.5 rounded-2xl bg-muted/20 border border-border/70 flex items-center justify-between gap-3">
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1.5">
-                      <span className="font-bold text-foreground text-xs truncate">Tabela FIPE</span>
+                      <span className="font-bold text-foreground text-xs">Tabela FIPE</span>
                       <Badge
                         className={
                           coverage.fipePercent > 0 && coverageActive
@@ -1664,13 +1641,13 @@ function VehicleDetailsDialog({
                         {coverage.fipePercent > 0 && coverageActive ? "Ativa" : "Inativa"}
                       </Badge>
                     </div>
-                    <span className="text-[9px] text-muted-foreground truncate block">Indenização integral</span>
+                    <span className="text-[10px] text-muted-foreground block mt-0.5">Indenização integral</span>
                   </div>
                   <Select
                     value={coverage.fipePercent.toString()}
                     onValueChange={(val) => setCoverage({ ...coverage, fipePercent: parseInt(val, 10) })}
                   >
-                    <SelectTrigger className="w-24 h-7 text-[11px] rounded-lg bg-background shrink-0">
+                    <SelectTrigger className="w-28 h-8 text-xs rounded-xl bg-background font-bold shrink-0">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="rounded-xl">
@@ -1683,10 +1660,10 @@ function VehicleDetailsDialog({
                 </div>
 
                 {/* Roubo e Furto */}
-                <div className="p-2.5 rounded-xl bg-muted/35 border border-border/50 flex items-center justify-between gap-2">
+                <div className="p-3.5 rounded-2xl bg-muted/20 border border-border/70 flex items-center justify-between gap-3">
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1.5">
-                      <span className="font-bold text-foreground text-xs truncate">Roubo e Furto</span>
+                      <span className="font-bold text-foreground text-xs">Roubo e Furto</span>
                       <Badge
                         className={
                           coverage.theft && coverageActive
@@ -1697,7 +1674,7 @@ function VehicleDetailsDialog({
                         {coverage.theft && coverageActive ? "Ativa" : "Inativa"}
                       </Badge>
                     </div>
-                    <span className="text-[9px] text-muted-foreground truncate block">Proteção qualificada</span>
+                    <span className="text-[10px] text-muted-foreground block mt-0.5">Proteção qualificada</span>
                   </div>
                   <Switch
                     checked={coverage.theft}
@@ -1706,10 +1683,10 @@ function VehicleDetailsDialog({
                 </div>
 
                 {/* Colisão e Perda Total */}
-                <div className="p-2.5 rounded-xl bg-muted/35 border border-border/50 flex items-center justify-between gap-2">
+                <div className="p-3.5 rounded-2xl bg-muted/20 border border-border/70 flex items-center justify-between gap-3">
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1.5">
-                      <span className="font-bold text-foreground text-xs truncate">Colisão & Perda Total</span>
+                      <span className="font-bold text-foreground text-xs">Colisão & Perda Total</span>
                       <Badge
                         className={
                           coverage.collision && coverageActive
@@ -1720,7 +1697,7 @@ function VehicleDetailsDialog({
                         {coverage.collision && coverageActive ? "Ativa" : "Inativa"}
                       </Badge>
                     </div>
-                    <span className="text-[9px] text-muted-foreground truncate block">Reparo ou indenização</span>
+                    <span className="text-[10px] text-muted-foreground block mt-0.5">Reparo ou indenização</span>
                   </div>
                   <Switch
                     checked={coverage.collision}
@@ -1729,10 +1706,10 @@ function VehicleDetailsDialog({
                 </div>
 
                 {/* Danos Materiais a Terceiros */}
-                <div className="p-2.5 rounded-xl bg-muted/35 border border-border/50 flex items-center justify-between gap-2">
+                <div className="p-3.5 rounded-2xl bg-muted/20 border border-border/70 flex items-center justify-between gap-3">
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1.5">
-                      <span className="font-bold text-foreground text-xs truncate">Danos a Terceiros</span>
+                      <span className="font-bold text-foreground text-xs">Danos a Terceiros</span>
                       <Badge
                         className={
                           coverage.thirdPartyProperty > 0 && coverageActive
@@ -1743,13 +1720,13 @@ function VehicleDetailsDialog({
                         {coverage.thirdPartyProperty > 0 && coverageActive ? "Ativa" : "Inativa"}
                       </Badge>
                     </div>
-                    <span className="text-[9px] text-muted-foreground truncate block">Limite RCF material</span>
+                    <span className="text-[10px] text-muted-foreground block mt-0.5">Limite RCF material</span>
                   </div>
                   <Select
                     value={coverage.thirdPartyProperty.toString()}
                     onValueChange={(val) => setCoverage({ ...coverage, thirdPartyProperty: parseInt(val, 10) })}
                   >
-                    <SelectTrigger className="w-24 h-7 text-[11px] rounded-lg bg-background shrink-0">
+                    <SelectTrigger className="w-28 h-8 text-xs rounded-xl bg-background font-bold shrink-0">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="rounded-xl">
@@ -1762,10 +1739,10 @@ function VehicleDetailsDialog({
                 </div>
 
                 {/* Guincho / Reboque */}
-                <div className="p-2.5 rounded-xl bg-muted/35 border border-border/50 flex items-center justify-between gap-2">
+                <div className="p-3.5 rounded-2xl bg-muted/20 border border-border/70 flex items-center justify-between gap-3">
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1.5">
-                      <span className="font-bold text-foreground text-xs truncate">Guincho 24h</span>
+                      <span className="font-bold text-foreground text-xs">Guincho 24h</span>
                       <Badge
                         className={
                           coverage.towKm > 0 && coverageActive
@@ -1776,13 +1753,13 @@ function VehicleDetailsDialog({
                         {coverage.towKm > 0 && coverageActive ? "Ativa" : "Inativa"}
                       </Badge>
                     </div>
-                    <span className="text-[9px] text-muted-foreground truncate block">Raio quilometragem</span>
+                    <span className="text-[10px] text-muted-foreground block mt-0.5">Raio de quilometragem</span>
                   </div>
                   <Select
                     value={coverage.towKm.toString()}
                     onValueChange={(val) => setCoverage({ ...coverage, towKm: parseInt(val, 10) })}
                   >
-                    <SelectTrigger className="w-24 h-7 text-[11px] rounded-lg bg-background shrink-0">
+                    <SelectTrigger className="w-28 h-8 text-xs rounded-xl bg-background font-bold shrink-0">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="rounded-xl">
@@ -1796,10 +1773,10 @@ function VehicleDetailsDialog({
                 </div>
 
                 {/* Carro Reserva */}
-                <div className="p-2.5 rounded-xl bg-muted/35 border border-border/50 flex items-center justify-between gap-2">
+                <div className="p-3.5 rounded-2xl bg-muted/20 border border-border/70 flex items-center justify-between gap-3">
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1.5">
-                      <span className="font-bold text-foreground text-xs truncate">Carro Reserva</span>
+                      <span className="font-bold text-foreground text-xs">Carro Reserva</span>
                       <Badge
                         className={
                           coverage.reserveCarDays > 0 && coverageActive
@@ -1810,13 +1787,13 @@ function VehicleDetailsDialog({
                         {coverage.reserveCarDays > 0 && coverageActive ? "Ativa" : "Inativa"}
                       </Badge>
                     </div>
-                    <span className="text-[9px] text-muted-foreground truncate block">Diárias sinistro</span>
+                    <span className="text-[10px] text-muted-foreground block mt-0.5">Diárias por sinistro</span>
                   </div>
                   <Select
                     value={coverage.reserveCarDays.toString()}
                     onValueChange={(val) => setCoverage({ ...coverage, reserveCarDays: parseInt(val, 10) })}
                   >
-                    <SelectTrigger className="w-24 h-7 text-[11px] rounded-lg bg-background shrink-0">
+                    <SelectTrigger className="w-28 h-8 text-xs rounded-xl bg-background font-bold shrink-0">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="rounded-xl">
@@ -1829,10 +1806,10 @@ function VehicleDetailsDialog({
                 </div>
 
                 {/* Vidros, Faróis e Lanternas */}
-                <div className="p-2.5 rounded-xl bg-muted/35 border border-border/50 flex items-center justify-between gap-2">
+                <div className="p-3.5 rounded-2xl bg-muted/20 border border-border/70 flex items-center justify-between gap-3">
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1.5">
-                      <span className="font-bold text-foreground text-xs truncate">Vidros & Lanternas</span>
+                      <span className="font-bold text-foreground text-xs">Vidros & Lanternas</span>
                       <Badge
                         className={
                           coverage.glassProtection && coverageActive
@@ -1843,7 +1820,7 @@ function VehicleDetailsDialog({
                         {coverage.glassProtection && coverageActive ? "Ativa" : "Inativa"}
                       </Badge>
                     </div>
-                    <span className="text-[9px] text-muted-foreground truncate block">Franquia reduzida</span>
+                    <span className="text-[10px] text-muted-foreground block mt-0.5">Franquia reduzida</span>
                   </div>
                   <Switch
                     checked={coverage.glassProtection}
@@ -1852,10 +1829,10 @@ function VehicleDetailsDialog({
                 </div>
 
                 {/* Assistência 24h */}
-                <div className="p-2.5 rounded-xl bg-muted/35 border border-border/50 flex items-center justify-between gap-2">
+                <div className="p-3.5 rounded-2xl bg-muted/20 border border-border/70 flex items-center justify-between gap-3">
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1.5">
-                      <span className="font-bold text-foreground text-xs truncate">Assistência 24h</span>
+                      <span className="font-bold text-foreground text-xs">Assistência 24h</span>
                       <Badge
                         className={
                           coverage.assistance24h && coverageActive
@@ -1866,7 +1843,7 @@ function VehicleDetailsDialog({
                         {coverage.assistance24h && coverageActive ? "Ativa" : "Inativa"}
                       </Badge>
                     </div>
-                    <span className="text-[9px] text-muted-foreground truncate block">Chaveiro, pneu, socorro</span>
+                    <span className="text-[10px] text-muted-foreground block mt-0.5">Chaveiro, pneu, socorro</span>
                   </div>
                   <Switch
                     checked={coverage.assistance24h}
@@ -1874,11 +1851,11 @@ function VehicleDetailsDialog({
                   />
                 </div>
 
-                {/* Rastreador / Telemetria */}
-                <div className="p-2.5 rounded-xl bg-muted/35 border border-border/50 flex items-center justify-between gap-2">
+                {/* Rastreador GPS */}
+                <div className="p-3.5 rounded-2xl bg-muted/20 border border-border/70 flex items-center justify-between gap-3">
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1.5">
-                      <span className="font-bold text-foreground text-xs truncate">Rastreador GPS</span>
+                      <span className="font-bold text-foreground text-xs">Rastreador GPS</span>
                       <Badge
                         className={
                           coverage.tracker && coverageActive
@@ -1889,7 +1866,7 @@ function VehicleDetailsDialog({
                         {coverage.tracker && coverageActive ? "Ativa" : "Inativa"}
                       </Badge>
                     </div>
-                    <span className="text-[9px] text-muted-foreground truncate block">Monitoramento 24h</span>
+                    <span className="text-[10px] text-muted-foreground block mt-0.5">Monitoramento 24 horas</span>
                   </div>
                   <Switch
                     checked={coverage.tracker}
@@ -1898,36 +1875,36 @@ function VehicleDetailsDialog({
                 </div>
               </div>
 
-              {/* Lista de Coberturas Adicionais / Outras Coberturas do Veículo */}
+              {/* Lista de Outras Coberturas Adicionadas */}
               {customCoverages.length > 0 && (
-                <div className="space-y-2 pt-2 border-t border-border/60">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-primary block">
+                <div className="space-y-2.5 pt-3 border-t border-border/60">
+                  <span className="text-xs font-bold uppercase tracking-wider text-primary block">
                     Outras Coberturas Adicionadas ({customCoverages.length})
                   </span>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {customCoverages.map((cc) => (
                       <div
                         key={cc.id}
-                        className="p-2.5 rounded-xl bg-primary/5 border border-primary/25 flex items-center justify-between gap-2 text-xs"
+                        className="p-3.5 rounded-2xl bg-primary/5 border border-primary/25 flex items-center justify-between gap-3 text-xs"
                       >
                         <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-1.5">
+                          <div className="flex items-center gap-2">
                             <span className="font-bold text-foreground truncate">{cc.name}</span>
                             <Badge
                               className={
                                 cc.isActive && coverageActive
-                                  ? "bg-emerald-500 text-white text-[9px] px-1.5 py-0"
+                                  ? "bg-emerald-500 text-white text-[9px] px-1.5 py-0 font-bold"
                                   : "bg-muted text-muted-foreground text-[9px] px-1.5 py-0"
                               }
                             >
                               {cc.isActive && coverageActive ? "Ativa" : "Inativa"}
                             </Badge>
                           </div>
-                          <span className="text-[10px] text-muted-foreground font-mono">
+                          <span className="text-[11px] text-muted-foreground font-mono mt-0.5 block">
                             {cc.limit || "Padrão"} • + {BRL(cc.monthlyFee)}/mês
                           </span>
                         </div>
-                        <div className="flex items-center gap-1.5 shrink-0">
+                        <div className="flex items-center gap-2 shrink-0">
                           <Switch
                             checked={cc.isActive}
                             onCheckedChange={(checked) => {
@@ -1956,16 +1933,14 @@ function VehicleDetailsDialog({
             </TabsContent>
 
             {/* ABA 3: Mensalidades */}
-            <TabsContent value="financial" className="space-y-3 m-0 p-0 flex-1 flex flex-col justify-start">
+            <TabsContent value="financial" className="space-y-4 m-0 p-0 flex-1 flex flex-col justify-start">
               {/* Bloco de Edição do Valor da Proteção */}
-              <div className="p-3.5 rounded-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-muted/20 border border-primary/25 space-y-2.5 shadow-xs">
-                <div className="grid grid-cols-1 sm:grid-cols-4 gap-2.5 items-end">
-                  <div className="space-y-1">
-                    <Label className="text-[10px] font-semibold text-muted-foreground">
-                      Valor Mensal Total (R$) *
-                    </Label>
+              <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-muted/20 border border-primary/25 space-y-3.5 shadow-xs">
+                <div className="grid grid-cols-1 sm:grid-cols-4 gap-3.5 items-end">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold">Valor Mensal Total (R$) *</Label>
                     <div className="relative">
-                      <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-black text-primary">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-black text-primary">
                         R$
                       </span>
                       <Input
@@ -1973,17 +1948,15 @@ function VehicleDetailsDialog({
                         value={monthlyFeeInput}
                         onChange={(e) => setMonthlyFeeInput(e.target.value)}
                         placeholder="179,90"
-                        className="pl-8 h-8 rounded-xl text-xs font-bold bg-background text-foreground border-border/80 focus-visible:ring-primary"
+                        className="pl-9 h-9 rounded-xl text-xs font-bold bg-background text-foreground border-border/80 focus-visible:ring-primary font-mono"
                       />
                     </div>
                   </div>
 
-                  <div className="space-y-1">
-                    <Label className="text-[10px] font-semibold text-muted-foreground">
-                      Dia de Vencimento
-                    </Label>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold">Dia de Vencimento</Label>
                     <Select value={dueDay} onValueChange={setDueDay}>
-                      <SelectTrigger className="h-8 text-xs font-semibold rounded-xl bg-background border-border/80">
+                      <SelectTrigger className="h-9 text-xs font-semibold rounded-xl bg-background border-border/80">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent className="rounded-xl">
@@ -1996,15 +1969,13 @@ function VehicleDetailsDialog({
                     </Select>
                   </div>
 
-                  <div className="space-y-1">
-                    <Label className="text-[10px] font-semibold text-muted-foreground">
-                      Status da Proteção
-                    </Label>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-semibold">Status da Proteção</Label>
                     <Select
                       value={protectionStatus}
                       onValueChange={(val: any) => setProtectionStatus(val)}
                     >
-                      <SelectTrigger className="h-8 text-xs font-semibold rounded-xl bg-background border-border/80">
+                      <SelectTrigger className="h-9 text-xs font-semibold rounded-xl bg-background border-border/80">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent className="rounded-xl">
@@ -2019,16 +1990,16 @@ function VehicleDetailsDialog({
                   <Button
                     size="sm"
                     onClick={handleSaveMonthly}
-                    className="rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground gap-1.5 font-bold text-xs h-8 px-3.5 shadow-xs w-full"
+                    className="rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground gap-1.5 font-bold text-xs h-9 px-4 shadow-xs w-full"
                   >
-                    <Save className="size-3.5" />
+                    <Save className="size-4" />
                     Salvar Valor
                   </Button>
                 </div>
 
                 {(implementosTotalFee > 0 || activeCustomCoveragesFee > 0) && (
-                  <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-primary/20 text-[11px]">
-                    <span className="text-muted-foreground">
+                  <div className="flex flex-wrap items-center justify-between gap-2 pt-2.5 border-t border-primary/20 text-xs">
+                    <span className="text-muted-foreground text-[11px]">
                       Sugestão da Tabela: Base ({BRL(baseSuggestedFee)}) + Implementos ({BRL(implementosTotalFee)}) + Coberturas Extras ({BRL(activeCustomCoveragesFee)}) ={" "}
                       <strong className="text-foreground font-mono">
                         {BRL(baseSuggestedFee + implementosTotalFee + activeCustomCoveragesFee)}
@@ -2042,7 +2013,7 @@ function VehicleDetailsDialog({
                         const sum = baseSuggestedFee + implementosTotalFee + activeCustomCoveragesFee;
                         setMonthlyFeeInput(sum.toFixed(2).replace(".", ","));
                       }}
-                      className="h-6 text-[10px] rounded-lg px-2 border-primary/40 text-primary"
+                      className="h-7 text-xs rounded-lg px-2.5 border-primary/40 text-primary font-bold"
                     >
                       Aplicar Valor Calculado
                     </Button>
@@ -2051,12 +2022,12 @@ function VehicleDetailsDialog({
               </div>
 
               {/* Histórico Recente de Mensalidades */}
-              <div className="space-y-1.5">
+              <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5">
-                    <History className="size-3.5 text-muted-foreground" />
-                    <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                      Lançamentos Recentes
+                  <div className="flex items-center gap-2">
+                    <History className="size-4 text-muted-foreground" />
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                      Lançamentos Recentes de Mensalidade
                     </h4>
                   </div>
                   <Button
@@ -2072,14 +2043,14 @@ function VehicleDetailsDialog({
                         toast.info("Associado não possui telefone cadastrado.");
                       }
                     }}
-                    className="rounded-lg h-6.5 text-[11px] font-semibold gap-1 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-500/10 px-2"
+                    className="rounded-xl h-8 text-xs font-semibold gap-1.5 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-500/10 px-3"
                   >
-                    <Send className="size-3" />
+                    <Send className="size-3.5" />
                     Enviar Cobrança WhatsApp
                   </Button>
                 </div>
 
-                <div className="rounded-2xl border border-border/60 bg-muted/20 divide-y divide-border/50 overflow-hidden shadow-xs">
+                <div className="rounded-2xl border border-border/70 bg-card divide-y divide-border/60 overflow-hidden shadow-xs">
                   {[
                     { month: "Outubro / 2026", due: `${vehicle.dueDay.toString().padStart(2, "0")}/10/2026`, status: "RECEIVED", value: vehicle.monthlyFee },
                     { month: "Setembro / 2026", due: `${vehicle.dueDay.toString().padStart(2, "0")}/09/2026`, status: "RECEIVED", value: vehicle.monthlyFee },
@@ -2087,21 +2058,21 @@ function VehicleDetailsDialog({
                   ].map((inv, i) => (
                     <div
                       key={i}
-                      className="p-2 sm:px-3 flex items-center justify-between hover:bg-background/60 transition-colors gap-2"
+                      className="p-3 sm:px-4 flex items-center justify-between hover:bg-muted/30 transition-colors gap-2 text-xs"
                     >
-                      <div className="flex items-center gap-2 min-w-0">
-                        <div className="size-6 rounded-lg bg-emerald-500/15 text-emerald-600 flex items-center justify-center shrink-0">
-                          <CheckCircle2 className="size-3.5" />
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="size-7 rounded-xl bg-emerald-500/15 text-emerald-600 flex items-center justify-center shrink-0">
+                          <CheckCircle2 className="size-4" />
                         </div>
                         <div className="min-w-0">
                           <p className="font-bold text-foreground text-xs leading-none truncate">{inv.month}</p>
-                          <p className="text-[9px] text-muted-foreground mt-0.5 truncate">Vencimento em {inv.due}</p>
+                          <p className="text-[10px] text-muted-foreground mt-1 truncate">Vencimento em {inv.due}</p>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-2 shrink-0">
+                      <div className="flex items-center gap-3 shrink-0">
                         <span className="font-extrabold text-foreground text-xs font-mono">{BRL(inv.value)}</span>
-                        <Badge className="bg-emerald-500/15 text-emerald-600 border border-emerald-500/30 text-[9px] font-bold px-1.5 py-0 rounded-md">
+                        <Badge className="bg-emerald-500/15 text-emerald-600 border border-emerald-500/30 text-[10px] font-bold px-2 py-0.5 rounded-md">
                           Pago
                         </Badge>
                       </div>
@@ -2114,16 +2085,16 @@ function VehicleDetailsDialog({
         </Tabs>
 
         {/* Rodapé */}
-        <div className="px-4 sm:px-5 py-2.5 border-t border-border/60 bg-muted/20 shrink-0 flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-2.5">
-          <div className="flex items-center justify-between sm:justify-start gap-2.5 sm:gap-3 w-full sm:w-auto">
+        <div className="px-4 sm:px-6 py-3 border-t border-border/60 bg-muted/20 shrink-0 flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center justify-between sm:justify-start gap-3 w-full sm:w-auto">
             <AsaasFormSeal />
             <Button
               variant="outline"
               size="sm"
               onClick={onOpenCertificate}
-              className="rounded-xl border-primary/40 text-primary hover:bg-primary/10 gap-1.5 font-bold text-xs h-8"
+              className="rounded-xl border-primary/40 text-primary hover:bg-primary/10 gap-1.5 font-bold text-xs h-8.5"
             >
-              <Award className="size-3.5" />
+              <Award className="size-4" />
               <span>Certificado Digital</span>
             </Button>
           </div>
@@ -2131,7 +2102,7 @@ function VehicleDetailsDialog({
           <Button
             size="sm"
             onClick={() => onOpenChange(false)}
-            className="rounded-xl text-xs h-8 font-semibold px-5 w-full sm:w-auto"
+            className="rounded-xl text-xs h-8.5 font-semibold px-6 w-full sm:w-auto"
           >
             Fechar
           </Button>
@@ -2141,7 +2112,6 @@ function VehicleDetailsDialog({
   );
 }
 
-// Modal do Certificado Oficial de Proteção Veicular Digital
 function CertificateDialog({
   open,
   onOpenChange,
@@ -2243,6 +2213,7 @@ function NewVehicleDialog({ members, partners = [] }: { members: any[]; partners
   const qc = useQueryClient();
   const { companyId } = useAuth();
   const [open, setOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<"dados" | "avaliacao">("dados");
 
   const [memberId, setMemberId] = useState("avulso");
   const [consultantId, setConsultantId] = useState("");
@@ -2265,6 +2236,7 @@ function NewVehicleDialog({ members, partners = [] }: { members: any[]; partners
   const [category, setCategory] = useState("Leves e utilitários");
   const [implementos, setImplementos] = useState<ImplementoItem[]>([]);
   const [monthlyFeeOverride, setMonthlyFeeOverride] = useState<string>("");
+  const [isSearchingPlate, setIsSearchingPlate] = useState(false);
 
   const fipeValue = Number(fipeValueStr.replace(/\D/g, "")) / 100 || 60000;
   const baseTableFee = useMemo(
@@ -2284,6 +2256,47 @@ function NewVehicleDialog({ members, partners = [] }: { members: any[]; partners
     }
     return calculatedTotalFee;
   }, [monthlyFeeOverride, calculatedTotalFee]);
+
+  // Busca automática da placa
+  const handlePlateLookup = async (plateInput: string) => {
+    const clean = (plateInput || "").replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+    if (clean.length < 7) return;
+
+    setIsSearchingPlate(true);
+    try {
+      const data = await lookupVehicleByPlate(clean);
+      if (data) {
+        setPlate(clean);
+        if (data.brand) setBrand(data.brand);
+        if (data.model) setModel(data.model);
+        if (data.year) {
+          setYear(String(data.year));
+          setYearModel(String(data.year));
+        }
+        if (data.color) setColor(data.color);
+        if (data.fuel) setFuel(data.fuel);
+        if (data.chassi) setChassi(data.chassi);
+        if (data.renavam) setRenavam(data.renavam);
+        if (data.category) {
+          setCategory(
+            data.category === "moto"
+              ? "Motocicletas"
+              : data.category === "pesado"
+              ? "Pesados"
+              : data.category === "utilitario"
+              ? "Vans e Utilitários"
+              : "Leves e utilitários"
+          );
+        }
+        if (data.fipeValue) setFipeValueStr(String(Math.round(data.fipeValue * 100)));
+        toast.success("Dados preenchidos pela placa!", {
+          description: `${data.brand} ${data.model} (${data.year})`,
+        });
+      }
+    } finally {
+      setIsSearchingPlate(false);
+    }
+  };
 
   const createVeh = useMutation({
     mutationFn: async () => {
@@ -2347,6 +2360,7 @@ function NewVehicleDialog({ members, partners = [] }: { members: any[]; partners
       setImplementos([]);
       setMonthlyFeeOverride("");
       setCategory("Leves e utilitários");
+      setActiveTab("dados");
     },
     onError: (err: any) => {
       toast.error(err.message || "Erro ao cadastrar veículo.");
@@ -2356,21 +2370,57 @@ function NewVehicleDialog({ members, partners = [] }: { members: any[]; partners
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="rounded-xl bg-primary text-primary-foreground gap-1.5 font-bold shadow-xs text-xs h-9">
-          <Plus className="size-3.5" />
+        <Button className="rounded-xl bg-primary text-primary-foreground gap-1.5 font-bold shadow-xs text-xs h-9 px-3.5">
+          <Plus className="size-4" />
           <span>Cadastrar Veículo</span>
         </Button>
       </DialogTrigger>
-      <DialogContent className="w-[96vw] sm:w-[920px] sm:max-w-4xl max-h-[92vh] flex flex-col rounded-2xl bg-card border-border p-0 gap-0 shadow-2xl overflow-hidden">
-        <DialogHeader className="p-4 sm:p-5 pb-3 border-b border-border/60 bg-muted/10 shrink-0">
-          <DialogTitle className="text-base font-bold flex items-center gap-2">
-            <Car className="size-4.5 text-primary" /> Cadastro Completo de Veículo & Implementos
-          </DialogTitle>
-          <DialogDescription className="text-xs">
-            Informe Chassi, Renavam, dados técnicos, avaliação FIPE e adicione implementos com precificação automática.
-          </DialogDescription>
+      <DialogContent className="w-[96vw] sm:w-[1100px] sm:max-w-6xl max-h-[92vh] flex flex-col p-0 gap-0 border-border bg-card shadow-2xl rounded-2xl sm:rounded-3xl overflow-hidden">
+        {/* Cabeçalho Amplo */}
+        <DialogHeader className="p-4 sm:p-5 pb-3 border-b border-border/60 bg-muted/15 shrink-0">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pr-8">
+            <div>
+              <DialogTitle className="text-base sm:text-lg font-bold flex items-center gap-2">
+                <Car className="size-5 text-primary" />
+                <span>Cadastro de Veículo & Implementos</span>
+              </DialogTitle>
+              <DialogDescription className="text-xs text-muted-foreground mt-0.5">
+                Informe a placa com busca automática de dados, chassi, renavam, avaliação FIPE e implementos.
+              </DialogDescription>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <Badge
+                variant="outline"
+                className="text-xs font-mono bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400 gap-1 py-1 px-3 font-bold"
+              >
+                Mensalidade: {BRL(finalMonthlyFee)}/mês
+              </Badge>
+            </div>
+          </div>
+
+          {/* Abas */}
+          <div className="pt-2">
+            <Tabs value={activeTab} onValueChange={(v: any) => setActiveTab(v)} className="w-full">
+              <TabsList className="bg-muted/60 p-1 rounded-xl h-10 w-full sm:w-auto grid grid-cols-2 sm:inline-flex">
+                <TabsTrigger value="dados" className="rounded-lg text-xs font-bold gap-2 px-4 h-8">
+                  <Car className="size-3.5" />
+                  <span>1. Identificação & Dados Técnicos</span>
+                </TabsTrigger>
+                <TabsTrigger value="avaliacao" className="rounded-lg text-xs font-bold gap-2 px-4 h-8">
+                  <DollarSign className="size-3.5" />
+                  <span>2. Avaliação FIPE, Implementos & Mensalidade</span>
+                  {implementos.length > 0 && (
+                    <span className="hidden sm:inline-block ml-1 font-mono text-[10px] bg-primary/15 text-primary px-1.5 py-0.2 rounded-md">
+                      +{implementos.length} Impl.
+                    </span>
+                  )}
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
         </DialogHeader>
 
+        {/* Formulário com rolagem suave */}
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -2378,271 +2428,375 @@ function NewVehicleDialog({ members, partners = [] }: { members: any[]; partners
           }}
           className="flex-1 flex flex-col justify-between overflow-hidden min-h-0"
         >
-          <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4 min-h-0">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
-              {/* Coluna 1: Identificação Técnica do Veículo */}
-              <div className="space-y-3 p-3.5 rounded-2xl border border-border/70 bg-muted/10">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-primary flex items-center gap-1.5 pb-1 border-b border-border/50">
-                  <Car className="size-3.5" /> 1. Dados do Veículo (Chassi & Renavam)
-                </h3>
+          <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-5 min-h-0">
+            {activeTab === "dados" && (
+              <div className="space-y-5">
+                {/* BLOCO 1: Vínculo do Proprietário & Consultor */}
+                <div className="p-4 rounded-2xl border border-border/80 bg-muted/10 space-y-3.5">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-primary flex items-center gap-2 pb-1 border-b border-border/60">
+                    <User className="size-4" /> 1. Vínculo do Proprietário & Consultoria
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                    <div className="space-y-1.5 sm:col-span-2">
+                      <Label className="text-xs font-semibold">Associado Proprietário</Label>
+                      <Select value={memberId} onValueChange={setMemberId}>
+                        <SelectTrigger className="rounded-xl h-9 text-xs bg-background font-medium">
+                          <SelectValue placeholder="Selecione o associado" />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-xl max-h-56">
+                          <SelectItem value="avulso" className="text-amber-600 font-semibold">
+                            ⚡ Cadastrar de forma avulsa (Vincular a associado depois)
+                          </SelectItem>
+                          {members.map((m) => (
+                            <SelectItem key={m.id} value={m.id}>
+                              {m.name} ({formatCpfCnpj(m.document)})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
 
-                <div className="space-y-1">
-                  <Label className="text-xs font-semibold">Associado Proprietário</Label>
-                  <Select value={memberId} onValueChange={setMemberId}>
-                    <SelectTrigger className="rounded-xl h-8.5 text-xs bg-background font-medium">
-                      <SelectValue placeholder="Selecione o associado" />
-                    </SelectTrigger>
-                    <SelectContent className="rounded-xl max-h-56">
-                      <SelectItem value="avulso" className="text-amber-600 font-semibold">
-                        ⚡ Cadastrar de forma avulsa (Vincular depois)
-                      </SelectItem>
-                      {members.map((m) => (
-                        <SelectItem key={m.id} value={m.id}>
-                          {m.name} ({formatCpfCnpj(m.document)})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="grid grid-cols-3 gap-2">
-                  <div className="space-y-1">
-                    <Label className="text-xs font-semibold">Placa (Mercosul) *</Label>
-                    <Input
-                      placeholder="Ex: BRA2E19"
-                      value={plate}
-                      onChange={(e) => setPlate(e.target.value.toUpperCase())}
-                      maxLength={8}
-                      className="rounded-xl uppercase font-mono font-bold text-xs h-8.5 bg-background"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs font-semibold">Ano Fab.</Label>
-                    <Input
-                      type="text"
-                      inputMode="numeric"
-                      placeholder="2023"
-                      value={year}
-                      onChange={(e) => setYear(e.target.value.replace(/\D/g, "").slice(0, 4))}
-                      maxLength={4}
-                      className="rounded-xl font-medium text-xs h-8.5 bg-background font-mono"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs font-semibold">Ano Modelo</Label>
-                    <Input
-                      type="text"
-                      inputMode="numeric"
-                      placeholder="2024"
-                      value={yearModel}
-                      onChange={(e) => setYearModel(e.target.value.replace(/\D/g, "").slice(0, 4))}
-                      maxLength={4}
-                      className="rounded-xl font-medium text-xs h-8.5 bg-background font-mono"
-                    />
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-semibold">Consultor Responsável</Label>
+                      <Select value={consultantId} onValueChange={setConsultantId}>
+                        <SelectTrigger className="rounded-xl h-9 text-xs bg-background">
+                          <SelectValue placeholder="Nenhum (Venda Direta)" />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-xl">
+                          <SelectItem value="none">Nenhum (Venda Direta)</SelectItem>
+                          {partners.map((p: any) => (
+                            <SelectItem key={p.id} value={p.id}>
+                              {p.name} {p.split_percent ? `(${p.split_percent}%)` : ""}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="space-y-1">
-                    <Label className="text-xs font-semibold">Marca *</Label>
-                    <Input
-                      placeholder="Ex: Toyota, Honda, Volvo"
-                      value={brand}
-                      onChange={(e) => setBrand(e.target.value)}
-                      className="rounded-xl text-xs h-8.5 bg-background"
-                    />
+                {/* BLOCO 2: Identificação do Veículo com Busca por Placa */}
+                <div className="p-4 rounded-2xl border border-border/80 bg-muted/10 space-y-3.5">
+                  <div className="flex items-center justify-between pb-1 border-b border-border/60">
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-primary flex items-center gap-2">
+                      <Car className="size-4" /> 2. Identificação do Veículo
+                    </h3>
+                    <span className="text-[11px] text-muted-foreground flex items-center gap-1">
+                      <Sparkles className="size-3 text-amber-500" />
+                      Auto-preenchimento ao digitar a placa
+                    </span>
                   </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs font-semibold">Cor</Label>
-                    <Input
-                      placeholder="Ex: Branco, Prata"
-                      value={color}
-                      onChange={(e) => setColor(e.target.value)}
-                      className="rounded-xl text-xs h-8.5 bg-background"
-                    />
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-semibold flex items-center justify-between">
+                        <span>Placa do Veículo *</span>
+                        {isSearchingPlate && (
+                          <span className="text-[10px] text-primary flex items-center gap-1 font-normal">
+                            <Loader2 className="size-3 animate-spin" /> Buscando...
+                          </span>
+                        )}
+                      </Label>
+                      <div className="relative">
+                        <Input
+                          placeholder="ABC1234"
+                          value={plate}
+                          onChange={(e) => {
+                            const val = e.target.value.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
+                            setPlate(val);
+                            if (val.length === 7) handlePlateLookup(val);
+                          }}
+                          onBlur={(e) => handlePlateLookup(e.target.value)}
+                          maxLength={7}
+                          className="rounded-xl uppercase font-mono font-bold text-xs h-9 bg-background pr-7"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handlePlateLookup(plate)}
+                          title="Buscar dados do veículo pela placa"
+                          className="absolute right-2 top-2.5 text-primary hover:text-primary/80"
+                        >
+                          <Sparkles className="size-4" />
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-semibold">Marca *</Label>
+                      <Input
+                        placeholder="Ex: Toyota, Fiat, Honda"
+                        value={brand}
+                        onChange={(e) => setBrand(e.target.value)}
+                        className="rounded-xl text-xs h-9 bg-background"
+                      />
+                    </div>
+
+                    <div className="space-y-1.5 sm:col-span-2">
+                      <Label className="text-xs font-semibold">Modelo e Versão *</Label>
+                      <Input
+                        placeholder="Ex: Corolla Altis 2.0 Dynamic Force Flex"
+                        value={model}
+                        onChange={(e) => setModel(e.target.value)}
+                        className="rounded-xl text-xs h-9 bg-background"
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-semibold">Ano Fab.</Label>
+                      <Input
+                        type="text"
+                        inputMode="numeric"
+                        placeholder="2023"
+                        value={year}
+                        onChange={(e) => setYear(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                        maxLength={4}
+                        className="rounded-xl font-medium text-xs h-9 bg-background font-mono"
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-semibold">Ano Modelo</Label>
+                      <Input
+                        type="text"
+                        inputMode="numeric"
+                        placeholder="2024"
+                        value={yearModel}
+                        onChange={(e) => setYearModel(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                        maxLength={4}
+                        className="rounded-xl font-medium text-xs h-9 bg-background font-mono"
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-semibold">Cor Predominante</Label>
+                      <Input
+                        placeholder="Ex: Branco, Prata, Preto"
+                        value={color}
+                        onChange={(e) => setColor(e.target.value)}
+                        className="rounded-xl text-xs h-9 bg-background"
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-semibold">Finalidade de Uso</Label>
+                      <Select value={usage} onValueChange={setUsage}>
+                        <SelectTrigger className="rounded-xl h-9 text-xs bg-background">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-xl">
+                          <SelectItem value="Particular">Particular / Passeio</SelectItem>
+                          <SelectItem value="Comercial">Comercial / Trabalho</SelectItem>
+                          <SelectItem value="Motorista App">Aplicativo (Uber/99)</SelectItem>
+                          <SelectItem value="Frota / Carga">Transporte de Carga</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                 </div>
 
-                <div className="space-y-1">
-                  <Label className="text-xs font-semibold">Modelo e Versão do Veículo *</Label>
-                  <Input
-                    placeholder="Ex: Corolla Altis 2.0 Dynamic Force Flex"
-                    value={model}
-                    onChange={(e) => setModel(e.target.value)}
-                    className="rounded-xl text-xs h-8.5 bg-background"
+                {/* BLOCO 3: Registro & Documentação Técnica */}
+                <div className="p-4 rounded-2xl border border-border/80 bg-muted/10 space-y-3.5">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-primary flex items-center gap-2 pb-1 border-b border-border/60">
+                    <FileText className="size-4" /> 3. Registro & Detalhes Técnicos
+                  </h3>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-bold text-primary">Número do Chassi *</Label>
+                      <Input
+                        placeholder="Ex: 9BRBL3HE8P0192841"
+                        value={chassi}
+                        onChange={(e) => setChassi(e.target.value.toUpperCase())}
+                        maxLength={20}
+                        className="rounded-xl font-mono uppercase text-xs h-9 bg-background border-primary/40 font-bold"
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-bold text-primary">Número do Renavam *</Label>
+                      <Input
+                        placeholder="Ex: 01398274619"
+                        value={renavam}
+                        onChange={(e) => setRenavam(e.target.value.replace(/\D/g, "").slice(0, 11))}
+                        maxLength={11}
+                        className="rounded-xl font-mono text-xs h-9 bg-background border-primary/40 font-bold"
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-semibold">Combustível</Label>
+                      <Select value={fuel} onValueChange={setFuel}>
+                        <SelectTrigger className="rounded-xl h-9 text-xs bg-background">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-xl">
+                          <SelectItem value="Flex">Flex (Álcool/Gasolina)</SelectItem>
+                          <SelectItem value="Gasolina">Gasolina</SelectItem>
+                          <SelectItem value="Diesel">Diesel</SelectItem>
+                          <SelectItem value="Etanol">Etanol</SelectItem>
+                          <SelectItem value="GNV">GNV</SelectItem>
+                          <SelectItem value="Híbrido/Elétrico">Híbrido / Elétrico</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-semibold">Hodômetro (KM)</Label>
+                      <Input
+                        placeholder="Ex: 35.000 km"
+                        value={mileage}
+                        onChange={(e) => setMileage(e.target.value)}
+                        className="rounded-xl font-mono text-xs h-9 bg-background"
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-semibold">Tipo de Câmbio</Label>
+                      <Select value={transmission} onValueChange={setTransmission}>
+                        <SelectTrigger className="rounded-xl h-9 text-xs bg-background">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-xl">
+                          <SelectItem value="Manual">Manual</SelectItem>
+                          <SelectItem value="Automático">Automático</SelectItem>
+                          <SelectItem value="Automático CVT">Automático CVT</SelectItem>
+                          <SelectItem value="Automatizado">Automatizado</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-semibold">Motorização / Potência</Label>
+                      <Input
+                        placeholder="Ex: 2.0 16V / 1.0 Turbo"
+                        value={engine}
+                        onChange={(e) => setEngine(e.target.value)}
+                        className="rounded-xl text-xs h-9 bg-background"
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-semibold">Rastreador GPS</Label>
+                      <Select value={trackerStatus} onValueChange={setTrackerStatus}>
+                        <SelectTrigger className="rounded-xl h-9 text-xs bg-background">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-xl">
+                          <SelectItem value="Instalado e Ativo">Instalado e Ativo</SelectItem>
+                          <SelectItem value="Aguardando Instalação">Aguardando Instalação</SelectItem>
+                          <SelectItem value="Isento / Não Requerido">Isento / Não Requerido</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-semibold">IMEI / ID Rastreador</Label>
+                      <Input
+                        placeholder="Ex: IMEI-882910"
+                        value={trackerCode}
+                        onChange={(e) => setTrackerCode(e.target.value)}
+                        className="rounded-xl font-mono text-xs h-9 bg-background"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Avançar para etapa 2 */}
+                <div className="flex justify-end pt-2">
+                  <Button
+                    type="button"
+                    onClick={() => setActiveTab("avaliacao")}
+                    className="rounded-xl h-9 text-xs font-bold px-4 gap-2 bg-primary text-primary-foreground shadow-xs"
+                  >
+                    <span>Avançar para Avaliação FIPE & Implementos</span>
+                    <ArrowRight className="size-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {activeTab === "avaliacao" && (
+              <div className="space-y-5">
+                {/* BLOCO 1: Categoria & Avaliação FIPE */}
+                <div className="p-4 rounded-2xl border border-border/80 bg-muted/10 space-y-3.5">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-primary flex items-center gap-2 pb-1 border-b border-border/60">
+                    <DollarSign className="size-4" /> 1. Categoria & Avaliação FIPE
+                  </h3>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-bold text-foreground">Valor FIPE / Comercial *</Label>
+                      <Input
+                        placeholder="R$ 60.000,00"
+                        value={formatCurrencyInput(fipeValueStr)}
+                        onChange={(e) => setFipeValueStr(e.target.value)}
+                        className="rounded-xl font-bold text-xs h-9 bg-background font-mono text-emerald-600 dark:text-emerald-400 text-sm"
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-semibold">Categoria Tarifária do Veículo</Label>
+                      <VehicleCategorySelector value={category} onChange={setCategory} compact />
+                    </div>
+                  </div>
+                </div>
+
+                {/* BLOCO 2: Implementos do Veículo */}
+                <div className="p-4 rounded-2xl border border-border/80 bg-card space-y-3">
+                  <ImplementosManager
+                    implementos={implementos}
+                    onChange={setImplementos}
+                    category={category}
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="space-y-1">
-                    <Label className="text-xs font-bold text-primary">Número do Chassi *</Label>
-                    <Input
-                      placeholder="Ex: 9BRBL3HE8P0192841"
-                      value={chassi}
-                      onChange={(e) => setChassi(e.target.value.toUpperCase())}
-                      maxLength={20}
-                      className="rounded-xl font-mono uppercase text-xs h-8.5 bg-background border-primary/40"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs font-bold text-primary">Número do Renavam *</Label>
-                    <Input
-                      placeholder="Ex: 01398274619"
-                      value={renavam}
-                      onChange={(e) => setRenavam(e.target.value.replace(/\D/g, "").slice(0, 11))}
-                      maxLength={11}
-                      className="rounded-xl font-mono text-xs h-8.5 bg-background border-primary/40"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-3 gap-2">
-                  <div className="space-y-1">
-                    <Label className="text-xs font-semibold">Combustível</Label>
-                    <Select value={fuel} onValueChange={setFuel}>
-                      <SelectTrigger className="rounded-xl h-8.5 text-xs bg-background">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent className="rounded-xl">
-                        <SelectItem value="Flex">Flex</SelectItem>
-                        <SelectItem value="Gasolina">Gasolina</SelectItem>
-                        <SelectItem value="Diesel">Diesel</SelectItem>
-                        <SelectItem value="Etanol">Etanol</SelectItem>
-                        <SelectItem value="GNV">GNV</SelectItem>
-                        <SelectItem value="Híbrido/Elétrico">Híbrido/Elétrico</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs font-semibold">Hodômetro (KM)</Label>
-                    <Input
-                      placeholder="Ex: 35.000 km"
-                      value={mileage}
-                      onChange={(e) => setMileage(e.target.value)}
-                      className="rounded-xl font-mono text-xs h-8.5 bg-background"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs font-semibold">Finalidade</Label>
-                    <Select value={usage} onValueChange={setUsage}>
-                      <SelectTrigger className="rounded-xl h-8.5 text-xs bg-background">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent className="rounded-xl">
-                        <SelectItem value="Particular">Particular</SelectItem>
-                        <SelectItem value="Comercial">Comercial</SelectItem>
-                        <SelectItem value="Motorista App">App (Uber/99)</SelectItem>
-                        <SelectItem value="Frota / Carga">Carga / Frota</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="space-y-1">
-                    <Label className="text-xs font-semibold">Câmbio</Label>
-                    <Select value={transmission} onValueChange={setTransmission}>
-                      <SelectTrigger className="rounded-xl h-8.5 text-xs bg-background">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent className="rounded-xl">
-                        <SelectItem value="Manual">Manual</SelectItem>
-                        <SelectItem value="Automático">Automático</SelectItem>
-                        <SelectItem value="Automático CVT">Automático CVT</SelectItem>
-                        <SelectItem value="Automatizado">Automatizado</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs font-semibold">Motorização / Potência</Label>
-                    <Input
-                      placeholder="Ex: 2.0 16V / 1.0 Turbo"
-                      value={engine}
-                      onChange={(e) => setEngine(e.target.value)}
-                      className="rounded-xl text-xs h-8.5 bg-background"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Coluna 2: Avaliação FIPE, Categoria, Implementos e Mensalidade */}
-              <div className="space-y-3 p-3.5 rounded-2xl border border-border/70 bg-muted/10">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-primary flex items-center gap-1.5 pb-1 border-b border-border/50">
-                  <DollarSign className="size-3.5" /> 2. Avaliação, Implementos & Mensalidade
-                </h3>
-
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="space-y-1">
-                    <Label className="text-xs font-semibold">Vincular a Consultor</Label>
-                    <Select value={consultantId} onValueChange={setConsultantId}>
-                      <SelectTrigger className="rounded-xl h-8.5 text-xs bg-background">
-                        <SelectValue placeholder="Nenhum (Venda Direta)" />
-                      </SelectTrigger>
-                      <SelectContent className="rounded-xl">
-                        <SelectItem value="none">Nenhum (Venda Direta)</SelectItem>
-                        {partners.map((p: any) => (
-                          <SelectItem key={p.id} value={p.id}>
-                            {p.name} {p.split_percent ? `(${p.split_percent}%)` : ""}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs font-bold text-foreground">Valor FIPE / Comercial *</Label>
-                    <Input
-                      placeholder="R$ 60.000,00"
-                      value={formatCurrencyInput(fipeValueStr)}
-                      onChange={(e) => setFipeValueStr(e.target.value)}
-                      className="rounded-xl font-bold text-xs h-8.5 bg-background font-mono text-emerald-600 dark:text-emerald-400"
-                    />
-                  </div>
-                </div>
-
-                <div className="pt-0.5">
-                  <VehicleCategorySelector value={category} onChange={setCategory} compact />
-                </div>
-
-                {/* Seção Adicionar Implemento */}
-                <ImplementosManager
-                  implementos={implementos}
-                  onChange={setImplementos}
-                  category={category}
-                />
-
-                {/* Resumo da Mensalidade Calculada + Ajuste */}
-                <div className="p-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 space-y-2">
-                  <div className="flex items-center justify-between text-xs">
+                {/* BLOCO 3: Resumo Financeiro & Mensalidade */}
+                <div className="p-4 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 space-y-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
                     <div>
-                      <span className="font-bold text-foreground block">
-                        Mensalidade Pela Tabela de Preços:
+                      <span className="font-bold text-foreground text-sm block">
+                        Mensalidade Calculada pela Tabela de Preços:
                       </span>
-                      <span className="text-[10px] text-muted-foreground">
+                      <span className="text-xs text-muted-foreground">
                         Veículo ({BRL(baseTableFee)})
                         {implementosFee > 0 ? ` + Implementos (${BRL(implementosFee)})` : ""}
                       </span>
                     </div>
-                    <span className="font-mono font-black text-base text-emerald-600 dark:text-emerald-400">
+                    <span className="font-mono font-black text-xl text-emerald-600 dark:text-emerald-400">
                       {BRL(calculatedTotalFee)}/mês
                     </span>
                   </div>
 
-                  <div className="space-y-1 pt-1.5 border-t border-emerald-500/20">
-                    <Label className="text-[11px] font-semibold">
-                      Mensalidade Final a Cobrar (Opcional se desejar personalizar)
+                  <div className="space-y-1.5 pt-2 border-t border-emerald-500/20">
+                    <Label className="text-xs font-semibold">
+                      Mensalidade Final a Cobrar (Opcional caso deseje personalizar com valor fixo)
                     </Label>
                     <Input
                       placeholder={BRL(calculatedTotalFee)}
                       value={monthlyFeeOverride ? formatCurrencyInput(monthlyFeeOverride) : ""}
                       onChange={(e) => setMonthlyFeeOverride(e.target.value)}
-                      className="rounded-xl font-bold text-xs h-8 bg-background font-mono"
+                      className="rounded-xl font-bold text-xs h-9 bg-background font-mono max-w-xs"
                     />
                   </div>
                 </div>
+
+                {/* Voltar para etapa 1 */}
+                <div className="flex justify-start pt-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setActiveTab("dados")}
+                    className="rounded-xl h-9 text-xs font-bold gap-2"
+                  >
+                    <ArrowLeft className="size-4" />
+                    <span>Voltar aos Dados Técnicos</span>
+                  </Button>
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
+          {/* Rodapé com Selo e Botões */}
           <DialogFooter className="p-3.5 sm:p-4 border-t border-border/60 bg-muted/20 shrink-0 flex flex-col-reverse sm:flex-row items-center sm:justify-between gap-3">
             <AsaasFormSeal />
             <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
@@ -2651,7 +2805,7 @@ function NewVehicleDialog({ members, partners = [] }: { members: any[]; partners
                 variant="outline"
                 size="sm"
                 onClick={() => setOpen(false)}
-                className="rounded-xl text-xs h-8 font-medium"
+                className="rounded-xl text-xs h-8.5 font-medium"
               >
                 Cancelar
               </Button>
@@ -2659,7 +2813,7 @@ function NewVehicleDialog({ members, partners = [] }: { members: any[]; partners
                 type="submit"
                 size="sm"
                 disabled={createVeh.isPending}
-                className="rounded-xl bg-primary text-primary-foreground font-semibold text-xs gap-1.5 shadow-xs h-8 px-4"
+                className="rounded-xl bg-primary text-primary-foreground font-semibold text-xs gap-1.5 shadow-xs h-8.5 px-5"
               >
                 {createVeh.isPending ? "Cadastrando..." : "Salvar Veículo"}
               </Button>
