@@ -524,7 +524,7 @@ function ReportsPage() {
                       <TableHead className="py-4 font-semibold text-muted-foreground text-center w-[12%]">Vencimento Original</TableHead>
                       <TableHead className="py-4 font-semibold text-muted-foreground text-center w-[12%]">Novo Vencimento</TableHead>
                       <TableHead className="py-4 font-semibold text-muted-foreground text-center w-[12%]">Status</TableHead>
-                      {partnerFilter !== "all" ? (
+                      {(isPartnerUser || partnerFilter !== "all") ? (
                         <>
                           <TableHead className="py-4 text-center font-semibold text-muted-foreground w-[10%]">% Split</TableHead>
                           <TableHead className="py-4 pr-6 text-right font-semibold text-muted-foreground w-[15%]">Repasse</TableHead>
@@ -542,7 +542,7 @@ function ReportsPage() {
                           animate={{ opacity: 1 }}
                           exit={{ opacity: 0 }}
                         >
-                          <TableCell colSpan={partnerFilter !== "all" ? 8 : 7} className="h-64 text-center">
+                          <TableCell colSpan={(isPartnerUser || partnerFilter !== "all") ? 8 : 7} className="h-64 text-center">
                             <div className="flex flex-col items-center justify-center text-muted-foreground space-y-3">
                               <div className="p-4 bg-muted/30 rounded-full">
                                 <SearchX className="h-8 w-8 opacity-40" />
@@ -621,7 +621,7 @@ function ReportsPage() {
                                 {status === "pending" && <Badge variant="outline" className="w-[100px] justify-center text-amber-600 border-amber-300 bg-amber-50 dark:bg-amber-950/30 px-3 py-1"><Clock className="w-3.5 h-3.5 mr-1.5" /> Pendente</Badge>}
                                 {status === "overdue" && <Badge variant="destructive" className="w-[100px] justify-center px-3 py-1 shadow-sm"><AlertCircle className="w-3.5 h-3.5 mr-1.5" /> Vencido</Badge>}
                               </TableCell>
-                              {partnerFilter !== "all" ? (
+                              {(isPartnerUser || partnerFilter !== "all") ? (
                                 <>
                                   <TableCell className="py-5 text-center font-medium">
                                     <Badge variant="outline" className="font-bold bg-muted/50 border-border/50 text-foreground">
