@@ -174,8 +174,8 @@ function EditMerchantDialog({ merchant }: { merchant: Merchant }) {
           <span>Editar</span>
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-xl p-0 gap-0 border-border bg-card shadow-2xl rounded-2xl overflow-hidden">
-        <DialogHeader className="p-5 sm:p-6 pb-4 border-b border-border/70 bg-gradient-to-r from-primary/10 via-primary/5 to-card">
+      <DialogContent className="w-[95vw] sm:max-w-xl max-h-[90vh] flex flex-col p-0 gap-0 border-border bg-card shadow-2xl rounded-2xl overflow-hidden">
+        <DialogHeader className="p-5 sm:p-6 pb-4 border-b border-border/70 bg-gradient-to-r from-primary/10 via-primary/5 to-card shrink-0">
           <div className="flex items-center gap-3">
             <div className="p-2.5 rounded-xl bg-primary text-primary-foreground shadow-xs">
               <Store className="size-5" />
@@ -188,7 +188,7 @@ function EditMerchantDialog({ merchant }: { merchant: Merchant }) {
             </div>
           </div>
         </DialogHeader>
-        <div className="p-5 sm:p-6 space-y-4">
+        <div className="p-5 sm:p-6 space-y-4 overflow-y-auto flex-1">
           <div className="space-y-1.5">
             <Label className="text-xs font-semibold text-foreground">Razão Social / Nome Fantasia *</Label>
             <Input
@@ -552,8 +552,8 @@ function MerchantsPage() {
               <span>Novo EC</span>
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-xl p-0 gap-0 border-border bg-card shadow-2xl rounded-2xl overflow-hidden">
-            <DialogHeader className="p-5 sm:p-6 pb-4 border-b border-border/70 bg-gradient-to-r from-primary/10 via-primary/5 to-card">
+          <DialogContent className="w-[95vw] sm:max-w-xl max-h-[90vh] flex flex-col p-0 gap-0 border-border bg-card shadow-2xl rounded-2xl overflow-hidden">
+            <DialogHeader className="p-5 sm:p-6 pb-4 border-b border-border/70 bg-gradient-to-r from-primary/10 via-primary/5 to-card shrink-0">
               <div className="flex items-center gap-3">
                 <div className="p-2.5 rounded-xl bg-primary text-primary-foreground shadow-xs">
                   <Store className="size-5" />
@@ -566,7 +566,7 @@ function MerchantsPage() {
                 </div>
               </div>
             </DialogHeader>
-            <div className="p-5 sm:p-6 space-y-4">
+            <div className="p-5 sm:p-6 space-y-4 overflow-y-auto flex-1">
               <div className="space-y-1.5">
                 <Label className="text-xs font-semibold text-foreground">Razão Social / Nome Fantasia *</Label>
                 <Input
@@ -670,7 +670,7 @@ function MerchantsPage() {
         </Dialog>
       }
     >
-      <div className="grid gap-5 lg:grid-cols-[340px_1fr] xl:grid-cols-[380px_1fr] items-start lg:items-stretch">
+      <div className="grid gap-4 xl:gap-5 lg:grid-cols-[280px_minmax(0,1fr)] xl:grid-cols-[300px_minmax(0,1fr)] 2xl:grid-cols-[340px_minmax(0,1fr)] items-start lg:items-stretch min-w-0">
         {/* =========================================================================
             COLUNA DA ESQUERDA: CARTEIRA DE ECs COM BUSCA E FILTROS
             ========================================================================= */}
@@ -827,19 +827,19 @@ function MerchantsPage() {
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             key={active.id}
-            className="space-y-5 self-start w-full"
+            className="space-y-4 self-start w-full min-w-0"
           >
             {/* Banner de Perfil do Estabelecimento */}
             <Card className="border border-border/80 shadow-card rounded-2xl bg-card overflow-hidden">
-              <div className="p-5 sm:p-6 flex flex-col xl:flex-row xl:items-center justify-between gap-5">
-                {/* Informações Principais (Identidade + Contato) */}
-                <div className="flex items-start sm:items-center gap-4 min-w-0">
-                  <div className="size-14 rounded-2xl bg-primary/10 text-primary border border-primary/20 flex items-center justify-center shrink-0 shadow-xs">
-                    <MerchantIcon name={active.name} className="size-7" />
-                  </div>
-                  <div className="space-y-2 min-w-0">
-                    <div className="flex flex-wrap items-center gap-2.5">
-                      <h2 className="text-lg sm:text-xl font-bold tracking-tight text-foreground truncate max-w-md" title={active.name}>
+              <div className="p-4 sm:p-5 space-y-3">
+                {/* Linha Superior: Identidade do Estabelecimento & Ações */}
+                <div className="flex items-center justify-between gap-3 min-w-0">
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                    <div className="size-11 sm:size-12 rounded-xl bg-primary/10 text-primary border border-primary/20 flex items-center justify-center shrink-0 shadow-2xs">
+                      <MerchantIcon name={active.name} className="size-6" />
+                    </div>
+                    <div className="flex items-center gap-2 min-w-0 flex-wrap">
+                      <h2 className="text-base sm:text-lg font-bold tracking-tight text-foreground truncate max-w-[200px] sm:max-w-md" title={active.name}>
                         {active.name}
                       </h2>
                       {/* Badge Interativa de Status */}
@@ -852,7 +852,7 @@ function MerchantsPage() {
                           })
                         }
                         title="Clique para alternar status"
-                        className={`px-2.5 py-0.5 rounded-full text-xs font-semibold inline-flex items-center gap-1.5 transition-all cursor-pointer border ${
+                        className={`px-2 py-0.5 rounded-full text-[11px] font-semibold inline-flex items-center gap-1.5 transition-all cursor-pointer border shrink-0 ${
                           active.status === "active"
                             ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/30 hover:bg-emerald-500/20 dark:text-emerald-400"
                             : "bg-muted text-muted-foreground border-border hover:bg-muted/80"
@@ -866,127 +866,10 @@ function MerchantsPage() {
                         {active.status === "active" ? "Ativo" : "Inativo"}
                       </button>
                     </div>
-
-                    {/* Chips de Contato e Documento */}
-                    <div className="flex flex-wrap items-center gap-2 text-xs">
-                      {active.document_cnpj ? (
-                        <button
-                          type="button"
-                          onClick={() => copyToClipboard(active.document_cnpj, "CNPJ copiado!")}
-                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-muted/60 border border-border/60 font-mono text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer group shadow-2xs"
-                          title="Clique para copiar CNPJ"
-                        >
-                          <Building2 className="size-3.5 text-muted-foreground/70" />
-                          <span>{active.document_cnpj}</span>
-                          <Copy className="size-3 opacity-0 group-hover:opacity-100 transition-opacity ml-0.5" />
-                        </button>
-                      ) : (
-                        <span className="px-2.5 py-1 rounded-lg bg-muted/30 border border-dashed border-border/60 text-muted-foreground/60 italic text-xs">
-                          Sem CNPJ cadastrado
-                        </span>
-                      )}
-
-                      {active.phone_whatsapp && (
-                        <a
-                          href={`https://wa.me/55${active.phone_whatsapp.replace(/\D/g, "")}`}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/25 text-emerald-600 dark:text-emerald-400 font-medium hover:bg-emerald-500/20 transition-colors shadow-2xs"
-                          title="Abrir WhatsApp"
-                        >
-                          <Phone className="size-3.5" />
-                          <span>{active.phone_whatsapp}</span>
-                        </a>
-                      )}
-
-                      {active.email && (
-                        <a
-                          href={`mailto:${active.email}`}
-                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-muted/60 border border-border/60 text-muted-foreground hover:text-primary hover:bg-muted transition-colors max-w-[220px] truncate shadow-2xs"
-                          title="Enviar e-mail"
-                        >
-                          <Mail className="size-3.5 text-muted-foreground/70 shrink-0" />
-                          <span className="truncate">{active.email}</span>
-                        </a>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Bloco Central & Direito: Tabela de Taxas Contratual, Métricas Rápidas e Ações */}
-                <div className="flex flex-wrap sm:flex-nowrap items-center justify-between xl:justify-end gap-3 sm:gap-4 pt-3 xl:pt-0 border-t xl:border-t-0 border-border/60">
-                  {/* Seletor de Tabela de Taxas Contratual */}
-                  <div className="flex items-center gap-2.5 px-3.5 py-2 rounded-xl bg-muted/40 border border-border/70 shadow-2xs">
-                    <div className="flex flex-col">
-                      <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider whitespace-nowrap">
-                        Tabela Contratual
-                      </span>
-                      <span className="text-[11px] font-medium text-foreground">
-                        {getSavedMerchantRateTable(active.id, active.rate_table) === "CPAG59" ? "Plano F3" : "Plano F7"}
-                      </span>
-                    </div>
-
-                    {(() => {
-                      const activeTable = getSavedMerchantRateTable(active.id, active.rate_table);
-                      return (
-                        <div className="inline-flex p-0.5 bg-background rounded-lg border border-border/70 gap-1 shadow-2xs">
-                          <Button
-                            type="button"
-                            variant={activeTable === "CPAG59" ? "default" : "ghost"}
-                            size="sm"
-                            disabled={updateRateTable.isPending}
-                            onClick={() => updateRateTable.mutate({ id: active.id, newTable: "CPAG59" })}
-                            className={cn(
-                              "h-7 px-2.5 rounded-md text-xs font-bold gap-1 transition-all",
-                              activeTable === "CPAG59"
-                                ? "bg-primary text-primary-foreground shadow-2xs"
-                                : "text-muted-foreground hover:text-foreground"
-                            )}
-                          >
-                            {activeTable === "CPAG59" && <Check className="size-3" />}
-                            <span>CPAG59 - F3</span>
-                          </Button>
-                          <Button
-                            type="button"
-                            variant={activeTable === "CPAG56" ? "default" : "ghost"}
-                            size="sm"
-                            disabled={updateRateTable.isPending}
-                            onClick={() => updateRateTable.mutate({ id: active.id, newTable: "CPAG56" })}
-                            className={cn(
-                              "h-7 px-2.5 rounded-md text-xs font-bold gap-1 transition-all",
-                              activeTable === "CPAG56"
-                                ? "bg-primary text-primary-foreground shadow-2xs"
-                                : "text-muted-foreground hover:text-foreground"
-                            )}
-                          >
-                            {activeTable === "CPAG56" && <Check className="size-3" />}
-                            <span>CPAG56 - F7</span>
-                          </Button>
-                        </div>
-                      );
-                    })()}
                   </div>
 
-                  {/* Resumo Rápido Operacional (POS & Splits) */}
-                  <div className="hidden lg:flex items-center gap-2 px-3 py-2 rounded-xl bg-muted/30 border border-border/50 text-xs text-muted-foreground">
-                    <div className="flex items-center gap-1.5" title="Terminais POS cadastrados">
-                      <Wallet className="size-3.5 text-primary" />
-                      <span className="font-bold text-foreground">{activeTerminalsCount}</span>
-                      <span className="text-[11px]">POS</span>
-                    </div>
-                    <span className="text-border">•</span>
-                    <div className="flex items-center gap-1.5" title="Regras de split ativas">
-                      <Share2 className="size-3.5 text-primary" />
-                      <span className="font-bold text-foreground">{activeSplitsCount}</span>
-                      <span className="text-[11px]">Split</span>
-                    </div>
-                  </div>
-
-                  {/* Divisor vertical sutil */}
-                  <div className="hidden sm:block h-8 w-px bg-border/60" />
-
-                  {/* Toolbar de Ações Rápidas */}
-                  <div className="flex items-center gap-2 shrink-0">
+                  {/* Ações Rápidas (Editar e Excluir) */}
+                  <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
                     <EditMerchantDialog merchant={active} />
 
                     {/* Confirmação Segura para Excluir */}
@@ -1001,7 +884,7 @@ function MerchantsPage() {
                           <Trash2 className="size-4" />
                         </Button>
                       </AlertDialogTrigger>
-                      <AlertDialogContent>
+                      <AlertDialogContent className="w-[95vw] sm:max-w-md">
                         <AlertDialogHeader>
                           <AlertDialogTitle className="flex items-center gap-2 text-destructive">
                             <Trash2 className="size-5" /> Excluir estabelecimento?
@@ -1024,55 +907,167 @@ function MerchantsPage() {
                     </AlertDialog>
                   </div>
                 </div>
+
+                {/* Divisor suave */}
+                <div className="h-px bg-border/60" />
+
+                {/* Linha Inferior: Contatos + Tabela de Taxas Contratual + Métricas */}
+                <div className="flex flex-wrap items-center justify-between gap-2.5 text-xs min-w-0">
+                  {/* Chips de Contato */}
+                  <div className="flex flex-wrap items-center gap-2 min-w-0">
+                    {active.document_cnpj ? (
+                      <button
+                        type="button"
+                        onClick={() => copyToClipboard(active.document_cnpj, "CNPJ copiado!")}
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-muted/60 border border-border/60 font-mono text-[11px] sm:text-xs text-muted-foreground hover:text-foreground hover:bg-muted transition-colors cursor-pointer group shadow-2xs"
+                        title="Clique para copiar CNPJ"
+                      >
+                        <Building2 className="size-3 text-muted-foreground/70 shrink-0" />
+                        <span>{active.document_cnpj}</span>
+                        <Copy className="size-3 opacity-0 group-hover:opacity-100 transition-opacity ml-0.5" />
+                      </button>
+                    ) : (
+                      <span className="px-2 py-0.5 rounded-lg bg-muted/30 border border-dashed border-border/60 text-muted-foreground/60 italic text-[11px]">
+                        Sem CNPJ
+                      </span>
+                    )}
+
+                    {active.phone_whatsapp && (
+                      <a
+                        href={`https://wa.me/55${active.phone_whatsapp.replace(/\D/g, "")}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/25 text-[11px] sm:text-xs text-emerald-600 dark:text-emerald-400 font-medium hover:bg-emerald-500/20 transition-colors shadow-2xs"
+                        title="Abrir WhatsApp"
+                      >
+                        <Phone className="size-3 shrink-0" />
+                        <span>{active.phone_whatsapp}</span>
+                      </a>
+                    )}
+
+                    {active.email && (
+                      <a
+                        href={`mailto:${active.email}`}
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-muted/60 border border-border/60 text-[11px] sm:text-xs text-muted-foreground hover:text-primary hover:bg-muted transition-colors max-w-[180px] sm:max-w-[220px] truncate shadow-2xs"
+                        title="Enviar e-mail"
+                      >
+                        <Mail className="size-3 text-muted-foreground/70 shrink-0" />
+                        <span className="truncate">{active.email}</span>
+                      </a>
+                    )}
+                  </div>
+
+                  {/* Tabela de Taxas Contratual & Métricas */}
+                  <div className="flex items-center gap-2 shrink-0 flex-wrap">
+                    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-muted/40 border border-border/70 shadow-2xs">
+                      <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider hidden sm:inline">
+                        Tabela:
+                      </span>
+                      {(() => {
+                        const activeTable = getSavedMerchantRateTable(active.id, active.rate_table);
+                        return (
+                          <div className="inline-flex p-0.5 bg-background rounded-lg border border-border/70 gap-0.5 shadow-2xs">
+                            <Button
+                              type="button"
+                              variant={activeTable === "CPAG59" ? "default" : "ghost"}
+                              size="sm"
+                              disabled={updateRateTable.isPending}
+                              onClick={() => updateRateTable.mutate({ id: active.id, newTable: "CPAG59" })}
+                              className={cn(
+                                "h-6 sm:h-7 px-2 sm:px-2.5 rounded-md text-[11px] font-bold gap-1 transition-all",
+                                activeTable === "CPAG59"
+                                  ? "bg-primary text-primary-foreground shadow-2xs"
+                                  : "text-muted-foreground hover:text-foreground"
+                              )}
+                            >
+                              {activeTable === "CPAG59" && <Check className="size-3" />}
+                              <span>CPAG59 - F3</span>
+                            </Button>
+                            <Button
+                              type="button"
+                              variant={activeTable === "CPAG56" ? "default" : "ghost"}
+                              size="sm"
+                              disabled={updateRateTable.isPending}
+                              onClick={() => updateRateTable.mutate({ id: active.id, newTable: "CPAG56" })}
+                              className={cn(
+                                "h-6 sm:h-7 px-2 sm:px-2.5 rounded-md text-[11px] font-bold gap-1 transition-all",
+                                activeTable === "CPAG56"
+                                  ? "bg-primary text-primary-foreground shadow-2xs"
+                                  : "text-muted-foreground hover:text-foreground"
+                              )}
+                            >
+                              {activeTable === "CPAG56" && <Check className="size-3" />}
+                              <span>CPAG56 - F7</span>
+                            </Button>
+                          </div>
+                        );
+                      })()}
+                    </div>
+
+                    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-muted/30 border border-border/50 text-[11px] text-muted-foreground">
+                      <div className="flex items-center gap-1" title="Terminais POS cadastrados">
+                        <Wallet className="size-3 text-primary shrink-0" />
+                        <span className="font-bold text-foreground">{activeTerminalsCount}</span>
+                        <span>POS</span>
+                      </div>
+                      <span className="text-border">•</span>
+                      <div className="flex items-center gap-1" title="Regras de split ativas">
+                        <Share2 className="size-3 text-primary shrink-0" />
+                        <span className="font-bold text-foreground">{activeSplitsCount}</span>
+                        <span>Split</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </Card>
 
             {/* Abas de Configuração */}
-            <Tabs defaultValue="plan" className="space-y-4">
-              <TabsList className="w-full grid grid-cols-2 sm:grid-cols-5 gap-2 p-1.5 h-auto sm:h-12 bg-muted/40 rounded-2xl border border-border/80 shadow-2xs">
+            <Tabs defaultValue="plan" className="space-y-4 w-full min-w-0">
+              <TabsList className="w-full grid grid-cols-2 sm:grid-cols-5 gap-1.5 p-1 h-auto sm:h-11 bg-muted/40 rounded-xl sm:rounded-2xl border border-border/80 shadow-2xs min-w-0">
                 <TabsTrigger
                   value="plan"
-                  className="flex items-center justify-center rounded-xl py-2 sm:py-2.5 px-3 text-xs sm:text-sm font-bold gap-2 transition-all data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-xs hover:text-foreground text-muted-foreground"
+                  className="flex items-center justify-center rounded-lg sm:rounded-xl py-1.5 sm:py-2 px-1.5 sm:px-2 text-xs xl:text-sm font-bold gap-1.5 transition-all data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-xs hover:text-foreground text-muted-foreground min-w-0"
                 >
-                  <Percent className="size-4 text-primary shrink-0" />
+                  <Percent className="size-3.5 sm:size-4 text-primary shrink-0" />
                   <span className="truncate">Plano financeiro</span>
                 </TabsTrigger>
                 <TabsTrigger
                   value="pos"
-                  className="flex items-center justify-center rounded-xl py-2 sm:py-2.5 px-3 text-xs sm:text-sm font-bold gap-2 transition-all data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-xs hover:text-foreground text-muted-foreground"
+                  className="flex items-center justify-center rounded-lg sm:rounded-xl py-1.5 sm:py-2 px-1.5 sm:px-2 text-xs xl:text-sm font-bold gap-1.5 transition-all data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-xs hover:text-foreground text-muted-foreground min-w-0"
                 >
-                  <Smartphone className="size-4 text-blue-500 shrink-0" />
+                  <Smartphone className="size-3.5 sm:size-4 text-blue-500 shrink-0" />
                   <span className="truncate">Terminais</span>
                   {activeTerminalsCount > 0 && (
-                    <Badge variant="secondary" className="h-5 px-1.5 text-[10px] font-mono shrink-0 font-bold bg-muted-foreground/15">
+                    <Badge variant="secondary" className="h-4.5 px-1 text-[10px] font-mono shrink-0 font-bold bg-muted-foreground/15">
                       {activeTerminalsCount}
                     </Badge>
                   )}
                 </TabsTrigger>
                 <TabsTrigger
                   value="split"
-                  className="flex items-center justify-center rounded-xl py-2 sm:py-2.5 px-3 text-xs sm:text-sm font-bold gap-2 transition-all data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-xs hover:text-foreground text-muted-foreground"
+                  className="flex items-center justify-center rounded-lg sm:rounded-xl py-1.5 sm:py-2 px-1.5 sm:px-2 text-xs xl:text-sm font-bold gap-1.5 transition-all data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-xs hover:text-foreground text-muted-foreground min-w-0"
                 >
-                  <Users className="size-4 text-violet-500 shrink-0" />
+                  <Users className="size-3.5 sm:size-4 text-violet-500 shrink-0" />
                   <span className="truncate">Split Asaas</span>
                   {activeSplitsCount > 0 && (
-                    <Badge variant="secondary" className="h-5 px-1.5 text-[10px] font-mono shrink-0 font-bold bg-muted-foreground/15">
+                    <Badge variant="secondary" className="h-4.5 px-1 text-[10px] font-mono shrink-0 font-bold bg-muted-foreground/15">
                       {activeSplitsCount}
                     </Badge>
                   )}
                 </TabsTrigger>
                 <TabsTrigger
                   value="billing"
-                  className="flex items-center justify-center rounded-xl py-2 sm:py-2.5 px-3 text-xs sm:text-sm font-bold gap-2 transition-all data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-xs hover:text-foreground text-muted-foreground"
+                  className="flex items-center justify-center rounded-lg sm:rounded-xl py-1.5 sm:py-2 px-1.5 sm:px-2 text-xs xl:text-sm font-bold gap-1.5 transition-all data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-xs hover:text-foreground text-muted-foreground min-w-0"
                 >
-                  <Target className="size-4 text-emerald-500 shrink-0" />
+                  <Target className="size-3.5 sm:size-4 text-emerald-500 shrink-0" />
                   <span className="truncate">Faturamento</span>
                 </TabsTrigger>
                 <TabsTrigger
                   value="advanced"
-                  className="col-span-2 sm:col-span-1 flex items-center justify-center rounded-xl py-2 sm:py-2.5 px-3 text-xs sm:text-sm font-bold gap-2 transition-all text-destructive/80 hover:text-destructive data-[state=active]:text-destructive data-[state=active]:bg-background data-[state=active]:shadow-xs"
+                  className="col-span-2 sm:col-span-1 flex items-center justify-center rounded-lg sm:rounded-xl py-1.5 sm:py-2 px-1.5 sm:px-2 text-xs xl:text-sm font-bold gap-1.5 transition-all text-destructive/80 hover:text-destructive data-[state=active]:text-destructive data-[state=active]:bg-background data-[state=active]:shadow-xs min-w-0"
                 >
-                  <Settings2 className="size-4 shrink-0" />
+                  <Settings2 className="size-3.5 sm:size-4 shrink-0" />
                   <span className="truncate">Avançado</span>
                 </TabsTrigger>
               </TabsList>
