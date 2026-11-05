@@ -145,6 +145,11 @@ function PublicCotacaoPage() {
         toast.success("Veículo localizado pela placa!", {
           description: `${data.brand} ${data.model} (${data.year})`,
         });
+      } else {
+        setPlate(clean);
+        toast.info("Não encontramos os dados desta placa", {
+          description: "Preencha marca, modelo, ano e cor manualmente.",
+        });
       }
     } catch {
       // ignore
