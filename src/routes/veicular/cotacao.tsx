@@ -2,7 +2,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { createFileRoute } from '@tanstack/react-router';
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import {
   Sparkles,
   Calculator,
@@ -121,29 +121,43 @@ function CotacaoPage() {
     return loadLocalData(companyId || "default", "cotas", DEFAULT_COTAS_PARTICIPACAO);
   }, [companyId]);
 
-  // Cotações salvas
+  // Cotações salvas (mesclando cache local da empresa e cache default)
   const [cotacoes, setCotacoes] = useState<CotacaoItem[]>(() => {
-    return loadLocalData<CotacaoItem[]>(companyId || "default", "cotacoes", []);
+    const listCompany = loadLocalData<CotacaoItem[]>(companyId || "default", "cotacoes", []);
+    const listDefault = companyId && companyId !== "default" ? loadLocalData<CotacaoItem[]>("default", "cotacoes", []) : [];
+    const ids = new Set(listCompany.map((c) => c.id));
+    return [...listCompany, ...listDefault.filter((c) => !ids.has(c.id))];
   });
 
-  // Cotações recebidas pelo link externo (salvas no banco)
+  // Cotações sincronizadas do banco de dados (vehicle_quotes)
   useEffect(() => {
-    if (!companyId) return;
-    supabase
-      .from("vehicle_quotes")
-      .select("payload")
-      .eq("company_id", companyId)
-      .order("created_at", { ascending: false })
-      .then(({ data }) => {
-        const remote = (data || []).map((r) => r.payload as unknown as CotacaoItem);
-        if (!remote.length) return;
-        setCotacoes((prev) => {
-          const ids = new Set(prev.map((c) => c.id));
-          const merged = [...remote.filter((c) => !ids.has(c.id)), ...prev];
-          merged.sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
-          return merged;
-        });
+    const listCompany = loadLocalData<CotacaoItem[]>(companyId || "default", "cotacoes", []);
+    const listDefault = loadLocalData<CotacaoItem[]>("default", "cotacoes", []);
+    setCotacoes((prev) => {
+      const ids = new Set(prev.map((c) => c.id));
+      const combined = [
+        ...prev,
+        ...listCompany.filter((c) => !ids.has(c.id)),
+        ...listDefault.filter((c) => !ids.has(c.id)),
+      ];
+      combined.sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
+      return combined;
+    });
+
+    let query = supabase.from("vehicle_quotes").select("payload").order("created_at", { ascending: false }).limit(60);
+    if (companyId && companyId !== "default") {
+      query = query.eq("company_id", companyId);
+    }
+    query.then(({ data }) => {
+      const remote = (data || []).map((r) => r.payload as unknown as CotacaoItem).filter(Boolean);
+      if (!remote.length) return;
+      setCotacoes((prev) => {
+        const ids = new Set(prev.map((c) => c.id));
+        const merged = [...remote.filter((c) => !ids.has(c.id)), ...prev];
+        merged.sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
+        return merged;
       });
+    });
   }, [companyId]);
 
   // Form State - Associado
@@ -183,29 +197,33 @@ function CotacaoPage() {
   const [selectedPlanId, setSelectedPlanId] = useState<string>("plano-completo");
   const [searchingPlate, setSearchingPlate] = useState(false);
 
+  const hasAutoOpenedRef = useRef<string | null>(null);
+
   // Monitora parâmetros de URL (?cotacaoId=... ou ?plate=...) para abrir cotação recebida em nova aba
   useEffect(() => {
     const targetId = search.cotacaoId || search.id;
     const targetPlate = search.plate ? search.plate.replace(/[^A-Za-z0-9]/g, "").toUpperCase() : undefined;
+    const key = targetId || targetPlate;
 
-    if (!targetId && !targetPlate && !search.tab) return;
+    if (!key && !search.tab) return;
 
-    if (search.tab === "historico" || targetId || targetPlate) {
+    if (search.tab === "historico" || key) {
       setActiveTab("historico");
     }
 
-    if (!targetId && !targetPlate) return;
+    if (!key || hasAutoOpenedRef.current === key) return;
 
-    // 1. Procura na lista local de cotações já carregadas
+    // 1. Procura na lista de cotações já carregadas
     const found = cotacoes.find(
       (c) =>
         (targetId && c.id === targetId) ||
-        (targetPlate && c.vehiclePlate.replace(/[^A-Za-z0-9]/g, "").toUpperCase() === targetPlate)
+        (targetPlate && c.vehiclePlate?.replace(/[^A-Za-z0-9]/g, "").toUpperCase() === targetPlate)
     );
 
     if (found) {
       setReviewCotacao(found);
       setReviewDialogOpen(true);
+      hasAutoOpenedRef.current = key;
       return;
     }
 
@@ -225,12 +243,14 @@ function CotacaoPage() {
           const item = match.payload as unknown as CotacaoItem;
           setReviewCotacao(item);
           setReviewDialogOpen(true);
+          hasAutoOpenedRef.current = key;
           setCotacoes((prev) => (prev.some((c) => c.id === item.id) ? prev : [item, ...prev]));
         }
       } else if (data?.payload) {
         const item = data.payload as unknown as CotacaoItem;
         setReviewCotacao(item);
         setReviewDialogOpen(true);
+        hasAutoOpenedRef.current = key;
         setCotacoes((prev) => (prev.some((c) => c.id === item.id) ? prev : [item, ...prev]));
       }
     });
@@ -392,6 +412,15 @@ function CotacaoPage() {
     const updated = [newCotacao, ...cotacoes];
     setCotacoes(updated);
     saveLocalData(companyId || "default", "cotacoes", updated);
+    if (companyId && companyId !== "default") {
+      supabase.from("vehicle_quotes").upsert({
+        id: newCotacao.id,
+        company_id: companyId,
+        payload: newCotacao as never,
+      }).then(({ error }) => {
+        if (error) console.error("vehicle_quotes upsert error", error);
+      });
+    }
     toast.success("Cotação salva com sucesso!");
     return newCotacao;
   };
@@ -698,10 +727,25 @@ function CotacaoPage() {
                             size="sm"
                             variant="outline"
                             onClick={() => {
+                              const targetUrl = `/veicular/cotacao?tab=historico&cotacaoId=${encodeURIComponent(c.id)}`;
+                              window.open(targetUrl, "_blank", "noopener,noreferrer");
+                            }}
+                            className="rounded-xl text-xs gap-1.5 font-semibold text-primary hover:text-primary hover:bg-primary/10 border-primary/30 shadow-2xs"
+                            title="Abrir esta cotação em uma nova guia para conferência detalhada"
+                          >
+                            <ExternalLink className="size-3.5" />
+                            <span>Abrir em Nova Guia</span>
+                          </Button>
+
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
                               setReviewCotacao(c);
                               setReviewDialogOpen(true);
                             }}
-                            className="rounded-xl text-xs gap-1.5 font-semibold"
+                            className="rounded-xl text-xs gap-1.5 font-semibold text-muted-foreground hover:text-foreground"
+                            title="Conferir todos os dados nesta tela"
                           >
                             <Eye className="size-3.5 text-primary" />
                             <span>Conferir Dados</span>
@@ -1318,7 +1362,21 @@ function CotacaoPage() {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 shrink-0">
+                  <div className="flex items-center gap-2 shrink-0 flex-wrap">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="rounded-xl text-xs gap-1.5"
+                      onClick={() => {
+                        const targetUrl = `/veicular/cotacao?tab=historico&cotacaoId=${encodeURIComponent(reviewCotacao.id)}`;
+                        window.open(targetUrl, "_blank", "noopener,noreferrer");
+                      }}
+                      title="Abrir esta cotação em uma nova guia separada"
+                    >
+                      <ExternalLink className="size-3.5 text-primary" />
+                      <span>Abrir em Nova Guia</span>
+                    </Button>
+
                     <Button
                       size="sm"
                       variant="outline"
