@@ -1524,6 +1524,35 @@ export type Database = {
         }
         Relationships: []
       }
+      vehicle_quotes: {
+        Row: {
+          company_id: string
+          created_at: string
+          id: string
+          payload: Json
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          id: string
+          payload: Json
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          id?: string
+          payload?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicle_quotes_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vehicles: {
         Row: {
           brand: string
