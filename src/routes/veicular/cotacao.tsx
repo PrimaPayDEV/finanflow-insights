@@ -1,3 +1,4 @@
+import { supabase } from "@/integrations/supabase/client";
 import { createFileRoute } from '@tanstack/react-router';
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -100,6 +101,26 @@ function CotacaoPage() {
   const [cotacoes, setCotacoes] = useState<CotacaoItem[]>(() => {
     return loadLocalData<CotacaoItem[]>(companyId || "default", "cotacoes", []);
   });
+
+  // Cotações recebidas pelo link externo (salvas no banco)
+  useEffect(() => {
+    if (!companyId) return;
+    supabase
+      .from("vehicle_quotes")
+      .select("payload")
+      .eq("company_id", companyId)
+      .order("created_at", { ascending: false })
+      .then(({ data }) => {
+        const remote = (data || []).map((r) => r.payload as unknown as CotacaoItem);
+        if (!remote.length) return;
+        setCotacoes((prev) => {
+          const ids = new Set(prev.map((c) => c.id));
+          const merged = [...remote.filter((c) => !ids.has(c.id)), ...prev];
+          merged.sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
+          return merged;
+        });
+      });
+  }, [companyId]);
 
   // Form State - Associado
   const [memberName, setMemberName] = useState("");
