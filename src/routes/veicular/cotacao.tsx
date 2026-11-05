@@ -24,8 +24,10 @@ import {
   ExternalLink,
   Percent,
   Check,
-  AlertCircle
+  AlertCircle,
+  Eye,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { AppLayout } from "@/components/AppLayout";
 import { AsaasFormSeal } from "@/components/AsaasBaasSeal";
@@ -65,10 +67,27 @@ import {
   calculateBaseMonthlyFee,
   loadLocalData,
   saveLocalData,
+  saveMemberExtraData,
+  saveVehicleExtraData,
+  setMemberDueDay,
+  type CustomCoverageItem,
   generateCotacaoWhatsAppMessage
 } from "@/lib/veicular";
 
+interface CotacaoSearch {
+  cotacaoId?: string;
+  id?: string;
+  plate?: string;
+  tab?: string;
+}
+
 export const Route = createFileRoute('/veicular/cotacao')({
+  validateSearch: (search: Record<string, unknown>): CotacaoSearch => ({
+    cotacaoId: (search.cotacaoId || search.id) as string | undefined,
+    id: (search.id || search.cotacaoId) as string | undefined,
+    plate: search.plate as string | undefined,
+    tab: search.tab as string | undefined,
+  }),
   head: () => ({
     meta: [{ title: "Iniciar Cotação | Planmais Proteção Veicular" }],
   }),
@@ -77,8 +96,13 @@ export const Route = createFileRoute('/veicular/cotacao')({
 
 
 function CotacaoPage() {
+  const search = Route.useSearch();
   const { companyId, companyName } = useAuth();
   const qc = useQueryClient();
+
+  const [reviewCotacao, setReviewCotacao] = useState<CotacaoItem | null>(null);
+  const [reviewDialogOpen, setReviewDialogOpen] = useState(false);
+  const [efetivandoCotacao, setEfetivandoCotacao] = useState(false);
 
   // Buscar consultores
   const fetchPartners = useServerFn(getPartners);
@@ -158,6 +182,59 @@ function CotacaoPage() {
   const [activeTab, setActiveTab] = useState<"formulario" | "historico">("formulario");
   const [selectedPlanId, setSelectedPlanId] = useState<string>("plano-completo");
   const [searchingPlate, setSearchingPlate] = useState(false);
+
+  // Monitora parâmetros de URL (?cotacaoId=... ou ?plate=...) para abrir cotação recebida em nova aba
+  useEffect(() => {
+    const targetId = search.cotacaoId || search.id;
+    const targetPlate = search.plate ? search.plate.replace(/[^A-Za-z0-9]/g, "").toUpperCase() : undefined;
+
+    if (!targetId && !targetPlate && !search.tab) return;
+
+    if (search.tab === "historico" || targetId || targetPlate) {
+      setActiveTab("historico");
+    }
+
+    if (!targetId && !targetPlate) return;
+
+    // 1. Procura na lista local de cotações já carregadas
+    const found = cotacoes.find(
+      (c) =>
+        (targetId && c.id === targetId) ||
+        (targetPlate && c.vehiclePlate.replace(/[^A-Za-z0-9]/g, "").toUpperCase() === targetPlate)
+    );
+
+    if (found) {
+      setReviewCotacao(found);
+      setReviewDialogOpen(true);
+      return;
+    }
+
+    // 2. Se ainda não carregou localmente, busca direto do banco de dados (vehicle_quotes)
+    const query = supabase.from("vehicle_quotes").select("payload");
+    const fetchPromise = targetId
+      ? query.eq("id", targetId).maybeSingle()
+      : query.order("created_at", { ascending: false }).limit(40);
+
+    fetchPromise.then(({ data }) => {
+      if (Array.isArray(data)) {
+        const match = data.find((row) => {
+          const item = row.payload as unknown as CotacaoItem;
+          return targetPlate && item?.vehiclePlate?.replace(/[^A-Za-z0-9]/g, "").toUpperCase() === targetPlate;
+        });
+        if (match?.payload) {
+          const item = match.payload as unknown as CotacaoItem;
+          setReviewCotacao(item);
+          setReviewDialogOpen(true);
+          setCotacoes((prev) => (prev.some((c) => c.id === item.id) ? prev : [item, ...prev]));
+        }
+      } else if (data?.payload) {
+        const item = data.payload as unknown as CotacaoItem;
+        setReviewCotacao(item);
+        setReviewDialogOpen(true);
+        setCotacoes((prev) => (prev.some((c) => c.id === item.id) ? prev : [item, ...prev]));
+      }
+    });
+  }, [search.cotacaoId, search.id, search.plate, search.tab, cotacoes]);
 
   const handlePlateSearch = async (val: string) => {
     const clean = (val || "").replace(/[^A-Za-z0-9]/g, "").toUpperCase();
@@ -333,7 +410,7 @@ function CotacaoPage() {
     window.open(url, "_blank", "noopener,noreferrer");
   };
 
-  // Efetivar Diretamente
+  // Efetivar Diretamente pelo formulário
   const handleEfetivar = async () => {
     if (!memberName.trim() || !memberDocument.trim()) {
       toast.error("Preencha ao menos Nome e CPF/CNPJ para efetivar o cadastro.");
@@ -343,7 +420,7 @@ function CotacaoPage() {
     const cotacao = handleSaveCotacao("efetivada");
     if (!cotacao) return;
 
-    await upsertMutation.mutateAsync({
+    const res = await upsertMutation.mutateAsync({
       data: {
         companyId: companyId!,
         name: memberName,
@@ -351,6 +428,7 @@ function CotacaoPage() {
         email: memberEmail || undefined,
         phone: memberPhone.replace(/\D/g, "") || undefined,
         partner_id: consultantId || undefined,
+        monthly_fee: totalMonthly,
         vehicle: {
           plate: vehiclePlate ? vehiclePlate.toUpperCase().trim() : undefined,
           brand: vehicleBrand,
@@ -362,6 +440,144 @@ function CotacaoPage() {
         },
       },
     });
+
+    if (res?.id) {
+      setMemberDueDay(companyId || "default", res.id, preferredDueDay);
+      saveMemberExtraData(companyId || "default", res.id, {
+        cep: memberCep,
+        address: memberAddress,
+        number: memberNumber,
+        complement: memberComplement,
+        neighborhood: memberNeighborhood,
+        city: memberCity,
+        state: memberState,
+        dueDay: preferredDueDay,
+        preferredDueDay,
+        customMonthlyFee: totalMonthly,
+        manualMonthlyFee: totalMonthly,
+      });
+    }
+
+    if (vehiclePlate) {
+      const coveragesList: CustomCoverageItem[] = (selectedProductIds || []).map((id) => {
+        const p = produtos.find((x) => x.id === id);
+        return {
+          id,
+          name: p?.name || id,
+          limit: p?.coverageLimit,
+          monthlyFee: p?.monthlyFee || 0,
+          isActive: true,
+        };
+      });
+      saveVehicleExtraData(companyId || "default", undefined, vehiclePlate, {
+        chassi: vehicleChassi,
+        color: vehicleColor,
+        fipeValue,
+        coveragePlan: COTACAO_PLANOS_PRESETS.find((p) => p.id === selectedPlanId)?.name || "Plano Personalizado",
+        customCoverages: coveragesList,
+      });
+    }
+  };
+
+  // Efetivar Cotação diretamente a partir do Modal de Conferência
+  const handleEfetivarFromReview = async (target: CotacaoItem) => {
+    if (!target.memberName?.trim() || !target.memberDocument?.trim()) {
+      toast.error("A cotação precisa conter ao menos Nome e CPF/CNPJ do proponente.");
+      return;
+    }
+
+    setEfetivandoCotacao(true);
+    try {
+      const res = await upsertMutation.mutateAsync({
+        data: {
+          companyId: companyId!,
+          name: target.memberName,
+          document: target.memberDocument.replace(/\D/g, ""),
+          email: target.memberEmail || undefined,
+          phone: target.memberPhone.replace(/\D/g, "") || undefined,
+          partner_id: target.consultantId || undefined,
+          monthly_fee: target.totalMonthlyFee,
+          vehicle: {
+            plate: target.vehiclePlate ? target.vehiclePlate.toUpperCase().trim() : undefined,
+            brand: target.vehicleBrand,
+            model: target.vehicleModel,
+            year: Number(target.vehicleYear) || undefined,
+            category:
+              target.vehicleType === "moto"
+                ? "Motocicletas"
+                : target.vehicleType === "pesado"
+                ? "Pesados"
+                : "Leves e utilitários",
+            monthly_fee: target.totalMonthlyFee,
+            fipe_value: target.vehicleFipeValue,
+          },
+        },
+      });
+
+      // Salva dados extras do associado (endereço, dia de vencimento, mensalidade fixada)
+      if (res?.id) {
+        setMemberDueDay(companyId || "default", res.id, target.preferredDueDay || 20);
+        saveMemberExtraData(companyId || "default", res.id, {
+          cep: target.memberCep,
+          address: target.memberAddress,
+          number: target.memberNumber,
+          complement: target.memberComplement,
+          neighborhood: target.memberNeighborhood,
+          city: target.memberCity,
+          state: target.memberState,
+          dueDay: target.preferredDueDay,
+          preferredDueDay: target.preferredDueDay,
+          customMonthlyFee: target.totalMonthlyFee,
+          manualMonthlyFee: target.totalMonthlyFee,
+        });
+      }
+
+      // Salva dados extras do veículo (placa, chassi, cor, plano, coberturas)
+      if (target.vehiclePlate) {
+        const coveragesList: CustomCoverageItem[] = (target.selectedProducts || []).map((id) => {
+          const p = produtos.find((x) => x.id === id);
+          return {
+            id,
+            name: p?.name || id,
+            limit: p?.coverageLimit,
+            monthlyFee: p?.monthlyFee || 0,
+            isActive: true,
+          };
+        });
+        saveVehicleExtraData(companyId || "default", undefined, target.vehiclePlate, {
+          chassi: target.vehicleChassi,
+          color: target.vehicleColor,
+          fipeValue: target.vehicleFipeValue,
+          coveragePlan: target.planName,
+          customCoverages: coveragesList,
+        });
+      }
+
+      // Atualiza status da cotação no Supabase vehicle_quotes
+      await supabase
+        .from("vehicle_quotes")
+        .update({ payload: { ...target, status: "efetivada" } as never })
+        .eq("id", target.id);
+
+      // Atualiza lista local
+      const updatedList = cotacoes.map((c) =>
+        c.id === target.id ? { ...c, status: "efetivada" as const } : c
+      );
+      setCotacoes(updatedList);
+      saveLocalData(companyId || "default", "cotacoes", updatedList);
+      setReviewCotacao((prev) => (prev ? { ...prev, status: "efetivada" } : null));
+
+      qc.invalidateQueries({ queryKey: ["members"] });
+      qc.invalidateQueries({ queryKey: ["vehicles"] });
+
+      toast.success("Cotação conferida e efetivada com sucesso!", {
+        description: `Associado ${target.memberName} e veículo ${target.vehiclePlate} cadastrados na plataforma com mensalidade de ${BRL(target.totalMonthlyFee)}/mês.`,
+      });
+    } catch (err: any) {
+      toast.error("Erro ao efetivar cotação: " + (err.message || "Erro desconhecido"));
+    } finally {
+      setEfetivandoCotacao(false);
+    }
   };
 
   return (
@@ -477,25 +693,26 @@ function CotacaoPage() {
                           <div className="text-[10px] text-muted-foreground">Franquia: {BRL(c.estimatedParticipationFee)}</div>
                         </div>
 
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex items-center gap-1.5 flex-wrap justify-end">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setReviewCotacao(c);
+                              setReviewDialogOpen(true);
+                            }}
+                            className="rounded-xl text-xs gap-1.5 font-semibold"
+                          >
+                            <Eye className="size-3.5 text-primary" />
+                            <span>Conferir Dados</span>
+                          </Button>
+
                           {c.status === "aguardando_aceite" && (
                             <Button
                               size="sm"
                               onClick={() => {
-                                setMemberName(c.memberName);
-                                setMemberDocument(c.memberDocument);
-                                setMemberPhone(c.memberPhone);
-                                setMemberEmail(c.memberEmail || "");
-                                setVehiclePlate(c.vehiclePlate);
-                                setVehicleBrand(c.vehicleBrand);
-                                setVehicleModel(c.vehicleModel);
-                                setVehicleYear(String(c.vehicleYear));
-                                setVehicleColor(c.vehicleColor || "");
-                                setVehicleType(c.vehicleType);
-                                setRawFipe(String(Math.round((c.vehicleFipeValue || 50000) * 100)));
-                                setSelectedProductIds(c.selectedProducts || []);
-                                setActiveTab("formulario");
-                                toast.info("Dados carregados no formulário. Clique em 'Efetivar Cadastro' para concluir o aceite.");
+                                setReviewCotacao(c);
+                                setReviewDialogOpen(true);
                               }}
                               className="rounded-xl text-xs font-bold gap-1 bg-amber-500 hover:bg-amber-600 text-slate-950 shadow-xs"
                             >
@@ -512,7 +729,7 @@ function CotacaoPage() {
                               const clean = c.memberPhone.replace(/\D/g, "");
                               window.open(`https://wa.me/55${clean}?text=${encodeURIComponent(msg)}`, "_blank");
                             }}
-                            className="rounded-xl text-xs gap-1.5 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/30"
+                            className="rounded-xl text-xs gap-1.5 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 border-emerald-500/30"
                           >
                             <MessageCircle className="size-3.5" />
                             <span>WhatsApp</span>
@@ -1062,6 +1279,291 @@ function CotacaoPage() {
             </div>
           </div>
         )}
+        {/* MODAL DE CONFERÊNCIA COMPLETA DA COTAÇÃO (ABERTO VIA NOTIFICAÇÃO OU CLIQUE DIRETO) */}
+        <Dialog open={reviewDialogOpen} onOpenChange={setReviewDialogOpen}>
+          <DialogContent className="sm:max-w-4xl max-h-[92vh] overflow-y-auto p-0 rounded-2xl border border-border/80 shadow-2xl">
+            {reviewCotacao && (
+              <div>
+                {/* CABEÇALHO */}
+                <div className="p-6 border-b border-border/60 bg-muted/20 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="size-11 rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 border border-amber-500/20 shadow-xs">
+                      <Sparkles className="size-5" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2.5 flex-wrap">
+                        <DialogTitle className="text-lg font-bold text-foreground">
+                          Conferência Completa de Cotação
+                        </DialogTitle>
+                        <Badge
+                          className={cn(
+                            "text-[10px] font-bold px-2 py-0.5 rounded-md uppercase tracking-wider",
+                            reviewCotacao.status === "efetivada"
+                              ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30"
+                              : reviewCotacao.status === "aguardando_aceite"
+                              ? "bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 font-extrabold animate-pulse"
+                              : "bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/30"
+                          )}
+                        >
+                          {reviewCotacao.status === "aguardando_aceite"
+                            ? "Aguardando Conferência & Aceite"
+                            : reviewCotacao.status.toUpperCase()}
+                        </Badge>
+                      </div>
+                      <DialogDescription className="text-xs text-muted-foreground mt-0.5 flex items-center gap-2">
+                        <span>Protocolo: <strong className="font-mono text-foreground">{reviewCotacao.id}</strong></span>
+                        <span>•</span>
+                        <span>Recebida em {reviewCotacao.createdAt ? new Date(reviewCotacao.createdAt).toLocaleString("pt-BR") : "Recentemente"}</span>
+                      </DialogDescription>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 shrink-0">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="rounded-xl text-xs gap-1.5 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 border-emerald-500/30"
+                      onClick={() => {
+                        const msg = generateCotacaoWhatsAppMessage(reviewCotacao, companyName || "Planmais");
+                        const clean = reviewCotacao.memberPhone.replace(/\D/g, "");
+                        window.open(`https://wa.me/55${clean}?text=${encodeURIComponent(msg)}`, "_blank");
+                      }}
+                    >
+                      <MessageCircle className="size-3.5" />
+                      <span>WhatsApp Proponente</span>
+                    </Button>
+                  </div>
+                </div>
+
+                {/* CORPO DE DADOS */}
+                <div className="p-6 space-y-6">
+                  {/* BANNER DE DESTAQUE COM VALOR */}
+                  <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <ShieldCheck className="size-4 text-primary" />
+                        <span className="text-xs font-bold uppercase tracking-wider text-primary">Plano Selecionado</span>
+                      </div>
+                      <p className="text-base font-extrabold text-foreground">{reviewCotacao.planName || "Plano Completo"}</p>
+                      <p className="text-xs text-muted-foreground">
+                        Veículo {reviewCotacao.vehicleBrand} {reviewCotacao.vehicleModel} ({reviewCotacao.vehicleYear}) • Franquia Estimada: {BRL(reviewCotacao.estimatedParticipationFee)}
+                      </p>
+                    </div>
+                    <div className="sm:text-right shrink-0">
+                      <span className="text-[11px] font-semibold text-muted-foreground uppercase block">Mensalidade da Proteção</span>
+                      <span className="text-2xl font-black text-emerald-600 dark:text-emerald-400">
+                        {BRL(reviewCotacao.totalMonthlyFee)}
+                        <span className="text-xs font-normal text-muted-foreground">/mês</span>
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    {/* CARD 1: DADOS DO ASSOCIADO / PROPONENTE */}
+                    <div className="rounded-xl border border-border/70 p-4 space-y-3 bg-card">
+                      <div className="flex items-center justify-between border-b border-border/50 pb-2">
+                        <div className="flex items-center gap-2 text-xs font-bold text-foreground">
+                          <User className="size-4 text-primary" />
+                          <span>Proponente / Associado</span>
+                        </div>
+                        <Badge variant="outline" className="text-[10px]">Pessoa Física/Jurídica</Badge>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3 text-xs">
+                        <div className="col-span-2">
+                          <span className="text-muted-foreground block text-[11px]">Nome Completo:</span>
+                          <span className="font-bold text-foreground text-sm">{reviewCotacao.memberName}</span>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground block text-[11px]">CPF / CNPJ:</span>
+                          <span className="font-mono font-semibold text-foreground">{formatCpfCnpj(reviewCotacao.memberDocument)}</span>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground block text-[11px]">WhatsApp / Telefone:</span>
+                          <span className="font-semibold text-foreground flex items-center gap-1">
+                            <Phone className="size-3 text-emerald-500" />
+                            {formatPhone(reviewCotacao.memberPhone)}
+                          </span>
+                        </div>
+                        <div className="col-span-2">
+                          <span className="text-muted-foreground block text-[11px]">E-mail:</span>
+                          <span className="font-medium text-foreground">{reviewCotacao.memberEmail || "Não informado"}</span>
+                        </div>
+                        <div className="col-span-2">
+                          <span className="text-muted-foreground block text-[11px]">Endereço Completo:</span>
+                          <span className="font-medium text-foreground">
+                            {[
+                              reviewCotacao.memberAddress,
+                              reviewCotacao.memberNumber ? `nº ${reviewCotacao.memberNumber}` : null,
+                              reviewCotacao.memberComplement,
+                              reviewCotacao.memberNeighborhood,
+                              reviewCotacao.memberCity && reviewCotacao.memberState
+                                ? `${reviewCotacao.memberCity} - ${reviewCotacao.memberState}`
+                                : reviewCotacao.memberCity,
+                              reviewCotacao.memberCep ? `CEP ${reviewCotacao.memberCep}` : null,
+                            ]
+                              .filter(Boolean)
+                              .join(", ") || "Endereço não informado"}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground block text-[11px]">Vencimento Preferencial:</span>
+                          <Badge variant="secondary" className="font-bold text-[11px] mt-0.5">
+                            Todo dia {reviewCotacao.preferredDueDay || 20}
+                          </Badge>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground block text-[11px]">Consultor Responsável:</span>
+                          <span className="font-medium text-foreground mt-0.5 block truncate">
+                            {reviewCotacao.consultantName || "Venda Direta / Sem indicação"}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* CARD 2: DADOS TÉCNICOS DO VEÍCULO */}
+                    <div className="rounded-xl border border-border/70 p-4 space-y-3 bg-card">
+                      <div className="flex items-center justify-between border-b border-border/50 pb-2">
+                        <div className="flex items-center gap-2 text-xs font-bold text-foreground">
+                          <Car className="size-4 text-primary" />
+                          <span>Veículo Avaliado</span>
+                        </div>
+                        <VehiclePlateBadge plate={reviewCotacao.vehiclePlate} size="sm" />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3 text-xs">
+                        <div className="col-span-2">
+                          <span className="text-muted-foreground block text-[11px]">Marca & Modelo:</span>
+                          <span className="font-bold text-foreground text-sm">
+                            {reviewCotacao.vehicleBrand} {reviewCotacao.vehicleModel}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground block text-[11px]">Ano / Modelo:</span>
+                          <span className="font-semibold text-foreground">{reviewCotacao.vehicleYear}</span>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground block text-[11px]">Cor:</span>
+                          <span className="font-semibold text-foreground">{reviewCotacao.vehicleColor || "Não informada"}</span>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground block text-[11px]">Categoria:</span>
+                          <span className="capitalize font-semibold text-foreground">{reviewCotacao.vehicleType}</span>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground block text-[11px]">Finalidade de Uso:</span>
+                          <span className="capitalize font-semibold text-foreground">{reviewCotacao.vehicleUsage}</span>
+                        </div>
+                        <div className="col-span-2">
+                          <span className="text-muted-foreground block text-[11px]">Chassi:</span>
+                          <span className="font-mono text-muted-foreground">{reviewCotacao.vehicleChassi || "A preencher na vistoria"}</span>
+                        </div>
+                        <div className="col-span-2 rounded-lg bg-muted/40 p-2.5 flex items-center justify-between border border-border/50">
+                          <span className="text-[11px] font-semibold text-muted-foreground">Avaliação Tabela FIPE:</span>
+                          <span className="font-mono font-extrabold text-foreground text-sm">{BRL(reviewCotacao.vehicleFipeValue)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* CARD 3: COBERTURAS & PRODUTOS INCLUSOS */}
+                  <div className="rounded-xl border border-border/70 p-4 space-y-3 bg-card">
+                    <div className="flex items-center justify-between border-b border-border/50 pb-2">
+                      <div className="flex items-center gap-2 text-xs font-bold text-foreground">
+                        <ShieldCheck className="size-4 text-emerald-500" />
+                        <span>Coberturas Inclusas e Adicionais Selecionados</span>
+                      </div>
+                      <span className="text-[11px] text-muted-foreground font-medium">
+                        {reviewCotacao.selectedProducts?.length || 0} coberturas selecionadas
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 pt-1">
+                      {produtos.map((prod) => {
+                        const isSelected = (reviewCotacao.selectedProducts || []).includes(prod.id);
+                        if (!isSelected && !prod.isRequired) return null;
+                        return (
+                          <div
+                            key={prod.id}
+                            className="flex items-start gap-2 p-2.5 rounded-lg border border-border/60 bg-muted/20"
+                          >
+                            <CheckCircle2 className="size-3.5 text-emerald-600 dark:text-emerald-400 mt-0.5 shrink-0" />
+                            <div className="min-w-0">
+                              <p className="text-xs font-semibold text-foreground truncate">{prod.name}</p>
+                              <p className="text-[10px] text-muted-foreground line-clamp-1">{prod.description}</p>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+
+                {/* RODAPÉ COM AÇÕES */}
+                <div className="p-4 sm:p-6 border-t border-border/60 bg-muted/20 flex flex-col sm:flex-row items-center justify-between gap-3">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setReviewDialogOpen(false)}
+                    className="text-xs text-muted-foreground w-full sm:w-auto"
+                  >
+                    Fechar
+                  </Button>
+
+                  <div className="flex items-center gap-2 w-full sm:w-auto justify-end flex-wrap">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        setMemberName(reviewCotacao.memberName);
+                        setMemberDocument(reviewCotacao.memberDocument);
+                        setMemberPhone(reviewCotacao.memberPhone);
+                        setMemberEmail(reviewCotacao.memberEmail || "");
+                        setMemberCep(reviewCotacao.memberCep || "");
+                        setMemberAddress(reviewCotacao.memberAddress || "");
+                        setMemberNumber(reviewCotacao.memberNumber || "");
+                        setMemberComplement(reviewCotacao.memberComplement || "");
+                        setMemberNeighborhood(reviewCotacao.memberNeighborhood || "");
+                        setMemberCity(reviewCotacao.memberCity || "");
+                        setMemberState(reviewCotacao.memberState || "");
+                        setPreferredDueDay(reviewCotacao.preferredDueDay || 20);
+                        setConsultantId(reviewCotacao.consultantId || "");
+                        setVehiclePlate(reviewCotacao.vehiclePlate);
+                        setVehicleBrand(reviewCotacao.vehicleBrand);
+                        setVehicleModel(reviewCotacao.vehicleModel);
+                        setVehicleYear(String(reviewCotacao.vehicleYear));
+                        setVehicleColor(reviewCotacao.vehicleColor || "");
+                        setVehicleChassi(reviewCotacao.vehicleChassi || "");
+                        setVehicleType(reviewCotacao.vehicleType);
+                        setRawFipe(String(Math.round((reviewCotacao.vehicleFipeValue || 50000) * 100)));
+                        setSelectedProductIds(reviewCotacao.selectedProducts || []);
+                        setReviewDialogOpen(false);
+                        setActiveTab("formulario");
+                        toast.info("Dados carregados no formulário de edição!");
+                      }}
+                      className="rounded-xl text-xs gap-1.5"
+                    >
+                      <FileText className="size-3.5" />
+                      <span>Editar no Formulário</span>
+                    </Button>
+
+                    {reviewCotacao.status !== "efetivada" && (
+                      <Button
+                        size="sm"
+                        onClick={() => handleEfetivarFromReview(reviewCotacao)}
+                        disabled={efetivandoCotacao}
+                        className="rounded-xl text-xs font-bold gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm"
+                      >
+                        <CheckCircle2 className="size-3.5" />
+                        <span>{efetivandoCotacao ? "Efetivando Cadastro..." : "Conferir & Efetivar Aceite"}</span>
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </AppLayout>
   );

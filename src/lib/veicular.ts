@@ -108,6 +108,9 @@ export interface MemberExtraData {
   registeredAt?: string;
   updatedAt?: string;
   customMonthlyFee?: number; // Valor da mensalidade definido manualmente no cadastro do associado
+  manualMonthlyFee?: number;
+  dueDay?: number;
+  preferredDueDay?: number;
 }
 
 export interface VehicleExtraData {

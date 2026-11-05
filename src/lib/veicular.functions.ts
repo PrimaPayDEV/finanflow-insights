@@ -68,9 +68,9 @@ export const submitPublicCotacao = createServerFn({ method: "POST" })
     if (targetCompanyId) {
       await supabaseAdmin.from("notifications").insert({
         company_id: targetCompanyId,
-        type: "info",
+        type: "cotacao",
         title: "Nova Cotação Externa Recebida",
-        description: `Cotação recebida de ${data.memberName} (${data.vehicleBrand} ${data.vehicleModel} - Placa ${data.vehiclePlate.toUpperCase()}) no plano "${data.planName}" por R$ ${data.totalMonthlyFee.toFixed(2)}/mês. Aguardando conferência e aceite.`,
+        description: `Cotação de ${data.memberName} (${data.vehicleBrand} ${data.vehicleModel} - Placa ${data.vehiclePlate.toUpperCase()}) no plano "${data.planName}" por R$ ${data.totalMonthlyFee.toFixed(2)}/mês. [cotacao:${cotacaoId}]`,
       });
     }
 

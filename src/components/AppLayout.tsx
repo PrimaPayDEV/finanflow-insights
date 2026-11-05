@@ -43,6 +43,7 @@ import {
   Settings2,
   Award,
   AlertTriangle,
+  ExternalLink,
 } from "lucide-react";
 import { DEFAULT_PLATFORM_URLS, isLocalEnvironment } from "@/lib/environment";
 import { getTabScope } from "@/lib/tab-session";
@@ -456,6 +457,59 @@ export function AppLayout({
                   )}
                   onClick={() => {
                     if (!notification.is_read) markAsRead.mutate(notification.id);
+
+                    const titleLower = (notification.title || "").toLowerCase();
+                    const descLower = (notification.description || "").toLowerCase();
+                    const isCotacao =
+                      notification.type === "cotacao" ||
+                      titleLower.includes("cotação") ||
+                      titleLower.includes("cotacao") ||
+                      descLower.includes("cotação") ||
+                      descLower.includes("cotacao");
+
+                    if (isCotacao) {
+                      const idMatch = (notification.description || "").match(/\[cotacao:([^\]]+)\]/i);
+                      const plateMatch = (notification.description || "").match(/Placa\s+([A-Za-z0-9]{7})/i);
+                      const cotacaoId = idMatch ? idMatch[1] : undefined;
+                      const plate = plateMatch ? plateMatch[1] : undefined;
+
+                      const params = new URLSearchParams();
+                      params.set("tab", "historico");
+                      if (cotacaoId) params.set("cotacaoId", cotacaoId);
+                      if (plate) params.set("plate", plate);
+
+                      const targetUrl = `/veicular/cotacao?${params.toString()}`;
+                      window.open(targetUrl, "_blank", "noopener,noreferrer");
+                      return;
+                    }
+
+                    if (isVeicular) {
+                      if (titleLower.includes("associado") || descLower.includes("associado")) {
+                        navigate({ to: "/members" });
+                        return;
+                      }
+                      if (
+                        titleLower.includes("veículo") ||
+                        titleLower.includes("veiculo") ||
+                        descLower.includes("veículo") ||
+                        descLower.includes("veiculo")
+                      ) {
+                        navigate({ to: "/vehicles" });
+                        return;
+                      }
+                      if (
+                        titleLower.includes("evento") ||
+                        descLower.includes("evento") ||
+                        titleLower.includes("sinistro") ||
+                        descLower.includes("sinistro")
+                      ) {
+                        navigate({ to: "/veicular/eventos" });
+                        return;
+                      }
+                      navigate({ to: "/dashboard" });
+                      return;
+                    }
+
                     navigate({ to: isPartner ? "/reports" : "/closures" });
                   }}
                 >
@@ -463,11 +517,29 @@ export function AppLayout({
                     <div className="shrink-0 mt-0.5">
                       {notification.type === 'payment' && <CircleDollarSign className="w-4 h-4 text-emerald-500" />}
                       {notification.type === 'closure' && <FileText className="w-4 h-4 text-blue-500" />}
+                      {(notification.type === 'cotacao' ||
+                        (notification.title || "").toLowerCase().includes("cotação") ||
+                        (notification.title || "").toLowerCase().includes("cotacao")) && (
+                        <Sparkles className="w-4 h-4 text-amber-500" />
+                      )}
                       {(notification.type === 'error' || notification.type === 'warning') && <AlertCircle className="w-4 h-4 text-destructive" />}
+                      {(!['payment', 'closure', 'cotacao', 'error', 'warning'].includes(notification.type) &&
+                        !(notification.title || "").toLowerCase().includes("cotação") &&
+                        !(notification.title || "").toLowerCase().includes("cotacao")) && (
+                        <Bell className="w-4 h-4 text-primary" />
+                      )}
                     </div>
                     <span className="text-sm font-medium leading-none">
                       {notification.title}
                     </span>
+                    {(notification.type === 'cotacao' ||
+                      (notification.title || "").toLowerCase().includes("cotação") ||
+                      (notification.title || "").toLowerCase().includes("cotacao")) && (
+                      <span className="text-[10px] text-amber-600 dark:text-amber-400 font-semibold flex items-center gap-1 ml-auto shrink-0 bg-amber-500/10 px-1.5 py-0.5 rounded">
+                        <ExternalLink className="size-2.5" />
+                        <span>Nova Aba</span>
+                      </span>
+                    )}
                     {(notification as any).partnerStatus && (
                       <Badge
                         variant="secondary"
