@@ -57,6 +57,13 @@
       "when": 1792694103205,
       "tag": "0007_add_vehicles_monthly_fee",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1793882325505,
+      "tag": "0008_vehicle_quotes",
+      "breakpoints": true
     }
   ]
 }

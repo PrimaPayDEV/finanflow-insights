@@ -45,12 +45,24 @@ export const submitPublicCotacao = createServerFn({ method: "POST" })
     // Identificar companyId padrão se não vier
     let targetCompanyId = data.companyId;
     if (!targetCompanyId || targetCompanyId === "default") {
-      const { data: companies } = await supabaseAdmin.from("companies").select("id").limit(1);
+      const { data: companies } = await supabaseAdmin
+        .from("companies")
+        .select("id, segment")
+        .ilike("segment", "%veicular%")
+        .limit(1);
       targetCompanyId = companies?.[0]?.id;
     }
 
     const cotacaoId = data.id || `cot-${Date.now()}`;
     const createdAt = new Date().toISOString();
+
+    if (targetCompanyId) {
+      const payload = { ...data, id: cotacaoId, companyId: targetCompanyId, createdAt };
+      const { error } = await supabaseAdmin
+        .from("vehicle_quotes")
+        .upsert({ id: cotacaoId, company_id: targetCompanyId, payload: payload as never });
+      if (error) console.error("vehicle_quotes insert", error);
+    }
 
     // Se temos companyId, registra notificação para os operadores da plataforma
     if (targetCompanyId) {
