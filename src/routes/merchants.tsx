@@ -13,7 +13,6 @@ import {
   Settings2,
   Edit2,
   Store,
-  Key,
   Copy,
   Check,
   Phone,
@@ -84,7 +83,6 @@ import { getPartners } from "@/lib/partner.functions";
 import { useServerFn } from "@tanstack/react-start";
 import { translateError } from "@/lib/translateError";
 import { useAuth } from "@/contexts/AuthContext";
-import { createMerchantAccess } from "@/lib/merchant.functions";
 import { fetchCepData } from "@/lib/cep";
 import { calculateTerminalBilling, TERMINAL_PRICE, TERMINAL_FIRST_TIER, TERMINAL_STEP_TIER } from "@/lib/closure";
 
@@ -114,114 +112,6 @@ const emptyMerchant = {
   email: "",
   rate_table: "CPAG59" as "CPAG59" | "CPAG56",
 };
-
-/* =========================================================================
-   DIÁLOGO: GERAR ACESSO WEB
-   ========================================================================= */
-function WebAccessDialog({ merchant }: { merchant: Merchant }) {
-  const { companyId } = useAuth();
-  const [open, setOpen] = useState(false);
-  const [email, setEmail] = useState(merchant.email || "");
-  const [password, setPassword] = useState("");
-
-  const accessMutation = useMutation({
-    mutationFn: async () => {
-      if (!companyId) throw new Error("companyId is required");
-      return createMerchantAccess({ data: { companyId, merchantId: merchant.id, email, password } });
-    },
-    onSuccess: () => {
-      toast.success("Acesso web gerado com sucesso! O EC já pode fazer login.");
-      setOpen(false);
-      setPassword("");
-    },
-    onError: (e: Error) => toast.error(translateError(e.message)),
-  });
-
-  const generateRandomPassword = () => {
-    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$";
-    let pwd = "";
-    for (let i = 0; i < 10; i++) {
-      pwd += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    setPassword(pwd);
-  };
-
-  return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button
-          variant="outline"
-          size="sm"
-          className="gap-2 border-primary/30 text-primary hover:bg-primary/10 hover:text-primary hover:border-primary/50 dark:border-primary/40 dark:hover:bg-primary/20 dark:hover:text-primary-foreground shadow-2xs font-medium"
-        >
-          <Key className="size-3.5" />
-          <span>Acesso Web</span>
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <div className="flex items-center gap-2.5 mb-1">
-            <div className="p-2 rounded-lg bg-primary/10 text-primary">
-              <Key className="size-4" />
-            </div>
-            <DialogTitle>Gerar Acesso Web</DialogTitle>
-          </div>
-          <DialogDescription>
-            Crie um login blindado para <strong>{merchant.name}</strong> acessar o painel de recebíveis.
-          </DialogDescription>
-        </DialogHeader>
-        <div className="space-y-4 py-2">
-          <div className="space-y-1.5">
-            <Label className="text-xs font-semibold">E-mail de Acesso</Label>
-            <div className="relative">
-              <Input
-                type="email"
-                placeholder="estabelecimento@exemplo.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="pl-9"
-              />
-              <Mail className="size-4 absolute left-3 top-2.5 text-muted-foreground pointer-events-none" />
-            </div>
-          </div>
-          <div className="space-y-1.5">
-            <div className="flex items-center justify-between">
-              <Label className="text-xs font-semibold">Senha Temporária</Label>
-              <button
-                type="button"
-                onClick={generateRandomPassword}
-                className="text-xs text-primary hover:underline font-medium cursor-pointer"
-              >
-                Gerar senha forte
-              </button>
-            </div>
-            <div className="relative">
-              <Input
-                type="text"
-                placeholder="Mínimo 6 caracteres"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="pl-9 font-mono"
-              />
-              <Key className="size-4 absolute left-3 top-2.5 text-muted-foreground pointer-events-none" />
-            </div>
-          </div>
-        </div>
-        <DialogFooter className="gap-2 sm:gap-0">
-          <Button variant="ghost" onClick={() => setOpen(false)}>
-            Cancelar
-          </Button>
-          <Button
-            onClick={() => accessMutation.mutate()}
-            disabled={accessMutation.isPending || !email || password.length < 6}
-          >
-            {accessMutation.isPending ? "Gerando..." : "Criar Acesso"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}
 
 /* =========================================================================
    DIÁLOGO: EDITAR ESTABELECIMENTO
@@ -1055,7 +945,6 @@ function MerchantsPage() {
 
                 {/* Toolbar de Ações Rápidas */}
                 <div className="flex flex-wrap items-center gap-2 pt-2 md:pt-0 border-t md:border-t-0 border-border/60">
-                  <WebAccessDialog merchant={active} />
                   <EditMerchantDialog merchant={active} />
 
                   {/* Confirmação Segura para Excluir */}

@@ -24,7 +24,6 @@ import {
   AlertCircle,
   ShieldCheck,
   Users,
-  ArrowDownToLine,
   Home,
   UserCheck,
   FastForward,
@@ -382,15 +381,10 @@ export function AppLayout({
       currentNav.push({ to: "/admin/companies", label: "Administração", icon: ShieldCheck, section: "Administração" });
     }
   } else {
-    currentNav.push({ to: "/admin/recebiveis/import", label: "Importar Vendas POS", icon: ArrowDownToLine, section: "Gestão de Recebíveis" });
     currentNav.push({ to: "/partners", label: "Parceiros", icon: Users, section: "Administração" });
     if (isPlatformAdmin) {
       currentNav.push({ to: "/admin/companies", label: "Administração", icon: ShieldCheck, section: "Administração" });
     }
-  }
-  // Parceiros do ambiente de ECs não acessam o Hub nem outros ambientes
-  if (!isPartner) {
-    currentNav.push({ to: "/", label: "Hub de Ambientes", icon: LayoutGrid, section: "Ecossistema" });
   }
 
   // Componente reutilizável para a área de perfil e notificações da direita
