@@ -1029,51 +1029,51 @@ function MerchantsPage() {
 
             {/* Abas de Configuração */}
             <Tabs defaultValue="plan" className="space-y-4">
-              <TabsList className="h-11 p-1 bg-muted/40 rounded-xl border border-border/60">
+              <TabsList className="w-full grid grid-cols-2 sm:grid-cols-5 gap-2 p-1.5 h-auto sm:h-12 bg-muted/40 rounded-2xl border border-border/80 shadow-2xs">
                 <TabsTrigger
                   value="plan"
-                  className="rounded-lg text-xs sm:text-sm font-semibold gap-2 data-[state=active]:bg-background data-[state=active]:shadow-2xs"
+                  className="flex items-center justify-center rounded-xl py-2 sm:py-2.5 px-3 text-xs sm:text-sm font-bold gap-2 transition-all data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-xs hover:text-foreground text-muted-foreground"
                 >
-                  <Percent className="size-4 text-primary" />
-                  <span>Plano financeiro</span>
+                  <Percent className="size-4 text-primary shrink-0" />
+                  <span className="truncate">Plano financeiro</span>
                 </TabsTrigger>
                 <TabsTrigger
                   value="pos"
-                  className="rounded-lg text-xs sm:text-sm font-semibold gap-2 data-[state=active]:bg-background data-[state=active]:shadow-2xs"
+                  className="flex items-center justify-center rounded-xl py-2 sm:py-2.5 px-3 text-xs sm:text-sm font-bold gap-2 transition-all data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-xs hover:text-foreground text-muted-foreground"
                 >
-                  <Smartphone className="size-4 text-blue-500" />
-                  <span>Terminais</span>
+                  <Smartphone className="size-4 text-blue-500 shrink-0" />
+                  <span className="truncate">Terminais</span>
                   {activeTerminalsCount > 0 && (
-                    <Badge variant="secondary" className="h-5 px-1.5 text-[10px] font-mono">
+                    <Badge variant="secondary" className="h-5 px-1.5 text-[10px] font-mono shrink-0 font-bold bg-muted-foreground/15">
                       {activeTerminalsCount}
                     </Badge>
                   )}
                 </TabsTrigger>
                 <TabsTrigger
                   value="split"
-                  className="rounded-lg text-xs sm:text-sm font-semibold gap-2 data-[state=active]:bg-background data-[state=active]:shadow-2xs"
+                  className="flex items-center justify-center rounded-xl py-2 sm:py-2.5 px-3 text-xs sm:text-sm font-bold gap-2 transition-all data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-xs hover:text-foreground text-muted-foreground"
                 >
-                  <Users className="size-4 text-violet-500" />
-                  <span>Split Asaas</span>
+                  <Users className="size-4 text-violet-500 shrink-0" />
+                  <span className="truncate">Split Asaas</span>
                   {activeSplitsCount > 0 && (
-                    <Badge variant="secondary" className="h-5 px-1.5 text-[10px] font-mono">
+                    <Badge variant="secondary" className="h-5 px-1.5 text-[10px] font-mono shrink-0 font-bold bg-muted-foreground/15">
                       {activeSplitsCount}
                     </Badge>
                   )}
                 </TabsTrigger>
                 <TabsTrigger
                   value="billing"
-                  className="rounded-lg text-xs sm:text-sm font-semibold gap-2 data-[state=active]:bg-background data-[state=active]:shadow-2xs"
+                  className="flex items-center justify-center rounded-xl py-2 sm:py-2.5 px-3 text-xs sm:text-sm font-bold gap-2 transition-all data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-xs hover:text-foreground text-muted-foreground"
                 >
-                  <Target className="size-4 text-emerald-500" />
-                  <span>Faturamento</span>
+                  <Target className="size-4 text-emerald-500 shrink-0" />
+                  <span className="truncate">Faturamento</span>
                 </TabsTrigger>
                 <TabsTrigger
                   value="advanced"
-                  className="rounded-lg text-xs sm:text-sm font-semibold gap-2 text-destructive data-[state=active]:text-destructive data-[state=active]:bg-background data-[state=active]:shadow-2xs ml-auto"
+                  className="col-span-2 sm:col-span-1 flex items-center justify-center rounded-xl py-2 sm:py-2.5 px-3 text-xs sm:text-sm font-bold gap-2 transition-all text-destructive/80 hover:text-destructive data-[state=active]:text-destructive data-[state=active]:bg-background data-[state=active]:shadow-xs"
                 >
-                  <Settings2 className="size-4" />
-                  <span>Avançado</span>
+                  <Settings2 className="size-4 shrink-0" />
+                  <span className="truncate">Avançado</span>
                 </TabsTrigger>
               </TabsList>
 
