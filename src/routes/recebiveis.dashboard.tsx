@@ -74,6 +74,7 @@ function RecebiveisDashboard() {
       const { data, error } = await supabase
         .from("merchants")
         .select("id, name, document_cnpj, status")
+        .eq("in_recebiveis", true)
         .order("name", { ascending: true });
       if (error) throw error;
       return data || [];

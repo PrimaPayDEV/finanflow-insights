@@ -1,0 +1,1 @@
+ALTER TABLE public.merchants ADD COLUMN IF NOT EXISTS in_recebiveis boolean NOT NULL DEFAULT false;

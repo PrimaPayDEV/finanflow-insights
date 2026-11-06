@@ -375,7 +375,6 @@ export function AppLayout({
         { to: "/recebiveis/solicitacoes", label: "Solicitações", icon: Receipt, section: "Operações" },
         { to: "/recebiveis/vendas", label: "Vendas POS", icon: CreditCard, section: "Operações" },
         { to: "/recebiveis/extrato", label: "Extrato Geral", icon: FileText, section: "Operações" },
-        { to: "/", label: "Hub de Ambientes", icon: Home, section: "Geral" },
       ];
     } else {
       currentNav = [
@@ -385,7 +384,6 @@ export function AppLayout({
         { to: "/recebiveis/extrato", label: "Extrato", icon: FileText, section: "Extratos" },
         { to: "/recebiveis/pos", label: "Minhas POS", icon: Wallet, section: "Equipamentos" },
         { to: "/recebiveis/perfil", label: "Meu Cadastro", icon: Settings, section: "Equipamentos" },
-        { to: "/", label: "Hub de Ambientes", icon: Home, section: "Geral" },
       ];
     }
   } else if (role === "merchant") {

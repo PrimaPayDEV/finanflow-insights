@@ -92,6 +92,7 @@ function RecebiveisEcsPage() {
       const { data, error } = await supabase
         .from("merchants")
         .select("*")
+        .eq("in_recebiveis", true)
         .order("name", { ascending: true });
       if (error) throw error;
       return data || [];
@@ -216,6 +217,7 @@ function RecebiveisEcsPage() {
         email: ecEmail.trim(),
         phone_whatsapp: ecPhone.trim(),
         status: "active" as const,
+        in_recebiveis: true,
       };
 
       const { data, error } = await supabase.from("merchants").insert(payload).select().single();

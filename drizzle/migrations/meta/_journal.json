@@ -64,6 +64,13 @@
       "when": 1793882325505,
       "tag": "0008_vehicle_quotes",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1793994034595,
+      "tag": "0009_merchants_recebiveis_flag",
+      "breakpoints": true
     }
   ]
 }
