@@ -521,6 +521,7 @@ export type Database = {
           company_id: string
           created_at: string
           description: string
+          environment: string | null
           id: string
           is_read: boolean
           title: string
@@ -530,6 +531,7 @@ export type Database = {
           company_id?: string
           created_at?: string
           description?: string
+          environment?: string | null
           id?: string
           is_read?: boolean
           title: string
@@ -539,6 +541,7 @@ export type Database = {
           company_id?: string
           created_at?: string
           description?: string
+          environment?: string | null
           id?: string
           is_read?: boolean
           title?: string
