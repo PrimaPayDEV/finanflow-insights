@@ -56,7 +56,7 @@ function RecebiveisPerfil() {
               </div>
             </div>
             <Badge className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-500/30 text-xs">
-              {m?.status === "ACTIVE" ? "Cadastro Ativo" : "Em Análise"}
+              {m?.status === "active" ? "Cadastro Ativo" : "Em Análise"}
             </Badge>
           </CardHeader>
 
@@ -68,7 +68,7 @@ function RecebiveisPerfil() {
                   <span>CNPJ / CPF</span>
                 </span>
                 <p className="font-mono font-bold text-foreground text-sm">
-                  {m?.document || "Não informado"}
+                  {m?.document_cnpj || "Não informado"}
                 </p>
               </div>
 
@@ -88,7 +88,7 @@ function RecebiveisPerfil() {
                   <span>Telefone de Contato</span>
                 </span>
                 <p className="font-bold text-foreground text-sm">
-                  {m?.phone || "Não informado"}
+                  {m?.phone_whatsapp || "Não informado"}
                 </p>
               </div>
 

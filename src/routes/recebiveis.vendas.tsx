@@ -49,7 +49,7 @@ function RecebiveisVendas() {
   const merchantsQuery = useQuery({
     queryKey: ["merchants_vendas_list"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("merchants").select("id, name, document").order("name");
+      const { data, error } = await supabase.from("merchants").select("id, name").order("name");
       if (error) throw error;
       return data || [];
     },

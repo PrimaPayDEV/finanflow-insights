@@ -191,9 +191,9 @@ function RecebiveisEcsPage() {
     const q = searchTerm.toLowerCase();
     return list.filter((m) => {
       const name = (m.name || "").toLowerCase();
-      const doc = (m.document || "").toLowerCase();
+      const doc = (m.document_cnpj || "").toLowerCase();
       const email = (m.email || "").toLowerCase();
-      const phone = (m.phone || "").toLowerCase();
+      const phone = (m.phone_whatsapp || "").toLowerCase();
 
       // Busca também pelo serial das POS vinculadas
       const terminals = terminalsByMerchant.get(m.id) || [];
@@ -212,10 +212,10 @@ function RecebiveisEcsPage() {
       const payload = {
         company_id: companyId,
         name: ecName.trim(),
-        document: ecDocument.trim() || null,
-        email: ecEmail.trim() || null,
-        phone: ecPhone.trim() || null,
-        status: "ACTIVE" as const,
+        document_cnpj: ecDocument.trim(),
+        email: ecEmail.trim(),
+        phone_whatsapp: ecPhone.trim(),
+        status: "active" as const,
       };
 
       const { data, error } = await supabase.from("merchants").insert(payload).select().single();
@@ -249,7 +249,7 @@ function RecebiveisEcsPage() {
           merchant_id: selectedMerchant.id,
           serial_number: cleanSerial,
           model: posModel.trim() || "POS",
-          status: "ACTIVE",
+          status: "active",
         })
         .select()
         .single();
@@ -372,16 +372,16 @@ function RecebiveisEcsPage() {
                     <TableRow key={m.id} className="hover:bg-muted/30 transition-colors">
                       <TableCell className="text-xs font-medium">
                         <div className="font-bold text-foreground text-sm">{m.name}</div>
-                        {m.document && (
+                        {m.document_cnpj && (
                           <div className="text-[11px] text-muted-foreground font-mono mt-0.5">
-                            {m.document}
+                            {m.document_cnpj}
                           </div>
                         )}
                       </TableCell>
 
                       <TableCell className="text-xs text-muted-foreground">
                         <div>{m.email || "—"}</div>
-                        <div className="text-[11px]">{m.phone || "—"}</div>
+                        <div className="text-[11px]">{m.phone_whatsapp || "—"}</div>
                       </TableCell>
 
                       <TableCell className="text-xs">
@@ -411,12 +411,12 @@ function RecebiveisEcsPage() {
                       <TableCell className="text-xs text-center whitespace-nowrap">
                         <Badge
                           className={
-                            m.status === "ACTIVE"
+                            m.status === "active"
                               ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-500/30 text-[10px]"
                               : "bg-muted text-muted-foreground text-[10px]"
                           }
                         >
-                          {m.status === "ACTIVE" ? "Ativo" : "Inativo"}
+                          {m.status === "active" ? "Ativo" : "Inativo"}
                         </Badge>
                       </TableCell>
 

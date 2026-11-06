@@ -101,7 +101,7 @@ function RecebiveisSolicitacoesPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("merchants")
-        .select("id, name, document, phone, email, status")
+        .select("id, name, document_cnpj, phone_whatsapp, email, status")
         .order("name", { ascending: true });
       if (error) throw error;
       return data || [];
@@ -143,7 +143,7 @@ function RecebiveisSolicitacoesPage() {
   const merchantsMap = useMemo(() => {
     const map = new Map<string, { name: string; document: string }>();
     (merchantsQuery.data || []).forEach((m) => {
-      map.set(m.id, { name: m.name, document: m.document || "" });
+      map.set(m.id, { name: m.name, document: m.document_cnpj || "" });
     });
     return map;
   }, [merchantsQuery.data]);
