@@ -102,6 +102,7 @@ function RecebiveisSolicitacoesPage() {
       const { data, error } = await supabase
         .from("merchants")
         .select("id, name, document_cnpj, phone_whatsapp, email, status")
+        .eq("in_recebiveis", true)
         .order("name", { ascending: true });
       if (error) throw error;
       return data || [];
