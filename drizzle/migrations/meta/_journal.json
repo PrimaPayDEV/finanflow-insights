@@ -71,6 +71,13 @@
       "when": 1793994034595,
       "tag": "0009_merchants_recebiveis_flag",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1793994856417,
+      "tag": "0010_notifications_environment_scope",
+      "breakpoints": true
     }
   ]
 }
