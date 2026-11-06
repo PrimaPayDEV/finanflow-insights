@@ -476,6 +476,7 @@ export type Database = {
           document_cnpj: string
           email: string
           id: string
+          in_recebiveis: boolean
           name: string
           phone_whatsapp: string
           rate_table: string | null
@@ -487,6 +488,7 @@ export type Database = {
           document_cnpj?: string
           email?: string
           id?: string
+          in_recebiveis?: boolean
           name: string
           phone_whatsapp?: string
           rate_table?: string | null
@@ -498,6 +500,7 @@ export type Database = {
           document_cnpj?: string
           email?: string
           id?: string
+          in_recebiveis?: boolean
           name?: string
           phone_whatsapp?: string
           rate_table?: string | null
