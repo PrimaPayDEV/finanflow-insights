@@ -1,5 +1,11 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Outlet, useRouterState } from "@tanstack/react-router";
 import { EnvironmentEntry } from "@/components/EnvironmentEntry";
+
+function RecebiveisRoute() {
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const isEntry = pathname.replace(/\/+$/, "") === "/recebiveis";
+  return isEntry ? <EnvironmentEntry env="recebiveis" /> : <Outlet />;
+}
 
 export const Route = createFileRoute("/recebiveis")({
   head: () => ({
@@ -12,6 +18,5 @@ export const Route = createFileRoute("/recebiveis")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  component: () => <EnvironmentEntry env="recebiveis" />,
+  component: RecebiveisRoute,
 });
-
