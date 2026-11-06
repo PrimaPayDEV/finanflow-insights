@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, ReactNode } from "react
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { applyCompanyTheme } from "@/lib/theme";
+import { bootstrapPrimaAdmin } from "@/lib/admin.functions";
 
 interface AuthContextType {
   session: Session | null;
@@ -81,6 +82,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           // @ts-ignore
           data.companies?.segment
         );
+      } else {
+        // Fallback e auto-bootstrap para os e-mails administrativos oficiais da PrimaPay
+        const { data: authUserData } = await supabase.auth.getUser();
+        const userEmail = authUserData?.user?.email?.toLowerCase();
+        if (userEmail === "contato@primapay.com.br" || userEmail === "financeiro@primapay.com.br") {
+          try {
+            const boot = await bootstrapPrimaAdmin({ data: { email: userEmail } });
+            if (boot?.companyId) {
+              setCompanyId(boot.companyId);
+              setRole("admin");
+              setCompanyName(boot.companyName || "Prima Hub");
+              setIsActive(true);
+              setAppMode("full");
+              return;
+            }
+          } catch (bootErr) {
+            console.warn("Auto-bootstrap fallback warning:", bootErr);
+          }
+          setRole("admin");
+          setCompanyName("Prima Hub");
+          setIsActive(true);
+          setAppMode("full");
+        }
       }
     } catch (e) {
       console.error("Error fetching company", e);

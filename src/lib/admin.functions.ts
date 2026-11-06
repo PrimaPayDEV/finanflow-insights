@@ -172,3 +172,103 @@ export const grantPlatformAdminAccess = createServerFn({ method: "POST" })
     if (insertError) throw new Error(insertError.message);
     return { ok: true };
   });
+
+export const bootstrapPrimaAdmin = createServerFn({ method: "POST" })
+  .validator(z.object({ email: z.string().email(), password: z.string().optional() }))
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const email = data.email.toLowerCase().trim();
+    if (email !== "contato@primapay.com.br" && email !== "financeiro@primapay.com.br") {
+      throw new Error("E-mail não autorizado para bootstrap de admin.");
+    }
+
+    // 1. Procurar ou Criar Usuário no Auth
+    const { data: listData, error: listError } = await supabaseAdmin.auth.admin.listUsers();
+    if (listError) throw new Error("Erro ao listar usuários: " + listError.message);
+
+    let user = listData.users.find((u) => u.email?.toLowerCase() === email);
+
+    if (!user) {
+      const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
+        email: email,
+        password: data.password || "Marina31#@",
+        email_confirm: true,
+      });
+      if (createError) throw new Error("Erro ao criar usuário admin: " + createError.message);
+      user = newUser.user;
+    } else {
+      // Garantir confirmação de e-mail e atualizar senha se informada
+      await supabaseAdmin.auth.admin.updateUserById(user.id, {
+        email_confirm: true,
+        ...(data.password ? { password: data.password } : {}),
+      });
+    }
+
+    if (!user) throw new Error("Usuário não encontrado ou não pôde ser criado.");
+
+    // 2. Localizar ou criar empresa principal
+    const { data: companies, error: compError } = await supabaseAdmin
+      .from("companies")
+      .select("id, name")
+      .order("created_at", { ascending: true });
+
+    if (compError) throw new Error("Erro ao buscar empresas: " + compError.message);
+
+    let targetCompany = (companies || []).find(
+      (c) => c.name?.toLowerCase().includes("prima")
+    ) || (companies && companies[0]);
+
+    if (!targetCompany) {
+      const { data: newComp, error: newCompErr } = await supabaseAdmin
+        .from("companies")
+        .insert({
+          name: "Prima Hub",
+          is_active: true,
+          app_mode: "full",
+        })
+        .select()
+        .single();
+      if (newCompErr) throw new Error("Erro ao criar empresa Prima Hub: " + newCompErr.message);
+      targetCompany = newComp;
+    }
+
+    // 3. Vincular em company_users com role: admin
+    const { data: existingLink } = await supabaseAdmin
+      .from("company_users")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("company_id", targetCompany.id)
+      .maybeSingle();
+
+    if (existingLink) {
+      await supabaseAdmin
+        .from("company_users")
+        .update({ role: "admin" })
+        .eq("id", existingLink.id);
+    } else {
+      await supabaseAdmin
+        .from("company_users")
+        .insert({
+          company_id: targetCompany.id,
+          user_id: user.id,
+          role: "admin",
+        });
+    }
+
+    // 4. Inserir em user_roles com role: admin
+    try {
+      await supabaseAdmin
+        .from("user_roles")
+        .upsert({ user_id: user.id, role: "admin" as any }, { onConflict: "user_id, role" });
+    } catch (e) {
+      console.warn("user_roles upsert skipped or not applicable", e);
+    }
+
+    return {
+      success: true,
+      userId: user.id,
+      companyId: targetCompany.id,
+      companyName: targetCompany.name,
+    };
+  });

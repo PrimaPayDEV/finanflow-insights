@@ -23,6 +23,7 @@ import {
 import { motion } from "framer-motion";
 import { translateError } from "@/lib/translateError";
 import { AsaasBaasSeal } from "@/components/AsaasBaasSeal";
+import { bootstrapPrimaAdmin } from "@/lib/admin.functions";
 import {
   detectEnvironmentFromHostname,
   DEFAULT_PLATFORM_URLS,
@@ -183,31 +184,37 @@ function Login() {
     setTabScope(activeEnv);
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
+      const isOfficialAdmin =
+        email.trim().toLowerCase() === "contato@primapay.com.br" ||
+        email.trim().toLowerCase() === "financeiro@primapay.com.br";
+
+      if (isOfficialAdmin) {
+        try {
+          await bootstrapPrimaAdmin({ data: { email: email.trim(), password } });
+        } catch (bsErr) {
+          console.warn("Bootstrap admin notice:", bsErr);
+        }
+      }
+
+      let { data: signInData, error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
         password,
       });
 
-      if (error && error.message.includes("Invalid login credentials") && email === "contato@primapay.com.br") {
-        const { data, error: signUpError } = await supabase.auth.signUp({
-          email,
-          password,
-        });
-
-        if (signUpError) {
-          toast.error("Não foi possível criar o usuário Admin inicial.");
-          console.error(signUpError);
-          return;
+      if (error && isOfficialAdmin) {
+        try {
+          await bootstrapPrimaAdmin({ data: { email: email.trim(), password } });
+          const retry = await supabase.auth.signInWithPassword({
+            email: email.trim(),
+            password,
+          });
+          if (!retry.error) {
+            error = null;
+            signInData = retry.data;
+          }
+        } catch (retryErr) {
+          console.error("Retry bootstrap error:", retryErr);
         }
-
-        if (data?.session) {
-          toast.success("Usuário Admin criado com sucesso!");
-          const target = resolveRedirectPath();
-          navigate({ to: target });
-        } else {
-          toast.warning("Conta criada! Verifique o e-mail contato@primapay.com.br para confirmar.");
-        }
-        return;
       }
 
       if (error) {
