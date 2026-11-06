@@ -22,6 +22,7 @@ import { Route as MembersRouteImport } from './routes/members'
 import { Route as MerchantsRouteImport } from './routes/merchants'
 import { Route as PartnersRouteImport } from './routes/partners'
 import { Route as ProfileRouteImport } from './routes/profile'
+import { Route as RecebiveisRouteImport } from './routes/recebiveis'
 import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as VehiclesRouteImport } from './routes/vehicles'
@@ -40,10 +41,12 @@ import { Route as RealEstateRequestsRouteImport } from './routes/real-estate/req
 import { Route as RealEstateResourcesRouteImport } from './routes/real-estate/resources'
 import { Route as RealEstateTenantsRouteImport } from './routes/real-estate/tenants'
 import { Route as RecebiveisDashboardRouteImport } from './routes/recebiveis.dashboard'
+import { Route as RecebiveisEcsRouteImport } from './routes/recebiveis.ecs'
 import { Route as RecebiveisExtratoRouteImport } from './routes/recebiveis.extrato'
 import { Route as RecebiveisLancamentosRouteImport } from './routes/recebiveis.lancamentos'
 import { Route as RecebiveisPerfilRouteImport } from './routes/recebiveis.perfil'
 import { Route as RecebiveisPosRouteImport } from './routes/recebiveis.pos'
+import { Route as RecebiveisSolicitacoesRouteImport } from './routes/recebiveis.solicitacoes'
 import { Route as RecebiveisVendasRouteImport } from './routes/recebiveis.vendas'
 import { Route as SettingsAppearanceRouteImport } from './routes/settings/appearance'
 import { Route as SettingsAsaasRouteImport } from './routes/settings.asaas'
@@ -121,6 +124,11 @@ const PartnersRoute = PartnersRouteImport.update({
 const ProfileRoute = ProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RecebiveisRoute = RecebiveisRouteImport.update({
+  id: '/recebiveis',
+  path: '/recebiveis',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ReportsRoute = ReportsRouteImport.update({
@@ -209,34 +217,44 @@ const RealEstateTenantsRoute = RealEstateTenantsRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const RecebiveisDashboardRoute = RecebiveisDashboardRouteImport.update({
-  id: '/recebiveis/dashboard',
-  path: '/recebiveis/dashboard',
-  getParentRoute: () => rootRouteImport,
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => RecebiveisRoute,
+} as any)
+const RecebiveisEcsRoute = RecebiveisEcsRouteImport.update({
+  id: '/ecs',
+  path: '/ecs',
+  getParentRoute: () => RecebiveisRoute,
 } as any)
 const RecebiveisExtratoRoute = RecebiveisExtratoRouteImport.update({
-  id: '/recebiveis/extrato',
-  path: '/recebiveis/extrato',
-  getParentRoute: () => rootRouteImport,
+  id: '/extrato',
+  path: '/extrato',
+  getParentRoute: () => RecebiveisRoute,
 } as any)
 const RecebiveisLancamentosRoute = RecebiveisLancamentosRouteImport.update({
-  id: '/recebiveis/lancamentos',
-  path: '/recebiveis/lancamentos',
-  getParentRoute: () => rootRouteImport,
+  id: '/lancamentos',
+  path: '/lancamentos',
+  getParentRoute: () => RecebiveisRoute,
 } as any)
 const RecebiveisPerfilRoute = RecebiveisPerfilRouteImport.update({
-  id: '/recebiveis/perfil',
-  path: '/recebiveis/perfil',
-  getParentRoute: () => rootRouteImport,
+  id: '/perfil',
+  path: '/perfil',
+  getParentRoute: () => RecebiveisRoute,
 } as any)
 const RecebiveisPosRoute = RecebiveisPosRouteImport.update({
-  id: '/recebiveis/pos',
-  path: '/recebiveis/pos',
-  getParentRoute: () => rootRouteImport,
+  id: '/pos',
+  path: '/pos',
+  getParentRoute: () => RecebiveisRoute,
+} as any)
+const RecebiveisSolicitacoesRoute = RecebiveisSolicitacoesRouteImport.update({
+  id: '/solicitacoes',
+  path: '/solicitacoes',
+  getParentRoute: () => RecebiveisRoute,
 } as any)
 const RecebiveisVendasRoute = RecebiveisVendasRouteImport.update({
-  id: '/recebiveis/vendas',
-  path: '/recebiveis/vendas',
-  getParentRoute: () => rootRouteImport,
+  id: '/vendas',
+  path: '/vendas',
+  getParentRoute: () => RecebiveisRoute,
 } as any)
 const SettingsAppearanceRoute = SettingsAppearanceRouteImport.update({
   id: '/settings/appearance',
@@ -313,6 +331,7 @@ export interface FileRoutesByFullPath {
   '/merchants': typeof MerchantsRoute
   '/partners': typeof PartnersRoute
   '/profile': typeof ProfileRoute
+  '/recebiveis': typeof RecebiveisRouteWithChildren
   '/reports': typeof ReportsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/vehicles': typeof VehiclesRoute
@@ -331,10 +350,12 @@ export interface FileRoutesByFullPath {
   '/real-estate/resources': typeof RealEstateResourcesRoute
   '/real-estate/tenants': typeof RealEstateTenantsRoute
   '/recebiveis/dashboard': typeof RecebiveisDashboardRoute
+  '/recebiveis/ecs': typeof RecebiveisEcsRoute
   '/recebiveis/extrato': typeof RecebiveisExtratoRoute
   '/recebiveis/lancamentos': typeof RecebiveisLancamentosRoute
   '/recebiveis/perfil': typeof RecebiveisPerfilRoute
   '/recebiveis/pos': typeof RecebiveisPosRoute
+  '/recebiveis/solicitacoes': typeof RecebiveisSolicitacoesRoute
   '/recebiveis/vendas': typeof RecebiveisVendasRoute
   '/settings/appearance': typeof SettingsAppearanceRoute
   '/settings/asaas': typeof SettingsAsaasRoute
@@ -363,6 +384,7 @@ export interface FileRoutesByTo {
   '/merchants': typeof MerchantsRoute
   '/partners': typeof PartnersRoute
   '/profile': typeof ProfileRoute
+  '/recebiveis': typeof RecebiveisRouteWithChildren
   '/reports': typeof ReportsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/vehicles': typeof VehiclesRoute
@@ -381,10 +403,12 @@ export interface FileRoutesByTo {
   '/real-estate/resources': typeof RealEstateResourcesRoute
   '/real-estate/tenants': typeof RealEstateTenantsRoute
   '/recebiveis/dashboard': typeof RecebiveisDashboardRoute
+  '/recebiveis/ecs': typeof RecebiveisEcsRoute
   '/recebiveis/extrato': typeof RecebiveisExtratoRoute
   '/recebiveis/lancamentos': typeof RecebiveisLancamentosRoute
   '/recebiveis/perfil': typeof RecebiveisPerfilRoute
   '/recebiveis/pos': typeof RecebiveisPosRoute
+  '/recebiveis/solicitacoes': typeof RecebiveisSolicitacoesRoute
   '/recebiveis/vendas': typeof RecebiveisVendasRoute
   '/settings/appearance': typeof SettingsAppearanceRoute
   '/settings/asaas': typeof SettingsAsaasRoute
@@ -414,6 +438,7 @@ export interface FileRoutesById {
   '/merchants': typeof MerchantsRoute
   '/partners': typeof PartnersRoute
   '/profile': typeof ProfileRoute
+  '/recebiveis': typeof RecebiveisRouteWithChildren
   '/reports': typeof ReportsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/vehicles': typeof VehiclesRoute
@@ -432,10 +457,12 @@ export interface FileRoutesById {
   '/real-estate/resources': typeof RealEstateResourcesRoute
   '/real-estate/tenants': typeof RealEstateTenantsRoute
   '/recebiveis/dashboard': typeof RecebiveisDashboardRoute
+  '/recebiveis/ecs': typeof RecebiveisEcsRoute
   '/recebiveis/extrato': typeof RecebiveisExtratoRoute
   '/recebiveis/lancamentos': typeof RecebiveisLancamentosRoute
   '/recebiveis/perfil': typeof RecebiveisPerfilRoute
   '/recebiveis/pos': typeof RecebiveisPosRoute
+  '/recebiveis/solicitacoes': typeof RecebiveisSolicitacoesRoute
   '/recebiveis/vendas': typeof RecebiveisVendasRoute
   '/settings/appearance': typeof SettingsAppearanceRoute
   '/settings/asaas': typeof SettingsAsaasRoute
@@ -466,6 +493,7 @@ export interface FileRouteTypes {
     | '/merchants'
     | '/partners'
     | '/profile'
+    | '/recebiveis'
     | '/reports'
     | '/sitemap.xml'
     | '/vehicles'
@@ -484,10 +512,12 @@ export interface FileRouteTypes {
     | '/real-estate/resources'
     | '/real-estate/tenants'
     | '/recebiveis/dashboard'
+    | '/recebiveis/ecs'
     | '/recebiveis/extrato'
     | '/recebiveis/lancamentos'
     | '/recebiveis/perfil'
     | '/recebiveis/pos'
+    | '/recebiveis/solicitacoes'
     | '/recebiveis/vendas'
     | '/settings/appearance'
     | '/settings/asaas'
@@ -516,6 +546,7 @@ export interface FileRouteTypes {
     | '/merchants'
     | '/partners'
     | '/profile'
+    | '/recebiveis'
     | '/reports'
     | '/sitemap.xml'
     | '/vehicles'
@@ -534,10 +565,12 @@ export interface FileRouteTypes {
     | '/real-estate/resources'
     | '/real-estate/tenants'
     | '/recebiveis/dashboard'
+    | '/recebiveis/ecs'
     | '/recebiveis/extrato'
     | '/recebiveis/lancamentos'
     | '/recebiveis/perfil'
     | '/recebiveis/pos'
+    | '/recebiveis/solicitacoes'
     | '/recebiveis/vendas'
     | '/settings/appearance'
     | '/settings/asaas'
@@ -566,6 +599,7 @@ export interface FileRouteTypes {
     | '/merchants'
     | '/partners'
     | '/profile'
+    | '/recebiveis'
     | '/reports'
     | '/sitemap.xml'
     | '/vehicles'
@@ -584,10 +618,12 @@ export interface FileRouteTypes {
     | '/real-estate/resources'
     | '/real-estate/tenants'
     | '/recebiveis/dashboard'
+    | '/recebiveis/ecs'
     | '/recebiveis/extrato'
     | '/recebiveis/lancamentos'
     | '/recebiveis/perfil'
     | '/recebiveis/pos'
+    | '/recebiveis/solicitacoes'
     | '/recebiveis/vendas'
     | '/settings/appearance'
     | '/settings/asaas'
@@ -617,6 +653,7 @@ export interface RootRouteChildren {
   MerchantsRoute: typeof MerchantsRoute
   PartnersRoute: typeof PartnersRoute
   ProfileRoute: typeof ProfileRoute
+  RecebiveisRoute: typeof RecebiveisRouteWithChildren
   ReportsRoute: typeof ReportsRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   VehiclesRoute: typeof VehiclesRoute
@@ -634,12 +671,6 @@ export interface RootRouteChildren {
   RealEstateRequestsRoute: typeof RealEstateRequestsRoute
   RealEstateResourcesRoute: typeof RealEstateResourcesRoute
   RealEstateTenantsRoute: typeof RealEstateTenantsRoute
-  RecebiveisDashboardRoute: typeof RecebiveisDashboardRoute
-  RecebiveisExtratoRoute: typeof RecebiveisExtratoRoute
-  RecebiveisLancamentosRoute: typeof RecebiveisLancamentosRoute
-  RecebiveisPerfilRoute: typeof RecebiveisPerfilRoute
-  RecebiveisPosRoute: typeof RecebiveisPosRoute
-  RecebiveisVendasRoute: typeof RecebiveisVendasRoute
   SettingsAppearanceRoute: typeof SettingsAppearanceRoute
   SettingsAsaasRoute: typeof SettingsAsaasRoute
   VeicularCadastrosRoute: typeof VeicularCadastrosRoute
@@ -745,6 +776,13 @@ declare module '@tanstack/react-router' {
       path: '/profile'
       fullPath: '/profile'
       preLoaderRoute: typeof ProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/recebiveis': {
+      id: '/recebiveis'
+      path: '/recebiveis'
+      fullPath: '/recebiveis'
+      preLoaderRoute: typeof RecebiveisRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/reports': {
@@ -868,45 +906,59 @@ declare module '@tanstack/react-router' {
     }
     '/recebiveis/dashboard': {
       id: '/recebiveis/dashboard'
-      path: '/recebiveis/dashboard'
+      path: '/dashboard'
       fullPath: '/recebiveis/dashboard'
       preLoaderRoute: typeof RecebiveisDashboardRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof RecebiveisRoute
+    }
+    '/recebiveis/ecs': {
+      id: '/recebiveis/ecs'
+      path: '/ecs'
+      fullPath: '/recebiveis/ecs'
+      preLoaderRoute: typeof RecebiveisEcsRouteImport
+      parentRoute: typeof RecebiveisRoute
     }
     '/recebiveis/extrato': {
       id: '/recebiveis/extrato'
-      path: '/recebiveis/extrato'
+      path: '/extrato'
       fullPath: '/recebiveis/extrato'
       preLoaderRoute: typeof RecebiveisExtratoRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof RecebiveisRoute
     }
     '/recebiveis/lancamentos': {
       id: '/recebiveis/lancamentos'
-      path: '/recebiveis/lancamentos'
+      path: '/lancamentos'
       fullPath: '/recebiveis/lancamentos'
       preLoaderRoute: typeof RecebiveisLancamentosRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof RecebiveisRoute
     }
     '/recebiveis/perfil': {
       id: '/recebiveis/perfil'
-      path: '/recebiveis/perfil'
+      path: '/perfil'
       fullPath: '/recebiveis/perfil'
       preLoaderRoute: typeof RecebiveisPerfilRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof RecebiveisRoute
     }
     '/recebiveis/pos': {
       id: '/recebiveis/pos'
-      path: '/recebiveis/pos'
+      path: '/pos'
       fullPath: '/recebiveis/pos'
       preLoaderRoute: typeof RecebiveisPosRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof RecebiveisRoute
+    }
+    '/recebiveis/solicitacoes': {
+      id: '/recebiveis/solicitacoes'
+      path: '/solicitacoes'
+      fullPath: '/recebiveis/solicitacoes'
+      preLoaderRoute: typeof RecebiveisSolicitacoesRouteImport
+      parentRoute: typeof RecebiveisRoute
     }
     '/recebiveis/vendas': {
       id: '/recebiveis/vendas'
-      path: '/recebiveis/vendas'
+      path: '/vendas'
       fullPath: '/recebiveis/vendas'
       preLoaderRoute: typeof RecebiveisVendasRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof RecebiveisRoute
     }
     '/settings/appearance': {
       id: '/settings/appearance'
@@ -995,6 +1047,32 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface RecebiveisRouteChildren {
+  RecebiveisDashboardRoute: typeof RecebiveisDashboardRoute
+  RecebiveisEcsRoute: typeof RecebiveisEcsRoute
+  RecebiveisExtratoRoute: typeof RecebiveisExtratoRoute
+  RecebiveisLancamentosRoute: typeof RecebiveisLancamentosRoute
+  RecebiveisPerfilRoute: typeof RecebiveisPerfilRoute
+  RecebiveisPosRoute: typeof RecebiveisPosRoute
+  RecebiveisSolicitacoesRoute: typeof RecebiveisSolicitacoesRoute
+  RecebiveisVendasRoute: typeof RecebiveisVendasRoute
+}
+
+const RecebiveisRouteChildren: RecebiveisRouteChildren = {
+  RecebiveisDashboardRoute: RecebiveisDashboardRoute,
+  RecebiveisEcsRoute: RecebiveisEcsRoute,
+  RecebiveisExtratoRoute: RecebiveisExtratoRoute,
+  RecebiveisLancamentosRoute: RecebiveisLancamentosRoute,
+  RecebiveisPerfilRoute: RecebiveisPerfilRoute,
+  RecebiveisPosRoute: RecebiveisPosRoute,
+  RecebiveisSolicitacoesRoute: RecebiveisSolicitacoesRoute,
+  RecebiveisVendasRoute: RecebiveisVendasRoute,
+}
+
+const RecebiveisRouteWithChildren = RecebiveisRoute._addFileChildren(
+  RecebiveisRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ClosuresRoute: ClosuresRoute,
@@ -1009,6 +1087,7 @@ const rootRouteChildren: RootRouteChildren = {
   MerchantsRoute: MerchantsRoute,
   PartnersRoute: PartnersRoute,
   ProfileRoute: ProfileRoute,
+  RecebiveisRoute: RecebiveisRouteWithChildren,
   ReportsRoute: ReportsRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   VehiclesRoute: VehiclesRoute,
@@ -1026,12 +1105,6 @@ const rootRouteChildren: RootRouteChildren = {
   RealEstateRequestsRoute: RealEstateRequestsRoute,
   RealEstateResourcesRoute: RealEstateResourcesRoute,
   RealEstateTenantsRoute: RealEstateTenantsRoute,
-  RecebiveisDashboardRoute: RecebiveisDashboardRoute,
-  RecebiveisExtratoRoute: RecebiveisExtratoRoute,
-  RecebiveisLancamentosRoute: RecebiveisLancamentosRoute,
-  RecebiveisPerfilRoute: RecebiveisPerfilRoute,
-  RecebiveisPosRoute: RecebiveisPosRoute,
-  RecebiveisVendasRoute: RecebiveisVendasRoute,
   SettingsAppearanceRoute: SettingsAppearanceRoute,
   SettingsAsaasRoute: SettingsAsaasRoute,
   VeicularCadastrosRoute: VeicularCadastrosRoute,

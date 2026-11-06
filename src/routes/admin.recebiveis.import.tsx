@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { read, utils } from "xlsx";
 import { useState } from "react";
@@ -76,7 +76,21 @@ function parseValue(val: any): number {
 
 function AdminRecebiveisImportPage() {
   const qc = useQueryClient();
-  const { companyId, user } = useAuth();
+  const navigate = useNavigate();
+  const { companyId, user, role, companyName } = useAuth();
+  const isAdmin = Boolean(
+    user?.email?.toLowerCase() === "financeiro@primapay.com.br" ||
+    user?.email?.toLowerCase() === "contato@primapay.com.br" ||
+    role === "admin" ||
+    companyName === "Prima Hub" ||
+    companyName === "PrimaPay"
+  ) && role !== "merchant";
+
+  if (!isAdmin && user) {
+    navigate({ to: "/recebiveis/dashboard" });
+    return null;
+  }
+
   const merchants = useQuery(merchantsQuery);
   const terminals = useQuery(terminalsQuery);
   const feePlans = useQuery(feePlansQuery);

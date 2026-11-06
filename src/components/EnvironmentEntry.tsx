@@ -22,6 +22,10 @@ export function EnvironmentEntry({ env }: { env: SessionScope }) {
 
     // Se já estiver logado neste ambiente nesta aba, vai direto para o painel correspondente
     if (user) {
+      if (env === "recebiveis") {
+        navigate({ to: "/recebiveis/dashboard", replace: true });
+        return;
+      }
       if (env === "veicular") {
         navigate({ to: "/dashboard", replace: true });
         return;

@@ -14,16 +14,17 @@ export const PLATFORM_SUBDOMAINS = {
   ec: "ec",
   veicular: "veicular",
   imobiliaria: "imob",
+  recebiveis: "recebiveis",
 } as const;
 
 /**
- * Ligue (true) somente quando os três endereços próprios estiverem com status
+ * Ligue (true) somente quando os endereços próprios estiverem com status
  * "Active" em Configurações → Domínios. Enquanto estiver false, todos os ambientes
  * abrem no endereço principal (subdomínios inexistentes mostram "No Lovable project found").
  */
 export const OWN_DOMAINS_ACTIVE = false;
 
-export type PlatformKey = "hub" | "ec" | "veicular" | "imobiliaria";
+export type PlatformKey = "hub" | "ec" | "veicular" | "imobiliaria" | "recebiveis";
 type EnvKey = Exclude<PlatformKey, "hub">;
 
 function ownDomainUrl(platform: EnvKey): string {
@@ -36,6 +37,7 @@ export const DEFAULT_PLATFORM_URLS: Record<PlatformKey, string> = {
   ec: OWN_DOMAINS_ACTIVE ? ownDomainUrl("ec") : HUB_URL,
   veicular: OWN_DOMAINS_ACTIVE ? ownDomainUrl("veicular") : HUB_URL,
   imobiliaria: OWN_DOMAINS_ACTIVE ? ownDomainUrl("imobiliaria") : HUB_URL,
+  recebiveis: OWN_DOMAINS_ACTIVE ? ownDomainUrl("recebiveis") : HUB_URL,
 };
 
 /** True quando o app está aberto em um endereço do domínio próprio. */
@@ -86,6 +88,7 @@ export function getPlatformBaseUrl(platform: PlatformKey): string {
   if (platform === "ec" && import.meta.env.VITE_EC_URL) return import.meta.env.VITE_EC_URL;
   if (platform === "veicular" && import.meta.env.VITE_VEICULAR_URL) return import.meta.env.VITE_VEICULAR_URL;
   if (platform === "imobiliaria" && import.meta.env.VITE_IMOBILIARIA_URL) return import.meta.env.VITE_IMOBILIARIA_URL;
+  if (platform === "recebiveis" && import.meta.env.VITE_RECEBIVEIS_URL) return import.meta.env.VITE_RECEBIVEIS_URL;
 
   if (platform !== "hub" && (OWN_DOMAINS_ACTIVE || isOnBrandDomain())) {
     return ownDomainUrl(platform);

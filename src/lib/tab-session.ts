@@ -10,15 +10,16 @@ import { detectEnvironmentFromHostname } from "./environment";
  * são vinculados ao ambiente ativo da aba.
  */
 
-export type SessionScope = "ec" | "veicular" | "imobiliaria";
+export type SessionScope = "ec" | "veicular" | "imobiliaria" | "recebiveis";
 
-export const SESSION_SCOPES: SessionScope[] = ["ec", "veicular", "imobiliaria"];
+export const SESSION_SCOPES: SessionScope[] = ["ec", "veicular", "imobiliaria", "recebiveis"];
 
 /** Sub-link de entrada de cada ambiente. */
 export const ENTRY_PATHS: Record<SessionScope, string> = {
   ec: "/ec",
   veicular: "/veicular",
   imobiliaria: "/imobiliaria",
+  recebiveis: "/recebiveis",
 };
 
 const TAB_KEY = "prima_tab_env";
@@ -67,7 +68,17 @@ export function scopeFromLocation(pathname: string, search?: string): SessionSco
     return "imobiliaria";
   }
 
-  // 4. Rotas do ecossistema de Estabelecimentos Comerciais (EC)
+  // 4. Rotas do ecossistema de Gestor de Recebíveis
+  if (
+    clean === "/recebiveis" ||
+    clean.startsWith("/recebiveis/") ||
+    clean === "/admin/recebiveis" ||
+    clean.startsWith("/admin/recebiveis/")
+  ) {
+    return "recebiveis";
+  }
+
+  // 5. Rotas do ecossistema de Estabelecimentos Comerciais (EC)
   if (
     clean === "/ec" ||
     clean.startsWith("/ec/") ||
@@ -81,7 +92,6 @@ export function scopeFromLocation(pathname: string, search?: string): SessionSco
     clean.startsWith("/import/") ||
     clean === "/reports" ||
     clean.startsWith("/reports/") ||
-    clean.startsWith("/recebiveis") ||
     clean.startsWith("/settings/asaas")
   ) {
     return "ec";
@@ -99,7 +109,7 @@ export function isAuthStorageKey(key: string): boolean {
 export function scopedAuthKey(key: string, scope: SessionScope | null): string {
   if (!scope) return key;
   // Remove sufixo anterior se já existir para evitar duplicação (ex: ::ec::ec)
-  const baseKey = key.replace(/::(ec|veicular|imobiliaria)$/, "");
+  const baseKey = key.replace(/::(ec|veicular|imobiliaria|recebiveis)$/, "");
   return `${baseKey}::${scope}`;
 }
 
@@ -189,7 +199,7 @@ export function installTabSessionScope() {
     const legacy: string[] = [];
     for (let i = 0; i < window.localStorage.length; i++) {
       const k = window.localStorage.key(i);
-      if (k && isAuthStorageKey(k) && !/::(ec|veicular|imobiliaria)$/.test(k)) legacy.push(k);
+      if (k && isAuthStorageKey(k) && !/::(ec|veicular|imobiliaria|recebiveis)$/.test(k)) legacy.push(k);
     }
     legacy.forEach((k) => window.localStorage.removeItem(k));
   } catch {

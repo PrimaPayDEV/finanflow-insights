@@ -1,5 +1,5 @@
 import React from "react";
-import { Store, ShieldCheck, Building2, ExternalLink, Copy, Check, ChevronDown, Layers } from "lucide-react";
+import { Store, ShieldCheck, Building2, Wallet, ExternalLink, Copy, Check, ChevronDown, Layers } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -62,6 +62,18 @@ const ENV_OPTIONS: EnvOption[] = [
     badgeBorder: "hover:border-amber-500/50",
     dotColor: "bg-amber-500",
     desc: "Controle de locações, contratos e repasses",
+  },
+  {
+    id: "recebiveis",
+    title: "Gestor de Recebíveis",
+    shortName: "Recebíveis",
+    path: "/recebiveis",
+    icon: Wallet,
+    colorClass: "text-blue-600 dark:text-blue-400",
+    badgeBg: "bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/30",
+    badgeBorder: "hover:border-blue-500/50",
+    dotColor: "bg-blue-500",
+    desc: "Acompanhamento de vendas POS, saldos e liquidações",
   },
 ];
 

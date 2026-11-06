@@ -245,6 +245,21 @@ export function AppLayout({
     pathname.startsWith("/members") ||
     pathname.startsWith("/veicular"));
 
+  const isAdminRecebiveis = Boolean(
+    user?.email?.toLowerCase() === "financeiro@primapay.com.br" ||
+    user?.email?.toLowerCase() === "contato@primapay.com.br" ||
+    role === "admin" ||
+    companyName === "Prima Hub" ||
+    companyName === "PrimaPay"
+  );
+
+  const isRecebiveis = role !== "partner" && !isVeicular && (
+    tabScope === "recebiveis" ||
+    role === "merchant" ||
+    pathname.startsWith("/recebiveis") ||
+    pathname.startsWith("/admin/recebiveis")
+  );
+
   // Estrutura de menus no topo para Proteção Veicular conforme especificação completa
   const veicularNavItems: TopNavItem[] = [
     {
@@ -349,9 +364,31 @@ export function AppLayout({
     return false;
   };
 
-  // Menu lateral para os demais ambientes (ECs e Imobiliária)
+  // Menu lateral para os demais ambientes (ECs, Imobiliária e Gestor de Recebíveis)
   let currentNav = [...nav];
-  if (role === "merchant") {
+  if (isRecebiveis) {
+    if (isAdminRecebiveis && role !== "merchant") {
+      currentNav = [
+        { to: "/recebiveis/dashboard", label: "Dashboard", icon: LayoutDashboard },
+        { to: "/recebiveis/ecs", label: "Carteira de ECs", icon: Store, section: "Gestão" },
+        { to: "/admin/recebiveis/import", label: "Importar Vendas POS", icon: Upload, section: "Gestão" },
+        { to: "/recebiveis/solicitacoes", label: "Solicitações", icon: Receipt, section: "Operações" },
+        { to: "/recebiveis/vendas", label: "Vendas POS", icon: CreditCard, section: "Operações" },
+        { to: "/recebiveis/extrato", label: "Extrato Geral", icon: FileText, section: "Operações" },
+        { to: "/", label: "Hub de Ambientes", icon: Home, section: "Geral" },
+      ];
+    } else {
+      currentNav = [
+        { to: "/recebiveis/dashboard", label: "Dashboard", icon: LayoutDashboard },
+        { to: "/recebiveis/solicitacoes", label: "Solicitações", icon: Receipt, section: "Financeiro" },
+        { to: "/recebiveis/vendas", label: "Minhas Vendas", icon: Store, section: "Extratos" },
+        { to: "/recebiveis/extrato", label: "Extrato", icon: FileText, section: "Extratos" },
+        { to: "/recebiveis/pos", label: "Minhas POS", icon: Wallet, section: "Equipamentos" },
+        { to: "/recebiveis/perfil", label: "Meu Cadastro", icon: Settings, section: "Equipamentos" },
+        { to: "/", label: "Hub de Ambientes", icon: Home, section: "Geral" },
+      ];
+    }
+  } else if (role === "merchant") {
     currentNav = [
       { to: "/recebiveis/dashboard", label: "Dashboard", icon: LayoutDashboard },
       { to: "/recebiveis/vendas", label: "Recebíveis", icon: Store, section: "Gestão de Recebíveis" },
@@ -920,7 +957,9 @@ export function AppLayout({
                 </span>
                 {!isCollapsed && (
                   <div className="leading-tight">
-                    <p className="text-lg md:text-xl font-extrabold tracking-tight line-clamp-2 break-words" style={{ fontFamily: '"Montserrat Arabic", Montserrat, sans-serif' }}>{companyName === 'PrimaPay' ? 'PrimaHub' : companyName}</p>
+                    <p className="text-lg md:text-xl font-extrabold tracking-tight line-clamp-2 break-words" style={{ fontFamily: '"Montserrat Arabic", Montserrat, sans-serif' }}>
+                      {isRecebiveis ? "Recebíveis" : (companyName === "PrimaPay" ? "PrimaHub" : companyName)}
+                    </p>
                   </div>
                 )}
               </>
@@ -1014,7 +1053,7 @@ export function AppLayout({
                           <Wallet className="size-5" />
                         </span>
                         <div className="leading-tight">
-                          <p className="text-lg font-extrabold tracking-tight line-clamp-2 break-words" style={{ fontFamily: '"Montserrat Arabic", Montserrat, sans-serif' }}>{companyName === 'PrimaPay' ? 'PrimaHub' : companyName}</p>
+                          <p className="text-lg font-extrabold tracking-tight line-clamp-2 break-words" style={{ fontFamily: '"Montserrat Arabic", Montserrat, sans-serif' }}>{isRecebiveis ? "Recebíveis" : (companyName === "PrimaPay" ? "PrimaHub" : companyName)}</p>
                         </div>
                       </>
                     )}

@@ -4,6 +4,7 @@ import {
   Store,
   ShieldCheck,
   Building2,
+  Wallet,
   ArrowRight,
   ExternalLink,
   Lock,
@@ -94,6 +95,19 @@ const PLATFORMS: PlatformConfig[] = [
     badgeDomain: "/imobiliaria",
     loginPath: "/imobiliaria",
     directPath: "/real-estate/charges",
+  },
+  {
+    id: "recebiveis",
+    title: "Gestor de Recebíveis",
+    subtitle: "Gestão e liquidação de vendas POS",
+    icon: Wallet,
+    gradient: "from-blue-600 to-cyan-600",
+    glowColor: "bg-blue-600",
+    borderHover: "hover:border-blue-500/60 hover:shadow-blue-500/10",
+    buttonClass: "bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500",
+    badgeDomain: "/recebiveis",
+    loginPath: "/recebiveis",
+    directPath: "/recebiveis/dashboard",
   },
 ];
 
@@ -190,10 +204,10 @@ function HubPage() {
       </header>
 
       {/* Conteúdo Principal do Hub */}
-      <main className="relative z-10 flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-8 sm:py-12 flex flex-col justify-center space-y-8 sm:space-y-10">
+      <main className="relative z-10 flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-8 sm:py-12 flex flex-col justify-center space-y-8 sm:space-y-10">
 
-        {/* Grade dos 3 Cards Resumidos (Foco em Nomes e Ícones) */}
-        <section className="grid grid-cols-1 md:grid-cols-3 gap-5 sm:gap-6 max-w-5xl mx-auto w-full">
+        {/* Grade dos 4 Cards Resumidos */}
+        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6 max-w-7xl mx-auto w-full">
           {PLATFORMS.map((platform, idx) => {
             const Icon = platform.icon;
             // Cada ambiente tem login próprio: o sub-link fixa o ambiente da aba e abre o login dele

@@ -37,7 +37,7 @@ function EnvLoginLink({
   className,
   children,
 }: {
-  env: "ec" | "veicular" | "imobiliaria";
+  env: "ec" | "veicular" | "imobiliaria" | "recebiveis";
   className: string;
   children: React.ReactNode;
 }) {
@@ -50,7 +50,7 @@ function EnvLoginLink({
   );
 }
 
-type EnvironmentKey = "ec" | "veicular" | "imobiliaria";
+type EnvironmentKey = "ec" | "veicular" | "imobiliaria" | "recebiveis";
 
 const ENV_META: Record<
   EnvironmentKey,
@@ -107,6 +107,19 @@ const ENV_META: Record<
     redirectPath: "/real-estate/charges",
     placeholderEmail: "imobiliaria@primapay.com.br",
   },
+  recebiveis: {
+    title: "Gestor de Recebíveis",
+    appName: "Gestor de Recebíveis",
+    shortTitle: "Recebíveis",
+    subtitle: "Acompanhamento de vendas POS, saldo disponível e liquidação de pagamentos",
+    badgeLabel: "Ambiente Gestor de Recebíveis",
+    icon: Wallet,
+    gradientClass: "from-blue-600 via-cyan-600 to-blue-700",
+    borderHighlight: "border-blue-500/30 shadow-blue-500/10",
+    badgeColor: "bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/30",
+    redirectPath: "/recebiveis/dashboard",
+    placeholderEmail: "financeiro@primapay.com.br",
+  },
 };
 
 export const Route = createFileRoute("/login")({
@@ -145,7 +158,7 @@ function Login() {
       navigate({ to: "/real-estate/charges" });
       return null;
     }
-    if (role === "merchant") {
+    if (currentEnvKey === "recebiveis" || role === "merchant") {
       navigate({ to: "/recebiveis/dashboard" });
       return null;
     }
@@ -155,9 +168,9 @@ function Login() {
 
   const resolveRedirectPath = () => {
     if (envConfig) return envConfig.redirectPath;
+    if (currentEnvKey === "recebiveis" || tabScope === "recebiveis" || role === "merchant") return "/recebiveis/dashboard";
     if (currentEnvKey === "veicular" || tabScope === "veicular") return "/dashboard";
     if (currentEnvKey === "imobiliaria" || tabScope === "imobiliaria" || segment === "IMOBILIARIA") return "/real-estate/charges";
-    if (role === "merchant") return "/recebiveis/dashboard";
     if (appMode === "billing") return "/dashboard";
     return "/dashboard";
   };
@@ -302,7 +315,7 @@ function Login() {
               <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-1.5">
                 Selecione o Ambiente de Acesso:
               </p>
-              <div className="grid grid-cols-3 gap-1.5">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
                 <EnvLoginLink
                   env="ec"
                   className="p-2 rounded-xl border border-border/80 bg-card hover:border-purple-500/50 hover:bg-purple-500/5 transition-all text-center flex flex-col items-center gap-1"
@@ -316,7 +329,7 @@ function Login() {
                   className="p-2 rounded-xl border border-border/80 bg-card hover:border-emerald-500/50 hover:bg-emerald-500/5 transition-all text-center flex flex-col items-center gap-1"
                 >
                   <Car className="size-4 text-emerald-600" />
-                  <span className="text-[10px] font-bold text-foreground">Proteção Veicular</span>
+                  <span className="text-[10px] font-bold text-foreground">Veicular</span>
                 </EnvLoginLink>
 
                 <EnvLoginLink
@@ -325,6 +338,14 @@ function Login() {
                 >
                   <Building2 className="size-4 text-amber-600" />
                   <span className="text-[10px] font-bold text-foreground">Imobiliária</span>
+                </EnvLoginLink>
+
+                <EnvLoginLink
+                  env="recebiveis"
+                  className="p-2 rounded-xl border border-border/80 bg-card hover:border-blue-500/50 hover:bg-blue-500/5 transition-all text-center flex flex-col items-center gap-1"
+                >
+                  <Wallet className="size-4 text-blue-600" />
+                  <span className="text-[10px] font-bold text-foreground">Recebíveis</span>
                 </EnvLoginLink>
               </div>
             </div>
