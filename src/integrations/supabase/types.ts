@@ -604,6 +604,27 @@ export type Database = {
           },
         ]
       }
+      platform_cloud_cache: {
+        Row: {
+          cache_key: string
+          company_id: string
+          payload: Json
+          updated_at: string
+        }
+        Insert: {
+          cache_key: string
+          company_id: string
+          payload?: Json
+          updated_at?: string
+        }
+        Update: {
+          cache_key?: string
+          company_id?: string
+          payload?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
       pos_terminals: {
         Row: {
           created_at: string
@@ -1575,6 +1596,7 @@ export type Database = {
           color: string | null
           company_id: string
           created_at: string
+          extra_data: Json | null
           fipe_value: number | null
           id: string
           member_id: string
@@ -1589,6 +1611,7 @@ export type Database = {
           color?: string | null
           company_id: string
           created_at?: string
+          extra_data?: Json | null
           fipe_value?: number | null
           id?: string
           member_id: string
@@ -1603,6 +1626,7 @@ export type Database = {
           color?: string | null
           company_id?: string
           created_at?: string
+          extra_data?: Json | null
           fipe_value?: number | null
           id?: string
           member_id?: string

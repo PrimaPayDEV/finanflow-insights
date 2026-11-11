@@ -60,6 +60,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { getVehicles, getMembers, addVehicle, linkVehicleToMember, deleteVehicle } from "@/lib/members.functions";
+import { pushCloudSyncData } from "@/lib/cloud-sync.functions";
 import { translateError } from "@/lib/translateError";
 import {
   AlertDialog,
@@ -483,6 +484,7 @@ function VehiclesPage() {
 
   // Queries
   const fetchVehicles = useServerFn(getVehicles);
+  const pushCloudFn = useServerFn(pushCloudSyncData);
   const { data: dbVehicles = [] } = useQuery({
     queryKey: ["vehicles", companyId],
     queryFn: () => fetchVehicles({ data: { companyId: companyId! } }),
@@ -523,7 +525,9 @@ function VehiclesPage() {
     const extrasMap = getAllVehiclesExtraData(companyId || "default");
     return (dbVehicles || []).map((v: any) => {
       const cleanPlate = (v.plate || "").replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+      const dbExtra = (v.extra_data && typeof v.extra_data === "object" ? v.extra_data : {}) as any;
       const extra = {
+        ...dbExtra,
         ...(cleanPlate ? extrasMap[`PLATE_${cleanPlate}`] || {} : {}),
         ...(v.id ? extrasMap[v.id] || {} : {}),
       };
@@ -661,7 +665,7 @@ function VehiclesPage() {
     setSelectedVehicle(updated);
 
     // Salva todos os dados extras (chassi, renavam, implementos, coberturas customizadas, etc.) localmente
-    saveVehicleExtraData(companyId || "default", updated.id, updated.plate, {
+    const vExtraPayload = {
       chassi: updated.chassi,
       renavam: updated.renavam,
       yearModel: updated.yearModel,
@@ -680,7 +684,23 @@ function VehiclesPage() {
       coverageActive: updated.coverageActive,
       coveragePlan: updated.coveragePlan,
       coverageConfig: updated.coverageConfig,
-    });
+    };
+
+    saveVehicleExtraData(companyId || "default", updated.id, updated.plate, vExtraPayload);
+
+    // Sincroniza em nuvem para que todos os computadores recebam as atualizações
+    const cleanPlate = (updated.plate || "").replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+    pushCloudFn({
+      data: {
+        companyId: companyId || "default",
+        data: {
+          vehicles_extra: {
+            ...(cleanPlate ? { [`PLATE_${cleanPlate}`]: vExtraPayload } : {}),
+            [updated.id]: vExtraPayload,
+          },
+        },
+      },
+    }).catch(() => {});
 
     // Persiste alterações no banco para que a geração de faturas use o valor atualizado
     if (!updated.isDemo && companyId && previous) {
@@ -692,6 +712,7 @@ function VehiclesPage() {
         model: updated.model,
         year: updated.year,
         category: updated.category,
+        extra_data: vExtraPayload,
       };
       const { error } = await supabase
         .from("vehicles")
@@ -700,9 +721,10 @@ function VehiclesPage() {
         .eq("company_id", companyId);
       if (error) {
         // Fallback caso alguma coluna opcional não exista
+        delete dbUpdate.extra_data;
         await supabase
           .from("vehicles")
-          .update({ monthly_fee: updated.monthlyFee })
+          .update(dbUpdate)
           .eq("id", updated.id)
           .eq("company_id", companyId);
       }

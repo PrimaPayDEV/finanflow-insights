@@ -48,8 +48,12 @@ import { DEFAULT_PLATFORM_URLS, isLocalEnvironment } from "@/lib/environment";
 import { getTabScope } from "@/lib/tab-session";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
+import { useServerFn } from "@tanstack/react-start";
 import { ThemeToggle } from "./ThemeToggle";
 import { EnvironmentSwitcher } from "./EnvironmentSwitcher";
+import { CloudSyncModal } from "./CloudSyncModal";
+import { pullCloudSyncData, pushCloudSyncData } from "@/lib/cloud-sync.functions";
+import { loadLocalData, saveLocalData } from "@/lib/veicular";
 import { AsaasBaasSeal, AsaasBaasFooterDisclosure } from "./AsaasBaasSeal";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "./ui/button";
@@ -111,6 +115,54 @@ export function AppLayout({
   useEffect(() => {
     applyCompanyTheme(primaryColor, companyName, appMode, segment);
   }, [primaryColor, companyName, appMode, segment]);
+
+  // Sincronização automática em nuvem entre computadores da mesma empresa
+  const pullCloudFn = useServerFn(pullCloudSyncData);
+  const pushCloudFn = useServerFn(pushCloudSyncData);
+
+  useEffect(() => {
+    if (!companyId) return;
+
+    let mounted = true;
+    const runAutoSync = async () => {
+      try {
+        // 1. Puxa dados da nuvem para atualizar este computador
+        const res = await pullCloudFn({ data: { companyId } });
+        if (res?.ok && res.data && mounted) {
+          Object.entries(res.data).forEach(([key, val]) => {
+            if (val != null) {
+              saveLocalData(companyId, key, val);
+            }
+          });
+        }
+
+        // 2. Envia quaisquer dados locais deste computador para a nuvem
+        const localKeys = ["member_due_days", "members_extra", "vehicles_extra", "cotacoes", "eventos"];
+        const toPush: Record<string, any> = {};
+        localKeys.forEach((key) => {
+          const val = loadLocalData(companyId, key, null);
+          if (val && (typeof val !== "object" || Object.keys(val).length > 0)) {
+            toPush[key] = val;
+          }
+        });
+
+        if (Object.keys(toPush).length > 0) {
+          await pushCloudFn({ data: { companyId, data: toPush } });
+        }
+      } catch (err) {
+        // Falha silenciosa de sync em background
+      }
+    };
+
+    runAutoSync();
+
+    const onFocus = () => runAutoSync();
+    window.addEventListener("focus", onFocus);
+    return () => {
+      mounted = false;
+      window.removeEventListener("focus", onFocus);
+    };
+  }, [companyId]);
   
   const qc = useQueryClient();
   const navigate = useNavigate();
@@ -434,6 +486,7 @@ export function AppLayout({
       {!isPartner && <EnvironmentSwitcher />}
 
       <div className="flex items-center gap-2 pl-2 sm:pl-3 border-l border-border/70">
+        <CloudSyncModal companyId={companyId || undefined} />
         <ThemeToggle />
 
         {/* Dropdown de Notificações */}
