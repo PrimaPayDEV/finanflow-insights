@@ -222,13 +222,23 @@ function FinanceiroPage() {
   const batchInvoiceMutation = useMutation({
     mutationFn: useServerFn(generateBatchInvoices),
     onSuccess: (data: any) => {
-      toast.success(`Lote emitido! ${data.successCount} de ${data.totalCount} boletos gerados.`);
+      if (data.successCount === 0) {
+        const firstError = data.results?.find((r: any) => !r.ok)?.error || "Nenhum boleto pôde ser gerado no Asaas.";
+        toast.error(`Falha na emissão: 0 de ${data.totalCount} boletos gerados. Motivo: ${firstError}`, {
+          duration: 8000,
+        });
+      } else if (data.successCount < data.totalCount) {
+        toast.warning(`Lote emitido parcialmente: ${data.successCount} de ${data.totalCount} boletos gerados.`);
+      } else {
+        toast.success(`Lote emitido com sucesso! ${data.successCount} boletos gerados.`);
+      }
+
       qc.invalidateQueries({ queryKey: ["billing_metrics"] });
       // Atualizar status dos itens
       setLoteItems((prev) =>
         prev.map((item) => {
           const res = data.results?.find((r: any) => r.memberId === item.memberId);
-          if (res?.ok) return { ...item, status: "emitido", invoiceId: res.invoiceId };
+          if (res?.ok) return { ...item, status: "emitido", invoiceId: res.invoiceId, errorDetails: undefined };
           if (res && !res.ok) return { ...item, status: "erro", errorDetails: res.error };
           return item;
         })
@@ -629,9 +639,16 @@ function FinanceiroPage() {
                                 {item.status === "emitido" ? (
                                   <Badge className="bg-emerald-500 text-white text-[10px]">Emitido</Badge>
                                 ) : item.status === "erro" ? (
-                                  <Badge variant="destructive" className="text-[10px]" title={item.errorDetails}>
-                                    Erro
-                                  </Badge>
+                                  <div className="flex flex-col items-center gap-1">
+                                    <Badge variant="destructive" className="text-[10px]" title={item.errorDetails}>
+                                      Erro
+                                    </Badge>
+                                    {item.errorDetails && (
+                                      <span className="text-[10px] text-destructive leading-tight max-w-[150px] text-center" title={item.errorDetails}>
+                                        {item.errorDetails}
+                                      </span>
+                                    )}
+                                  </div>
                                 ) : (
                                   <Badge variant="secondary" className="text-[10px]">Pronto</Badge>
                                 )}

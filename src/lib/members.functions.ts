@@ -642,23 +642,59 @@ export const generateInvoice = createServerFn({ method: "POST" })
     const sandbox = settings?.sandbox ?? false;
     const apiKey = company?.asaas_api_key || (sandbox ? process.env.ASAAS_API_TESTE : process.env.ASAAS_API_KEY);
 
-    if (!apiKey) throw new Error("Chave da API do Asaas não configurada.");
+    if (!apiKey) throw new Error("Chave da API do Asaas não configurada. Acesse Configurações > Asaas.");
 
     const base = sandbox ? "https://sandbox.asaas.com/api/v3" : "https://api.asaas.com/v3";
     const headers = { "Content-Type": "application/json", "User-Agent": "PrimaHub", access_token: apiKey };
 
+    const cleanDoc = (member.document || "").replace(/\D/g, "");
+
+    // 1. Obter ou criar cliente no Asaas
     if (!customerId) {
-      const created = await fetch(`${base}/customers`, {
-        method: "POST",
-        headers,
-        body: JSON.stringify({ name: member.name, cpfCnpj: member.document, email: member.email || undefined, mobilePhone: member.phone || undefined }),
-      });
-      const createdJson = (await created.json()) as { id?: string; errors?: any[] };
-      if (createdJson.id) {
-        customerId = createdJson.id;
+      // Primeiro verificar se o cliente já existe no Asaas pelo CPF/CNPJ
+      if (cleanDoc) {
+        try {
+          const found = await fetch(`${base}/customers?cpfCnpj=${encodeURIComponent(cleanDoc)}`, { headers });
+          if (found.status === 401) {
+            throw new Error("Chave da API do Asaas não autorizada ou inválida (401). Verifique a chave em Configurações > Asaas.");
+          }
+          const foundJson = (await found.json()) as { data?: Array<{ id: string }> };
+          if (foundJson.data && foundJson.data.length > 0) {
+            customerId = foundJson.data[0].id;
+          }
+        } catch (e: any) {
+          if (e.message?.includes("401")) throw e;
+        }
+      }
+
+      // Se ainda não existir no Asaas, cria o cliente com dados limpos
+      if (!customerId) {
+        const cleanPhone = (member.phone || "").replace(/\D/g, "");
+        const cleanEmail = (member.email || "").trim() || undefined;
+        const created = await fetch(`${base}/customers`, {
+          method: "POST",
+          headers,
+          body: JSON.stringify({
+            name: member.name?.trim(),
+            cpfCnpj: cleanDoc || undefined,
+            email: cleanEmail,
+            mobilePhone: cleanPhone || undefined,
+          }),
+        });
+        if (created.status === 401) {
+          throw new Error("Chave da API do Asaas não autorizada ou inválida (401). Verifique a chave em Configurações > Asaas.");
+        }
+        const createdJson = (await created.json()) as { id?: string; errors?: any[] };
+        if (createdJson.id) {
+          customerId = createdJson.id;
+        } else {
+          const errMsg = createdJson.errors?.[0]?.description || JSON.stringify(createdJson.errors);
+          throw new Error(`Falha ao cadastrar cliente no Asaas: ${errMsg}`);
+        }
+      }
+
+      if (customerId) {
         await supabaseAdmin.from("members").update({ asaas_customer_id: customerId }).eq("id", data.memberId);
-      } else {
-        throw new Error("Falha ao criar cliente no Asaas: " + JSON.stringify(createdJson.errors));
       }
     }
 
@@ -668,10 +704,8 @@ export const generateInvoice = createServerFn({ method: "POST" })
 
     let dueDate: string;
     if (data.dueDate && data.dueDate.trim()) {
-      // Se o vencimento foi especificado diretamente, respeita a data exata
       dueDate = data.dueDate.split("T")[0];
     } else {
-      // Vencimento exatamente no dia configurado nas preferências (ex: dia 20), sem prazo adicional de 5 dias
       const now = new Date();
       let targetYear = now.getFullYear();
       let targetMonth = now.getMonth();
@@ -684,6 +718,12 @@ export const generateInvoice = createServerFn({ method: "POST" })
       }
       const targetDate = new Date(targetYear, targetMonth, configuredDueDay);
       dueDate = format(targetDate, "yyyy-MM-dd");
+    }
+
+    // Garantir que a data de vencimento não seja anterior ao dia de hoje (regra obrigatória do Asaas)
+    const todayStr = format(new Date(), "yyyy-MM-dd");
+    if (dueDate < todayStr) {
+      dueDate = todayStr;
     }
 
     let partner = Array.isArray(member.partners) ? member.partners[0] : (member.partners as any);
@@ -707,18 +747,19 @@ export const generateInvoice = createServerFn({ method: "POST" })
       value: Number(data.amount.toFixed(2)),
       dueDate,
       description,
-      ...(isPlanmais
-        ? {
-          // No ambiente Planmais, os boletos não podem ser pagos após o vencimento
-          daysAfterDueDateToRegistrationCancellation: 0,
-          fine: { value: 0 },
-          interest: { value: 0 },
-        }
-        : {
-          ...(Number(settings?.fine_percent ?? 0) > 0 ? { fine: { value: Number(settings?.fine_percent ?? 0), type: "PERCENTAGE" } } : {}),
-          ...(Number(settings?.interest_percent ?? 0) > 0 ? { interest: { value: Number(settings?.interest_percent ?? 0) } } : {}),
-        }),
     };
+
+    // Multa e juros: somente incluir no payload se forem maiores que zero com o type correto
+    if (!isPlanmais) {
+      const fineVal = Number(settings?.fine_percent ?? 0);
+      if (fineVal > 0) {
+        paymentPayload.fine = { value: fineVal, type: "PERCENTAGE" };
+      }
+      const intVal = Number(settings?.interest_percent ?? 0);
+      if (intVal > 0) {
+        paymentPayload.interest = { value: intVal };
+      }
+    }
 
     const splitPercent = partner?.split_percent ? Number(partner.split_percent) : 0;
     const walletId = partner?.asaas_wallet_id ? String(partner.asaas_wallet_id).trim() : "";
@@ -732,15 +773,37 @@ export const generateInvoice = createServerFn({ method: "POST" })
       ];
     }
 
-    const paymentRes = await fetch(`${base}/payments`, {
+    let paymentRes = await fetch(`${base}/payments`, {
       method: "POST",
       headers,
       body: JSON.stringify(paymentPayload),
     });
 
-    const paymentJson = (await paymentRes.json()) as { id?: string; errors?: any[] };
+    if (paymentRes.status === 401) {
+      throw new Error("Chave da API do Asaas não autorizada ou inválida (401). Verifique a chave em Configurações > Asaas.");
+    }
+
+    let paymentJson = (await paymentRes.json()) as { id?: string; errors?: any[] };
+
+    // Se o Asaas rejeitar por conta de wallet/split inválido do parceiro/consultor, tenta emitir sem split
+    if (!paymentJson.id && paymentPayload.split && paymentJson.errors?.some(e =>
+      e.description?.toLowerCase().includes("carteira") ||
+      e.description?.toLowerCase().includes("wallet") ||
+      e.description?.toLowerCase().includes("split")
+    )) {
+      console.warn(`Carteira de split do parceiro inválida (${walletId}). Emitindo cobrança sem split.`);
+      delete paymentPayload.split;
+      paymentRes = await fetch(`${base}/payments`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify(paymentPayload),
+      });
+      paymentJson = (await paymentRes.json()) as { id?: string; errors?: any[] };
+    }
+
     if (!paymentJson.id) {
-      throw new Error("Erro do Asaas: " + (paymentJson.errors?.[0]?.description ?? JSON.stringify(paymentJson.errors)));
+      const errMsg = paymentJson.errors?.[0]?.description ?? JSON.stringify(paymentJson.errors);
+      throw new Error(`Erro do Asaas: ${errMsg}`);
     }
 
     await supabaseAdmin.from("notifications").insert({
