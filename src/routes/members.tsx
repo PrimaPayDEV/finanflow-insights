@@ -1931,7 +1931,7 @@ function VehicleDialog({ memberId, memberName }: { memberId: string; memberName:
               disabled={submit.isPending}
               className="rounded-xl h-8.5 text-xs font-semibold px-5 bg-primary text-primary-foreground shadow-xs"
             >
-              {submit.isPending ? "Salvando..." : (member ? "Salvar Alterações" : "Cadastrar Associado")}
+              {submit.isPending ? "Salvando..." : "Cadastrar Veículo"}
             </Button>
           </div>
         </DialogFooter>
