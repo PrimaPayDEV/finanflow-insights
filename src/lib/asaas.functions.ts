@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { format } from "date-fns";
 
 const schema = z.object({
   companyId: z.string().uuid(),
@@ -679,6 +680,215 @@ export const generateBatchInvoices = createServerFn({ method: "POST" })
       successCount,
       totalCount: data.items.length,
       results,
+    };
+  });
+
+export const generateCancellationBoleto = createServerFn({ method: "POST" })
+  .validator((d: {
+    companyId: string;
+    memberId?: string;
+    isRegistered: boolean;
+    customerName: string;
+    customerDocument: string;
+    customerEmail?: string;
+    customerPhone?: string;
+    vehiclePlate?: string;
+    amount: number;
+    dueDate: string;
+    description?: string;
+  }) => d)
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    // 1. Fetch Company for API Key
+    const { data: company } = await supabaseAdmin
+      .from("companies")
+      .select("id, name, app_mode, segment, asaas_api_key")
+      .eq("id", data.companyId)
+      .single();
+
+    const { data: settings } = await supabaseAdmin
+      .from("asaas_settings")
+      .select("*")
+      .eq("company_id", data.companyId)
+      .limit(1)
+      .maybeSingle();
+
+    const sandbox = settings?.sandbox ?? false;
+    const isPrimaPay = company?.name === "Prima Hub" || company?.name === "PrimaPay";
+    const apiKey = company?.asaas_api_key || (isPrimaPay ? (sandbox ? process.env.ASAAS_API_TESTE : process.env.ASAAS_API_KEY) : (process.env.ASAAS_API_KEY || null));
+
+    if (!apiKey) {
+      throw new Error("Chave da API do Asaas não configurada. Acesse o menu Configuração Asaas.");
+    }
+
+    const base = sandbox ? "https://sandbox.asaas.com/api/v3" : "https://api.asaas.com/v3";
+    const headers = { "Content-Type": "application/json", "User-Agent": "PrimaHub", access_token: apiKey };
+
+    const cleanDoc = (data.customerDocument || "").replace(/\D/g, "");
+    if (!cleanDoc || (cleanDoc.length !== 11 && cleanDoc.length !== 14)) {
+      throw new Error("CPF ou CNPJ inválido para emissão de boleto bancário.");
+    }
+
+    let customerId: string | null = null;
+
+    // Se for associado cadastrado, verifica se já tem customerId no banco
+    if (data.memberId) {
+      const { data: member } = await supabaseAdmin
+        .from("members")
+        .select("asaas_customer_id")
+        .eq("id", data.memberId)
+        .maybeSingle();
+      if (member?.asaas_customer_id) {
+        customerId = member.asaas_customer_id;
+      }
+    }
+
+    // 2. Busca cliente existente no Asaas pelo CPF/CNPJ
+    if (!customerId) {
+      try {
+        const found = await fetch(`${base}/customers?cpfCnpj=${encodeURIComponent(cleanDoc)}`, { headers });
+        if (found.status === 401) {
+          throw new Error("Chave de API do Asaas não autorizada ou inválida (401). Verifique a chave em Configurações > Asaas.");
+        }
+        const foundJson = (await found.json()) as { data?: Array<{ id: string }> };
+        if (foundJson.data && foundJson.data.length > 0) {
+          customerId = foundJson.data[0].id;
+        }
+      } catch (e: any) {
+        if (e.message?.includes("401")) throw e;
+      }
+    }
+
+    // 3. Se ainda não existe no Asaas, cria o cliente com dados limpos
+    if (!customerId) {
+      const cleanPhone = (data.customerPhone || "").replace(/\D/g, "");
+      const cleanEmail = (data.customerEmail || "").trim() || undefined;
+
+      const created = await fetch(`${base}/customers`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          name: data.customerName.trim(),
+          cpfCnpj: cleanDoc,
+          email: cleanEmail,
+          mobilePhone: cleanPhone || undefined,
+        }),
+      });
+
+      if (created.status === 401) {
+        throw new Error("Chave de API do Asaas não autorizada ou inválida (401).");
+      }
+
+      const createdJson = (await created.json()) as { id?: string; errors?: any[] };
+      if (createdJson.id) {
+        customerId = createdJson.id;
+        if (data.memberId) {
+          await supabaseAdmin
+            .from("members")
+            .update({ asaas_customer_id: customerId })
+            .eq("id", data.memberId);
+        }
+      } else {
+        const errMsg = createdJson.errors?.[0]?.description || JSON.stringify(createdJson.errors);
+        throw new Error(`Falha ao cadastrar cliente no Asaas: ${errMsg}`);
+      }
+    }
+
+    // 4. Validar e ajustar data de vencimento (não pode ser anterior à data de hoje)
+    const todayStr = format(new Date(), "yyyy-MM-dd");
+    let targetDueDate = (data.dueDate || "").split("T")[0];
+    if (!targetDueDate || targetDueDate < todayStr) {
+      targetDueDate = todayStr;
+    }
+
+    const desc = data.description?.trim() ||
+      `Boleto de Cancelamento - Proteção Veicular (Associado: ${data.customerName}${data.vehiclePlate ? ` - Placa: ${data.vehiclePlate}` : ""})`;
+
+    // 5. Criar Cobrança (Boleto) no Asaas
+    const paymentPayload: any = {
+      customer: customerId,
+      billingType: "BOLETO",
+      value: Number(data.amount.toFixed(2)),
+      dueDate: targetDueDate,
+      description: desc,
+      postalService: false,
+    };
+
+    const paymentRes = await fetch(`${base}/payments`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(paymentPayload),
+    });
+
+    if (paymentRes.status === 401) {
+      throw new Error("Chave de API do Asaas não autorizada ou inválida (401).");
+    }
+
+    const paymentJson = (await paymentRes.json()) as {
+      id?: string;
+      bankSlipUrl?: string;
+      invoiceUrl?: string;
+      netValue?: number;
+      status?: string;
+      errors?: any[];
+    };
+
+    if (!paymentJson.id) {
+      const errMsg = paymentJson.errors?.[0]?.description || JSON.stringify(paymentJson.errors);
+      throw new Error(`Erro ao gerar boleto no Asaas: ${errMsg}`);
+    }
+
+    // 6. Buscar Linha Digitável e Código de Barras
+    let identificationField: string | null = null;
+    let barCode: string | null = null;
+    try {
+      const barRes = await fetch(`${base}/payments/${paymentJson.id}/identificationField`, { headers });
+      if (barRes.ok) {
+        const barJson = await barRes.json();
+        identificationField = barJson.identificationField || null;
+        barCode = barJson.barCode || null;
+      }
+    } catch (e) {
+      console.warn("Falha ao obter identificationField:", e);
+    }
+
+    // 7. Buscar PIX QrCode se disponível
+    let pixPayload: string | null = null;
+    let pixQrCodeUrl: string | null = null;
+    try {
+      const pixRes = await fetch(`${base}/payments/${paymentJson.id}/pixQrCode`, { headers });
+      if (pixRes.ok) {
+        const pixJson = await pixRes.json();
+        pixPayload = pixJson.payload || null;
+        pixQrCodeUrl = pixJson.encodedImage ? `data:image/png;base64,${pixJson.encodedImage}` : null;
+      }
+    } catch (e) {
+      console.warn("Falha ao obter pixQrCode:", e);
+    }
+
+    // 8. Registrar Notificação
+    await supabaseAdmin.from("notifications").insert({
+      company_id: data.companyId,
+      type: "payment",
+      title: "Boleto de Cancelamento Gerado",
+      description: `Boleto de cancelamento de R$ ${data.amount.toFixed(2)} gerado para ${data.customerName} (Venc: ${targetDueDate}).`,
+    });
+
+    return {
+      ok: true,
+      paymentId: paymentJson.id,
+      bankSlipUrl: paymentJson.bankSlipUrl || null,
+      invoiceUrl: paymentJson.invoiceUrl || null,
+      identificationField,
+      barCode,
+      pixPayload,
+      pixQrCodeUrl,
+      dueDate: targetDueDate,
+      amount: data.amount,
+      customerName: data.customerName,
+      customerPhone: data.customerPhone,
+      description: desc,
     };
   });
 

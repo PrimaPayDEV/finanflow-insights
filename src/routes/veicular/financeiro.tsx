@@ -23,8 +23,10 @@ import {
   Percent,
   Plus,
   Clock,
-  ArrowRight
+  ArrowRight,
+  FileX,
 } from "lucide-react";
+import { BoletoCancelamentoModal } from "@/components/BoletoCancelamentoModal";
 import { toast } from "sonner";
 import { AppLayout } from "@/components/AppLayout";
 import { AsaasFormSeal } from "@/components/AsaasBaasSeal";
@@ -78,6 +80,7 @@ function FinanceiroPage() {
 
   // Tab State
   const [activeTab, setActiveTab] = useState<string>("lotes");
+  const [cancelModalOpen, setCancelModalOpen] = useState(false);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -392,6 +395,17 @@ function FinanceiroPage() {
     <AppLayout
       title="Gestão Financeira & Cobrança"
       subtitle="Parametrização por vencimento, emissão em lote, conferência e rateio de sinistros"
+      actions={
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => setCancelModalOpen(true)}
+          className="rounded-xl h-9 px-3.5 text-xs font-bold text-destructive border-destructive/30 hover:bg-destructive/10 gap-1.5 shadow-2xs cursor-pointer"
+        >
+          <FileX className="size-4" />
+          <span>Boleto de Cancelamento</span>
+        </Button>
+      }
     >
       <div className="space-y-6 max-w-7xl mx-auto">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -1075,6 +1089,17 @@ function FinanceiroPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Modal de Emissão de Boleto de Cancelamento */}
+        <BoletoCancelamentoModal
+          open={cancelModalOpen}
+          onOpenChange={setCancelModalOpen}
+          companyId={companyId!}
+          members={members}
+          onSuccess={() => {
+            qc.invalidateQueries({ queryKey: ["billing_metrics"] });
+          }}
+        />
       </div>
     </AppLayout>
   );

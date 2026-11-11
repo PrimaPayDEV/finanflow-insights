@@ -28,7 +28,18 @@ import {
   FileBarChart2,
   Sparkles,
   DollarSign,
+  ChevronDown,
+  FileX,
+  Receipt,
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import { BoletoCancelamentoModal } from "@/components/BoletoCancelamentoModal";
 import { MerchantIcon } from "@/components/MerchantIcon";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -108,6 +119,7 @@ const COLORS = [
 ];
 
 function BillingDashboard({ companyId }: { companyId: string }) {
+  const [cancelModalOpen, setCancelModalOpen] = useState(false);
   const fetchMetrics = useServerFn(getAsaasDashboardMetrics);
   const fetchMembers = useServerFn(getMembers);
 
@@ -266,16 +278,49 @@ function BillingDashboard({ companyId }: { companyId: string }) {
             <RefreshCw className={cn("size-3.5", isRefetching && "animate-spin")} />
             <span className="hidden sm:inline">Atualizar</span>
           </Button>
-          <Button
-            size="sm"
-            asChild
-            className="rounded-xl h-9 px-3.5 text-xs font-bold bg-primary hover:bg-primary/90 text-primary-foreground gap-1.5 shadow-xs"
-          >
-            <Link to="/veicular/financeiro">
-              <Plus className="size-4" />
-              <span>Gerar Fatura</span>
-            </Link>
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                size="sm"
+                className="rounded-xl h-9 px-3.5 text-xs font-bold bg-primary hover:bg-primary/90 text-primary-foreground gap-1.5 shadow-xs cursor-pointer"
+              >
+                <Plus className="size-4" />
+                <span>Gerar Fatura</span>
+                <ChevronDown className="size-3.5 opacity-70" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-64 p-1.5 rounded-2xl border border-border/80 shadow-xl bg-popover/95 backdrop-blur-md">
+              <DropdownMenuItem asChild className="p-0 focus:bg-transparent">
+                <Link
+                  to="/veicular/financeiro"
+                  className="flex items-start gap-2.5 p-2.5 rounded-xl text-left hover:bg-primary/10 hover:text-primary transition-colors cursor-pointer group w-full"
+                >
+                  <span className="size-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0 mt-0.5 group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                    <Receipt className="size-4" />
+                  </span>
+                  <div>
+                    <p className="text-xs font-bold text-foreground group-hover:text-primary">Fatura / Lote Mensal</p>
+                    <p className="text-[11px] text-muted-foreground leading-tight">Emissão regular por lote de vencimento</p>
+                  </div>
+                </Link>
+              </DropdownMenuItem>
+
+              <DropdownMenuSeparator className="my-1" />
+
+              <DropdownMenuItem
+                onClick={() => setCancelModalOpen(true)}
+                className="flex items-start gap-2.5 p-2.5 rounded-xl text-left hover:bg-destructive/10 hover:text-destructive transition-colors cursor-pointer group"
+              >
+                <span className="size-8 rounded-lg bg-destructive/10 text-destructive flex items-center justify-center shrink-0 mt-0.5 group-hover:bg-destructive group-hover:text-destructive-foreground transition-colors">
+                  <FileX className="size-4" />
+                </span>
+                <div>
+                  <p className="text-xs font-bold text-foreground group-hover:text-destructive">Boleto de Cancelamento</p>
+                  <p className="text-[11px] text-muted-foreground leading-tight">Associado da base ou não cadastrado</p>
+                </div>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       }
     >
@@ -732,6 +777,15 @@ function BillingDashboard({ companyId }: { companyId: string }) {
           <p className="text-sm text-muted-foreground">{data?.error || (error as Error)?.message}</p>
         </div>
       )}
+
+      {/* Modal para Emissão de Boleto de Cancelamento */}
+      <BoletoCancelamentoModal
+        open={cancelModalOpen}
+        onOpenChange={setCancelModalOpen}
+        companyId={companyId}
+        members={members}
+        onSuccess={() => refetch()}
+      />
     </AppLayout>
   );
 }
