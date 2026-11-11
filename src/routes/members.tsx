@@ -666,17 +666,26 @@ function MemberDialog({
       const vehiclesPayload = validVehicles.map((v, i) => {
         const pricing = vehiclesPricing[i] || { totalFee: 179.90 };
         const fVal = Number(v.fipeValueStr.replace(/\D/g, "")) / 100 || 50000;
-        const vehMonthlyFee =
-          validVehicles.length === 1 && customMonthlyFeeNum > 0
-            ? customMonthlyFeeNum
-            : pricing.totalFee;
+        let vehMonthlyFee: number;
+        if (customMonthlyFeeNum > 0) {
+          if (validVehicles.length === 1) {
+            vehMonthlyFee = customMonthlyFeeNum;
+          } else {
+            // Distribui a mensalidade proporcionalmente entre os veículos para que a soma bata exatamente
+            const baseSplit = Math.floor((customMonthlyFeeNum / validVehicles.length) * 100) / 100;
+            const remainder = Number((customMonthlyFeeNum - baseSplit * validVehicles.length).toFixed(2));
+            vehMonthlyFee = i === 0 ? Number((baseSplit + remainder).toFixed(2)) : baseSplit;
+          }
+        } else {
+          vehMonthlyFee = pricing.totalFee;
+        }
 
         return {
           id: v.id || undefined,
           plate: v.plate ? v.plate.toUpperCase().trim() : undefined,
           brand: v.brand.trim(),
           model: v.model.trim(),
-          year: v.year ? parseInt(v.year, 10) : undefined,
+          year: v.year && !isNaN(parseInt(v.year, 10)) ? parseInt(v.year, 10) : undefined,
           category: v.category,
           monthly_fee: vehMonthlyFee,
           fipe_value: fVal,
@@ -753,14 +762,41 @@ function MemberDialog({
         });
       }
 
-      return { registeredAt: finalRegisteredAt };
+      return { registeredAt: finalRegisteredAt, targetId: targetMemberId, vehiclesPayload, extraPayload };
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       toast.success(
         member ? "Associado e veículos atualizados com sucesso!" : "Novo associado cadastrado com sucesso!"
       );
-      qc.invalidateQueries({ queryKey: ["members", companyId] });
-      qc.invalidateQueries({ queryKey: ["vehicles", companyId] });
+      if (companyId) {
+        const targetId = member?.id || data?.targetId;
+        if (targetId) {
+          qc.setQueryData(["members", companyId], (old: any) => {
+            if (!Array.isArray(old)) return old;
+            return old.map((m: any) => {
+              if (m.id === targetId) {
+                return {
+                  ...m,
+                  name: name.trim(),
+                  document: document.trim(),
+                  email: email.trim() || null,
+                  phone: phone.trim() || null,
+                  due_day: dueDay,
+                  monthly_fee: effectiveMonthlyFee,
+                  extra_data: { ...(m.extra_data || {}), ...data.extraPayload, customMonthlyFee: effectiveMonthlyFee },
+                  vehicles: (data.vehiclesPayload || []).map((vp: any, idx: number) => ({
+                    ...(m.vehicles?.[idx] || {}),
+                    ...vp,
+                  })),
+                };
+              }
+              return m;
+            });
+          });
+        }
+        qc.invalidateQueries({ queryKey: ["members", companyId] });
+        qc.invalidateQueries({ queryKey: ["vehicles", companyId] });
+      }
       setOpen(false);
     },
     onError: (e) => toast.error(translateError(e.message)),
@@ -1895,7 +1931,7 @@ function VehicleDialog({ memberId, memberName }: { memberId: string; memberName:
               disabled={submit.isPending}
               className="rounded-xl h-8.5 text-xs font-semibold px-5 bg-primary text-primary-foreground shadow-xs"
             >
-              {submit.isPending ? "Salvando..." : "Salvar Veículo"}
+              {submit.isPending ? "Salvando..." : (member ? "Salvar Alterações" : "Cadastrar Associado")}
             </Button>
           </div>
         </DialogFooter>
@@ -2342,19 +2378,10 @@ function MembersPage() {
                           {(() => {
                             const effectiveFee = getMemberEffectiveMonthlyFee(companyId || "default", m);
                             const vSum = (m.vehicles || []).reduce((acc: number, v: any) => acc + (Number(v.monthly_fee) || 0), 0);
-                            const cleanDoc = (m.document || "").replace(/\D/g, "");
-                            const isKnownManual = [
-                              "07255890607",
-                              "04475490650",
-                              "01353566608",
-                              "51823037687",
-                              "13875213675",
-                              "00423179675",
-                            ].includes(cleanDoc);
                             const isManual =
-                              isKnownManual ||
-                              (typeof extra.customMonthlyFee === "number" && extra.customMonthlyFee > 0) ||
-                              (vSum > 0 && Math.abs(effectiveFee - vSum) > 0.05);
+                              (typeof extra.customMonthlyFee === "number" && extra.customMonthlyFee > 0 && Math.abs(extra.customMonthlyFee - vSum) > 0.05) ||
+                              (typeof m.monthly_fee === "number" && m.monthly_fee > 0 && vSum > 0 && Math.abs(m.monthly_fee - vSum) > 0.05) ||
+                              (typeof extra.customMonthlyFee === "number" && extra.customMonthlyFee > 0 && vSum === 0);
 
                             return (
                               <div className="space-y-0.5">

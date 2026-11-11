@@ -107,59 +107,64 @@ export const getMembers = createServerFn({ method: "GET" })
       const cleanName = (m.name || "").toLowerCase().trim();
       const known = KNOWN_MEMBER_DEFAULTS[cleanDoc];
 
-      let needsUpdate = false;
-      const patch: any = {};
+      let needsDueUpdate = false;
+      let newDueDay: number | null = null;
 
-      // 1. Due day resolution
+      // 1. Due day resolution: preservar fielmente o valor gravado no banco de dados!
+      // Somente se due_day for nulo, aplica seed inicial (15 para nomes conhecidos, 20 padrão)
       if (m.due_day == null) {
         const isDia15 =
           !!known?.dueDay ||
           DIA_15_NAME_SUBSTRINGS.some((s) => cleanName.includes(s));
         m.due_day = isDia15 ? 15 : 20;
-        patch.due_day = m.due_day;
-        needsUpdate = true;
+        newDueDay = m.due_day;
+        needsDueUpdate = true;
       }
 
-      // 2. Monthly fee resolution
+      // 2. Monthly fee resolution:
+      // Prioridade 1: mensalidade já salva no associado (se > 0)
+      // Prioridade 2: soma das mensalidades dos veículos vinculados (vSum) se > 0
+      // Prioridade 3: seed inicial se nunca preenchido, ou fallback 179.90
+      const vSum = (m.vehicles || []).reduce((acc: number, v: any) => acc + (Number(v.monthly_fee) || 0), 0);
       if (m.monthly_fee == null || m.monthly_fee === 0) {
-        if (known?.monthlyFee) {
+        if (vSum > 0) {
+          m.monthly_fee = Number(vSum.toFixed(2));
+        } else if (known?.monthlyFee) {
           m.monthly_fee = known.monthlyFee;
-        } else if (m.vehicles && m.vehicles.length > 0) {
-          const vSum = m.vehicles.reduce((acc: number, v: any) => acc + (Number(v.monthly_fee) || 0), 0);
-          m.monthly_fee = vSum > 0 ? Number(vSum.toFixed(2)) : 179.90;
         } else {
           m.monthly_fee = 179.90;
         }
-        patch.monthly_fee = m.monthly_fee;
-        needsUpdate = true;
       }
 
       // 3. Extra data resolution (CNH, custom monthly fee)
-      if (known?.extra) {
-        m.extra_data = {
-          ...(typeof m.extra_data === "object" && m.extra_data ? m.extra_data : {}),
-          ...known.extra,
-        };
-        patch.extra_data = m.extra_data;
-        needsUpdate = true;
-      } else if (m.monthly_fee && (!m.extra_data || !(m.extra_data as any).customMonthlyFee)) {
-        m.extra_data = {
-          ...(typeof m.extra_data === "object" && m.extra_data ? m.extra_data : {}),
-          customMonthlyFee: m.monthly_fee,
-        };
-        patch.extra_data = m.extra_data;
-        needsUpdate = true;
+      // NUNCA sobrescrever customMonthlyFee ou dados já existentes com valores padrão!
+      const existingExtra = typeof m.extra_data === "object" && m.extra_data ? m.extra_data : {};
+      const newExtra = { ...existingExtra };
+
+      if (!newExtra.customMonthlyFee && m.monthly_fee) {
+        newExtra.customMonthlyFee = m.monthly_fee;
       }
 
-      if (needsUpdate) {
+      // Preenche CNH e dados de semente apenas se estiverem vazios
+      if (known?.extra) {
+        Object.entries(known.extra).forEach(([k, v]) => {
+          if (newExtra[k] === undefined || newExtra[k] === null || newExtra[k] === "") {
+            newExtra[k] = v;
+          }
+        });
+      }
+      m.extra_data = newExtra;
+
+      // Se due_day precisou de preenchimento inicial no banco, atualiza apenas due_day
+      if (needsDueUpdate && newDueDay != null) {
         backfillUpdates.push(
           supabaseAdmin
             .from("members")
-            .update(patch)
+            .update({ due_day: newDueDay })
             .eq("id", m.id)
             .then(
               () => {},
-              (err) => console.error("Erro no auto-backfill do associado", m.id, err)
+              (err) => console.error("Erro no auto-backfill do vencimento", m.id, err)
             )
         );
       }
@@ -182,8 +187,7 @@ export const syncMemberDueDays = createServerFn({ method: "POST" })
         await supabaseAdmin
           .from("members")
           .update({ due_day: dueDay })
-          .eq("id", memberId)
-          .eq("company_id", data.companyId);
+          .eq("id", memberId);
       }
     });
     await Promise.allSettled(updates);
@@ -196,16 +200,38 @@ export const syncMemberExtraData = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const entries = Object.entries(data.extras);
     const updates = entries.map(async ([memberId, extra]) => {
-      const patch: any = { extra_data: extra };
       if (typeof extra?.customMonthlyFee === "number" && extra.customMonthlyFee > 0) {
-        patch.monthly_fee = extra.customMonthlyFee;
+        // Atualiza também os veículos vinculados no banco para manter paridade universal
+        const { data: vList } = await supabaseAdmin
+          .from("vehicles")
+          .select("id")
+          .eq("member_id", memberId);
+        if (vList && vList.length === 1) {
+          await supabaseAdmin
+            .from("vehicles")
+            .update({ monthly_fee: extra.customMonthlyFee })
+            .eq("id", vList[0].id);
+        } else if (vList && vList.length > 1) {
+          const baseSplit = Math.floor((extra.customMonthlyFee / vList.length) * 100) / 100;
+          const remainder = Number((extra.customMonthlyFee - baseSplit * vList.length).toFixed(2));
+          for (let i = 0; i < vList.length; i++) {
+            const fee = i === 0 ? Number((baseSplit + remainder).toFixed(2)) : baseSplit;
+            await supabaseAdmin
+              .from("vehicles")
+              .update({ monthly_fee: fee })
+              .eq("id", vList[i].id);
+          }
+        }
       }
       try {
+        const patch: any = { extra_data: extra };
+        if (typeof extra?.customMonthlyFee === "number" && extra.customMonthlyFee > 0) {
+          patch.monthly_fee = extra.customMonthlyFee;
+        }
         await supabaseAdmin
           .from("members")
           .update(patch)
-          .eq("id", memberId)
-          .eq("company_id", data.companyId);
+          .eq("id", memberId);
       } catch {
         // Ignora silenciosamente se colunas ainda não foram migradas
       }
@@ -301,12 +327,11 @@ export const upsertMember = createServerFn({ method: "POST" })
       let { error: updateError } = await supabaseAdmin
         .from("members")
         .update(upsertData)
-        .eq("id", data.id)
-        .eq("company_id", data.companyId); // extra safety
+        .eq("id", data.id);
       if (updateError && ((updateError as any).code === "42703" || updateError.message?.includes("monthly_fee") || updateError.message?.includes("extra_data"))) {
         delete upsertData.monthly_fee;
         delete upsertData.extra_data;
-        const retry = await supabaseAdmin.from("members").update(upsertData).eq("id", data.id).eq("company_id", data.companyId);
+        const retry = await supabaseAdmin.from("members").update(upsertData).eq("id", data.id);
         updateError = retry.error;
       }
       error = updateError;
@@ -349,8 +374,7 @@ export const upsertMember = createServerFn({ method: "POST" })
       const { data: currentVehicles } = await supabaseAdmin
         .from("vehicles")
         .select("id")
-        .eq("member_id", data.id)
-        .eq("company_id", data.companyId);
+        .eq("member_id", data.id);
 
       const keptIds = new Set(
         allVehiclesToUpsert.map((v) => v.id).filter((id): id is string => !!id)
@@ -365,19 +389,27 @@ export const upsertMember = createServerFn({ method: "POST" })
         await supabaseAdmin
           .from("vehicles")
           .delete()
-          .in("id", toDelete)
-          .eq("company_id", data.companyId);
+          .in("id", toDelete);
       }
     }
 
     if (data.id && allVehiclesToUpsert.length > 0) {
       for (let i = 0; i < allVehiclesToUpsert.length; i++) {
         const vItem = allVehiclesToUpsert[i];
-        // Atribui a mensalidade manual configurada no associado
-        const assignedFee =
-          allVehiclesToUpsert.length === 1 && typeof data.monthly_fee === "number" && data.monthly_fee > 0
-            ? data.monthly_fee
-            : vItem.monthly_fee ?? (i === 0 && typeof data.monthly_fee === "number" && data.monthly_fee > 0 ? data.monthly_fee : 179.90);
+        let assignedFee = vItem.monthly_fee;
+        if (assignedFee == null || assignedFee <= 0) {
+          if (typeof data.monthly_fee === "number" && data.monthly_fee > 0) {
+            if (allVehiclesToUpsert.length === 1) {
+              assignedFee = data.monthly_fee;
+            } else {
+              const baseSplit = Math.floor((data.monthly_fee / allVehiclesToUpsert.length) * 100) / 100;
+              const remainder = Number((data.monthly_fee - baseSplit * allVehiclesToUpsert.length).toFixed(2));
+              assignedFee = i === 0 ? Number((baseSplit + remainder).toFixed(2)) : baseSplit;
+            }
+          } else {
+            assignedFee = 179.90;
+          }
+        }
 
         const vData: any = {
           member_id: data.id,
@@ -385,23 +417,23 @@ export const upsertMember = createServerFn({ method: "POST" })
           plate: (vItem.plate || "").toUpperCase(),
           brand: vItem.brand || "",
           model: vItem.model || "",
-          year: vItem.year,
+          year: typeof vItem.year === "number" && !isNaN(vItem.year) ? vItem.year : null,
           category: vItem.category || "Leves e utilitários",
           monthly_fee: assignedFee,
           fipe_value: vItem.fipe_value || null,
         };
 
         if (vItem.id) {
-          let { error: vError } = await supabaseAdmin.from("vehicles").update(vData).eq("id", vItem.id).eq("company_id", data.companyId);
+          let { error: vError } = await supabaseAdmin.from("vehicles").update(vData).eq("id", vItem.id);
           if (vError && (vError.message?.includes("monthly_fee") || (vError as any).code === "42703")) {
             delete vData.monthly_fee;
             delete vData.fipe_value;
-            const retry = await supabaseAdmin.from("vehicles").update(vData).eq("id", vItem.id).eq("company_id", data.companyId);
+            const retry = await supabaseAdmin.from("vehicles").update(vData).eq("id", vItem.id);
             vError = retry.error;
           }
           if (vError && (vError.message?.includes("category") || (vError as any).code === "42703")) {
             delete vData.category;
-            await supabaseAdmin.from("vehicles").update(vData).eq("id", vItem.id).eq("company_id", data.companyId);
+            await supabaseAdmin.from("vehicles").update(vData).eq("id", vItem.id);
           }
         } else {
           let { error: vError } = await supabaseAdmin.from("vehicles").insert(vData);
