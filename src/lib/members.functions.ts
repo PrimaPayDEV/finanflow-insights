@@ -27,17 +27,54 @@ const memberSchema = z.object({
   vehicles: z.array(vehicleItemSchema).optional(),
   monthly_fee: z.number().optional(),
   due_day: z.number().int().min(1).max(31).optional(),
+  extra_data: z.record(z.any()).optional(),
 });
 
-// CPFs e nomes conhecidos de associados com vencimento no dia 15
-const DIA_15_CPFS = new Set([
-  "07255890607", // Julio Cesar Ferreira
-  "04475490650", // LIDIONEZ COSTA SILVA
-  "01353566608", // LUCIANO ARLINDO DE JESUS
-  "51823037687", // Sebastiao de Rosario
-  "13875213675", // TCHARLE DO CARMO BATISTA
-  "00423179675", // VIVIANE MICHELLINE VELOSO
-]);
+// Associados conhecidos com vencimento dia 15 e mensalidade fixada manualmente
+const KNOWN_MEMBER_DEFAULTS: Record<
+  string,
+  {
+    dueDay: number;
+    monthlyFee: number;
+    extra?: Record<string, any>;
+  }
+> = {
+  "07255890607": {
+    dueDay: 15,
+    monthlyFee: 154.55,
+    extra: {
+      customMonthlyFee: 154.55,
+      cnhNumber: "00899319421",
+      cnhCategory: "AD",
+      cnhExpiryDate: "2033-03-09",
+    },
+  },
+  "04475490650": {
+    dueDay: 15,
+    monthlyFee: 316.67,
+    extra: { customMonthlyFee: 316.67 },
+  },
+  "01353566608": {
+    dueDay: 15,
+    monthlyFee: 194.17,
+    extra: { customMonthlyFee: 194.17 },
+  },
+  "51823037687": {
+    dueDay: 15,
+    monthlyFee: 215.00,
+    extra: { customMonthlyFee: 215.00 },
+  },
+  "13875213675": {
+    dueDay: 15,
+    monthlyFee: 1570.50,
+    extra: { customMonthlyFee: 1570.50 },
+  },
+  "00423179675": {
+    dueDay: 15,
+    monthlyFee: 237.50,
+    extra: { customMonthlyFee: 237.50 },
+  },
+};
 
 const DIA_15_NAME_SUBSTRINGS = [
   "julio cesar ferreira",
@@ -63,26 +100,66 @@ export const getMembers = createServerFn({ method: "GET" })
     if (error) throw new Error(error.message);
     const list = members || [];
 
-    // Garantir que todos os associados tenham dia de vencimento definido no banco e na resposta
+    // Garantir que todos os associados tenham vencimento e mensalidade unificados no banco e na resposta
     const backfillUpdates: Promise<any>[] = [];
     list.forEach((m: any) => {
-      if (m.due_day == null) {
-        const cleanDoc = (m.document || "").replace(/\D/g, "");
-        const cleanName = (m.name || "").toLowerCase().trim();
-        const isDia15 =
-          DIA_15_CPFS.has(cleanDoc) ||
-          DIA_15_NAME_SUBSTRINGS.some((s) => cleanName.includes(s));
-        const resolvedDueDay = isDia15 ? 15 : 20;
-        m.due_day = resolvedDueDay;
+      const cleanDoc = (m.document || "").replace(/\D/g, "");
+      const cleanName = (m.name || "").toLowerCase().trim();
+      const known = KNOWN_MEMBER_DEFAULTS[cleanDoc];
 
+      let needsUpdate = false;
+      const patch: any = {};
+
+      // 1. Due day resolution
+      if (m.due_day == null) {
+        const isDia15 =
+          !!known?.dueDay ||
+          DIA_15_NAME_SUBSTRINGS.some((s) => cleanName.includes(s));
+        m.due_day = isDia15 ? 15 : 20;
+        patch.due_day = m.due_day;
+        needsUpdate = true;
+      }
+
+      // 2. Monthly fee resolution
+      if (m.monthly_fee == null || m.monthly_fee === 0) {
+        if (known?.monthlyFee) {
+          m.monthly_fee = known.monthlyFee;
+        } else if (m.vehicles && m.vehicles.length > 0) {
+          const vSum = m.vehicles.reduce((acc: number, v: any) => acc + (Number(v.monthly_fee) || 0), 0);
+          m.monthly_fee = vSum > 0 ? Number(vSum.toFixed(2)) : 179.90;
+        } else {
+          m.monthly_fee = 179.90;
+        }
+        patch.monthly_fee = m.monthly_fee;
+        needsUpdate = true;
+      }
+
+      // 3. Extra data resolution (CNH, custom monthly fee)
+      if (known?.extra) {
+        m.extra_data = {
+          ...(typeof m.extra_data === "object" && m.extra_data ? m.extra_data : {}),
+          ...known.extra,
+        };
+        patch.extra_data = m.extra_data;
+        needsUpdate = true;
+      } else if (m.monthly_fee && (!m.extra_data || !(m.extra_data as any).customMonthlyFee)) {
+        m.extra_data = {
+          ...(typeof m.extra_data === "object" && m.extra_data ? m.extra_data : {}),
+          customMonthlyFee: m.monthly_fee,
+        };
+        patch.extra_data = m.extra_data;
+        needsUpdate = true;
+      }
+
+      if (needsUpdate) {
         backfillUpdates.push(
           supabaseAdmin
             .from("members")
-            .update({ due_day: resolvedDueDay })
+            .update(patch)
             .eq("id", m.id)
             .then(
               () => {},
-              (err) => console.error("Erro ao atualizar due_day do associado", m.id, err)
+              (err) => console.error("Erro no auto-backfill do associado", m.id, err)
             )
         );
       }
@@ -107,6 +184,30 @@ export const syncMemberDueDays = createServerFn({ method: "POST" })
           .update({ due_day: dueDay })
           .eq("id", memberId)
           .eq("company_id", data.companyId);
+      }
+    });
+    await Promise.allSettled(updates);
+    return { ok: true, count: entries.length };
+  });
+
+export const syncMemberExtraData = createServerFn({ method: "POST" })
+  .validator((d: { companyId: string; extras: Record<string, any> }) => d)
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const entries = Object.entries(data.extras);
+    const updates = entries.map(async ([memberId, extra]) => {
+      const patch: any = { extra_data: extra };
+      if (typeof extra?.customMonthlyFee === "number" && extra.customMonthlyFee > 0) {
+        patch.monthly_fee = extra.customMonthlyFee;
+      }
+      try {
+        await supabaseAdmin
+          .from("members")
+          .update(patch)
+          .eq("id", memberId)
+          .eq("company_id", data.companyId);
+      } catch {
+        // Ignora silenciosamente se colunas ainda não foram migradas
       }
     });
     await Promise.allSettled(updates);
@@ -187,23 +288,42 @@ export const upsertMember = createServerFn({ method: "POST" })
     if (data.due_day !== undefined) {
       upsertData.due_day = data.due_day;
     }
+    if (data.monthly_fee !== undefined) {
+      upsertData.monthly_fee = data.monthly_fee;
+    }
+    if (data.extra_data !== undefined) {
+      upsertData.extra_data = data.extra_data;
+    }
 
     let error;
     if (data.id) {
       // Update existing
-      const { error: updateError } = await supabaseAdmin
+      let { error: updateError } = await supabaseAdmin
         .from("members")
         .update(upsertData)
         .eq("id", data.id)
         .eq("company_id", data.companyId); // extra safety
+      if (updateError && ((updateError as any).code === "42703" || updateError.message?.includes("monthly_fee") || updateError.message?.includes("extra_data"))) {
+        delete upsertData.monthly_fee;
+        delete upsertData.extra_data;
+        const retry = await supabaseAdmin.from("members").update(upsertData).eq("id", data.id).eq("company_id", data.companyId);
+        updateError = retry.error;
+      }
       error = updateError;
     } else {
       // Insert new
-      const { data: newMember, error: insertError } = await supabaseAdmin
+      let { data: newMember, error: insertError } = await supabaseAdmin
         .from("members")
         .insert(upsertData)
         .select("id")
         .single();
+      if (insertError && ((insertError as any).code === "42703" || insertError.message?.includes("monthly_fee") || insertError.message?.includes("extra_data"))) {
+        delete upsertData.monthly_fee;
+        delete upsertData.extra_data;
+        const retry = await supabaseAdmin.from("members").insert(upsertData).select("id").single();
+        newMember = retry.data;
+        insertError = retry.error;
+      }
       error = insertError;
       if (newMember?.id) {
         data.id = newMember.id;

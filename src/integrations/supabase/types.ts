@@ -384,7 +384,9 @@ export type Database = {
           document: string
           due_day: number | null
           email: string | null
+          extra_data: Json | null
           id: string
+          monthly_fee: number | null
           name: string
           partner_id: string | null
           phone: string | null
@@ -397,7 +399,9 @@ export type Database = {
           document: string
           due_day?: number | null
           email?: string | null
+          extra_data?: Json | null
           id?: string
+          monthly_fee?: number | null
           name: string
           partner_id?: string | null
           phone?: string | null
@@ -410,7 +414,9 @@ export type Database = {
           document?: string
           due_day?: number | null
           email?: string | null
+          extra_data?: Json | null
           id?: string
+          monthly_fee?: number | null
           name?: string
           partner_id?: string | null
           phone?: string | null

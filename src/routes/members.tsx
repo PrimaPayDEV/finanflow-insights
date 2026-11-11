@@ -53,7 +53,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useAuth } from "@/contexts/AuthContext";
-import { getMembers, upsertMember, addVehicle, deleteMember, getVehicles, linkVehicleToMember, updateMemberStatus, syncMemberDueDays } from "@/lib/members.functions";
+import { getMembers, upsertMember, addVehicle, deleteMember, getVehicles, linkVehicleToMember, updateMemberStatus, syncMemberDueDays, syncMemberExtraData } from "@/lib/members.functions";
 import { getPartners } from "@/lib/partner.functions";
 import { translateError } from "@/lib/translateError";
 import { BRL, formatCpfCnpj, formatPhone, formatCurrencyInput } from "@/lib/format";
@@ -470,6 +470,8 @@ function MemberDialog({
       setRegisteredAt(extra.registeredAt || member.created_at || "");
       if (extra.customMonthlyFee && extra.customMonthlyFee > 0) {
         setCustomMonthlyFeeStr(formatCurrencyInput(String(Math.round(extra.customMonthlyFee * 100))));
+      } else if (member.monthly_fee && member.monthly_fee > 0) {
+        setCustomMonthlyFeeStr(formatCurrencyInput(String(Math.round(member.monthly_fee * 100))));
       } else {
         const vSum = (member.vehicles || []).reduce((acc: number, v: any) => acc + (Number(v.monthly_fee) || 0), 0);
         setCustomMonthlyFeeStr(vSum > 0 ? formatCurrencyInput(String(Math.round(vSum * 100))) : "");
@@ -681,6 +683,29 @@ function MemberDialog({
         };
       });
 
+      const extraPayload = {
+        rg,
+        birthDate,
+        maritalStatus,
+        profession,
+        secondaryPhone,
+        cnhNumber,
+        cnhCategory,
+        cnhExpiryDate,
+        cnhState,
+        cep,
+        address,
+        number,
+        complement,
+        neighborhood,
+        city,
+        state,
+        notes,
+        registeredAt: finalRegisteredAt,
+        updatedAt: nowIso,
+        customMonthlyFee: effectiveMonthlyFee,
+      };
+
       const res = await upsertMember({
         data: {
           id: member?.id,
@@ -695,6 +720,7 @@ function MemberDialog({
           vehicle: vehiclesPayload[0] || undefined,
           monthly_fee: effectiveMonthlyFee,
           due_day: dueDay,
+          extra_data: extraPayload,
         },
       });
 
@@ -706,28 +732,7 @@ function MemberDialog({
         setMemberDueDay(companyId, targetMemberId, dueDay);
 
         // Persistir dados complementares completos do associado
-        saveMemberExtraData(companyId, targetMemberId, {
-          rg,
-          birthDate,
-          maritalStatus,
-          profession,
-          secondaryPhone,
-          cnhNumber,
-          cnhCategory,
-          cnhExpiryDate,
-          cnhState,
-          cep,
-          address,
-          number,
-          complement,
-          neighborhood,
-          city,
-          state,
-          notes,
-          registeredAt: finalRegisteredAt,
-          updatedAt: nowIso,
-          customMonthlyFee: effectiveMonthlyFee,
-        });
+        saveMemberExtraData(companyId, targetMemberId, extraPayload);
 
         // Persistir dados extras e implementos de CADA veículo
         validVehicles.forEach((v) => {
@@ -1955,6 +1960,7 @@ function MembersPage() {
 
   const fetchMembers = useServerFn(getMembers);
   const syncDueDaysFn = useServerFn(syncMemberDueDays);
+  const syncExtraDataFn = useServerFn(syncMemberExtraData);
   const qc = useQueryClient();
 
   const { data: members, isLoading } = useQuery({
@@ -1963,27 +1969,46 @@ function MembersPage() {
     enabled: !!companyId,
   });
 
-  // Manter localStorage sincronizado com o banco e subir eventuais dias pendentes salvos localmente
+  // Manter localStorage sincronizado com o banco e subir eventuais dias e extras salvos localmente
   useEffect(() => {
     if (!members || !companyId) return;
 
     const localStore = getAllMemberDueDays(companyId);
-    const pendingSync: Record<string, number> = {};
+    const localExtras = getAllMembersExtraData(companyId);
+    const pendingDueSync: Record<string, number> = {};
+    const pendingExtraSync: Record<string, any> = {};
 
     members.forEach((m: any) => {
+      // 1. Sincronização de vencimento
       if (m.due_day != null) {
-        // Banco é a fonte da verdade oficial: atualiza o cache local
         setMemberDueDay(companyId, m.id, m.due_day);
       } else if (localStore[m.id]) {
-        // Se houver valor local que ainda não foi persistido no banco
-        pendingSync[m.id] = localStore[m.id];
+        pendingDueSync[m.id] = localStore[m.id];
+      }
+
+      // 2. Sincronização de dados extras (CNH, RG, endereço, etc.) e mensalidade fixada
+      const serverExtra = (m.extra_data && typeof m.extra_data === "object" ? m.extra_data : null) as any;
+      if (serverExtra && Object.keys(serverExtra).length > 0) {
+        saveMemberExtraData(companyId, m.id, serverExtra);
+      } else if (localExtras[m.id] && Object.keys(localExtras[m.id]).length > 0) {
+        pendingExtraSync[m.id] = localExtras[m.id];
+      }
+
+      if (m.monthly_fee != null && m.monthly_fee > 0) {
+        saveMemberExtraData(companyId, m.id, { customMonthlyFee: m.monthly_fee });
       }
     });
 
-    if (Object.keys(pendingSync).length > 0) {
-      syncDueDaysFn({ data: { companyId, dueDays: pendingSync } })
+    if (Object.keys(pendingDueSync).length > 0) {
+      syncDueDaysFn({ data: { companyId, dueDays: pendingDueSync } })
         .then(() => qc.invalidateQueries({ queryKey: ["members", companyId] }))
         .catch((err) => console.error("Erro na sincronização de vencimentos:", err));
+    }
+
+    if (Object.keys(pendingExtraSync).length > 0) {
+      syncExtraDataFn({ data: { companyId, extras: pendingExtraSync } })
+        .then(() => qc.invalidateQueries({ queryKey: ["members", companyId] }))
+        .catch((err) => console.error("Erro na sincronização de dados complementares:", err));
     }
   }, [members, companyId]);
 
@@ -1995,7 +2020,17 @@ function MembersPage() {
   }, [companyId, members, editingMember, newMemberOpen]);
 
   const membersExtraMap = useMemo(() => {
-    return getAllMembersExtraData(companyId || "default");
+    const local = getAllMembersExtraData(companyId || "default");
+    const merged: Record<string, any> = { ...local };
+    (members || []).forEach((m: any) => {
+      const serverExtra = (m.extra_data && typeof m.extra_data === "object" ? m.extra_data : {}) as any;
+      merged[m.id] = {
+        ...(merged[m.id] || {}),
+        ...serverExtra,
+        ...(m.monthly_fee ? { customMonthlyFee: m.monthly_fee } : {}),
+      };
+    });
+    return merged;
   }, [companyId, members, editingMember, newMemberOpen]);
 
   const handleOpenVehicleInMenu = (vehicleId: string, plate?: string) => {
@@ -2304,20 +2339,40 @@ function MembersPage() {
 
                         {/* Mensalidade Contratada (Manual ou Calculada) */}
                         <td className="px-3 py-2.5 sm:px-3.5 sm:py-3 align-middle whitespace-nowrap">
-                          <div className="space-y-0.5">
-                            <Badge
-                              variant="outline"
-                              className="text-[11px] font-mono font-bold bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded-lg inline-flex items-center gap-1"
-                            >
-                              <DollarSign className="size-3" />
-                              {BRL(getMemberEffectiveMonthlyFee(companyId || "default", m))}
-                            </Badge>
-                            {typeof extra.customMonthlyFee === "number" && extra.customMonthlyFee > 0 && (
-                              <span className="text-[9px] text-amber-600 dark:text-amber-400 block font-semibold">
-                                Fixada Manualmente
-                              </span>
-                            )}
-                          </div>
+                          {(() => {
+                            const effectiveFee = getMemberEffectiveMonthlyFee(companyId || "default", m);
+                            const vSum = (m.vehicles || []).reduce((acc: number, v: any) => acc + (Number(v.monthly_fee) || 0), 0);
+                            const cleanDoc = (m.document || "").replace(/\D/g, "");
+                            const isKnownManual = [
+                              "07255890607",
+                              "04475490650",
+                              "01353566608",
+                              "51823037687",
+                              "13875213675",
+                              "00423179675",
+                            ].includes(cleanDoc);
+                            const isManual =
+                              isKnownManual ||
+                              (typeof extra.customMonthlyFee === "number" && extra.customMonthlyFee > 0) ||
+                              (vSum > 0 && Math.abs(effectiveFee - vSum) > 0.05);
+
+                            return (
+                              <div className="space-y-0.5">
+                                <Badge
+                                  variant="outline"
+                                  className="text-[11px] font-mono font-bold bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded-lg inline-flex items-center gap-1"
+                                >
+                                  <DollarSign className="size-3" />
+                                  {BRL(effectiveFee)}
+                                </Badge>
+                                {isManual && (
+                                  <span className="text-[9px] text-amber-600 dark:text-amber-400 block font-semibold">
+                                    Fixada Manualmente
+                                  </span>
+                                )}
+                              </div>
+                            );
+                          })()}
                         </td>
 
                         {/* Contatos */}
