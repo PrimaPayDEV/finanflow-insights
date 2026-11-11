@@ -293,9 +293,12 @@ export function AppLayout({
     tabScope === "veicular" ||
     appMode === "billing" ||
     segment === "PROTECAO_VEICULAR" ||
+    (companyName || "").toLowerCase().includes("planmais") ||
     pathname.startsWith("/vehicles") ||
     pathname.startsWith("/members") ||
-    pathname.startsWith("/veicular"));
+    pathname.startsWith("/veicular") ||
+    (pathname === "/settings/asaas" && (tabScope === "veicular" || appMode === "billing" || segment === "PROTECAO_VEICULAR" || (companyName || "").toLowerCase().includes("planmais")))
+  );
 
   const isAdminRecebiveis = Boolean(
     user?.email?.toLowerCase() === "financeiro@primapay.com.br" ||
@@ -380,6 +383,12 @@ export function AppLayout({
           icon: PiggyBank,
           description: "Acréscimo percentual na mensalidade",
         },
+        {
+          to: "/settings/asaas",
+          label: "Configuração Asaas",
+          icon: Settings,
+          description: "Chave de API Planmais e gateway Asaas",
+        },
       ],
     },
     {
@@ -396,6 +405,11 @@ export function AppLayout({
       to: "/veicular/termos",
       label: "Usuário/Termos",
       icon: FileText,
+    },
+    {
+      to: "/settings/asaas",
+      label: "Configuração Asaas",
+      icon: Settings,
     },
   ];
 

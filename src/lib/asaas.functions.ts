@@ -49,16 +49,132 @@ export const checkAsaasConfigured = createServerFn({ method: "GET" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: company } = await supabaseAdmin
       .from("companies")
-      .select("name, asaas_api_key, asaas_webhook_token")
+      .select("id, name, asaas_api_key, asaas_webhook_token")
       .eq("id", companyId)
-      .single();
+      .maybeSingle();
     
     const isPrimaPay = company?.name === "Prima Hub" || company?.name === "PrimaPay";
     const key = company?.asaas_api_key || (isPrimaPay ? (process.env.ASAAS_API_KEY || process.env.ASAAS_API_TESTE) : null);
     return {
+      companyName: company?.name || "Empresa",
       configured: Boolean(key),
+      hasOwnKey: Boolean(company?.asaas_api_key),
+      maskedKey: company?.asaas_api_key
+        ? `${company.asaas_api_key.substring(0, 8)}...${company.asaas_api_key.slice(-4)}`
+        : null,
       webhookTokenConfigured: Boolean(company?.asaas_webhook_token || (isPrimaPay ? process.env.ASAAS_WEBHOOK_TOKEN : null)),
     };
+  });
+
+export const getAsaasCompanies = createServerFn({ method: "GET" })
+  .handler(async () => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: companies, error } = await supabaseAdmin
+      .from("companies")
+      .select("id, name, app_mode, segment, asaas_api_key, asaas_webhook_token")
+      .order("name", { ascending: true });
+    if (error) throw new Error(error.message);
+    return (companies || []).map((c) => ({
+      id: c.id,
+      name: c.name,
+      app_mode: c.app_mode,
+      segment: c.segment,
+      hasKey: Boolean(c.asaas_api_key),
+      maskedKey: c.asaas_api_key ? `${c.asaas_api_key.substring(0, 8)}...${c.asaas_api_key.slice(-4)}` : null,
+      hasWebhook: Boolean(c.asaas_webhook_token),
+    }));
+  });
+
+export const saveCompanyAsaasKey = createServerFn({ method: "POST" })
+  .validator((d: { companyId: string; apiKey: string }) => d)
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin
+      .from("companies")
+      .update({ asaas_api_key: data.apiKey.trim() })
+      .eq("id", data.companyId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const saveCompanyAsaasWebhookToken = createServerFn({ method: "POST" })
+  .validator((d: { companyId: string; webhookToken: string }) => d)
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin
+      .from("companies")
+      .update({ asaas_webhook_token: data.webhookToken.trim() })
+      .eq("id", data.companyId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const getCompanyAsaasSettings = createServerFn({ method: "GET" })
+  .validator((d: { companyId: string }) => d)
+  .handler(async ({ data: { companyId } }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: company } = await supabaseAdmin
+      .from("companies")
+      .select("id, name, app_mode, segment, asaas_api_key, asaas_webhook_token")
+      .eq("id", companyId)
+      .maybeSingle();
+
+    const { data: settings } = await supabaseAdmin
+      .from("asaas_settings")
+      .select("*")
+      .eq("company_id", companyId)
+      .maybeSingle();
+
+    const isPrimaPay = company?.name === "Prima Hub" || company?.name === "PrimaPay";
+    const effectiveKey = company?.asaas_api_key || (isPrimaPay ? (process.env.ASAAS_API_KEY || process.env.ASAAS_API_TESTE) : null);
+
+    return {
+      companyId,
+      companyName: company?.name || "Empresa",
+      configured: Boolean(effectiveKey),
+      hasOwnKey: Boolean(company?.asaas_api_key),
+      maskedKey: company?.asaas_api_key
+        ? `${company.asaas_api_key.substring(0, 8)}...${company.asaas_api_key.slice(-4)}`
+        : null,
+      webhookTokenConfigured: Boolean(company?.asaas_webhook_token || (isPrimaPay ? process.env.ASAAS_WEBHOOK_TOKEN : null)),
+      settings: settings || null,
+    };
+  });
+
+export const saveCompanyAsaasSettings = createServerFn({ method: "POST" })
+  .validator((d: {
+    companyId: string;
+    due_day: number;
+    fine_percent: number;
+    interest_percent: number;
+    discount_percent: number;
+    discount_deadline_days: number;
+    default_description: string;
+    sandbox: boolean;
+  }) => d)
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { companyId, ...fields } = data;
+    const { data: existing } = await supabaseAdmin
+      .from("asaas_settings")
+      .select("id")
+      .eq("company_id", companyId)
+      .maybeSingle();
+
+    if (existing?.id) {
+      const { error } = await supabaseAdmin
+        .from("asaas_settings")
+        .update({ ...fields, updated_at: new Date().toISOString() })
+        .eq("id", existing.id);
+      if (error) throw new Error(error.message);
+    } else {
+      const { error } = await supabaseAdmin
+        .from("asaas_settings")
+        .insert({ company_id: companyId, ...fields });
+      if (error) throw new Error(error.message);
+    }
+
+    return { ok: true };
   });
 
 import { getNextBusinessDueDate, formatNextBusinessDueDate } from "./dateUtils";

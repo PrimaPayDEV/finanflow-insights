@@ -40,9 +40,22 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { checkAsaasConfigured } from "@/lib/asaas.functions";
-import { asaasSettingsQuery, asaasEventsQuery, type AsaasSettings } from "@/lib/db";
-import { supabase } from "@/integrations/supabase/client";
+import {
+  checkAsaasConfigured,
+  getAsaasCompanies,
+  getCompanyAsaasSettings,
+  saveCompanyAsaasKey,
+  saveCompanyAsaasWebhookToken,
+  saveCompanyAsaasSettings,
+} from "@/lib/asaas.functions";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { asaasEventsQuery, type AsaasSettings } from "@/lib/db";
 import { translateError } from "@/lib/translateError";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -78,18 +91,74 @@ const defaults = {
 };
 
 function AsaasSettingsPage() {
-  const { companyId, appMode, companyName } = useAuth();
-  const isPlanmais = appMode === "billing" || companyName?.toLowerCase().includes("planmais");
+  const { companyId: authCompanyId, appMode, companyName: authCompanyName, role } = useAuth();
+  const isPlatformAdmin = authCompanyName === "Prima Hub" || authCompanyName === "PrimaPay" || role === "admin";
   const qc = useQueryClient();
-  const check = useServerFn(checkAsaasConfigured);
-  const status = useQuery({
-    queryKey: ["asaas-status", companyId],
-    queryFn: () => check({ data: { companyId: companyId! } }),
-    enabled: !!companyId,
+
+  const isVeicularContext =
+    appMode === "billing" ||
+    (authCompanyName || "").toLowerCase().includes("planmais") ||
+    (typeof window !== "undefined" && (
+      window.location.pathname.startsWith("/veicular") ||
+      window.location.search.includes("veicular") ||
+      window.location.host.includes("veicular")
+    ));
+
+  // Buscar lista de empresas disponíveis para configuração do Asaas
+  const fetchCompanies = useServerFn(getAsaasCompanies);
+  const companiesQuery = useQuery({
+    queryKey: ["asaas-companies"],
+    queryFn: () => fetchCompanies(),
   });
-  const settings = useQuery(asaasSettingsQuery);
+
+  const [selectedCompanyId, setSelectedCompanyId] = useState<string>("");
+
+  useEffect(() => {
+    if (selectedCompanyId) return;
+
+    if (companiesQuery.data && companiesQuery.data.length > 0) {
+      if (isVeicularContext) {
+        const planmais = companiesQuery.data.find(
+          (c) =>
+            c.name?.toLowerCase().includes("planmais") ||
+            c.segment === "veicular" ||
+            c.app_mode === "billing"
+        );
+        if (planmais) {
+          setSelectedCompanyId(planmais.id);
+          return;
+        }
+      }
+
+      if (authCompanyId) {
+        setSelectedCompanyId(authCompanyId);
+      } else if (companiesQuery.data[0]) {
+        setSelectedCompanyId(companiesQuery.data[0].id);
+      }
+    } else if (authCompanyId) {
+      setSelectedCompanyId(authCompanyId);
+    }
+  }, [companiesQuery.data, authCompanyId, isVeicularContext, selectedCompanyId]);
+
+  const activeCompanyId = selectedCompanyId || authCompanyId || "";
+
+  // Buscar status e configurações da empresa selecionada via servidor (supabaseAdmin)
+  const fetchCompanySettings = useServerFn(getCompanyAsaasSettings);
+  const status = useQuery({
+    queryKey: ["company-asaas-status", activeCompanyId],
+    queryFn: () => fetchCompanySettings({ data: { companyId: activeCompanyId } }),
+    enabled: !!activeCompanyId,
+  });
+
   const events = useQuery(asaasEventsQuery);
   const configured = status.data?.configured;
+  const hasOwnKey = status.data?.hasOwnKey;
+  const maskedKey = status.data?.maskedKey;
+  const currentCompanyName = status.data?.companyName || authCompanyName || "Empresa";
+
+  const isPlanmais =
+    isVeicularContext ||
+    currentCompanyName.toLowerCase().includes("planmais");
 
   const [form, setForm] = useState(defaults);
   const [apiKey, setApiKey] = useState("");
@@ -98,7 +167,9 @@ function AsaasSettingsPage() {
   const [savingWebhookToken, setSavingWebhookToken] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<any | null>(null);
   const [currentOrigin, setCurrentOrigin] = useState("");
-  const [originMode, setOriginMode] = useState<"current" | "ec" | "veicular" | "imobiliaria">("current");
+  const [originMode, setOriginMode] = useState<"current" | "ec" | "veicular" | "imobiliaria">(
+    isPlanmais ? "veicular" : "current"
+  );
 
   useEffect(() => {
     setCurrentOrigin(getCurrentOrigin());
@@ -112,49 +183,56 @@ function AsaasSettingsPage() {
   };
 
   useEffect(() => {
-    if (settings.data) {
+    if (status.data?.settings) {
+      const s = status.data.settings;
       setForm({
-        due_day: settings.data.due_day,
-        fine_percent: Number(settings.data.fine_percent),
-        interest_percent: Number(settings.data.interest_percent),
-        discount_percent: Number(settings.data.discount_percent),
-        discount_deadline_days: settings.data.discount_deadline_days,
-        default_description: settings.data.default_description,
-        sandbox: settings.data.sandbox,
+        due_day: s.due_day ?? (isPlanmais ? 20 : 10),
+        fine_percent: Number(s.fine_percent ?? 2),
+        interest_percent: Number(s.interest_percent ?? 1),
+        discount_percent: Number(s.discount_percent ?? 0),
+        discount_deadline_days: s.discount_deadline_days ?? 0,
+        default_description: s.default_description || (isPlanmais ? "Mensalidade Proteção Veicular" : "Fatura PrimaHub"),
+        sandbox: s.sandbox ?? false,
       });
+    } else if (isPlanmais) {
+      setForm((prev) => ({
+        ...prev,
+        due_day: 20,
+        default_description: "Mensalidade Proteção Veicular",
+      }));
     }
-  }, [settings.data]);
+  }, [status.data?.settings, isPlanmais]);
 
+  const saveSettingsFn = useServerFn(saveCompanyAsaasSettings);
   const save = useMutation({
     mutationFn: async () => {
-      const payload: Partial<AsaasSettings> = { ...form };
-      const existing = settings.data?.id;
-      const { error } = existing
-        ? await supabase.from("asaas_settings").update(payload).eq("id", existing)
-        : await supabase.from("asaas_settings").insert(payload as never);
-      if (error) throw new Error(error.message);
+      if (!activeCompanyId) throw new Error("Empresa não selecionada.");
+      await saveSettingsFn({
+        data: {
+          companyId: activeCompanyId,
+          ...form,
+        },
+      });
     },
     onSuccess: () => {
       toast.success("Preferências de cobrança salvas com sucesso!");
-      qc.invalidateQueries({ queryKey: ["asaas_settings"] });
+      qc.invalidateQueries({ queryKey: ["company-asaas-status", activeCompanyId] });
     },
     onError: (e: Error) => toast.error(translateError(e.message)),
   });
 
+  const saveKeyFn = useServerFn(saveCompanyAsaasKey);
   const saveApiKey = async () => {
-    if (!companyId) return;
+    if (!activeCompanyId) return toast.error("Selecione a empresa.");
     if (!apiKey.trim()) return toast.error("Insira uma chave válida");
 
     setSavingKey(true);
     try {
-      const { error } = await supabase
-        .from("companies")
-        .update({ asaas_api_key: apiKey.trim() })
-        .eq("id", companyId);
-      if (error) throw error;
-      toast.success("Chave de API salva com sucesso!");
+      await saveKeyFn({ data: { companyId: activeCompanyId, apiKey: apiKey.trim() } });
+      toast.success("Chave de API salva com sucesso para " + currentCompanyName + "!");
       setApiKey("");
-      qc.invalidateQueries({ queryKey: ["asaas-status", companyId] });
+      qc.invalidateQueries({ queryKey: ["company-asaas-status", activeCompanyId] });
+      qc.invalidateQueries({ queryKey: ["asaas-companies"] });
     } catch (e: any) {
       toast.error(translateError(e.message));
     } finally {
@@ -162,20 +240,17 @@ function AsaasSettingsPage() {
     }
   };
 
+  const saveTokenFn = useServerFn(saveCompanyAsaasWebhookToken);
   const saveWebhookToken = async () => {
-    if (!companyId) return;
+    if (!activeCompanyId) return toast.error("Selecione a empresa.");
     if (!webhookToken.trim()) return toast.error("Insira um token válido");
 
     setSavingWebhookToken(true);
     try {
-      const { error } = await supabase
-        .from("companies")
-        .update({ asaas_webhook_token: webhookToken.trim() })
-        .eq("id", companyId);
-      if (error) throw error;
+      await saveTokenFn({ data: { companyId: activeCompanyId, webhookToken: webhookToken.trim() } });
       toast.success("Token do Webhook salvo com sucesso!");
       setWebhookToken("");
-      qc.invalidateQueries({ queryKey: ["asaas-status", companyId] });
+      qc.invalidateQueries({ queryKey: ["company-asaas-status", activeCompanyId] });
     } catch (e: any) {
       toast.error(translateError(e.message));
     } finally {
@@ -183,7 +258,7 @@ function AsaasSettingsPage() {
     }
   };
 
-  const webhookUrl = getAsaasWebhookUrl(companyId, activeOrigin());
+  const webhookUrl = getAsaasWebhookUrl(activeCompanyId, activeOrigin());
 
   return (
     <AppLayout
@@ -195,6 +270,41 @@ function AsaasSettingsPage() {
       }
     >
       <div className="max-w-7xl mx-auto space-y-6">
+        {/* Seletor de empresa caso seja admin */}
+        {isPlatformAdmin && companiesQuery.data && companiesQuery.data.length > 1 && (
+          <Card className="rounded-2xl border border-border/80 shadow-card bg-card overflow-hidden">
+            <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <Label className="text-xs font-bold text-foreground">Empresa Selecionada para Configuração Asaas</Label>
+                <p className="text-xs text-muted-foreground">Alterne entre a Planmais (Proteção Veicular) ou outras contas do Hub para gerenciar a chave individual</p>
+              </div>
+              <Select value={activeCompanyId} onValueChange={(val) => setSelectedCompanyId(val)}>
+                <SelectTrigger className="w-full sm:w-80 h-10 rounded-xl bg-background border-border/80 font-semibold text-xs">
+                  <SelectValue placeholder="Selecione a empresa" />
+                </SelectTrigger>
+                <SelectContent>
+                  {companiesQuery.data.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.name} {c.hasKey ? "✓ (Chave Salva)" : "(Pendente)"}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </CardContent>
+          </Card>
+        )}
+
+        {(!isPlatformAdmin || (companiesQuery.data && companiesQuery.data.length <= 1)) && (
+          <div className="flex items-center justify-between px-1 text-xs text-muted-foreground font-medium">
+            <span>Ambiente / Empresa: <strong className="text-foreground">{currentCompanyName}</strong></span>
+            {hasOwnKey && (
+              <Badge className="bg-emerald-500/10 text-emerald-600 border border-emerald-500/30 text-[11px] font-semibold">
+                Chave Própria Ativa
+              </Badge>
+            )}
+          </div>
+        )}
+
         <div className="grid gap-6 lg:grid-cols-12 items-stretch">
           {/* ========================================================= */}
           {/* COLUNA ESQUERDA: Autenticação, Chave API e Webhooks        */}
@@ -212,7 +322,7 @@ function AsaasSettingsPage() {
                       Chave de API Asaas
                     </CardTitle>
                     <CardDescription className="text-xs text-muted-foreground mt-0.5">
-                      Integração direta com o gateway
+                      {isPlanmais ? "Integração exclusiva da Planmais" : "Integração direta com o gateway"}
                     </CardDescription>
                   </div>
                 </div>
@@ -221,9 +331,13 @@ function AsaasSettingsPage() {
                   <Badge variant="secondary" className="font-mono text-[11px] px-2.5 py-0.5">
                     verificando…
                   </Badge>
-                ) : configured ? (
+                ) : hasOwnKey ? (
                   <Badge className="bg-emerald-500/10 text-emerald-600 border border-emerald-500/30 text-xs font-semibold gap-1.5 px-2.5 py-0.5">
-                    <ShieldCheck className="size-3.5" /> Conectado
+                    <ShieldCheck className="size-3.5" /> Conectado (Chave Própria)
+                  </Badge>
+                ) : configured ? (
+                  <Badge className="bg-blue-500/10 text-blue-600 border border-blue-500/30 text-xs font-semibold gap-1.5 px-2.5 py-0.5">
+                    <ShieldCheck className="size-3.5" /> Padrão da Plataforma
                   </Badge>
                 ) : (
                   <Badge variant="destructive" className="text-xs font-semibold gap-1.5 px-2.5 py-0.5">
@@ -233,9 +347,27 @@ function AsaasSettingsPage() {
               </CardHeader>
 
               <CardContent className="p-6 space-y-4 text-sm">
+                {hasOwnKey && maskedKey ? (
+                  <div className="flex items-center gap-2 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-300 text-xs">
+                    <CheckCircle2 className="size-4 shrink-0 text-emerald-600" />
+                    <div>
+                      <p className="font-semibold">Chave de API {isPlanmais ? "da Planmais" : ""} Ativa</p>
+                      <p className="font-mono text-[11px] opacity-80 mt-0.5">Chave salva: {maskedKey}</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-300 text-xs">
+                    <TriangleAlert className="size-4 shrink-0 text-amber-600" />
+                    <div>
+                      <p className="font-semibold">Chave própria não configurada</p>
+                      <p className="text-[11px] opacity-80 mt-0.5">Insira abaixo a chave gerada no painel Asaas da {isPlanmais ? "Planmais" : currentCompanyName}.</p>
+                    </div>
+                  </div>
+                )}
+
                 <p className="text-xs text-muted-foreground leading-relaxed">
                   Insira a chave de API gerada no painel do Asaas (Menu <strong>Configurações da Conta → Integrações</strong>).
-                  Certifique-se de utilizar a chave correspondente ao ambiente ativo.
+                  Certifique-se de utilizar a chave correspondente à conta {isPlanmais ? "da Planmais" : "da sua empresa"}.
                 </p>
 
                 <div className="flex flex-col sm:flex-row gap-2.5 items-stretch sm:items-center">
