@@ -80,7 +80,14 @@ import {
 
 export const Route = createFileRoute("/members")({
   head: () => ({
-    meta: [{ title: "Associados | Gestão de Proteção" }],
+    meta: [
+      { title: "Associados | PlanMais Proteção Veicular" },
+      { name: "description", content: "Cadastro de associados, veículos, mensalidades e vencimentos da PlanMais." },
+      { property: "og:title", content: "Associados | PlanMais Proteção Veicular" },
+      { property: "og:description", content: "Gestão de associados e vencimentos da proteção veicular PlanMais." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
   }),
   component: MembersPage,
 });
@@ -439,7 +446,7 @@ function MemberDialog({
       setPartnerId(member.partner_id || "");
       setStatus(member.status === "inactive" ? "inactive" : "active");
 
-      const savedDue = getMemberDueDay(companyId || "default", member.id, Number((member as any).due_day || 20));
+      const savedDue = getMemberDueDay(companyId || "default", member.id, member.due_day);
       setDueDay(savedDue);
 
       const extra = getMemberExtraData(companyId || "default", member.id);
@@ -687,6 +694,7 @@ function MemberDialog({
           vehicles: vehiclesPayload,
           vehicle: vehiclesPayload[0] || undefined,
           monthly_fee: effectiveMonthlyFee,
+          due_day: dueDay,
         },
       });
 
@@ -1957,7 +1965,7 @@ function MembersPage() {
   // Mapear dias de vencimento e dados complementares (CNH, data/hora de cadastro)
   const memberDueDays = useMemo(() => {
     return getAllMemberDueDays(companyId || "default");
-  }, [companyId, members]);
+  }, [companyId, members, editingMember, newMemberOpen]);
 
   const membersExtraMap = useMemo(() => {
     return getAllMembersExtraData(companyId || "default");
@@ -1990,7 +1998,7 @@ function MembersPage() {
       (statusFilter === "ACTIVE" && m.status === "active") ||
       (statusFilter === "INACTIVE" && m.status !== "active");
 
-    const memberDue = memberDueDays[m.id] ?? Number((m as any).due_day || (m as any).preferred_due_day || 20);
+    const memberDue = m.due_day ?? memberDueDays[m.id] ?? 20;
     const matchesDueDay = dueDayFilter === "ALL" || String(memberDue) === dueDayFilter;
 
     return matchesSearch && matchesStatus && matchesDueDay;
@@ -2202,7 +2210,7 @@ function MembersPage() {
                   {filteredMembers.map((m: any) => {
                     const partner = Array.isArray(m.partners) ? m.partners[0] : m.partners;
                     const vehiclesList = m.vehicles || [];
-                    const due = memberDueDays[m.id] ?? Number((m as any).due_day || (m as any).preferred_due_day || 20);
+                    const due = m.due_day ?? memberDueDays[m.id] ?? 20;
                     const extra = membersExtraMap[m.id] || {};
                     const regStamp = extra.registeredAt || m.created_at;
 

@@ -382,6 +382,7 @@ export type Database = {
           company_id: string
           created_at: string
           document: string
+          due_day: number | null
           email: string | null
           id: string
           name: string
@@ -394,6 +395,7 @@ export type Database = {
           company_id: string
           created_at?: string
           document: string
+          due_day?: number | null
           email?: string | null
           id?: string
           name: string
@@ -406,6 +408,7 @@ export type Database = {
           company_id?: string
           created_at?: string
           document?: string
+          due_day?: number | null
           email?: string | null
           id?: string
           name?: string
