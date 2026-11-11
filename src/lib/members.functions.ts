@@ -27,7 +27,7 @@ const memberSchema = z.object({
   vehicles: z.array(vehicleItemSchema).optional(),
   monthly_fee: z.number().optional(),
   due_day: z.number().int().min(1).max(31).optional(),
-  extra_data: z.record(z.any()).optional(),
+  extra_data: z.record(z.string(), z.any()).optional(),
 });
 
 // Associados conhecidos com vencimento dia 15 e mensalidade fixada manualmente
@@ -158,10 +158,10 @@ export const getMembers = createServerFn({ method: "GET" })
       // Se due_day precisou de preenchimento inicial no banco, atualiza apenas due_day
       if (needsDueUpdate && newDueDay != null) {
         backfillUpdates.push(
-          supabaseAdmin
+          Promise.resolve(supabaseAdmin
             .from("members")
             .update({ due_day: newDueDay })
-            .eq("id", m.id)
+            .eq("id", m.id))
             .then(
               () => {},
               (err) => console.error("Erro no auto-backfill do vencimento", m.id, err)
