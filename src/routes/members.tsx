@@ -53,7 +53,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useAuth } from "@/contexts/AuthContext";
-import { getMembers, upsertMember, addVehicle, deleteMember, getVehicles, linkVehicleToMember, updateMemberStatus } from "@/lib/members.functions";
+import { getMembers, upsertMember, addVehicle, deleteMember, getVehicles, linkVehicleToMember, updateMemberStatus, syncMemberDueDays } from "@/lib/members.functions";
 import { getPartners } from "@/lib/partner.functions";
 import { translateError } from "@/lib/translateError";
 import { BRL, formatCpfCnpj, formatPhone, formatCurrencyInput } from "@/lib/format";
@@ -1954,11 +1954,38 @@ function MembersPage() {
   const [newMemberOpen, setNewMemberOpen] = useState(false);
 
   const fetchMembers = useServerFn(getMembers);
+  const syncDueDaysFn = useServerFn(syncMemberDueDays);
+  const qc = useQueryClient();
+
   const { data: members, isLoading } = useQuery({
     queryKey: ["members", companyId],
     queryFn: () => fetchMembers({ data: { companyId: companyId! } }),
     enabled: !!companyId,
   });
+
+  // Manter localStorage sincronizado com o banco e subir eventuais dias pendentes salvos localmente
+  useEffect(() => {
+    if (!members || !companyId) return;
+
+    const localStore = getAllMemberDueDays(companyId);
+    const pendingSync: Record<string, number> = {};
+
+    members.forEach((m: any) => {
+      if (m.due_day != null) {
+        // Banco é a fonte da verdade oficial: atualiza o cache local
+        setMemberDueDay(companyId, m.id, m.due_day);
+      } else if (localStore[m.id]) {
+        // Se houver valor local que ainda não foi persistido no banco
+        pendingSync[m.id] = localStore[m.id];
+      }
+    });
+
+    if (Object.keys(pendingSync).length > 0) {
+      syncDueDaysFn({ data: { companyId, dueDays: pendingSync } })
+        .then(() => qc.invalidateQueries({ queryKey: ["members", companyId] }))
+        .catch((err) => console.error("Erro na sincronização de vencimentos:", err));
+    }
+  }, [members, companyId]);
 
   const memberList = members || [];
 
@@ -2009,7 +2036,6 @@ function MembersPage() {
   const inactiveMembers = memberList.filter((m: any) => m.status !== "active").length;
   const totalVehicles = memberList.reduce((acc: number, m: any) => acc + (m.vehicles?.length || 0), 0);
 
-  const qc = useQueryClient();
   const updateStatusFn = useServerFn(updateMemberStatus);
   const toggleStatusMutation = useMutation({
     mutationFn: (vars: { data: { id: string; companyId: string; status: "active" | "inactive" } }) =>

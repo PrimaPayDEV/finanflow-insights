@@ -458,6 +458,7 @@ function CotacaoPage() {
         phone: memberPhone.replace(/\D/g, "") || undefined,
         partner_id: consultantId || undefined,
         monthly_fee: totalMonthly,
+        due_day: preferredDueDay,
         vehicle: {
           plate: vehiclePlate ? vehiclePlate.toUpperCase().trim() : undefined,
           brand: vehicleBrand,
@@ -526,6 +527,7 @@ function CotacaoPage() {
           phone: target.memberPhone.replace(/\D/g, "") || undefined,
           partner_id: target.consultantId || undefined,
           monthly_fee: target.totalMonthlyFee,
+          due_day: target.preferredDueDay || 20,
           vehicle: {
             plate: target.vehiclePlate ? target.vehiclePlate.toUpperCase().trim() : undefined,
             brand: target.vehicleBrand,

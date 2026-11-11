@@ -29,6 +29,26 @@ const memberSchema = z.object({
   due_day: z.number().int().min(1).max(31).optional(),
 });
 
+// CPFs e nomes conhecidos de associados com vencimento no dia 15
+const DIA_15_CPFS = new Set([
+  "07255890607", // Julio Cesar Ferreira
+  "04475490650", // LIDIONEZ COSTA SILVA
+  "01353566608", // LUCIANO ARLINDO DE JESUS
+  "51823037687", // Sebastiao de Rosario
+  "13875213675", // TCHARLE DO CARMO BATISTA
+  "00423179675", // VIVIANE MICHELLINE VELOSO
+]);
+
+const DIA_15_NAME_SUBSTRINGS = [
+  "julio cesar ferreira",
+  "lidionez costa silva",
+  "luciano arlindo de jesus",
+  "sebastiao de rosario",
+  "sebastião de rosário",
+  "tcharle do carmo batista",
+  "viviane michelline",
+];
+
 export const getMembers = createServerFn({ method: "GET" })
   .validator((d: { companyId: string }) => d)
   .handler(async ({ data }) => {
@@ -41,7 +61,56 @@ export const getMembers = createServerFn({ method: "GET" })
       .order("name");
 
     if (error) throw new Error(error.message);
-    return members || [];
+    const list = members || [];
+
+    // Garantir que todos os associados tenham dia de vencimento definido no banco e na resposta
+    const backfillUpdates: Promise<any>[] = [];
+    list.forEach((m: any) => {
+      if (m.due_day == null) {
+        const cleanDoc = (m.document || "").replace(/\D/g, "");
+        const cleanName = (m.name || "").toLowerCase().trim();
+        const isDia15 =
+          DIA_15_CPFS.has(cleanDoc) ||
+          DIA_15_NAME_SUBSTRINGS.some((s) => cleanName.includes(s));
+        const resolvedDueDay = isDia15 ? 15 : 20;
+        m.due_day = resolvedDueDay;
+
+        backfillUpdates.push(
+          supabaseAdmin
+            .from("members")
+            .update({ due_day: resolvedDueDay })
+            .eq("id", m.id)
+            .then(
+              () => {},
+              (err) => console.error("Erro ao atualizar due_day do associado", m.id, err)
+            )
+        );
+      }
+    });
+
+    if (backfillUpdates.length > 0) {
+      Promise.allSettled(backfillUpdates).catch(() => {});
+    }
+
+    return list;
+  });
+
+export const syncMemberDueDays = createServerFn({ method: "POST" })
+  .validator((d: { companyId: string; dueDays: Record<string, number> }) => d)
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const entries = Object.entries(data.dueDays);
+    const updates = entries.map(async ([memberId, dueDay]) => {
+      if (typeof dueDay === "number" && dueDay >= 1 && dueDay <= 31) {
+        await supabaseAdmin
+          .from("members")
+          .update({ due_day: dueDay })
+          .eq("id", memberId)
+          .eq("company_id", data.companyId);
+      }
+    });
+    await Promise.allSettled(updates);
+    return { ok: true, count: entries.length };
   });
 
 export const upsertMember = createServerFn({ method: "POST" })
