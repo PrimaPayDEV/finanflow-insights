@@ -20,3 +20,4 @@ CREATE POLICY "platform_cloud_cache_update" ON public.platform_cloud_cache FOR U
 
 -- Garantir coluna extra_data na tabela vehicles
 ALTER TABLE public.vehicles ADD COLUMN IF NOT EXISTS extra_data jsonb DEFAULT '{}'::jsonb;
+

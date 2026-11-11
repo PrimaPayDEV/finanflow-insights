@@ -300,3 +300,4 @@ export function CloudSyncModal({ companyId, trigger }: CloudSyncModalProps) {
     </Dialog>
   );
 }
+
