@@ -384,9 +384,7 @@ export type Database = {
           document: string
           due_day: number | null
           email: string | null
-          extra_data: Json | null
           id: string
-          monthly_fee: number | null
           name: string
           partner_id: string | null
           phone: string | null
@@ -399,9 +397,7 @@ export type Database = {
           document: string
           due_day?: number | null
           email?: string | null
-          extra_data?: Json | null
           id?: string
-          monthly_fee?: number | null
           name: string
           partner_id?: string | null
           phone?: string | null
@@ -414,9 +410,7 @@ export type Database = {
           document?: string
           due_day?: number | null
           email?: string | null
-          extra_data?: Json | null
           id?: string
-          monthly_fee?: number | null
           name?: string
           partner_id?: string | null
           phone?: string | null
@@ -603,27 +597,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      platform_cloud_cache: {
-        Row: {
-          cache_key: string
-          company_id: string
-          payload: Json
-          updated_at: string
-        }
-        Insert: {
-          cache_key: string
-          company_id: string
-          payload?: Json
-          updated_at?: string
-        }
-        Update: {
-          cache_key?: string
-          company_id?: string
-          payload?: Json
-          updated_at?: string
-        }
-        Relationships: []
       }
       pos_terminals: {
         Row: {
@@ -1596,7 +1569,6 @@ export type Database = {
           color: string | null
           company_id: string
           created_at: string
-          extra_data: Json | null
           fipe_value: number | null
           id: string
           member_id: string
@@ -1611,7 +1583,6 @@ export type Database = {
           color?: string | null
           company_id: string
           created_at?: string
-          extra_data?: Json | null
           fipe_value?: number | null
           id?: string
           member_id: string
@@ -1626,7 +1597,6 @@ export type Database = {
           color?: string | null
           company_id?: string
           created_at?: string
-          extra_data?: Json | null
           fipe_value?: number | null
           id?: string
           member_id?: string
