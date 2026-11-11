@@ -78,6 +78,13 @@
       "when": 1793994856417,
       "tag": "0010_notifications_environment_scope",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1794403708543,
+      "tag": "0011_members_persist_due_day",
+      "breakpoints": true
     }
   ]
 }
