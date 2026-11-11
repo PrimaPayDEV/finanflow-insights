@@ -147,7 +147,7 @@ function FinanceiroPage() {
       }
 
       // Pega dia de vencimento preferido do associado ou o padrão (20)
-      const memberDueDay = getMemberDueDay(companyId || "default", m.id, Number((m as any).due_day || (m as any).preferred_due_day || 20));
+      const memberDueDay = getMemberDueDay(companyId || "default", m.id, m.due_day);
 
       if (selectedDueDayNum !== null && memberDueDay !== selectedDueDayNum) {
         continue;

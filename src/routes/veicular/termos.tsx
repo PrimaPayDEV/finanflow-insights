@@ -297,7 +297,7 @@ function TermosPage() {
 
   const memberDueDay = useMemo(() => {
     if (!selectedMemberId) return 20;
-    return getMemberDueDay(companyId || "default", selectedMemberId, Number((selectedMember as any)?.due_day || 20));
+    return getMemberDueDay(companyId || "default", selectedMemberId, selectedMember?.due_day);
   }, [companyId, selectedMemberId, selectedMember]);
 
   const memberVehicles = useMemo(() => {

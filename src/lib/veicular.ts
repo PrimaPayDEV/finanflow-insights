@@ -493,10 +493,11 @@ export function saveLocalData<T>(companyId: string, subKey: string, value: T): v
 // -------------------------------------------------------------
 // HELPER PARA DIA DE VENCIMENTO DO BOLETO DO ASSOCIADO
 // -------------------------------------------------------------
-export function getMemberDueDay(companyId: string, memberId: string, fallback: number = 20): number {
-  if (typeof window === "undefined") return fallback;
+export function getMemberDueDay(companyId: string, memberId: string, savedDay?: number | null): number {
+  if (savedDay != null) return savedDay;
+  if (typeof window === "undefined") return 20;
   const store = loadLocalData<Record<string, number>>(companyId, "member_due_days", {});
-  return store[memberId] ?? fallback;
+  return store[memberId] ?? 20;
 }
 
 export function setMemberDueDay(companyId: string, memberId: string, dueDay: number): void {

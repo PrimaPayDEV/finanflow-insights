@@ -26,6 +26,7 @@ const memberSchema = z.object({
   vehicle: vehicleItemSchema.optional(),
   vehicles: z.array(vehicleItemSchema).optional(),
   monthly_fee: z.number().optional(),
+  due_day: z.number().int().min(1).max(31).optional(),
 });
 
 export const getMembers = createServerFn({ method: "GET" })
@@ -113,6 +114,9 @@ export const upsertMember = createServerFn({ method: "POST" })
     };
     if (data.status) {
       upsertData.status = data.status;
+    }
+    if (data.due_day !== undefined) {
+      upsertData.due_day = data.due_day;
     }
 
     let error;
