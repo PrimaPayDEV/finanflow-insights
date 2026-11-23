@@ -381,7 +381,9 @@ function MemberDialog({
   const [email, setEmail] = useState(member?.email || "");
   const [phone, setPhone] = useState(member?.phone || "");
   const [secondaryPhone, setSecondaryPhone] = useState("");
-  const [partnerId, setPartnerId] = useState(member?.partner_id || "");
+  const [partnerIds, setPartnerIds] = useState<string[]>(
+    member?.partner_ids?.length ? member.partner_ids : member?.partner_id ? [member.partner_id] : [],
+  );
   const [dueDay, setDueDay] = useState<number>(20);
   const [status, setStatus] = useState<"active" | "inactive">("active");
   const [notes, setNotes] = useState("");
@@ -443,7 +445,9 @@ function MemberDialog({
       setDocument(member.document || "");
       setEmail(member.email || "");
       setPhone(member.phone || "");
-      setPartnerId(member.partner_id || "");
+      setPartnerIds(
+        member.partner_ids?.length ? member.partner_ids : member.partner_id ? [member.partner_id] : [],
+      );
       setStatus(member.status === "inactive" ? "inactive" : "active");
 
       const savedDue = getMemberDueDay(companyId || "default", member.id, member.due_day);
@@ -513,7 +517,7 @@ function MemberDialog({
       setEmail("");
       setPhone("");
       setSecondaryPhone("");
-      setPartnerId("");
+      setPartnerIds([]);
       setDueDay(20);
       setStatus("active");
       setNotes("");
@@ -723,7 +727,8 @@ function MemberDialog({
           document: document.trim(),
           email: email.trim() || undefined,
           phone: phone.trim() || undefined,
-          partner_id: partnerId && partnerId !== "none" ? partnerId : undefined,
+          partner_id: partnerIds[0] || "",
+          partner_ids: partnerIds,
           status,
           vehicles: vehiclesPayload,
           vehicle: vehiclesPayload[0] || undefined,
@@ -980,19 +985,33 @@ function MemberDialog({
                   </div>
                   <div className="space-y-1.5">
                     <Label className="text-xs font-semibold">Consultor Responsável</Label>
-                    <Select value={partnerId} onValueChange={setPartnerId}>
-                      <SelectTrigger className="h-9 rounded-xl text-xs bg-background">
-                        <SelectValue placeholder="Direto / Sem Consultor" />
-                      </SelectTrigger>
-                      <SelectContent className="rounded-xl">
-                        <SelectItem value="none">Direto / Sem Consultor</SelectItem>
-                        {partners?.map((p: any) => (
-                          <SelectItem key={p.id} value={p.id}>
-                            {p.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <div className="space-y-1.5">
+                      {partnerIds.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5">
+                          {partnerIds.map((pid) => {
+                            const p = partners?.find((x: any) => x.id === pid);
+                            return (
+                              <Badge key={pid} variant="outline" className="text-[10px] border-primary/30 text-primary gap-1 rounded-full">
+                                {p?.name || "Consultor"}
+                                <button type="button" aria-label="Remover consultor" onClick={() => setPartnerIds((ids) => ids.filter((i) => i !== pid))} className="ml-0.5 hover:text-destructive">×</button>
+                              </Badge>
+                            );
+                          })}
+                        </div>
+                      )}
+                      <Select value="" onValueChange={(v) => v && v !== "none" && setPartnerIds((ids) => (ids.includes(v) ? ids : [...ids, v]))}>
+                        <SelectTrigger className="h-9 rounded-xl text-xs bg-background">
+                          <SelectValue placeholder={partnerIds.length ? "Adicionar outro consultor" : "Direto / Sem Consultor"} />
+                        </SelectTrigger>
+                        <SelectContent className="rounded-xl">
+                          {partners?.filter((p: any) => !partnerIds.includes(p.id)).map((p: any) => (
+                            <SelectItem key={p.id} value={p.id}>
+                              {p.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -2004,6 +2023,12 @@ function MembersPage() {
     queryFn: () => fetchMembers({ data: { companyId: companyId! } }),
     enabled: !!companyId,
   });
+  const fetchPartnersList = useServerFn(getPartners);
+  const { data: partnersList } = useQuery({
+    queryKey: ["partners", companyId],
+    queryFn: () => fetchPartnersList({ data: { companyId: companyId! } }),
+    enabled: !!companyId,
+  });
 
   // Manter localStorage sincronizado com o banco e subir eventuais dias e extras salvos localmente
   useEffect(() => {
@@ -2470,13 +2495,26 @@ function MembersPage() {
 
                         {/* Consultor / Parceiro */}
                         <td className="px-3 py-2.5 sm:px-3.5 sm:py-3 align-middle whitespace-nowrap">
-                          {partner?.name ? (
-                            <Badge
-                              variant="outline"
-                              className="text-[9.5px] sm:text-[10px] border-primary/30 text-primary font-semibold whitespace-nowrap px-2.5 py-0.5 rounded-full inline-flex items-center leading-none"
-                            >
-                              {partner.name}
-                            </Badge>
+                          {(() => {
+                            const ids: string[] = m.partner_ids?.length ? m.partner_ids : m.partner_id ? [m.partner_id] : [];
+                            const names = ids.map((id) => partnersList?.find((p: any) => p.id === id)?.name || (id === partner?.id ? partner?.name : null)).filter(Boolean);
+                            return names.length ? names : partner?.name ? [partner.name] : [];
+                          })().length ? (
+                            <div className="flex flex-wrap gap-1">
+                              {(() => {
+                                const ids: string[] = m.partner_ids?.length ? m.partner_ids : m.partner_id ? [m.partner_id] : [];
+                                const names = ids.map((id) => partnersList?.find((p: any) => p.id === id)?.name || (id === partner?.id ? partner?.name : null)).filter(Boolean);
+                                return names.length ? names : [partner?.name];
+                              })().map((n: any) => (
+                                <Badge
+                                  key={n}
+                                  variant="outline"
+                                  className="text-[9.5px] sm:text-[10px] border-primary/30 text-primary font-semibold whitespace-nowrap px-2.5 py-0.5 rounded-full inline-flex items-center leading-none"
+                                >
+                                  {n}
+                                </Badge>
+                              ))}
+                            </div>
                           ) : (
                             <span className="text-[11px] text-muted-foreground whitespace-nowrap">Direto</span>
                           )}

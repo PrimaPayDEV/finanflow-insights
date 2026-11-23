@@ -387,6 +387,7 @@ export type Database = {
           id: string
           name: string
           partner_id: string | null
+          partner_ids: string[]
           phone: string | null
           status: string
         }
@@ -400,6 +401,7 @@ export type Database = {
           id?: string
           name: string
           partner_id?: string | null
+          partner_ids?: string[]
           phone?: string | null
           status?: string
         }
@@ -413,6 +415,7 @@ export type Database = {
           id?: string
           name?: string
           partner_id?: string | null
+          partner_ids?: string[]
           phone?: string | null
           status?: string
         }

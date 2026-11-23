@@ -1,0 +1,2 @@
+ALTER TABLE public.members ADD COLUMN IF NOT EXISTS partner_ids uuid[] NOT NULL DEFAULT '{}';
+UPDATE public.members SET partner_ids = ARRAY[partner_id] WHERE partner_id IS NOT NULL AND cardinality(partner_ids) = 0;

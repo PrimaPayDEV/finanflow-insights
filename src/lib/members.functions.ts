@@ -22,6 +22,7 @@ const memberSchema = z.object({
   email: z.string().email("E-mail inválido").optional().or(z.literal("")),
   phone: z.string().optional().or(z.literal("")),
   partner_id: z.string().uuid().optional().or(z.literal("")),
+  partner_ids: z.array(z.string().uuid()).optional(),
   status: z.string().optional(),
   vehicle: vehicleItemSchema.optional(),
   vehicles: z.array(vehicleItemSchema).optional(),
@@ -306,8 +307,11 @@ export const upsertMember = createServerFn({ method: "POST" })
       email: data.email || null,
       phone: data.phone || null,
       asaas_customer_id: asaasCustomerId || null,
-      partner_id: data.partner_id || null,
+      partner_id: data.partner_ids?.[0] || data.partner_id || null,
     };
+    if (data.partner_ids !== undefined) {
+      upsertData.partner_ids = data.partner_ids;
+    }
     if (data.status) {
       upsertData.status = data.status;
     }
