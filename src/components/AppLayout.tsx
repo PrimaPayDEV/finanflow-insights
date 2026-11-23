@@ -297,7 +297,7 @@ export function AppLayout({
     pathname.startsWith("/vehicles") ||
     pathname.startsWith("/members") ||
     pathname.startsWith("/veicular") ||
-    (pathname === "/settings/asaas" && (tabScope === "veicular" || appMode === "billing" || segment === "PROTECAO_VEICULAR" || (companyName || "").toLowerCase().includes("planmais")))
+    (pathname === "/settings/asaas" && (appMode === "billing" || segment === "PROTECAO_VEICULAR" || (companyName || "").toLowerCase().includes("planmais")))
   );
 
   const isAdminRecebiveis = Boolean(
