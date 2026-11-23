@@ -38,6 +38,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
+import { memberConsultantIds, toggleConsultant } from "@/lib/member-consultants";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
@@ -382,7 +384,7 @@ function MemberDialog({
   const [phone, setPhone] = useState(member?.phone || "");
   const [secondaryPhone, setSecondaryPhone] = useState("");
   const [partnerIds, setPartnerIds] = useState<string[]>(
-    member?.partner_ids?.length ? member.partner_ids : member?.partner_id ? [member.partner_id] : [],
+    member ? memberConsultantIds(member) : [],
   );
   const [dueDay, setDueDay] = useState<number>(20);
   const [status, setStatus] = useState<"active" | "inactive">("active");
@@ -446,7 +448,7 @@ function MemberDialog({
       setEmail(member.email || "");
       setPhone(member.phone || "");
       setPartnerIds(
-        member.partner_ids?.length ? member.partner_ids : member.partner_id ? [member.partner_id] : [],
+        memberConsultantIds(member),
       );
       setStatus(member.status === "inactive" ? "inactive" : "active");
 
@@ -984,33 +986,19 @@ function MemberDialog({
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold">Consultor Responsável</Label>
-                    <div className="space-y-1.5">
-                      {partnerIds.length > 0 && (
-                        <div className="flex flex-wrap gap-1.5">
-                          {partnerIds.map((pid) => {
-                            const p = partners?.find((x: any) => x.id === pid);
-                            return (
-                              <Badge key={pid} variant="outline" className="text-[10px] border-primary/30 text-primary gap-1 rounded-full">
-                                {p?.name || "Consultor"}
-                                <button type="button" aria-label="Remover consultor" onClick={() => setPartnerIds((ids) => ids.filter((i) => i !== pid))} className="ml-0.5 hover:text-destructive">×</button>
-                              </Badge>
-                            );
-                          })}
-                        </div>
-                      )}
-                      <Select value="" onValueChange={(v) => v && v !== "none" && setPartnerIds((ids) => (ids.includes(v) ? ids : [...ids, v]))}>
-                        <SelectTrigger className="h-9 rounded-xl text-xs bg-background">
-                          <SelectValue placeholder={partnerIds.length ? "Adicionar outro consultor" : "Direto / Sem Consultor"} />
-                        </SelectTrigger>
-                        <SelectContent className="rounded-xl">
-                          {partners?.filter((p: any) => !partnerIds.includes(p.id)).map((p: any) => (
-                            <SelectItem key={p.id} value={p.id}>
-                              {p.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                    <Label className="text-xs font-semibold">Consultores Responsáveis</Label>
+                    <div className="max-h-40 overflow-y-auto rounded-lg border border-border bg-background p-2 space-y-2" role="group" aria-label="Consultores Responsáveis">
+                      {partners?.map((partner) => (
+                        <label key={partner.id} className="flex items-center gap-2 text-xs cursor-pointer py-1">
+                          <Checkbox
+                            checked={partnerIds.includes(partner.id)}
+                            onCheckedChange={(checked) => setPartnerIds((ids) => toggleConsultant(ids, partner.id, checked === true))}
+                            aria-label={partner.name}
+                          />
+                          <span className="min-w-0 break-words">{partner.name}</span>
+                        </label>
+                      ))}
+                      {partners?.length === 0 && <span className="text-xs text-muted-foreground">Nenhum consultor cadastrado</span>}
                     </div>
                   </div>
                 </div>

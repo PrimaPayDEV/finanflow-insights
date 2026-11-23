@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { addDays, format, parseISO } from "date-fns";
 import { getNextBusinessDay } from "./dateUtils";
+import { buildConsultantSplits, memberConsultantIds } from "./member-consultants";
 
 const vehicleItemSchema = z.object({
   id: z.string().uuid().optional(),
@@ -307,10 +308,10 @@ export const upsertMember = createServerFn({ method: "POST" })
       email: data.email || null,
       phone: data.phone || null,
       asaas_customer_id: asaasCustomerId || null,
-      partner_id: data.partner_ids?.[0] || data.partner_id || null,
+      partner_id: data.partner_ids !== undefined ? data.partner_ids[0] || null : data.partner_id || null,
     };
     if (data.partner_ids !== undefined) {
-      upsertData.partner_ids = data.partner_ids;
+      upsertData.partner_ids = [...new Set(data.partner_ids)];
     }
     if (data.status) {
       upsertData.status = data.status;
@@ -331,7 +332,8 @@ export const upsertMember = createServerFn({ method: "POST" })
       let { error: updateError } = await supabaseAdmin
         .from("members")
         .update(upsertData)
-        .eq("id", data.id);
+        .eq("id", data.id)
+        .eq("company_id", data.companyId);
       if (updateError && ((updateError as any).code === "42703" || updateError.message?.includes("monthly_fee") || updateError.message?.includes("extra_data"))) {
         delete upsertData.monthly_fee;
         delete upsertData.extra_data;
@@ -633,8 +635,9 @@ export const generateInvoice = createServerFn({ method: "POST" })
 
     const { data: member } = await supabaseAdmin
       .from("members")
-      .select("asaas_customer_id, document, name, email, phone, partner_id, partners(id, name, asaas_wallet_id, split_percent)")
+      .select("asaas_customer_id, document, name, email, phone, partner_id, partner_ids")
       .eq("id", data.memberId)
+      .eq("company_id", data.companyId)
       .single();
     if (!member) throw new Error("Associado não encontrado");
 
@@ -730,14 +733,16 @@ export const generateInvoice = createServerFn({ method: "POST" })
       dueDate = todayStr;
     }
 
-    let partner = Array.isArray(member.partners) ? member.partners[0] : (member.partners as any);
-    if (!partner && member.partner_id) {
-      const { data: pDb } = await supabaseAdmin
+    const consultantIds = memberConsultantIds(member);
+    let splits: ReturnType<typeof buildConsultantSplits> = [];
+    if (consultantIds.length > 0) {
+      const { data: consultants, error: consultantsError } = await supabaseAdmin
         .from("partners")
         .select("id, name, asaas_wallet_id, split_percent")
-        .eq("id", member.partner_id)
-        .maybeSingle();
-      partner = pDb;
+        .eq("company_id", data.companyId)
+        .in("id", consultantIds);
+      if (consultantsError) throw new Error(consultantsError.message);
+      splits = buildConsultantSplits(consultantIds, consultants ?? []);
     }
 
     const baseDescription = data.description?.trim() || "Cobrança de Proteção Veicular";
@@ -765,19 +770,11 @@ export const generateInvoice = createServerFn({ method: "POST" })
       }
     }
 
-    const splitPercent = partner?.split_percent ? Number(partner.split_percent) : 0;
-    const walletId = partner?.asaas_wallet_id ? String(partner.asaas_wallet_id).trim() : "";
-
-    if (walletId && !isNaN(splitPercent) && splitPercent > 0) {
-      paymentPayload.split = [
-        {
-          walletId,
-          percentualValue: Number(splitPercent.toFixed(2)),
-        }
-      ];
+    if (splits.length > 0) {
+      paymentPayload.split = splits;
     }
 
-    let paymentRes = await fetch(`${base}/payments`, {
+    const paymentRes = await fetch(`${base}/payments`, {
       method: "POST",
       headers,
       body: JSON.stringify(paymentPayload),
@@ -787,23 +784,7 @@ export const generateInvoice = createServerFn({ method: "POST" })
       throw new Error("Chave da API do Asaas não autorizada ou inválida (401). Verifique a chave em Configurações > Asaas.");
     }
 
-    let paymentJson = (await paymentRes.json()) as { id?: string; errors?: any[] };
-
-    // Se o Asaas rejeitar por conta de wallet/split inválido do parceiro/consultor, tenta emitir sem split
-    if (!paymentJson.id && paymentPayload.split && paymentJson.errors?.some(e =>
-      e.description?.toLowerCase().includes("carteira") ||
-      e.description?.toLowerCase().includes("wallet") ||
-      e.description?.toLowerCase().includes("split")
-    )) {
-      console.warn(`Carteira de split do parceiro inválida (${walletId}). Emitindo cobrança sem split.`);
-      delete paymentPayload.split;
-      paymentRes = await fetch(`${base}/payments`, {
-        method: "POST",
-        headers,
-        body: JSON.stringify(paymentPayload),
-      });
-      paymentJson = (await paymentRes.json()) as { id?: string; errors?: any[] };
-    }
+    const paymentJson = (await paymentRes.json()) as { id?: string; errors?: any[] };
 
     if (!paymentJson.id) {
       const errMsg = paymentJson.errors?.[0]?.description ?? JSON.stringify(paymentJson.errors);
